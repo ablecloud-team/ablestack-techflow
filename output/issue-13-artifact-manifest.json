@@ -1,0 +1,94 @@
+{
+  "schemaVersion": "1.0",
+  "issue": 13,
+  "title": "Activepieces 테스트 서버 Docker Compose 배포",
+  "status": "validated",
+  "generatedAt": "2026-07-30",
+  "files": [
+    {
+      "path": "docs/decisions/activepieces-compose-deployment.json",
+      "size": 4806,
+      "sha256": "D9FE542A27817F54625395ED4EE73DCC6C1739FFA876B408E08B47E9980128AB"
+    },
+    {
+      "path": "docs/reports/issue-13-activepieces-compose-deployment-validation.md",
+      "size": 5363,
+      "sha256": "0109EB4824DF94E795E698F215C72EDC64AFCC8EDE21E46FC8E9C72F6DA00A96"
+    },
+    {
+      "path": "docs/runbooks/activepieces-compose-deployment.md",
+      "size": 8680,
+      "sha256": "C509B8B4671D60DE0E2C68680D4FDD98820F13D6CB68651FF933406E08897373"
+    },
+    {
+      "path": "docs/environments/activepieces-test-server.md",
+      "size": 5334,
+      "sha256": "0A9661BA9A92680D1D3540A1845BE533D53C5CA4D3ACAA314B7BAFFA1BF1D11E"
+    },
+    {
+      "path": "deploy/compose/activepieces/compose.yml",
+      "size": 2682,
+      "sha256": "96CECADED55DBB550C45C52BEB545AB482D70DE304B7DB0499ED2D814628062D"
+    },
+    {
+      "path": "deploy/compose/activepieces/.env.example",
+      "size": 1010,
+      "sha256": "366FF76D646233F1C1A1BFDB5277681971FACE8D6BBB0EAC3D4E9E4F9723F425"
+    },
+    {
+      "path": "deploy/compose/activepieces/README.md",
+      "size": 1249,
+      "sha256": "A340500DD06E5781544D1349B9C7F1D091D0C0C484C1013A0C599E67D7559CBA"
+    },
+    {
+      "path": "deploy/compose/activepieces/scripts/install-docker-ubuntu.sh",
+      "size": 1213,
+      "sha256": "640F385CAD3F5722C5177934AF835C1306C6D3E39A6917BFE32A0326086DB2E4"
+    },
+    {
+      "path": "deploy/compose/activepieces/scripts/init-env.sh",
+      "size": 1169,
+      "sha256": "CD3A0366E8F30F8760A6E962C9C910A7413334E2868F49F151D88592784796D9"
+    },
+    {
+      "path": "deploy/compose/activepieces/scripts/deploy.sh",
+      "size": 685,
+      "sha256": "B62BB9B11E3D3B610A2BEC2220B07EE614AE918598CA0BDAB17219DBD18ECF2C"
+    },
+    {
+      "path": "deploy/compose/activepieces/scripts/healthcheck.sh",
+      "size": 1706,
+      "sha256": "806CA634929344EDA8E9F087C352D7DCEDF0196D1EA383A72E8845D87D221484"
+    },
+    {
+      "path": "deploy/compose/activepieces/scripts/status.sh",
+      "size": 672,
+      "sha256": "5635B40969FD405B1E0888A5027699050E1EECF6E2396D49DB1554D5FA0A36AA"
+    },
+    {
+      "path": "deploy/compose/activepieces/scripts/verify-persistence.sh",
+      "size": 1543,
+      "sha256": "7E0B59A2510FA8CBD92335063008C36AF6B22D12D79FA2BBACC92BF3B64A91C4"
+    },
+    {
+      "path": "deploy/compose/activepieces/scripts/remove.sh",
+      "size": 650,
+      "sha256": "570AF2603BF69814327B4A4646A9FBF152CE66E5AE32EF1145144E93780308B7"
+    },
+    {
+      "path": "output/pdf/activepieces-compose-deployment-report.pdf",
+      "size": 137592,
+      "sha256": "C2782F668BED1D6B7B642F0BD27A7F1D4EC8520CFF1712DFCA63B7ADD2F80130"
+    },
+    {
+      "path": "output/pdf/activepieces-compose-deployment-presentation.pdf",
+      "size": 555498,
+      "sha256": "DF82B8907497FD59B0AB190CEBCA640E726377F9C437B330971F0510E9496114"
+    },
+    {
+      "path": "output/presentation/activepieces-compose-deployment.pptx",
+      "size": 47950,
+      "sha256": "6B671B5ED7AE7B41E336E139CEFB3A26E06B1B12BE35FABC428C223A7957C4E2"
+    }
+  ]
+}
