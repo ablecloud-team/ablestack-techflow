@@ -1,0 +1,115 @@
+name: techflow-activepieces
+
+services:
+  postgres:
+    image: pgvector/pgvector:0.8.0-pg14
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: ${AP_POSTGRES_DATABASE:?AP_POSTGRES_DATABASE is required}
+      POSTGRES_USER: ${AP_POSTGRES_USERNAME:?AP_POSTGRES_USERNAME is required}
+      POSTGRES_PASSWORD: ${AP_POSTGRES_PASSWORD:?AP_POSTGRES_PASSWORD is required}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - backend
+
+  redis:
+    image: redis:7.0.7
+    restart: unless-stopped
+    env_file:
+      - .env
+    command:
+      - sh
+      - -c
+      - exec redis-server --appendonly yes --requirepass "$${AP_REDIS_PASSWORD}"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - REDISCLI_AUTH="$${AP_REDIS_PASSWORD}" redis-cli ping | grep -q PONG
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - backend
+
+  app:
+    image: ${AP_IMAGE:-ghcr.io/activepieces/activepieces:0.86.3}
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      AP_CONTAINER_TYPE: APP
+    ports:
+      - ${AP_BIND_ADDRESS:-172.16.0.231}:${AP_HTTP_PORT:-8080}:80
+    volumes:
+      - activepieces_cache:/usr/src/app/cache
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -fsS http://localhost:80/api/v1/health >/dev/null
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - frontend
+      - backend
+
+  worker:
+    image: ${AP_IMAGE:-ghcr.io/activepieces/activepieces:0.86.3}
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      AP_CONTAINER_TYPE: WORKER
+      AP_WORKER_CONCURRENCY: "1"
+    volumes:
+      - activepieces_cache:/usr/src/app/cache
+    depends_on:
+      app:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -fsS http://localhost:80/api/v1/health >/dev/null
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - backend
+
+volumes:
+  activepieces_cache:
+  postgres_data:
+  redis_data:
+
+networks:
+  frontend:
+  backend:

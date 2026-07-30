@@ -1,0 +1,181 @@
+{
+  "schemaVersion": "1.0",
+  "issue": 13,
+  "title": "Activepieces 테스트 서버 Docker Compose 배포",
+  "status": "validated",
+  "validatedAt": "2026-07-30",
+  "target": {
+    "hostname": "u24-base",
+    "operatingSystem": "Ubuntu 24.04.4 LTS",
+    "kernel": "7.0.0-28-generic",
+    "cpu": "4 vCPU",
+    "memory": "3.8 GiB",
+    "swap": "3.8 GiB",
+    "rootFreeBeforeDeployment": "37 GiB",
+    "deploymentPath": "/opt/ablestack-techflow/activepieces",
+    "privateUrl": "http://172.16.0.231:8080"
+  },
+  "sshRoutes": [
+    {
+      "type": "private",
+      "endpoint": "172.16.0.231:22",
+      "verified": true
+    },
+    {
+      "type": "external-forward",
+      "endpoint": "211.115.222.251:10023",
+      "verified": true
+    }
+  ],
+  "sshHostKey": {
+    "type": "ssh-ed25519",
+    "sha256": "SHA256:uhqc0M7okWRf6I53PF6qqSIUc9j1KHD5ImQRlqvfm3o",
+    "sameOnBothRoutes": true
+  },
+  "runtime": {
+    "dockerEngine": "29.6.2",
+    "dockerCompose": "5.3.1",
+    "dockerServiceEnabled": true,
+    "dockerServiceActive": true
+  },
+  "services": [
+    {
+      "name": "app",
+      "image": "ghcr.io/activepieces/activepieces:0.86.3",
+      "digest": "sha256:208517c4f0d798a477a0c594bf432dd0f4918433f4b6f5b5f188a6e10e638c6c",
+      "health": "healthy"
+    },
+    {
+      "name": "worker",
+      "image": "ghcr.io/activepieces/activepieces:0.86.3",
+      "digest": "sha256:208517c4f0d798a477a0c594bf432dd0f4918433f4b6f5b5f188a6e10e638c6c",
+      "health": "healthy",
+      "workerConcurrency": 1,
+      "polling": "ready"
+    },
+    {
+      "name": "postgres",
+      "image": "pgvector/pgvector:0.8.0-pg14",
+      "digest": "sha256:c55d7e7deac05dde62139e0ded4fcf4f58363656cbc382dbea82fbed995aa767",
+      "health": "healthy",
+      "persistentVolume": "postgres_data"
+    },
+    {
+      "name": "redis",
+      "image": "redis:7.0.7",
+      "digest": "sha256:bb474c35022ca2c5618f4c49ca759bd2c0eea1daf5d934c560bd30092b97b498",
+      "health": "healthy",
+      "persistentVolume": "redis_data",
+      "appendOnly": true,
+      "authentication": true
+    }
+  ],
+  "configuration": {
+    "frontendBinding": "172.16.0.231:8080",
+    "databaseHostPortExposed": false,
+    "redisHostPortExposed": false,
+    "executionMode": "SANDBOX_CODE_ONLY",
+    "networkMode": "STRICT",
+    "telemetryEnabled": false,
+    "restartPolicy": "unless-stopped",
+    "runtimeEnvMode": "0600",
+    "runtimeSecretsCommitted": false,
+    "deploymentAssetsSha256MatchRepository": true,
+    "deploymentScriptMode": "0755"
+  },
+  "verification": [
+    {
+      "id": "V1",
+      "name": "SSH routes and host identity",
+      "result": "pass"
+    },
+    {
+      "id": "V2",
+      "name": "Docker and Compose installation",
+      "result": "pass"
+    },
+    {
+      "id": "V3",
+      "name": "Compose configuration",
+      "result": "pass"
+    },
+    {
+      "id": "V4",
+      "name": "Service health",
+      "result": "pass"
+    },
+    {
+      "id": "V5",
+      "name": "Private HTTP health and UI",
+      "result": "pass",
+      "httpStatus": 200
+    },
+    {
+      "id": "V6",
+      "name": "Worker polling readiness",
+      "result": "pass"
+    },
+    {
+      "id": "V7",
+      "name": "PostgreSQL and Redis persistence",
+      "result": "pass"
+    },
+    {
+      "id": "V8",
+      "name": "Host reboot recovery",
+      "result": "pass",
+      "bootTimeUtc": "2026-07-30 08:05:23"
+    },
+    {
+      "id": "V9",
+      "name": "Post-ready runtime errors and warnings",
+      "result": "pass",
+      "errors": 0,
+      "warnings": 0
+    },
+    {
+      "id": "V10",
+      "name": "Runtime secret log exposure",
+      "result": "pass",
+      "leaks": 0
+    }
+  ],
+  "resourceSnapshot": {
+    "appMemory": "807 MiB",
+    "workerMemory": "200 MiB",
+    "postgresMemory": "176 MiB",
+    "redisMemory": "34 MiB",
+    "note": "Single post-reboot observation; not a capacity planning baseline."
+  },
+  "knownObservations": [
+    "After host reboot the worker retried Socket.IO until the app was fully ready, then connected and started polling at concurrency 1.",
+    "Health verification checks worker polling readiness in addition to container health.",
+    "External HTTPS and webhook exposure are intentionally deferred to Issue #14."
+  ],
+  "followUps": [
+    14,
+    15,
+    16,
+    17,
+    18,
+    19
+  ],
+  "references": [
+    {
+      "title": "GitHub Issue #13",
+      "url": "https://github.com/ablecloud-team/ablestack-techflow/issues/13"
+    },
+    {
+      "title": "Activepieces Docker Compose",
+      "url": "https://www.activepieces.com/docs/install/options/docker-compose"
+    },
+    {
+      "title": "Activepieces Workers",
+      "url": "https://www.activepieces.com/docs/install/architecture/workers"
+    },
+    {
+      "title": "Docker Engine on Ubuntu",
+      "url": "https://docs.docker.com/engine/install/ubuntu/"
+    }
+  ]
+}
