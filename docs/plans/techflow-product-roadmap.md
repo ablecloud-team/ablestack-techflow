@@ -128,6 +128,8 @@ flowchart TB
 - AI는 답변·진단·권고를 생성하지만 권한 판단과 최종 자원 상태를 결정하지 않는다.
 - 자원 변경 작업은 멱등성 키, 사전 조건, 승인 정보 및 감사 ID를 포함한 API로 실행한다.
 
+구현 시에는 [ADR-0001: TechFlow와 Activepieces 책임 경계](../adr/0001-techflow-activepieces-responsibility-boundary.md)를 규범 문서로 사용한다. 특히 Activepieces 실행 성공을 실제 자원 성공으로 간주하지 않고 ABLESTACK API의 권위 상태를 재조회하며, 제품 요청과 인프라 작업의 멱등성을 두 계층에서 각각 보장한다.
+
 ## 5. 개발 원칙
 
 1. **ABLESTACK 우선**
@@ -188,7 +190,7 @@ flowchart TB
 - Activepieces Community Edition 기반 실행 범위 확정
 - Embed, SSO, RBAC, Audit Log, API 및 Piece 관리의 TechFlow 자체 구현 방향 확정
 - Activepieces 버전 고정과 업그레이드 정책 수립
-- TechFlow Control API와 Activepieces의 책임 경계 ADR 작성
+- [TechFlow Control API와 Activepieces의 책임 경계 ADR](../adr/0001-techflow-activepieces-responsibility-boundary.md) 적용
 - 고객별 전용 배포와 향후 멀티테넌트 방식 비교
 - Webhook, AI, 사설망 접근 및 자원 변경에 대한 위협 모델 작성
 - 로그·실행 데이터·AI 대화의 보존 기간 정의
