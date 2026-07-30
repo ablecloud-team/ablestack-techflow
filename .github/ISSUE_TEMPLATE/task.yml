@@ -1,0 +1,64 @@
+name: 작업
+description: 범위와 완료 기준이 명확한 개발·문서·운영 작업을 등록합니다.
+title: "[Task] "
+labels:
+  - needs:triage
+type: Task
+projects:
+  - ablecloud-team/23
+body:
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: 사전 확인
+      options:
+        - label: 관련 Epic 또는 선행 Issue를 확인했습니다.
+          required: true
+        - label: 공개 Issue에 비밀번호, 토큰, 개인정보, 내부 로그 원문을 포함하지 않았습니다.
+          required: true
+  - type: textarea
+    id: purpose
+    attributes:
+      label: 목적
+      description: 이 작업이 필요한 이유와 기대 결과를 작성해 주세요.
+    validations:
+      required: true
+  - type: textarea
+    id: work
+    attributes:
+      label: 작업 내용
+      value: |
+        - [ ]
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: 완료 기준
+      value: |
+        - [ ]
+    validations:
+      required: true
+  - type: textarea
+    id: links
+    attributes:
+      label: 관련 Epic·Issue·문서
+      placeholder: "Parent: #번호, Depends on: #번호"
+  - type: dropdown
+    id: risk
+    attributes:
+      label: 예상 위험 수준
+      options:
+        - R0 읽기 전용
+        - R1 사내 Assist
+        - R2 외부 연동 또는 제한된 작업
+        - R3 가상자원 변경
+    validations:
+      required: true
+  - type: textarea
+    id: validation
+    attributes:
+      label: 테스트·롤백·문서 계획
+      description: 변경에 비례한 검증, 실패 시 복구 방법과 갱신할 문서를 작성해 주세요.
+    validations:
+      required: true

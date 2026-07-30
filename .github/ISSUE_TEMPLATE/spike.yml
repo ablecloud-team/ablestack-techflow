@@ -1,0 +1,52 @@
+name: 조사·실험
+description: 시간 제한이 있는 기술 조사, PoC 또는 의사결정 근거 수집을 등록합니다.
+title: "[Spike] "
+labels:
+  - kind:spike
+  - needs:triage
+type: Task
+projects:
+  - ablecloud-team/23
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: 확인할 질문
+      description: 이 조사에서 답해야 할 의사결정 질문을 한 문장으로 작성해 주세요.
+    validations:
+      required: true
+  - type: textarea
+    id: hypothesis
+    attributes:
+      label: 가설과 선택지
+      description: 현재 가설과 비교할 대안을 작성해 주세요.
+    validations:
+      required: true
+  - type: input
+    id: timebox
+    attributes:
+      label: 타임박스
+      placeholder: "예: 2일, Iteration 1 종료 전"
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: 수집할 증거
+      description: 소스, 공식 문서, 테스트 결과와 측정값을 명시해 주세요.
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: 종료 산출물
+      description: ADR, 비교표, PoC 코드, 후속 Issue 등 조사 종료 시 남길 결과를 작성해 주세요.
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: 공개 저장소 안전 확인
+      options:
+        - label: 비밀번호, 토큰, 개인정보, 내부 로그 원문을 공개 Issue에 기록하지 않습니다.
+          required: true

@@ -1,0 +1,79 @@
+name: 기능 제안
+description: 사용자 가치가 있는 새 기능 또는 개선 작업을 제안합니다.
+title: "[Feature] "
+labels:
+  - needs:triage
+type: Feature
+projects:
+  - ablecloud-team/23
+body:
+  - type: checkboxes
+    id: duplicate
+    attributes:
+      label: 사전 확인
+      options:
+        - label: 동일하거나 유사한 Issue가 없는지 검색했습니다.
+          required: true
+        - label: 공개 Issue에 비밀번호, 토큰, 개인정보, 내부 로그 원문을 포함하지 않았습니다.
+          required: true
+  - type: textarea
+    id: goal
+    attributes:
+      label: 목표
+      description: 이 기능으로 달성하려는 사용자 또는 운영상의 결과를 설명해 주세요.
+      placeholder: 누가 어떤 문제를 해결하고 어떤 결과를 얻는지 작성합니다.
+    validations:
+      required: true
+  - type: textarea
+    id: background
+    attributes:
+      label: 배경과 문제
+      description: 현재 흐름, 문제의 빈도와 영향을 설명해 주세요.
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: 범위
+      description: 구현하거나 변경할 항목을 체크리스트로 작성해 주세요.
+      value: |
+        - [ ]
+    validations:
+      required: true
+  - type: textarea
+    id: out_of_scope
+    attributes:
+      label: 제외 범위
+      description: 이번 Issue에서 다루지 않을 항목을 명시해 주세요.
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: 완료 기준
+      description: 검증 가능한 조건을 체크리스트로 작성해 주세요.
+      value: |
+        - [ ]
+    validations:
+      required: true
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: 의존성과 관련 Issue
+      description: 선행 작업, 외부 시스템, 관련 Issue나 ADR 링크를 작성해 주세요.
+  - type: dropdown
+    id: impact
+    attributes:
+      label: 보안·데이터·AI 영향
+      options:
+        - 없음 또는 읽기 전용
+        - 사내 데이터 또는 AI 답변
+        - 외부 연동 또는 제한된 작업
+        - 가상자원 변경
+    validations:
+      required: true
+  - type: textarea
+    id: controls
+    attributes:
+      label: 통제와 검증 계획
+      description: 권한, 승인, 감사, 멱등성, 테스트, 롤백과 문서화 계획을 작성해 주세요.
+    validations:
+      required: true
