@@ -111,6 +111,9 @@ Activepieces는 실행 엔진으로 사용하며 TechFlow의 제품 정책과 AB
 ## 문서
 
 - [제품화 및 범용 확장 계획](docs/plans/techflow-product-roadmap.md)
+- [Activepieces 기능·라이선스 의사결정](docs/decisions/activepieces-license-feature-matrix.md)
+- [Activepieces 라이선스 검토 보고서 PDF](output/pdf/activepieces-license-review-report.pdf)
+- [Activepieces 라이선스 검토 프레젠테이션 PDF](output/pdf/activepieces-license-review-presentation.pdf)
 - [GitHub Issue 기반 작업 관리](docs/governance/github-issue-management.md)
 - [Activepieces 테스트 서버](docs/environments/activepieces-test-server.md)
 

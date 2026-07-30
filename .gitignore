@@ -9,3 +9,7 @@ secrets/
 *.pem
 *.p12
 *.pfx
+
+# Generated research and rendering workspace
+tmp/
+*.pptx.inspect.ndjson
