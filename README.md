@@ -76,6 +76,8 @@ flowchart LR
 
 Activepieces는 실행 엔진으로 사용하며 TechFlow의 제품 정책과 ABLESTACK 핵심 업무 규칙은 별도 계층에 둡니다. 초기에는 Activepieces 전체 소스를 포크하지 않고 고정된 배포 이미지와 Custom Piece를 중심으로 확장합니다.
 
+책임·상태·멱등성·실패 경계와 실행 명령 규칙은 [ADR-0001: TechFlow와 Activepieces 책임 경계](docs/adr/0001-techflow-activepieces-responsibility-boundary.md)를 구현 기준으로 사용합니다.
+
 ## 단계별 로드맵
 
 | 단계 | 목표 |
@@ -111,6 +113,9 @@ Activepieces는 실행 엔진으로 사용하며 TechFlow의 제품 정책과 AB
 ## 문서
 
 - [제품화 및 범용 확장 계획](docs/plans/techflow-product-roadmap.md)
+- [ADR-0001: TechFlow와 Activepieces 책임 경계](docs/adr/0001-techflow-activepieces-responsibility-boundary.md)
+- [책임 경계 ADR 보고서 PDF](output/pdf/techflow-responsibility-boundary-report.pdf)
+- [책임 경계 ADR 프레젠테이션 PDF](output/pdf/techflow-responsibility-boundary-presentation.pdf)
 - [Activepieces 기능·라이선스 의사결정](docs/decisions/activepieces-license-feature-matrix.md)
 - [Activepieces 라이선스 검토 보고서 PDF](output/pdf/activepieces-license-review-report.pdf)
 - [Activepieces 라이선스 검토 프레젠테이션 PDF](output/pdf/activepieces-license-review-presentation.pdf)

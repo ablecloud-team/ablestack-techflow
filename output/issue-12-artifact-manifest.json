@@ -1,0 +1,34 @@
+{
+  "schemaVersion": "1.0",
+  "issue": 12,
+  "adr": "ADR-0001",
+  "status": "accepted",
+  "generatedAt": "2026-07-30",
+  "files": [
+    {
+      "path": "docs/decisions/techflow-activepieces-responsibility-boundary.json",
+      "size": 15549,
+      "sha256": "1FD11334BA2E79DBB3CA323C15DF336E31A16527E092688C8949D0C59FC423A9"
+    },
+    {
+      "path": "docs/adr/0001-techflow-activepieces-responsibility-boundary.md",
+      "size": 11179,
+      "sha256": "DCBCD4B51DA0173A8CCB0EE71D780C7BB8CC56D55B5CC8B786475DE96A69F503"
+    },
+    {
+      "path": "output/pdf/techflow-responsibility-boundary-report.pdf",
+      "size": 163748,
+      "sha256": "A236742272967ED8B4720D1D18DF8D788F3FDA2EF392C7BADFF6925FAFB839BA"
+    },
+    {
+      "path": "output/pdf/techflow-responsibility-boundary-presentation.pdf",
+      "size": 555006,
+      "sha256": "80DE10FF735970919C5235AAF40E5492DF52D5F2C0792999FC990D28567D26A7"
+    },
+    {
+      "path": "output/presentation/techflow-responsibility-boundary.pptx",
+      "size": 47126,
+      "sha256": "BF0949510C2680C80E03AE7F4A52BB8B9FAD50028B5B45A1394DA773A30F78DB"
+    }
+  ]
+}
