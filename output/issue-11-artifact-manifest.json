@@ -1,0 +1,40 @@
+{
+  "schemaVersion": "1.0",
+  "issue": 11,
+  "generatedAt": "2026-07-30",
+  "baseline": {
+    "product": "Activepieces",
+    "version": "0.86.3",
+    "releaseDate": "2026-07-17",
+    "tagCommit": "8bfbb2fd962eeded92d38359605a89fd14b2ec00",
+    "rootLicenseSha256": "C66760CFE1D2361A78BC9662EC8FAB43274A386BAB3BF25D07E7257A0843470D",
+    "enterpriseLicenseSha256": "D3E92F0C2988288CECD7699BB7CA35BA63F3E94B91EE0C1647C6FD328FBFB712"
+  },
+  "files": [
+    {
+      "path": "docs/decisions/activepieces-license-review.json",
+      "size": 19006,
+      "sha256": "F8797A8D8E85C4786C1D84898992C3640B7E780A3470955C4F65B26A35958E6F"
+    },
+    {
+      "path": "docs/decisions/activepieces-license-feature-matrix.md",
+      "size": 11881,
+      "sha256": "96D54646F3EA318CD9B96E4E3882CAFDEC0CFF454E6DC3EDA9F33247E93962B0"
+    },
+    {
+      "path": "output/pdf/activepieces-license-review-report.pdf",
+      "size": 152200,
+      "sha256": "571426182BD261909BBBE060D1D82B52B367D876B0EACE66CE061C8950BE2A42"
+    },
+    {
+      "path": "output/pdf/activepieces-license-review-presentation.pdf",
+      "size": 571582,
+      "sha256": "36F9A56A95CE4BD271B311D3B9E70C2F743D2E6917EA9FBA35C8B1594FB13861"
+    },
+    {
+      "path": "output/presentation/activepieces-license-review.pptx",
+      "size": 46393,
+      "sha256": "9C5701036C786DF5F3F1E11505BC90FC1BA3060073F3E12B01101C6826139CE2"
+    }
+  ]
+}
