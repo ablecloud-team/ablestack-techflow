@@ -73,17 +73,17 @@ def decision_label(value: str) -> str:
     labels = {
         "APPROVED": "승인",
         "APPROVED_WITH_SBOM": "SBOM 조건부 승인",
-        "CONDITIONAL": "조건부",
-        "COMMERCIAL_REQUIRED": "상용 계약 필요",
-        "BLOCKED": "차단",
+        "IMPLEMENTATION_ALLOWED": "구현 가능",
+        "SELF_IMPLEMENT": "자체 구현",
+        "OWNER_DECISION": "제품 책임자 결정",
     }
     return labels.get(value, value)
 
 
 def status_colors(value: str) -> tuple[colors.Color, colors.Color]:
-    if value in {"APPROVED", "APPROVED_WITH_SBOM"}:
+    if value in {"APPROVED", "APPROVED_WITH_SBOM", "IMPLEMENTATION_ALLOWED", "SELF_IMPLEMENT"}:
         return GREEN_BG, GREEN
-    if value == "CONDITIONAL":
+    if value == "OWNER_DECISION":
         return AMBER_BG, AMBER
     return RED_BG, RED
 
@@ -352,13 +352,13 @@ def build() -> None:
         ),
         Spacer(1, 7 * mm),
         P(
-            "사내 Assist 실증부터 고객 제품화까지의 사용 범위, 대체 설계, 계약 게이트",
+            "Community 실행 기반, 상위 기능 자체 구현과 고객 공개 결정의 분리",
             "KSubtitle",
         ),
         Spacer(1, 22 * mm),
         Table(
             [
-                [P("결정", "KTableHead"), P("사내 PoC 승인 · 고객 제품화 조건부", "KCallout")],
+                [P("결정", "KTableHead"), P("Community 기반 · 자체 구현 범위 제한 없음", "KCallout")],
                 [P("기준 버전", "KTableHead"), P(data["baseline"]["version"], "KBody")],
                 [P("기준 커밋", "KTableHead"), P(data["baseline"]["tagCommit"], "KBody")],
                 [P("검토일", "KTableHead"), P(data["analysisDate"], "KBody")],
@@ -391,7 +391,8 @@ def build() -> None:
         P("승인 요청", "KH2"),
         bullet("사내 Assist PoC는 Community 0.86.3과 사내 운영자 전용 UI로 착수한다."),
         bullet("고객 제품은 TechFlow가 권한·정책·승인·감사를 소유하는 구조로 구현한다."),
-        bullet("고객 배포·직접 UI·Embedding·Platform API는 서면 확인 또는 상용 계약 전까지 차단한다."),
+        bullet("Enterprise 상당 기능은 필요에 따라 TechFlow에서 자체 구현한다."),
+        bullet("고객 공개·판매·배포 여부는 제품 책임자가 별도로 결정하며 구현 게이트로 사용하지 않는다."),
         PageBreak(),
     ]
 
@@ -413,7 +414,8 @@ def build() -> None:
         Spacer(1, 7 * mm),
         P(
             "Community 자체 코드의 MIT 권리와 Enterprise 코드·제3자 구성요소의 권리를 분리해서 판단해야 한다. "
-            "공식 결합 이미지의 고객 재배포는 저장소 MIT 고지만으로 확정하지 않고 Activepieces의 서면 답변을 제품 출시 게이트로 둔다.",
+            "공식 결합 이미지와 Activepieces 네이티브 Enterprise 기능의 외부 사용 조건은 고객 공개 판단 시 참고한다. "
+            "이 정보는 TechFlow의 자체 기능 구현, 내부 실증과 개발 우선순위를 제한하지 않는다.",
             "KBody",
         ),
         PageBreak(),
@@ -433,6 +435,12 @@ def build() -> None:
         )
     story += [
         table(feature_rows, [39 * mm, 16 * mm, 26 * mm, 29 * mm, 64 * mm], font_size=6.8),
+        Spacer(1, 9 * mm),
+        P("매트릭스 적용 원칙", "KH2"),
+        bullet("Community 기능은 기본 실행 경로로 사용하고 TechFlow 연동 요구에 맞춰 확장한다."),
+        bullet("Enterprise 또는 Paid로 분류된 네이티브 기능은 제품 요구에 따라 TechFlow에서 자체 구현한다."),
+        bullet("자체 구현 순서는 사내 실증과 ABLESTACK 고객 지원 효과를 기준으로 결정한다."),
+        bullet("고객 공개·판매·배포 판단은 기능 구현 범위와 완료 조건에서 분리한다."),
         PageBreak(),
     ]
 
@@ -473,19 +481,21 @@ def build() -> None:
         PageBreak(),
     ]
 
-    story += [P("5. 제품 출시 게이트", "KH1")]
-    gate_rows = [["게이트", "허용 범위", "완료 기준"]]
-    for gate in data["releaseGates"]:
-        gate_rows.append([f"{gate['id']} {gate['name']}", gate["name"].replace(" 허용", ""), gate["criteria"]])
+    story += [P("5. 구현 원칙과 공개 참고사항", "KH1")]
+    gate_rows = [["원칙", "방향", "적용 기준"]]
+    for gate in data["implementationPrinciples"]:
+        gate_rows.append([f"{gate['id']} {gate['name']}", gate["name"], gate["criteria"]])
     story += [
         table(gate_rows, [42 * mm, 39 * mm, 93 * mm]),
         Spacer(1, 9 * mm),
-        P("제3자 라이선스·공급망 필수 절차", "KH2"),
+        P("고객 공개 결정 시 참고할 공급망 정보", "KH2"),
         bullet("정확한 컨테이너 이미지 digest를 고정한다."),
         bullet("이미지와 애플리케이션 SBOM을 SPDX 또는 CycloneDX로 생성한다."),
         bullet("라이선스 탐지 결과·수동 예외·NOTICE를 릴리스 증적과 함께 보관한다."),
-        bullet("copyleft·source-available·unknown 항목은 고객 배포 전에 법무가 승인한다."),
+        bullet("copyleft·source-available·unknown 항목을 공개 판단 자료로 정리한다."),
         bullet("버전 변경 때마다 SBOM과 라이선스 차이를 다시 검토한다."),
+        Spacer(1, 5 * mm),
+        P("위 항목은 기능 구현의 선행 조건이나 개발 완료 게이트가 아니다.", "KCallout"),
         PageBreak(),
     ]
 
@@ -494,7 +504,7 @@ def build() -> None:
         story.append(P(f"{idx}. {question}", "KBody"))
     story += [
         Spacer(1, 6 * mm),
-        P("질문에 대한 서면 답변은 G2 고객 파일럿의 필수 증적이다.", "KCallout"),
+        P("질문과 답변은 제품 책임자가 고객 공개·상용화를 결정할 때 참고한다.", "KCallout"),
         PageBreak(),
     ]
 
@@ -502,20 +512,20 @@ def build() -> None:
     completed = [
         "Community·Enterprise·제3자 라이선스 경계 확인",
         "기능별 사용 범위와 대체 설계 작성",
-        "사내 PoC·고객 배포·임베딩·SaaS·오프라인 시나리오 판단",
+        "사내 PoC와 제품 기능의 구현 가능 범위 판단",
         "TechFlow와 Activepieces 권한 경계 확정",
-        "고객 제품화 단계별 게이트 정의",
-        "벤더 서면 확인 질문 작성",
+        "Community 기반과 상위 기능 자체 구현 원칙 정의",
+        "고객 공개 결정 시 참고할 질문 작성",
         "JSON 원본, 보고서 PDF, 프레젠테이션 PPTX·PDF 생성 체계 구성",
     ]
     for item in completed:
         story.append(P(f"✓ {item}", "KBody"))
     story += [
         Spacer(1, 5 * mm),
-        P("후속 고객 출시 게이트", "KH2"),
-        bullet("Activepieces 서면 답변 수령과 법무 승인"),
-        bullet("최종 배포 이미지 SBOM·NOTICE·취약점·라이선스 예외 검토"),
-        bullet("고객별 설치·백업·업그레이드·롤백·보안 통지 운영 절차 확정"),
+        P("향후 작업 적용 원칙", "KH2"),
+        bullet("Community 실행 기반을 유지하며 제품 요구에 따라 상위 기능을 자체 구현한다."),
+        bullet("Activepieces 네이티브 기능의 상용 조건을 개발 백로그의 차단 조건으로 사용하지 않는다."),
+        bullet("고객 공개·판매·배포 여부는 제품 책임자가 별도로 결정한다."),
         PageBreak(),
     ]
 

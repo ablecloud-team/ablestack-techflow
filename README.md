@@ -80,7 +80,7 @@ Activepieces는 실행 엔진으로 사용하며 TechFlow의 제품 정책과 AB
 
 | 단계 | 목표 |
 |---|---|
-| 0. 제품 기반 확정 | 아키텍처, Activepieces 라이선스, 보안과 배포 기준 확정 |
+| 0. 제품 기반 확정 | 아키텍처, Community 실행 기반, 보안과 배포 기준 확정 |
 | 1. 사내 Assist 실증 | GitHub, Community, 사내 메신저 자동화 실사용 |
 | 2. ABLESTACK Assist MVP | 고객 기술지원에 적용 가능한 AI Assist |
 | 3. Ops Observe | 읽기 전용 자원 조회, 이벤트 분석과 진단 자동화 |
@@ -128,7 +128,7 @@ Activepieces는 실행 엔진으로 사용하며 TechFlow의 제품 정책과 AB
 
 ## Activepieces 사용 원칙
 
-Activepieces Community Edition의 일반 코드는 MIT 라이선스이지만 Enterprise 디렉터리와 Embedding·관리 기능 일부는 별도 상용 조건이 적용됩니다. 사내 실증은 Community Edition으로 시작하고 고객용 임베딩, SSO, RBAC 및 Audit 기능은 제품화 전에 라이선스 조건을 확정합니다.
+Activepieces Community Edition을 기본 실행 엔진으로 사용합니다. Enterprise로 분류된 네이티브 기능의 조건은 참고정보로 유지하되, Builder, SSO, RBAC, Audit, API, Secret 관리와 Worker 격리 등 TechFlow에 필요한 상위 기능은 제품 요구사항에 따라 자체 구현합니다. 고객 공개·판매·배포 여부는 제품 책임자가 별도로 결정하며 개발 범위와 완료 조건에 포함하지 않습니다.
 
 - [Activepieces 라이선스](https://github.com/activepieces/activepieces/blob/main/LICENSE)
 - [Activepieces 공식 문서](https://www.activepieces.com/docs/overview/welcome)
