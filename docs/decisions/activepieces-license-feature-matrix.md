@@ -6,22 +6,24 @@
 >
 > 기준일: 2026-07-30
 >
-> 상태: **승인(제품화 게이트 조건부)**
+> 상태: **승인(Community 기반, 자체 구현 범위 제한 없음)**
 
 ## 1. 결론
 
-ABLESTACK TechFlow의 **사내 Assist 실증은 Activepieces Community Edition으로 진행한다.** 다만 Activepieces는 시각적 플로우 설계와 실행만 담당하며, TechFlow Core가 고객·테넌트·인증·권한·정책·승인·감사·템플릿·제품 API·AI/RAG를 소유한다. ABLESTACK/Mold API는 실제 가상자원 작업의 권한·최종 상태·멱등성을 소유한다.
+ABLESTACK TechFlow는 **Activepieces Community Edition을 기본 실행 엔진으로 사용한다.** Activepieces는 시각적 플로우 설계와 실행을 담당하며, TechFlow Core가 고객·테넌트·인증·권한·정책·승인·감사·템플릿·제품 API·AI/RAG를 소유한다. ABLESTACK/Mold API는 실제 가상자원 작업의 권한·최종 상태·멱등성을 소유한다.
 
-| 적용 시나리오 | 판단 | 핵심 조건 |
+Activepieces에서 Enterprise로 분류한 기능이라도 TechFlow 제품에 필요하면 자체 구현한다. 라이선스 분류는 Activepieces 네이티브 기능을 직접 사용할 때의 참고정보이며, **동등하거나 더 적합한 기능의 자체 구현을 제한하지 않는다.** 고객 공개·판매·배포 여부는 제품 책임자가 별도로 결정하며 개발 우선순위, 아키텍처와 완료 조건에 포함하지 않는다.
+
+| 적용 시나리오 | 구현 판단 | 공개 관련 참고사항 |
 |---|---|---|
-| 사내 Assist PoC | **승인** | Community 0.86.3, 사내 운영자만 UI 접근, Enterprise 기능과 API Key 미사용 |
-| 고객 전용 인스턴스, Activepieces UI 비노출 | **조건부** | 공식 이미지 재배포와 설치 방식에 대한 Activepieces 서면 확인 |
-| 고객의 Activepieces UI 직접 사용 | **상용 계약 필요** | 최종 사용자 접근, 서비스 제공, 좌석 기준을 계약으로 확정 |
-| TechFlow Portal에 Builder 임베딩 | **상용 계약 필요** | Embedding·OEM·브랜딩·JWT 조건 계약 |
-| 다중 고객 Managed SaaS | **상용 계약 필요** | 재판매·서비스 뷰로·테넌트·API·감사 조건 계약 |
-| 고객 사설망·오프라인 배포 | **조건부** | MIT-only 구성, SBOM·NOTICE, 이미지·상표 서면 확인 |
+| 사내 Assist PoC | **승인** | Community 0.86.3을 기본 엔진으로 사용 |
+| 고객 전용 인스턴스 | **구현 가능** | 실제 고객 공개·배포 방식은 제품 책임자 결정 |
+| 고객용 구성·관리 UI | **자체 구현 가능** | Activepieces 네이티브 UI 사용 조건은 공개 결정 시 참고 |
+| TechFlow Builder | **자체 구현 가능** | 네이티브 Embed SDK 조건은 공개 결정 시 참고 |
+| 다중 고객 플랫폼 | **자체 구현 가능** | 공개·판매·서비스 형태는 제품 책임자 결정 |
+| 사설망·오프라인 배포 기능 | **자체 구현 가능** | 실제 고객 제공 조건은 공개 결정 시 참고 |
 
-이 결론은 제품·기술 의사결정을 위한 검토 결과이며 법률 자문이 아니다. 고객 배포 또는 상용 계약 전에는 법무 검토와 Activepieces의 서면 확인이 필요하다.
+이 문서의 고객 공개·상용화 관련 내용은 제품 책임자의 최종 판단을 위한 참고사항이며 법률 자문이 아니다. 해당 참고사항은 TechFlow 기능의 설계·자체 구현·개발 우선순위를 제한하지 않는다.
 
 ## 2. 분석 기준과 재현성
 
@@ -48,7 +50,7 @@ Activepieces 저장소는 하나의 단일 MIT 라이선스 프로젝트가 아�
 
 `0.86.3` 소스의 `app.ts`는 Community에서 `platformProjectModule`과 `communityPiecesModule`을 등록하지만, API Key·Audit·SSO·Git Sync·Platform Webhook·Project Role·SCIM·Secret Manager·Embed 등의 모듈은 Enterprise 또는 Cloud 분기에서 등록한다. 라이선스 서비스의 무라이선스 기본값도 이 기능들을 비활성화한다.
 
-공식 컨테이너 빌드는 Enterprise 소스도 빌드 입력에 포함한다. Community 실행이 공식 지원되더라도 **그 결합 이미지를 ABLESTACK 설치 미디어에 넣어 고객에게 재배포할 권리까지 자동으로 확인된 것은 아니다.** 따라서 고객 배포는 서면 확인 전까지 조건부다.
+공식 컨테이너 빌드는 Enterprise 소스도 빌드 입력에 포함한다. Community 실행이 공식 지원되더라도 그 결합 이미지의 외부 재배포 조건은 별도 확인 대상이다. 이 내용은 향후 고객 공개를 결정할 때 참고하며, TechFlow의 자체 기능 구현과 내부 실증을 제한하는 조건으로 사용하지 않는다.
 
 ## 4. 기능 매트릭스
 
@@ -62,24 +64,24 @@ Activepieces 저장소는 하나의 단일 MIT 라이선스 프로젝트가 아�
 | Custom Piece SDK | P1-P4 | 승인 | TechFlow·ABLESTACK 연동 기본 경로 |
 | Community 프로젝트 운영 | P1 | 승인 | 사내 단일 운영 팀, 최소 관리자 |
 
-### 4.2 계약 또는 대체 구현이 필요한 기능
+### 4.2 TechFlow에서 자체 구현할 수 있는 상위 기능
 
-| 기능 | 중요도 | Activepieces 조건 | TechFlow 기본 대안 |
+| 기능 | 중요도 | Activepieces 네이티브 분류 | TechFlow 구현 방향 |
 |---|---|---|---|
-| 플랫폼 API Key·외부 관리 API | 높음 | Platform/Enterprise | Webhook·Custom Piece·TechFlow 소유 API |
-| Embed SDK·JWT·Builder 임베딩 | 선택 | Paid | TechFlow Portal + 운영자 전용 별도 UI |
-| SAML SSO·SCIM | 고객 요구 | Paid/Enterprise | TechFlow IAM, Activepieces UI 격리 |
+| 플랫폼 API·외부 관리 API | 높음 | Platform/Enterprise | TechFlow 소유 API와 인증 체계 |
+| Builder·Portal 통합 | 선택 | Paid | TechFlow Portal과 자체 구성 UI |
+| SAML SSO·SCIM | 제품 요구 | Paid/Enterprise | TechFlow IAM과 프로비저닝 |
 | RBAC·Custom Role·Project Role | 필수 | Paid/Enterprise | TechFlow RBAC + ABLESTACK API 권한 |
 | Audit Log | 필수 | Paid | TechFlow append-only 감사 원장 |
 | Event Streaming·Platform Webhook | 높음 | Paid | Event Gateway + Custom Piece callback |
-| Global Connection·Secret Manager | 필수 | Enterprise | 고객별 Secret Broker와 단기 자격증명 |
-| Piece 허용·차단·Set | 높음 | Enterprise | 빌드 allowlist + egress 정책 |
-| Custom Appearance·Branding | 선택 | Paid/상표 조건 | 고객에게 TechFlow Portal만 노출 |
+| Global Connection·Secret Manager | 필수 | Enterprise | TechFlow Secret Broker와 단기 자격증명 |
+| Piece 허용·차단·Set | 높음 | Enterprise | Piece allowlist + egress 정책 |
+| Custom Appearance·Branding | 선택 | Paid/상표 조건 | TechFlow 자체 UI와 디자인 시스템 |
 | Template·Environment·Git Sync | 높음 | Enterprise | GitOps Flow 번들·TechFlow 카탈로그 |
 | Analytics | 선택 | Enterprise | OpenTelemetry·Prometheus·TechFlow KPI |
 | Agent·AI Provider·Chat 관리 | 높음 | Enterprise | TechFlow AI Gateway |
-| Worker Group·전용 Worker | 고객 격리 | Enterprise | 고객별 전용 Activepieces 인스턴스 |
-| 상용 지원·보증·면책 | 출시 필수 | 상용 계약 | ABLESTACK가 책임을 전부 수용할지 별도 결정 |
+| Worker Group·전용 Worker | 격리 요구 | Enterprise | 자체 Worker Pool 또는 인스턴스 분리 |
+| 상용 지원·보증·면책 | 공개 참고 | 상용 계약 | 제품 책임자가 공개·상용화 결정 시 판단 |
 
 전체 행 단위 근거와 판단은 [JSON 원본](activepieces-license-review.json)의 `featureMatrix`에 유지한다.
 
@@ -112,29 +114,29 @@ flowchart LR
 
 특히 사내 PoC에서 TechFlow와 Activepieces의 통합은 **Activepieces Platform API Key에 의존하지 않는다.** 입력은 서명된 Webhook, 출력은 Custom Piece callback 또는 TechFlow가 소유한 API를 사용한다.
 
-## 6. 단계별 허용 게이트
+## 6. 구현 원칙
 
-| 게이트 | 허용 범위 | 완료 기준 |
-|---|---|---|
-| G1 사내 PoC | 내부 Assist 실증 | Community 기능만 사용, 운영자 UI 격리, 고정 버전, 보안 기준, SBOM 초안 |
-| G2 고객 파일럿 | 고객별 전용 인스턴스 | 배포 방식 서면 확인, NOTICE·SBOM, 백업·업그레이드·취약점 대응 |
-| G3 고객 직접 UI·임베딩 | Activepieces UI 또는 Builder 노출 | Enterprise/OEM 계약, 사용자·좌석·브랜딩·API·지원 조건 확정 |
-| G4 GA | 상용 일반 배포 | 법무 승인, 최종 이미지 스캔, SLA·면책·보안 통지·오프라인 조건 확정 |
+| 원칙 | 적용 기준 |
+|---|---|
+| Community 기반 | Activepieces Community Edition을 시각적 설계·실행 엔진의 기본으로 사용 |
+| 상위 기능 자체 구현 | SSO·RBAC·Audit·Builder·API·Secret·Worker 격리 등을 제품 요구에 따라 구현 |
+| 권한 경계 유지 | 제품 정책과 고객 기능은 TechFlow가, 실제 자원 작업은 ABLESTACK API가 소유 |
+| 공개 판단 분리 | 고객 공개·판매·배포 여부는 제품 책임자가 결정하며 개발 완료 조건으로 사용하지 않음 |
 
 ## 7. 제3자 라이선스와 공급망
 
 `0.86.3`의 `packages/**/package.json`만으로는 완전한 라이선스 목록을 만들 수 없다. 다수의 Piece 패키지에 `license` 필드가 없고, 실제 배포물에는 운영체제·Node 의존성·브라우저·도구가 추가될 수 있다.
 
-따라서 다음을 고객 배포의 필수 게이트로 둔다.
+다음 항목은 실제 고객 공개·배포를 결정할 때 참고할 공급망 정보다. 현재와 향후 기능 구현의 선행 게이트로 사용하지 않는다.
 
 1. 정확한 이미지 digest를 고정한다.
 2. 이미지·애플리케이션 SBOM을 SPDX 또는 CycloneDX로 생성한다.
 3. 라이선스 탐지 결과와 수동 예외 검토를 보관한다.
 4. MIT 고지와 모든 제3자 NOTICE를 설치 패키지에 포함한다.
-5. copyleft·source-available·unknown 항목은 법무가 승인한다.
+5. copyleft·source-available·unknown 항목을 공개 판단 자료로 정리한다.
 6. 버전 변경 때마다 결과를 다시 생성하고 차이를 검토한다.
 
-## 8. Activepieces에 서면 확인할 질문
+## 8. 고객 공개 결정 시 참고할 확인 질문
 
 1. 공식 컨테이너 이미지에는 Enterprise 코드가 결합되어 있는가, Community 용도로 고객에게 재배포할 수 있는가?
 2. 고객 인프라에 설치하는 전용 Community 인스턴스를 ABLESTACK 설치 미디어에 포함할 수 있는가?
@@ -152,15 +154,13 @@ flowchart LR
 
 - [x] Community·Enterprise·제3자 라이선스 경계 확인
 - [x] 기능별 사용 가능 범위와 대체 설계 작성
-- [x] 사내 PoC·고객 배포·임베딩·SaaS·오프라인 시나리오 판단
+- [x] 사내 PoC와 제품 기능의 구현 가능 범위 판단
 - [x] TechFlow와 Activepieces의 권한 경계 확정
-- [x] 고객 제품화 단계별 게이트 정의
-- [x] 벤더 서면 확인 질문 작성
+- [x] Community 기반 및 상위 기능 자체 구현 원칙 정의
+- [x] 고객 공개 결정 시 참고할 질문 작성
 - [x] 재생성 가능한 JSON 원본, 보고서 PDF, 프레젠테이션 PPTX·PDF 구성
-- [ ] 고객 파일럿 전 Activepieces 서면 답변 수령
-- [ ] 고객 파일럿 전 최종 이미지 SBOM·NOTICE·법무 검토
 
-마지막 두 항목은 이슈 #11의 분석 산출물 완료 조건이 아니라 후속 고객 출시 게이트다.
+고객 공개·판매·배포 여부와 그 시점의 계약·법무·공급망 확인은 제품 책임자가 별도로 결정한다. 이 항목들은 향후 개발 작업의 고려사항이나 완료 게이트로 사용하지 않는다.
 
 ## 10. 공식 근거
 

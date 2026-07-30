@@ -13,28 +13,28 @@
   "files": [
     {
       "path": "docs/decisions/activepieces-license-review.json",
-      "size": 19006,
-      "sha256": "F8797A8D8E85C4786C1D84898992C3640B7E780A3470955C4F65B26A35958E6F"
+      "size": 20256,
+      "sha256": "C959604A43890CA7CC8155BCA3A55EFB7C26355A17A77B9C8F9FADF9C0FC589A"
     },
     {
       "path": "docs/decisions/activepieces-license-feature-matrix.md",
-      "size": 11881,
-      "sha256": "96D54646F3EA318CD9B96E4E3882CAFDEC0CFF454E6DC3EDA9F33247E93962B0"
+      "size": 12508,
+      "sha256": "D0CDD5086BFEAB469628682B5A266F52B13F007FC322FB60D0462EB17B2DC0FD"
     },
     {
       "path": "output/pdf/activepieces-license-review-report.pdf",
-      "size": 152200,
-      "sha256": "571426182BD261909BBBE060D1D82B52B367D876B0EACE66CE061C8950BE2A42"
+      "size": 155227,
+      "sha256": "AC8D5F535C4A5D38D38ECF33F4793D4F5532BA346075C39A5E66E934431E80BB"
     },
     {
       "path": "output/pdf/activepieces-license-review-presentation.pdf",
-      "size": 571582,
-      "sha256": "36F9A56A95CE4BD271B311D3B9E70C2F743D2E6917EA9FBA35C8B1594FB13861"
+      "size": 588936,
+      "sha256": "AE0321FB9D63600B205ABC3BAB1384E0B6D8D723B757669FF5FEBA5B18D5D8D4"
     },
     {
       "path": "output/presentation/activepieces-license-review.pptx",
-      "size": 46393,
-      "sha256": "9C5701036C786DF5F3F1E11505BC90FC1BA3060073F3E12B01101C6826139CE2"
+      "size": 46401,
+      "sha256": "58BCCB4D7CCF46387C5E94788AC08C910E628ADCAEBCA3B8365D2A43D7299485"
     }
   ]
 }

@@ -181,12 +181,12 @@ flowchart TB
 
 #### 목표
 
-개발을 시작하기 전에 Activepieces와 TechFlow의 경계, 배포 방식, 상용 라이선스, 보안 기준을 결정한다.
+개발을 시작하기 전에 Activepieces Community 실행 기반과 TechFlow의 책임 경계, 배포 방식과 보안 기준을 결정한다.
 
 #### 주요 작업
 
-- Activepieces Community Edition과 Enterprise 기능 사용 범위 확정
-- Embed SDK, SSO, RBAC, Audit Log 및 Piece 관리 기능의 상용 계약 검토
+- Activepieces Community Edition 기반 실행 범위 확정
+- Embed, SSO, RBAC, Audit Log, API 및 Piece 관리의 TechFlow 자체 구현 방향 확정
 - Activepieces 버전 고정과 업그레이드 정책 수립
 - TechFlow Control API와 Activepieces의 책임 경계 ADR 작성
 - 고객별 전용 배포와 향후 멀티테넌트 방식 비교
@@ -393,7 +393,7 @@ Assist와 검증된 Ops 기능을 고객 환경에 반복 설치하고 지원할
 - 설치·업그레이드·복구 절차가 자동화돼 있다.
 - 지원 버전 매트릭스와 릴리스 정책이 운영된다.
 - 고객 데이터·비밀정보·감사 로그 처리 정책이 계약과 제품에 반영돼 있다.
-- 제품 가격과 Activepieces 상용 기능 사용 조건이 확정돼 있다.
+- 제품 가격과 고객 공개·상용화 범위는 제품 책임자가 별도로 결정한다.
 
 ### 단계 6. 정책 기반 AIOps
 
@@ -663,7 +663,7 @@ Activepieces 전체 소스를 이 저장소에 복사하지 않는다. 배포 �
 
 | 위험 | 대응 |
 |---|---|
-| Activepieces 유료 기능 의존 | 단계 0에서 기능·라이선스 매트릭스 작성, 공식 Embedding과 분리 UI 대안 비교 |
+| Activepieces 유료 기능 의존 | Community 실행 기반을 유지하고 필요한 상위 기능은 TechFlow Core·Portal·Gateway에서 자체 구현 |
 | Activepieces 업스트림 변경 | 버전 고정, Staging 회귀 테스트, 엔진 포크 최소화 |
 | AI 환각과 부정확한 답변 | 근거 필수, 저확신 차단, 담당자 승인, 고정 평가 세트 |
 | Prompt Injection과 데이터 유출 | 지식·도구 권한 분리, 입력 필터, 고객별 데이터 격리 |

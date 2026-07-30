@@ -3,8 +3,8 @@
   "issue": 11,
   "title": "Activepieces Community·Enterprise 기능 및 라이선스 검토",
   "analysisDate": "2026-07-30",
-  "status": "approved-with-gates",
-  "legalDisclaimer": "이 자료는 제품·기술 의사결정을 위한 검토 결과이며 법률 자문이 아니다. 고객 배포 또는 상용 계약 전에는 법무 검토와 Activepieces의 서면 확인이 필요하다.",
+  "status": "approved-for-implementation",
+  "legalDisclaimer": "이 자료의 라이선스·고객 공개 관련 내용은 제품 책임자의 최종 공개·상용화 판단을 위한 참고사항이며 법률 자문이 아니다. 해당 참고사항은 TechFlow 기능의 설계·자체 구현·개발 우선순위를 제한하지 않는다.",
   "baseline": {
     "product": "Activepieces",
     "version": "0.86.3",
@@ -15,11 +15,10 @@
   },
   "executiveDecision": {
     "internalPoc": "APPROVED",
-    "customerDistribution": "CONDITIONAL",
-    "customerDirectUi": "COMMERCIAL_REQUIRED",
-    "embeddedBuilder": "COMMERCIAL_REQUIRED",
-    "managedSaas": "COMMERCIAL_REQUIRED",
-    "summary": "사내 Assist 실증은 Activepieces Community Edition을 독립 관리 UI와 실행 엔진으로 사용한다. 고객 제품에서는 TechFlow가 인증·권한·정책·승인·감사·제품 API를 소유하고 Activepieces는 격리된 실행 엔진으로 제한한다. 고객 배포, 직접 UI 제공, 임베딩, 플랫폼 API 사용은 서면 확인 또는 상용 계약 전까지 진행하지 않는다."
+    "implementationPolicy": "UNRESTRICTED_SELF_IMPLEMENTATION",
+    "customerReleaseDecision": "PRODUCT_OWNER_DECISION",
+    "activepiecesNativeEnterpriseUse": "REFERENCE_ONLY",
+    "summary": "Activepieces Community Edition을 기본 실행 엔진으로 사용한다. Enterprise 상당 기능이 필요하면 Activepieces 네이티브 기능의 계약 여부와 무관하게 TechFlow에서 자체 구현할 수 있다. 고객·테넌트·인증·권한·정책·승인·감사·제품 API·AI/RAG는 TechFlow가 소유한다. 고객 공개·판매·배포 여부는 제품 책임자가 별도로 결정하며 개발 범위와 완료 조건에 포함하지 않는다."
   },
   "licenseBoundary": [
     {
@@ -38,7 +37,7 @@
       "area": "제3자 구성요소",
       "scope": "의존 라이브러리, Piece 의존성, 컨테이너 구성요소",
       "terms": "각 원 저작권자의 라이선스",
-      "decision": "최종 배포 이미지 기준 SBOM·NOTICE·예외 검토 완료 전 고객 재배포 금지"
+      "decision": "최종 공개·배포 판단 시 참고할 SBOM·NOTICE 정보를 유지하되 자체 구현 게이트로 사용하지 않음"
     }
   ],
   "featureMatrix": [
@@ -109,8 +108,8 @@
       "importance": "선택",
       "edition": "Enterprise",
       "license": "Enterprise",
-      "decision": "COMMERCIAL_REQUIRED",
-      "use": "Community PoC에서는 사용하지 않음",
+      "decision": "SELF_IMPLEMENT",
+      "use": "TechFlow Core에서 요구사항에 따라 자체 구현",
       "alternative": "TechFlow Core 테넌트·프로젝트 모델",
       "evidence": "manageProjectsEnabled 및 Enterprise 모듈"
     },
@@ -121,8 +120,8 @@
       "importance": "높음",
       "edition": "Platform/Enterprise",
       "license": "Enterprise",
-      "decision": "COMMERCIAL_REQUIRED",
-      "use": "사내 PoC에서 사용 금지",
+      "decision": "SELF_IMPLEMENT",
+      "use": "TechFlow 제품 API와 인증 체계로 자체 구현",
       "alternative": "Webhook·Custom Piece·TechFlow 소유 API",
       "evidence": "apiKeysEnabled=false, apiKeyModule은 Enterprise/Cloud에서만 등록"
     },
@@ -133,8 +132,8 @@
       "importance": "선택",
       "edition": "Paid",
       "license": "Enterprise/상용 조건",
-      "decision": "COMMERCIAL_REQUIRED",
-      "use": "계약 전 고객 포털에 임베드 금지",
+      "decision": "SELF_IMPLEMENT",
+      "use": "필요하면 TechFlow Portal에 자체 Builder·구성 UI 구현",
       "alternative": "TechFlow Portal + 별도 관리자 UI",
       "evidence": "공식 Configure Embedding 문서와 embeddingEnabled"
     },
@@ -145,8 +144,8 @@
       "importance": "고객 요구",
       "edition": "Paid",
       "license": "Enterprise",
-      "decision": "COMMERCIAL_REQUIRED",
-      "use": "TechFlow 인증을 기본으로 사용",
+      "decision": "SELF_IMPLEMENT",
+      "use": "TechFlow 인증·SSO 계층으로 자체 구현",
       "alternative": "Activepieces UI를 운영자 전용으로 격리",
       "evidence": "authnSsoSamlModule 및 ssoEnabled"
     },
@@ -157,8 +156,8 @@
       "importance": "고객 요구",
       "edition": "Enterprise",
       "license": "Enterprise",
-      "decision": "COMMERCIAL_REQUIRED",
-      "use": "TechFlow 사용자 모델로 대체",
+      "decision": "SELF_IMPLEMENT",
+      "use": "TechFlow 사용자·프로비저닝 모델로 자체 구현",
       "alternative": "TechFlow IAM 연계",
       "evidence": "scimModule 및 scimEnabled"
     },
@@ -169,7 +168,7 @@
       "importance": "필수",
       "edition": "Paid",
       "license": "Enterprise",
-      "decision": "COMMERCIAL_REQUIRED",
+      "decision": "SELF_IMPLEMENT",
       "use": "Activepieces 기능 대신 TechFlow 정책 계층이 최종 권한 소유",
       "alternative": "TechFlow RBAC + ABLESTACK API 권한",
       "evidence": "customRolesEnabled, projectRolesEnabled"
@@ -181,7 +180,7 @@
       "importance": "필수",
       "edition": "Paid",
       "license": "Enterprise",
-      "decision": "COMMERCIAL_REQUIRED",
+      "decision": "SELF_IMPLEMENT",
       "use": "TechFlow 감사 원장을 기본 기록으로 사용",
       "alternative": "TechFlow append-only 감사 이벤트",
       "evidence": "auditEventModule 및 auditLogEnabled"
@@ -193,8 +192,8 @@
       "importance": "높음",
       "edition": "Paid",
       "license": "Enterprise",
-      "decision": "COMMERCIAL_REQUIRED",
-      "use": "PoC에서는 사용하지 않음",
+      "decision": "SELF_IMPLEMENT",
+      "use": "TechFlow Event Gateway에서 요구사항에 따라 자체 구현",
       "alternative": "TechFlow Event Gateway와 Custom Piece callback",
       "evidence": "platformWebhooksModule 및 eventStreamingEnabled"
     },
@@ -205,7 +204,7 @@
       "importance": "선택",
       "edition": "Enterprise",
       "license": "Enterprise",
-      "decision": "COMMERCIAL_REQUIRED",
+      "decision": "SELF_IMPLEMENT",
       "use": "고객 비밀정보의 중앙 공유에 사용하지 않음",
       "alternative": "고객별 TechFlow Secret Broker",
       "evidence": "globalConnectionModule 및 globalConnectionsEnabled"
@@ -217,7 +216,7 @@
       "importance": "필수",
       "edition": "Enterprise",
       "license": "Enterprise",
-      "decision": "COMMERCIAL_REQUIRED",
+      "decision": "SELF_IMPLEMENT",
       "use": "Activepieces 저장소를 제품 비밀정보의 원장으로 사용하지 않음",
       "alternative": "TechFlow Secret Broker가 실행 시 단기 자격증명 전달",
       "evidence": "secretManagersModule 및 secretManagersEnabled"
@@ -229,7 +228,7 @@
       "importance": "높음",
       "edition": "Enterprise",
       "license": "Enterprise",
-      "decision": "COMMERCIAL_REQUIRED",
+      "decision": "SELF_IMPLEMENT",
       "use": "PoC는 배포 이미지와 운영 절차로 허용 목록 고정",
       "alternative": "빌드 시 Piece allowlist와 네트워크 egress 정책",
       "evidence": "platformPieceModule, pieceSetModule, managePiecesEnabled"
@@ -241,9 +240,9 @@
       "importance": "선택",
       "edition": "Paid",
       "license": "Enterprise/상표 조건",
-      "decision": "COMMERCIAL_REQUIRED",
-      "use": "계약 전 Activepieces UI 리브랜딩 금지",
-      "alternative": "TechFlow Portal만 고객에게 노출",
+      "decision": "SELF_IMPLEMENT",
+      "use": "TechFlow Portal과 자체 UI에서 제품 외관 구현",
+      "alternative": "Activepieces 네이티브 브랜딩 조건은 공개 결정 시 참고",
       "evidence": "customAppearanceEnabled, showPoweredBy"
     },
     {
@@ -253,7 +252,7 @@
       "importance": "높음",
       "edition": "Enterprise",
       "license": "Enterprise",
-      "decision": "COMMERCIAL_REQUIRED",
+      "decision": "SELF_IMPLEMENT",
       "use": "TechFlow 검증 템플릿 카탈로그를 원본으로 사용",
       "alternative": "버전 관리된 Flow export·import",
       "evidence": "manageTemplatesEnabled 및 EE template 경로"
@@ -265,7 +264,7 @@
       "importance": "높음",
       "edition": "Enterprise",
       "license": "Enterprise",
-      "decision": "COMMERCIAL_REQUIRED",
+      "decision": "SELF_IMPLEMENT",
       "use": "TechFlow 배포 파이프라인에서 버전 고정",
       "alternative": "GitOps 기반 Flow 번들 배포",
       "evidence": "gitRepoModule, projectReleaseModule, environmentsEnabled"
@@ -277,7 +276,7 @@
       "importance": "선택",
       "edition": "Enterprise",
       "license": "Enterprise",
-      "decision": "COMMERCIAL_REQUIRED",
+      "decision": "SELF_IMPLEMENT",
       "use": "PoC KPI는 TechFlow Telemetry에서 산출",
       "alternative": "OpenTelemetry·Prometheus·TechFlow KPI",
       "evidence": "analyticsEnabled"
@@ -289,7 +288,7 @@
       "importance": "높음",
       "edition": "Enterprise",
       "license": "Enterprise",
-      "decision": "COMMERCIAL_REQUIRED",
+      "decision": "SELF_IMPLEMENT",
       "use": "AI 기능은 TechFlow AI Gateway가 소유",
       "alternative": "모델·RAG·비용·안전 정책을 별도 서비스로 구현",
       "evidence": "agentsEnabled, aiProvidersEnabled, chatEnabled"
@@ -301,9 +300,9 @@
       "importance": "고객 격리",
       "edition": "Enterprise",
       "license": "Enterprise",
-      "decision": "COMMERCIAL_REQUIRED",
-      "use": "초기 고객은 인스턴스 단위 격리",
-      "alternative": "고객별 전용 Activepieces 배포",
+      "decision": "SELF_IMPLEMENT",
+      "use": "TechFlow 배포·스케줄링 계층에서 격리 기능 자체 구현",
+      "alternative": "인스턴스 분리 또는 자체 Worker Pool",
       "evidence": "workerGroupsEnabled"
     },
     {
@@ -313,9 +312,9 @@
       "importance": "출시 필수",
       "edition": "Commercial",
       "license": "계약",
-      "decision": "COMMERCIAL_REQUIRED",
-      "use": "GA 전 SLA·보안 통지·면책 범위 확정",
-      "alternative": "ABLESTACK가 전 범위 유지보수 책임 수용",
+      "decision": "OWNER_DECISION",
+      "use": "고객 공개·상용화 결정 시 제품 책임자가 판단",
+      "alternative": "구현 범위와 개발 완료 조건에는 포함하지 않음",
       "evidence": "MIT 및 Enterprise 모두 기본적으로 무보증"
     }
   ],
@@ -324,37 +323,37 @@
       "id": "A",
       "name": "사내 Assist PoC",
       "status": "APPROVED",
-      "conditions": "Community 0.86.3, 사내 운영자만 UI 접근, Enterprise 기능·API Key 미사용, 고정 버전·SBOM 생성"
+      "conditions": "Community 0.86.3을 기본 실행 엔진으로 사용하고 필요한 제품 기능은 TechFlow에서 구현"
     },
     {
       "id": "B",
       "name": "고객 전용 인스턴스·관리자 UI 비노출",
-      "status": "CONDITIONAL",
-      "conditions": "TechFlow Portal만 고객에게 제공. 공식 결합 이미지 재배포와 설치 방식에 대한 Activepieces 서면 확인 필요"
+      "status": "IMPLEMENTATION_ALLOWED",
+      "conditions": "구현 제한 없음. 고객 공개·배포 여부와 방식은 제품 책임자가 별도 결정"
     },
     {
       "id": "C",
       "name": "고객의 Activepieces UI 직접 사용",
-      "status": "COMMERCIAL_REQUIRED",
-      "conditions": "서비스 제공·최종 사용자 접근·좌석 산정 범위를 계약으로 확정"
+      "status": "IMPLEMENTATION_ALLOWED",
+      "conditions": "대응 기능은 자체 구현 가능. Activepieces 네이티브 UI 사용 조건은 공개 결정 시 참고"
     },
     {
       "id": "D",
       "name": "TechFlow Portal에 Builder 임베딩",
-      "status": "COMMERCIAL_REQUIRED",
-      "conditions": "Embedding·OEM·브랜딩·JWT·지원 조건을 포함한 계약 필요"
+      "status": "IMPLEMENTATION_ALLOWED",
+      "conditions": "TechFlow Builder·구성 UI 자체 구현 가능. 네이티브 Embed 조건은 참고사항"
     },
     {
       "id": "E",
       "name": "다중 고객 Managed SaaS",
-      "status": "COMMERCIAL_REQUIRED",
-      "conditions": "서비스 뷰로·재판매·테넌트·사용자·API·감사 조건을 포함한 상용 계약 필요"
+      "status": "IMPLEMENTATION_ALLOWED",
+      "conditions": "멀티테넌시·API·감사 기능 자체 구현 가능. 공개·상용화는 제품 책임자 결정"
     },
     {
       "id": "F",
       "name": "고객 사설망·오프라인 배포",
-      "status": "CONDITIONAL",
-      "conditions": "MIT-only 배포 구성, SBOM·NOTICE, 이미지 재배포·상표 서면 확인. Enterprise 사용 시 오프라인 활성화 조건 필요"
+      "status": "IMPLEMENTATION_ALLOWED",
+      "conditions": "오프라인 설치·업그레이드 기능 자체 구현 가능. 실제 고객 제공 조건은 제품 책임자 결정"
     }
   ],
   "architectureBoundaries": [
@@ -371,27 +370,32 @@
       "responsibilities": "가상자원 권한·최종 상태·멱등성·실제 인프라 작업"
     }
   ],
-  "releaseGates": [
+  "implementationPrinciples": [
     {
-      "id": "G1",
-      "name": "사내 PoC 허용",
-      "criteria": "Community 기능만 사용, 운영자 UI 격리, 고정 버전, 보안 기준, SBOM 초안"
+      "id": "I1",
+      "name": "Community 기반",
+      "criteria": "Activepieces Community Edition을 시각적 플로우 설계와 실행 엔진의 기본으로 사용"
     },
     {
-      "id": "G2",
-      "name": "고객 파일럿 허용",
-      "criteria": "배포 방식 서면 확인, 고객별 인스턴스, NOTICE·SBOM, 백업·업그레이드·취약점 대응"
+      "id": "I2",
+      "name": "상위 기능 자체 구현",
+      "criteria": "SSO·RBAC·Audit·Embedding·API·Secret·Worker 격리 등 필요한 기능은 TechFlow에서 제한 없이 구현"
     },
     {
-      "id": "G3",
-      "name": "고객 직접 UI·임베딩 허용",
-      "criteria": "Enterprise/OEM 계약, 사용자·좌석·브랜딩·API·지원 조건 확정"
+      "id": "I3",
+      "name": "권한 경계 유지",
+      "criteria": "제품 정책·인증·승인·감사·AI·제품 API는 TechFlow가, 인프라 상태와 작업은 ABLESTACK API가 소유"
     },
     {
-      "id": "G4",
-      "name": "GA 허용",
-      "criteria": "법무 승인, 이미지 라이선스 스캔, SLA·면책·보안 통지·오프라인 조건 확정"
+      "id": "I4",
+      "name": "공개 판단 분리",
+      "criteria": "고객 공개·판매·배포 여부는 제품 책임자가 별도로 결정하며 개발 우선순위와 완료 조건에 사용하지 않음"
     }
+  ],
+  "releaseNotes": [
+    "Activepieces Enterprise 네이티브 기능을 직접 사용할 때의 라이선스 조건은 고객 공개·상용화 판단을 위한 참고정보로 유지한다.",
+    "공식 이미지 재배포, 상표, 지원, SBOM·NOTICE 관련 확인은 실제 공개·배포를 결정할 때 수행한다.",
+    "이 참고사항은 TechFlow의 자체 기능 구현, 테스트, 내부 실증, 아키텍처 설계를 차단하지 않는다."
   ],
   "vendorQuestions": [
     "공식 Activepieces 컨테이너 이미지에는 Enterprise 코드가 결합되어 있는가, Community 용도로 고객에게 재배포할 수 있는가?",
