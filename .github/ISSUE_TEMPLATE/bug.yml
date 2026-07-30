@@ -1,0 +1,75 @@
+name: 버그 신고
+description: 재현 가능한 결함이나 회귀를 신고합니다.
+title: "[Bug] "
+labels:
+  - bug
+  - needs:triage
+type: Bug
+projects:
+  - ablecloud-team/23
+body:
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: 사전 확인
+      options:
+        - label: 동일한 버그가 이미 등록되지 않았는지 검색했습니다.
+          required: true
+        - label: 로그와 화면에서 비밀번호, 토큰, 개인정보, 고객 식별정보를 제거했습니다.
+          required: true
+  - type: input
+    id: version
+    attributes:
+      label: TechFlow·Activepieces 버전
+      placeholder: "예: TechFlow commit, Activepieces version 또는 image digest"
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: 환경
+      description: 운영체제, 배포 방식, 브라우저와 관련 연동 시스템을 비밀정보 없이 작성해 주세요.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: 재현 절차
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 기대 결과
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: 실제 결과
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: 마스킹한 로그와 증거
+      description: 비밀정보와 고객 데이터를 제거한 최소 로그, 실행 ID, 화면 또는 관련 링크만 첨부해 주세요.
+  - type: dropdown
+    id: impact
+    attributes:
+      label: 영향
+      options:
+        - 기능 불편 또는 우회 가능
+        - 주요 업무 실패
+        - 데이터 손상 또는 유실 가능성
+        - 보안 영향 가능성
+    validations:
+      required: true
+  - type: textarea
+    id: workaround
+    attributes:
+      label: 임시 우회 또는 복구 방법

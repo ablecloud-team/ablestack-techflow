@@ -111,6 +111,7 @@ Activepieces는 실행 엔진으로 사용하며 TechFlow의 제품 정책과 AB
 ## 문서
 
 - [제품화 및 범용 확장 계획](docs/plans/techflow-product-roadmap.md)
+- [GitHub Issue 기반 작업 관리](docs/governance/github-issue-management.md)
 - [Activepieces 테스트 서버](docs/environments/activepieces-test-server.md)
 
 ## 보안 원칙
