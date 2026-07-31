@@ -1,0 +1,98 @@
+{
+  "schemaVersion": "1.0",
+  "issue": 17,
+  "title": "로그·메트릭·상태 점검 구성",
+  "status": "completed",
+  "validatedAt": "2026-07-31T09:38:05Z",
+  "environment": {
+    "platform": "Ubuntu 24.04",
+    "hostname": "u24-base",
+    "deploymentPath": "/opt/ablestack-techflow/activepieces",
+    "publicHealthUrl": "https://techflow.ablecloud.io/api/v1/health"
+  },
+  "collector": {
+    "scheduleSeconds": 60,
+    "timerEnabled": true,
+    "timerActive": true,
+    "lastResult": "success",
+    "lastExitCode": 0,
+    "stateDirectory": "/var/lib/ablestack-techflow/observability",
+    "logDirectory": "/var/log/ablestack-techflow/observability",
+    "fileMode": "0640",
+    "directoryMode": "0750"
+  },
+  "baseline": {
+    "rootDiskUsedRatio": 0.229328,
+    "memoryAvailableRatio": 0.69178,
+    "healthyServices": 6,
+    "totalServices": 6,
+    "internalAppStatus": 200,
+    "internalGatewayStatus": 200,
+    "publicAppStatus": 200,
+    "postgresUp": true,
+    "postgresConnections": 2,
+    "postgresMaxConnections": 100,
+    "postgresDatabaseBytes": 206766883,
+    "redisUp": true,
+    "redisConnectedClients": 17,
+    "redisRejectedConnections": 0,
+    "redisRdbStatus": "ok",
+    "redisAofRewriteStatus": "ok",
+    "backupTimerActive": true,
+    "backupLastResult": "success",
+    "backupLatestBytes": 75441555,
+    "prometheusSeries": 43,
+    "activeCriticalAlerts": 0,
+    "activeWarningAlerts": 0
+  },
+  "logging": {
+    "driver": "local",
+    "maxSize": "10m",
+    "maxFiles": 3,
+    "servicesApplied": 6
+  },
+  "failureDrill": {
+    "id": "issue-17-gateway",
+    "scenario": "event_gateway_stop_start",
+    "expectedExitCode": 2,
+    "observedExitCode": 2,
+    "openedAlerts": [
+      "endpoint_internal_gateway",
+      "service_event-gateway"
+    ],
+    "resolvedAlerts": [
+      "endpoint_internal_gateway",
+      "service_event-gateway"
+    ],
+    "systemdOnFailureNotification": "PASS",
+    "postRecoveryHealth": "PASS",
+    "payloadOrIdentifierRecorded": false
+  },
+  "security": {
+    "rawLogsPersistedByObserver": false,
+    "flowPayloadsPersisted": false,
+    "runtimeSecretNamesChecked": 6,
+    "observabilityObjectsScanned": 5,
+    "secretLeaks": 0,
+    "allowListedEnvironmentSettings": [
+      "AP_BIND_ADDRESS",
+      "AP_HTTP_PORT",
+      "TECHFLOW_PUBLIC_URL",
+      "TECHFLOW_BACKUP_DIR"
+    ]
+  },
+  "verification": [
+    {"id": "V1", "name": "Observer unit tests", "result": "PASS", "count": 7},
+    {"id": "V2", "name": "Systemd timer enabled and active", "result": "PASS"},
+    {"id": "V3", "name": "Six Compose service health checks", "result": "PASS"},
+    {"id": "V4", "name": "Internal and public endpoint checks", "result": "PASS"},
+    {"id": "V5", "name": "PostgreSQL Redis and backup metrics", "result": "PASS"},
+    {"id": "V6", "name": "Prometheus text format", "result": "PASS"},
+    {"id": "V7", "name": "Gateway failure detection and root cause", "result": "PASS"},
+    {"id": "V8", "name": "Alert opened and resolved transitions", "result": "PASS"},
+    {"id": "V9", "name": "Systemd OnFailure local notification", "result": "PASS"},
+    {"id": "V10", "name": "Post-drill health recovery", "result": "PASS"},
+    {"id": "V11", "name": "Bounded Docker log retention", "result": "PASS"},
+    {"id": "V12", "name": "Observability asset secret scan", "result": "PASS"}
+  ]
+}

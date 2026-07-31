@@ -1,0 +1,19 @@
+[Unit]
+Description=ABLESTACK TechFlow health, metric, and alert collector
+Requires=docker.service
+After=docker.service network-online.target
+OnFailure=techflow-observer-notify@%n.service
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+WorkingDirectory=/opt/ablestack-techflow/activepieces
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/usr/local/libexec/techflow-observer collect --strict
+UMask=0027
+PrivateTmp=true
+NoNewPrivileges=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/ablestack-techflow/observability /var/log/ablestack-techflow/observability
