@@ -151,6 +151,8 @@ Activepieces Compose 기준선은 테스트 서버에 배포되어 Health, Worke
 - [백업·복구 프레젠테이션 PDF](output/pdf/techflow-backup-recovery-presentation.pdf)
 - [백업·복구 프레젠테이션 PPTX](output/presentation/techflow-backup-recovery.pptx)
 
+- [Issue #19 GitHub 조직 Webhook·Synology Chat 자동화 설계](docs/plans/issue-19-github-chat-webhook-design.md)
+
 ## 보안 원칙
 
 - 비밀번호, API 키, 토큰, 개인키와 암호화 키를 저장소에 커밋하지 않습니다.
