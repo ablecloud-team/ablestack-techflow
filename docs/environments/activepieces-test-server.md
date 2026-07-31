@@ -60,11 +60,11 @@ ssh -p 10023 ablecloud@211.115.222.251
 | Java | 미설치 |
 | Activepieces | 설치·실행 중 (`0.86.3`) |
 
-외부 포트 포워딩은 SSH `10023`만 확인했다. Activepieces HTTP 포트는 사설 주소 `172.16.0.231:8080`에만 바인딩했으며 PostgreSQL과 Redis 포트는 호스트에 공개하지 않는다.
+Activepieces 서비스는 사설 주소 `172.16.0.231:8080`에만 바인딩한다. 외부 사용자는 Cloudflare와 공개 TLS Origin을 경유해 `https://techflow.ablecloud.io`로 접속하며, HTTP 요청은 `308`로 HTTPS에 전환된다. 공개 `8080`, PostgreSQL과 Redis 포트는 열지 않는다.
 
 ## Activepieces 배포 상태
 
-2026-07-30 다음 Compose 구성을 `/opt/ablestack-techflow/activepieces`에 배포했다.
+2026-07-30 기본 Compose 구성을 배포했고 2026-07-31 Issue #14에서 HTTPS와 Webhook Ingress를 추가했다.
 
 | 서비스 | 이미지 | 상태 |
 |---|---|---|
@@ -72,6 +72,8 @@ ssh -p 10023 ablecloud@211.115.222.251
 | Worker | `ghcr.io/activepieces/activepieces:0.86.3` | `healthy`, Polling 준비 |
 | PostgreSQL | `pgvector/pgvector:0.8.0-pg14` | `healthy` |
 | Redis | `redis:7.0.7` | `healthy`, AOF·인증 사용 |
+| Event Gateway | 로컬 Python 3.12 Alpine 이미지 | `healthy`, HMAC·중복 검증 |
+| Ingress | `caddy:2.8.4-alpine` | `healthy`, 경로 분기·보안 헤더 |
 
 배포 시 확인한 이미지 Digest는 다음과 같다. 버전·Digest 갱신 정책과 정식 호환성 기준은 Issue #18에서 관리한다.
 
@@ -80,6 +82,8 @@ ssh -p 10023 ablecloud@211.115.222.251
 | Activepieces `0.86.3` | `sha256:208517c4f0d798a477a0c594bf432dd0f4918433f4b6f5b5f188a6e10e638c6c` |
 | PostgreSQL | `sha256:c55d7e7deac05dde62139e0ded4fcf4f58363656cbc382dbea82fbed995aa767` |
 | Redis | `sha256:bb474c35022ca2c5618f4c49ca759bd2c0eea1daf5d934c560bd30092b97b498` |
+| Caddy `2.8.4-alpine` | `sha256:af32e97344dc5b105fb68042792e80399ff8a4f01b46c5c17a00f6169b262c17` |
+| Event Gateway | `sha256:eb5bf8b2e069f3de91d55f718f14f54fd56f63fc5741ce50979143947d75a5df` |
 
 ## 배포 검증 결과
 
@@ -96,6 +100,11 @@ ssh -p 10023 ablecloud@211.115.222.251
 | 재부팅 후 두 SSH 경로 | 모두 로그인 성공 |
 | 준비 완료 후 오류 이벤트 | `0` |
 | 런타임 비밀값 로그 노출 | `0` |
+| 외부 HTTP→HTTPS | `308`, 경로·쿼리 보존 |
+| 외부 HTTPS UI·Health | TLS 검증과 HTTP `200` |
+| 유효 서명 Webhook | `202` |
+| 중복·위조·오래된 요청 | `409`·`401`·`401` |
+| Ingress 재시작·서버 재부팅 | 6개 서비스와 Webhook 재검증 통과 |
 
 재부팅 검증 시 서버 Boot Time은 `2026-07-30 08:05:23 UTC`였으며, 복구 후 App은 약 807 MiB, Worker는 약 200 MiB, PostgreSQL은 약 176 MiB, Redis는 약 34 MiB를 사용했다. 이 수치는 단일 시점 관측값이며 용량 계획 기준은 아니다.
 
@@ -103,6 +112,7 @@ ssh -p 10023 ablecloud@211.115.222.251
 
 - [Activepieces Compose 배포 자산](../../deploy/compose/activepieces/README.md)
 - [Activepieces Compose 배포 Runbook](../runbooks/activepieces-compose-deployment.md)
+- [HTTPS·Webhook Ingress 운영 Runbook](../runbooks/https-webhook-ingress.md)
 
 실제 비밀값은 서버의 `/opt/ablestack-techflow/activepieces/.env`에 권한 `0600`으로 생성했다. 저장소와 문서에는 값이 없는 `.env.example`만 포함한다.
 
@@ -114,4 +124,4 @@ ssh -p 10023 ablecloud@211.115.222.251
 - AI 서비스 API 키
 - 사내 메신저 및 커뮤니티 연동 자격 증명
 
-정식 비밀정보 저장·교체·폐기 방식은 Issue #15에서 확정한다. 현재 서버는 Issue #14의 HTTPS·Webhook 경로가 구성되기 전까지 사설망 실증용으로만 사용한다.
+정식 비밀정보 저장·교체·폐기 방식은 Issue #15에서 확정한다. 현재 서버의 외부 HTTPS·서명 Webhook 경로는 Issue #14 기준으로 검증되었으며, 고객 공개 여부는 별도 제품 의사결정으로 관리한다.

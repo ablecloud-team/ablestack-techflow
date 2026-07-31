@@ -4,7 +4,7 @@ ABLESTACK TechFlow는 **ABLESTACK 기술지원과 인프라 운영을 연결하�
 
 Activepieces를 워크플로우 실행 엔진으로 사용하고, ABLESTACK 전용 연동, 기술지원 지식, AI 정책, 승인·권한·감사 및 안전한 운영 자동화를 제품 기능으로 개발합니다.
 
-> 현재 상태: 제품 기반 및 사내 실증 실행 환경 구축 단계
+> 현재 상태: 제품 기반, 사내 실증 실행 환경 및 외부 HTTPS·서명 Webhook Ingress 구축 완료
 
 ## 프로젝트 목표
 
@@ -110,7 +110,7 @@ Activepieces는 실행 엔진으로 사용하며 TechFlow의 제품 정책과 AB
 
 현재 테스트 서버는 기능 실증 목적으로만 사용합니다.
 
-Activepieces Compose 기준선은 테스트 서버에 배포되어 Health, Worker Polling, 데이터 영속성과 서버 재부팅 복구 검증을 통과했습니다. 재현 가능한 설치·운영 절차는 [Activepieces Compose 배포 Runbook](docs/runbooks/activepieces-compose-deployment.md)에서 관리합니다.
+Activepieces Compose 기준선은 테스트 서버에 배포되어 Health, Worker Polling, 데이터 영속성과 서버 재부팅 복구 검증을 통과했습니다. `techflow.ablecloud.io`에는 호스트 한정 HTTPS 전환과 엄격한 Origin TLS, HMAC 서명·Timestamp·중복 방지를 적용한 Webhook Ingress가 구성되었습니다. 재현 가능한 절차는 [Activepieces Compose 배포 Runbook](docs/runbooks/activepieces-compose-deployment.md)과 [HTTPS·Webhook Ingress 운영 Runbook](docs/runbooks/https-webhook-ingress.md)에서 관리합니다.
 
 ## 문서
 
@@ -127,6 +127,11 @@ Activepieces Compose 기준선은 테스트 서버에 배포되어 Health, Worke
 - [Activepieces Compose 배포 검증 보고서](docs/reports/issue-13-activepieces-compose-deployment-validation.md)
 - [Activepieces Compose 배포 보고서 PDF](output/pdf/activepieces-compose-deployment-report.pdf)
 - [Activepieces Compose 배포 프레젠테이션 PDF](output/pdf/activepieces-compose-deployment-presentation.pdf)
+- [HTTPS·Webhook Ingress 운영 Runbook](docs/runbooks/https-webhook-ingress.md)
+- [HTTPS·Webhook Ingress 완료 보고서](docs/reports/issue-14-https-webhook-validation.md)
+- [HTTPS·Webhook Ingress 보고서 PDF](output/pdf/https-webhook-ingress-report.pdf)
+- [HTTPS·Webhook Ingress 프레젠테이션 PDF](output/pdf/https-webhook-ingress-presentation.pdf)
+- [HTTPS·Webhook Ingress 프레젠테이션 PPTX](output/presentation/https-webhook-ingress.pptx)
 
 ## 보안 원칙
 

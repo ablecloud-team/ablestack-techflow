@@ -16,7 +16,7 @@ source .env
 set +a
 
 deadline=$((SECONDS + wait_seconds))
-services=(postgres redis app worker)
+services=(postgres redis app worker event-gateway ingress)
 
 while true; do
   healthy=true
@@ -49,10 +49,15 @@ while true; do
   sleep 5
 done
 
-curl -fsS "${AP_FRONTEND_URL}/api/v1/health" >/dev/null
+private_url="http://${AP_BIND_ADDRESS}:${AP_HTTP_PORT}"
+curl -fsS "${private_url}/api/v1/health" >/dev/null
+curl -fsS "${private_url}/techflow/hooks/healthz" >/dev/null
+if [[ -n ${TECHFLOW_PUBLIC_URL:-} ]]; then
+  curl -fsS "${TECHFLOW_PUBLIC_URL}/api/v1/health" >/dev/null
+fi
 docker compose --env-file .env exec -T postgres \
   pg_isready -U "${AP_POSTGRES_USERNAME}" -d "${AP_POSTGRES_DATABASE}" >/dev/null
 docker compose --env-file .env exec -T redis sh -c \
   'REDISCLI_AUTH="$AP_REDIS_PASSWORD" redis-cli ping' | grep -q PONG
 
-echo "app=healthy worker=healthy worker_polling=ready postgres=healthy redis=healthy"
+echo "ingress=healthy event_gateway=healthy app=healthy worker=healthy worker_polling=ready postgres=healthy redis=healthy"

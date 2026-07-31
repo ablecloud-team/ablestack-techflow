@@ -1,0 +1,134 @@
+{
+  "schemaVersion": "1.0",
+  "issue": 14,
+  "title": "외부 HTTPS·Webhook 접속 경로 구성",
+  "status": "validated",
+  "generatedAt": "2026-07-31",
+  "files": [
+    {
+      "path": "docs/decisions/https-webhook-ingress.json",
+      "size": 5943,
+      "sha256": "18A762D5420C8A84837E91D0BF77EB1877A5F854A7AF0981B8D2E5278F43150F"
+    },
+    {
+      "path": "docs/reports/issue-14-https-webhook-validation.md",
+      "size": 6165,
+      "sha256": "72C2607AF351002D206E8AA3F285CF77DD022FDFE02252EE11E534827607EC71"
+    },
+    {
+      "path": "docs/runbooks/https-webhook-ingress.md",
+      "size": 7388,
+      "sha256": "29B288CDF8B6C6F1DB9CE2F5C058882D120CD0792538B32FD5CFD7F5070BA64A"
+    },
+    {
+      "path": "docs/runbooks/activepieces-compose-deployment.md",
+      "size": 9403,
+      "sha256": "9FE718889620F0F28C3BE2F5A8A9291302562C5A53E8731CD3570ACB22C66B38"
+    },
+    {
+      "path": "docs/environments/activepieces-test-server.md",
+      "size": 6300,
+      "sha256": "8E4B8B138B04B9765EF33C316F91BAC3F9AE61E757B65726D3772D7213CD3D81"
+    },
+    {
+      "path": "deploy/compose/activepieces/compose.yml",
+      "size": 4116,
+      "sha256": "D60AC555F6DBC6901B271553B17A53A4AE763428E480004B88F4F3D739C85B58"
+    },
+    {
+      "path": "deploy/compose/activepieces/.env.example",
+      "size": 1408,
+      "sha256": "69F671E948DD3C357DD0344A8BD5743568AB0A69EF145111159EFE3CA5C3D053"
+    },
+    {
+      "path": "deploy/compose/activepieces/README.md",
+      "size": 1629,
+      "sha256": "8E07BB9DDB0724D03719398907C89EBF16087B65BD4E48D9A19D12C2BB00254C"
+    },
+    {
+      "path": "deploy/compose/activepieces/scripts/install-docker-ubuntu.sh",
+      "size": 1213,
+      "sha256": "640F385CAD3F5722C5177934AF835C1306C6D3E39A6917BFE32A0326086DB2E4"
+    },
+    {
+      "path": "deploy/compose/activepieces/scripts/init-env.sh",
+      "size": 1233,
+      "sha256": "80B1F2AD9D0F7674469A7BBCC01C1B69F5782F7A282B58A299787325946B80AD"
+    },
+    {
+      "path": "deploy/compose/activepieces/scripts/deploy.sh",
+      "size": 693,
+      "sha256": "9C3B32B807115C511AB64A808A8DAB503E804E6F525AE0635BEFA4FBAA882518"
+    },
+    {
+      "path": "deploy/compose/activepieces/scripts/healthcheck.sh",
+      "size": 1987,
+      "sha256": "BC66D987F9F97886D0110D8455964189931CE3A4A77253DBB6265E6A952A201F"
+    },
+    {
+      "path": "deploy/compose/activepieces/scripts/status.sh",
+      "size": 786,
+      "sha256": "B9BB063D7106931652BD8C8660CC0A28A168580BBF1A31317E65DD61804F5070"
+    },
+    {
+      "path": "deploy/compose/activepieces/scripts/configure-ingress.sh",
+      "size": 1569,
+      "sha256": "C6DFCF9D0FF4E3E25B5CAB522312FE1A8A5F4201527F4BBD58E89D51E05ABF5B"
+    },
+    {
+      "path": "deploy/compose/activepieces/scripts/verify-ingress.sh",
+      "size": 1191,
+      "sha256": "689F7B25CB1971CB0E4A9361FC1AF301289FD863B423485D22F30032919EAF81"
+    },
+    {
+      "path": "deploy/compose/activepieces/scripts/verify-webhook.sh",
+      "size": 2410,
+      "sha256": "FED117C275908F0C1D796391FF349269D27004C94A1CB7BD89D5B545870D70EA"
+    },
+    {
+      "path": "deploy/compose/activepieces/event-gateway/Dockerfile",
+      "size": 211,
+      "sha256": "CA8E71A7DD42CBBFE81EF932D1D50487FE93B0E8B3B6E6833ED78FD48C49E77C"
+    },
+    {
+      "path": "deploy/compose/activepieces/event-gateway/gateway.py",
+      "size": 12343,
+      "sha256": "42DB6002A8D2FB262159FB4EE705ABE097C24A2462A3AB8E71713132996D5F0E"
+    },
+    {
+      "path": "deploy/compose/activepieces/event-gateway/test_gateway.py",
+      "size": 1700,
+      "sha256": "3C19673CAA7D0525D3C00A698E49D86B8E5C7F35A8EC88F3425EA93199F01DCA"
+    },
+    {
+      "path": "deploy/compose/activepieces/ingress/Caddyfile",
+      "size": 343,
+      "sha256": "10D918B4157C1AB55B5467F25B45C9A100A1618441D4F6876DE58B246C2B1DD8"
+    },
+    {
+      "path": "deploy/compose/activepieces/scripts/verify-persistence.sh",
+      "size": 1543,
+      "sha256": "7E0B59A2510FA8CBD92335063008C36AF6B22D12D79FA2BBACC92BF3B64A91C4"
+    },
+    {
+      "path": "deploy/compose/activepieces/scripts/remove.sh",
+      "size": 650,
+      "sha256": "570AF2603BF69814327B4A4646A9FBF152CE66E5AE32EF1145144E93780308B7"
+    },
+    {
+      "path": "output/pdf/https-webhook-ingress-report.pdf",
+      "size": 129878,
+      "sha256": "20B1BD3ED01ECCDB0BD2855AB9D1F268E5C0BAEF5D1FEA6057007E1C7EE03B04"
+    },
+    {
+      "path": "output/pdf/https-webhook-ingress-presentation.pdf",
+      "size": 563206,
+      "sha256": "2CCDB00876FD134C57A8BC169D00CD36A0BC4444C49D5FD10B2C4D7648F029BC"
+    },
+    {
+      "path": "output/presentation/https-webhook-ingress.pptx",
+      "size": 47286,
+      "sha256": "589080A388A335CC49FD532A0B3231C920704D45528A3918116FF108D048C575"
+    }
+  ]
+}

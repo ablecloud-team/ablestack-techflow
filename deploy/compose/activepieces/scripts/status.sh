@@ -11,7 +11,10 @@ source .env
 set +a
 
 docker compose --env-file .env ps
-curl -fsS "${AP_FRONTEND_URL}/api/v1/health"
+private_url="http://${AP_BIND_ADDRESS}:${AP_HTTP_PORT}"
+curl -fsS "${private_url}/api/v1/health"
+printf '\n'
+curl -fsS "${private_url}/techflow/hooks/healthz"
 printf '\n'
 worker_id=$(docker compose --env-file .env ps -q worker)
 worker_logs=$(docker logs "${worker_id}" 2>&1 || true)
