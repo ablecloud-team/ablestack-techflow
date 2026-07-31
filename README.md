@@ -4,7 +4,7 @@ ABLESTACK TechFlow는 **ABLESTACK 기술지원과 인프라 운영을 연결하�
 
 Activepieces를 워크플로우 실행 엔진으로 사용하고, ABLESTACK 전용 연동, 기술지원 지식, AI 정책, 승인·권한·감사 및 안전한 운영 자동화를 제품 기능으로 개발합니다.
 
-> 현재 상태: 제품 기반, 사내 실증 실행 환경, 외부 HTTPS·서명 Webhook Ingress, 상태 백업·격리 복구, 관측성과 이미지 잠금·무빌드 롤백 체계 구축 완료
+> 현재 상태: 제품 기반, 사내 실증 실행 환경, 외부 HTTPS·서명 Webhook Ingress, 상태 백업·격리 복구, 관측성·이미지 잠금, GitHub Push·PR Merge Chat 자동화 구축 완료
 
 ## 프로젝트 목표
 
@@ -116,7 +116,7 @@ PostgreSQL·Redis 백업, 격리 복구, RPO·RTO와 Secret 복구 분리는 [AD
 
 Activepieces Compose 기준선은 테스트 서버에 배포되어 Health, Worker Polling, 데이터 영속성과 서버 재부팅 복구 검증을 통과했습니다. `techflow.ablecloud.io`에는 호스트 한정 HTTPS 전환과 엄격한 Origin TLS, HMAC 서명·Timestamp·중복 방지를 적용한 Webhook Ingress가 구성되었습니다. PostgreSQL·Redis는 매일 백업되며 운영 Volume을 변경하지 않는 격리 복구와 40초 RTO 실증을 통과했습니다. 재현 가능한 절차는 [Activepieces Compose 배포 Runbook](docs/runbooks/activepieces-compose-deployment.md), [HTTPS·Webhook Ingress 운영 Runbook](docs/runbooks/https-webhook-ingress.md)과 [상태 백업·복구 Runbook](docs/runbooks/state-backup-recovery.md)에서 관리합니다.
 
-현재 여섯 Compose 서비스는 `image-lock.json`의 검토된 버전과 불변 이미지 식별자로 고정됩니다. 외부 이미지는 Tag+Registry Digest, 자체 Event Gateway는 M0 테스트 서버에서 승인한 로컬 Image ID를 사용하며, 배포 전 상태 백업과 무빌드 배포·롤백을 강제합니다. 동일 잠금 반복 배포, 직전 Runtime Lock 롤백, 목표 릴리스 복귀와 영속 Volume 보존 드릴을 통과했습니다. 운영 절차는 [이미지 버전 업그레이드·롤백 Runbook](docs/runbooks/image-version-upgrade-rollback.md)을 따릅니다.
+현재 여섯 Compose 서비스는 `image-lock.json`의 검토된 버전과 불변 이미지 식별자로 고정됩니다. 외부 이미지는 Tag+Registry Digest, 자체 Event Gateway는 M1 테스트 서버에서 승인한 로컬 Image ID를 사용하며, 배포 전 상태 백업과 무빌드 배포·롤백을 강제합니다. 동일 잠금 반복 배포, 직전 Runtime Lock 롤백, 목표 릴리스 복귀와 영속 Volume 보존 드릴을 통과했습니다. 운영 절차는 [이미지 버전 업그레이드·롤백 Runbook](docs/runbooks/image-version-upgrade-rollback.md)을 따릅니다.
 
 ## 문서
 
@@ -152,6 +152,11 @@ Activepieces Compose 기준선은 테스트 서버에 배포되어 Health, Worke
 - [백업·복구 프레젠테이션 PPTX](output/presentation/techflow-backup-recovery.pptx)
 
 - [Issue #19 GitHub 조직 Webhook·Synology Chat 자동화 설계](docs/plans/issue-19-github-chat-webhook-design.md)
+- [GitHub 조직 Webhook·Synology Chat 운영 Runbook](docs/runbooks/github-chat-webhook.md)
+- [Issue #19 구현·배포·검증 완료 보고서](docs/reports/issue-19-github-chat-webhook-validation.md)
+- [GitHub Chat 자동화 보고서 PDF](output/pdf/github-chat-webhook-report.pdf)
+- [GitHub Chat 자동화 프레젠테이션 PDF](output/pdf/github-chat-webhook-presentation.pdf)
+- [GitHub Chat 자동화 프레젠테이션 PPTX](output/presentation/github-chat-webhook.pptx)
 
 ## 보안 원칙
 

@@ -1,6 +1,6 @@
 # Issue #19 GitHub 조직 Webhook·Synology Chat 자동화 설계
 
-> 상태: **구현 전 설계 완료, 승인 대기**
+> 상태: **구현·배포·E2E 검증 완료**
 >
 > 기준일: 2026-07-31
 >
@@ -10,7 +10,7 @@
 
 ## 1. 결론
 
-Issue #19의 최초 구현은 `ablecloud-team` 조직의 기존 Webhook 중 `chat.ablecloud.io`로 직접 전송하던 대상만 TechFlow로 전환한다. 정상 동작 중인 다른 조직 Webhook은 변경하지 않는다.
+Issue #19의 최초 구현은 `ablecloud-team` 조직의 기존 Webhook 중 `chat.ablecloud.io`로 직접 전송하던 대상만 TechFlow로 전환했다. 정상 동작 중인 다른 조직 Webhook은 변경하지 않았다.
 
 전환 후 하나의 Activepieces Flow가 다음 두 이벤트를 처리한다.
 
@@ -55,13 +55,10 @@ GitHub Delivery 화면의 성공은 HTTP 상태만 나타내므로 업무 성공
 ```mermaid
 flowchart LR
     GH["GitHub 조직 Webhook<br/>push·pull_request"] -->|"HTTPS·GitHub HMAC"| GW["TechFlow Event Gateway<br/>검증·정규화·중복 방지"]
-    GW -->|"내부 서명 이벤트"| AP["Activepieces<br/>github-chat-v1"]
-    AP --> R{"이벤트 분기"}
-    R -->|"push"| PM["Push 메시지 생성"]
-    R -->|"merged PR"| PRM["PR Merge 메시지 생성"]
-    R -->|"그 외"| IGN["IGNORED"]
-    PM --> CHAT["TechFlow Chat Piece<br/>Synology Chat"]
-    PRM --> CHAT
+    GW -->|"검증된 최소 이벤트"| AP["Activepieces<br/>github-chat-v1"]
+    AP -->|"eventId·url·text"| ADAPTER["내부 Chat Adapter<br/>응답 본문 판정·전송 간격 제어"]
+    ADAPTER --> CHAT["Synology Chat"]
+    GW -->|"비대상 PR"| IGN["IGNORED"]
     AP --> OBS["Flow Runs·TechFlow Observer"]
 ```
 
@@ -70,9 +67,9 @@ flowchart LR
 | 계층 | 책임 |
 |---|---|
 | GitHub | 조직 이벤트 발행과 `X-Hub-Signature-256` 생성 |
-| Event Gateway | 원문 서명 검증, 이벤트 allowlist, 최소 필드 정규화, Delivery ID 중복 방지, Activepieces 접수 확인 |
-| Activepieces | 이벤트 분기, 메시지 조립, Chat Piece 실행, 실행 이력과 실패 상태 |
-| TechFlow Chat Piece | Webhook URL을 Connection Secret으로 사용, Synology 요청 인코딩, 응답 본문 성공 판정 |
+| Event Gateway | 원문 서명 검증, 이벤트 allowlist, 최소 필드 정규화, 메시지 조립, Delivery ID 중복 방지, Activepieces 접수 확인 |
+| Activepieces | 검증된 이벤트의 시각적 실행, 내부 Chat Adapter 호출, 실행 이력과 실패 상태 |
+| 내부 Chat Adapter | 보호된 Webhook URL 사용, Synology 요청 인코딩, 최소 600 ms 전송 간격, 응답 본문 성공 판정 |
 | Synology Chat | 채널 게시 결과의 권위 응답 제공 |
 | TechFlow Observer | 최근 Flow 실패 건수와 Gateway 거부 건수 집계 |
 
@@ -105,7 +102,7 @@ Content-Type: application/json
 3. 전용 GitHub Webhook Secret으로 원문 Body의 `X-Hub-Signature-256`을 상수 시간 비교한다.
 4. `X-GitHub-Delivery`로 Redis 중복 상태를 확인한다. Redis 장애 시 Fail Closed한다.
 5. 원문 JSON을 파싱하고 허용된 필드만 내부 이벤트로 정규화한다.
-6. 정규화 Body를 TechFlow 내부 HMAC으로 서명해 Activepieces Catch Webhook으로 전달한다.
+6. 정규화 Body를 Docker 내부망의 Activepieces Catch Webhook으로 전달한다. Caddy는 외부의 Activepieces 직접 Webhook 경로를 `404`로 차단한다.
 7. Activepieces가 접수한 경우 GitHub에 `202 accepted`를 반환한다.
 
 GitHub는 Timestamp 헤더를 제공하지 않으므로 기존 `X-TechFlow-Timestamp` 외부 계약을 그대로 적용하지 않는다. HTTPS, GitHub HMAC, Delivery ID 중복 방지와 이벤트 allowlist를 함께 적용한다.
@@ -202,7 +199,7 @@ body.pull_request.merged == true
 
 닫혔지만 병합되지 않은 PR은 `IGNORED`로 기록하고 Chat을 호출하지 않는다.
 
-## 7. Activepieces Flow 상세 설계
+## 7. Activepieces Flow 상세 구현
 
 ### 7.1 Flow 식별자
 
@@ -210,24 +207,30 @@ body.pull_request.merged == true
 |---|---|
 | 표시 이름 | `TechFlow - GitHub to Synology Chat v1` |
 | 논리 ID | `github-chat-v1` |
-| Trigger | Catch Webhook |
-| 공개 상태 | Canary 검증 전 비활성, 검증 시 Publish |
-| Connection | `TechFlow Synology Chat` |
+| Runtime Flow ID | `BjLSSjbSp3tyNLjnxWUS8` |
+| Trigger | Catch Webhook `0.1.39` |
+| Action | HTTP `0.11.14` |
+| 상태 | Publish·Enabled |
+| 버전 관리 자산 | [github-chat-v1.json](../../deploy/compose/activepieces/flows/github-chat-v1.json) |
 
-초기에는 한 Flow 안에서 Push와 PR Merge를 Router로 분리한다. 향후 채널·재시도·소유자가 달라지면 두 Flow로 분리하되 내부 이벤트 계약은 유지한다.
+Community Edition에서 사설 Piece 업로드 기능에 의존하지 않도록 GitHub 계약 검증과 Chat 프로토콜 처리는 Event Gateway에 구현했다. Activepieces는 검증된 이벤트를 받아 내부 Adapter를 호출하고 Run 상태를 남기는 시각적 실행 계층이다. 이 분리는 Activepieces가 실행을 담당하고 TechFlow가 정책·Secret·성공 판정을 소유한다는 ADR-0001의 책임 경계를 유지한다.
 
 ### 7.2 Step
 
 | 순서 | Step | 입력 | 동작 | 출력·판정 |
 |---:|---|---|---|---|
-| 1 | Catch Webhook | Gateway 내부 요청 | 정규화 이벤트 수신 | 접수 후 빠르게 2xx |
-| 2 | Verify Internal Event | Body와 `X-TechFlow-*` | 내부 HMAC, Event ID, 계약 버전 검사 | 불일치 시 실패, Chat 미호출 |
-| 3 | Validate Contract | 정규화 Body | 필수 필드, 조직, URL scheme 검사 | `ablecloud-team`, HTTPS만 허용 |
-| 4 | Route Event | `eventType` | Push, PR Merge, Ignore 분기 | 미지원 이벤트는 Ignore |
-| 5A | Format Push | Push 계약 | Push 텍스트와 URL 생성 | 빈 `url`·`text` 금지 |
-| 5B | Format PR Merge | PR 계약 | PR Merge 텍스트와 URL 생성 | 빈 `url`·`text` 금지 |
-| 6 | Post Chat Message | `url`, `text` | TechFlow Chat Piece 실행 | 응답 본문까지 판정 |
-| 7 | Return Result | 실행 결과 | `SUCCEEDED`, `IGNORED`, `FAILED`, `UNKNOWN` 분류 | Flow Run에서 확인 |
+| 1 | Catch Webhook | Gateway의 최소 정규화 이벤트 | Docker 내부망에서만 수신 | 외부 `/api/v1/webhooks/*`는 Caddy가 404 |
+| 2 | Post to Synology Chat | `eventId`, `data.url`, `message.text` | `http://chat-adapter:8081/internal/chat/github` 호출 | Adapter의 2xx만 성공, 실패 시 Flow `FAILED` |
+
+Activepieces 0.86.3의 Schema 22 표현식은 `trigger.output`을 명시한다. 저장된 매핑은 다음과 같다.
+
+```text
+eventId = {{trigger['output']['body']['eventId']}}
+url     = {{trigger['output']['body']['data']['url']}}
+text    = {{trigger['output']['body']['message']['text']}}
+```
+
+Worker의 `AP_NETWORK_MODE=STRICT`는 유지한다. 전용 `automation_egress` 네트워크에서 Activepieces 제어 API `172.30.19.9`와 Chat Adapter `172.30.19.10`만 `AP_SSRF_ALLOW_LIST`에 등록한다.
 
 ### 7.3 메시지 계약
 
@@ -248,7 +251,7 @@ PR Merge 메시지:
 <{data.url}|PR 보기>
 ```
 
-메시지 생성기는 다음 제한을 적용한다.
+Gateway 메시지 생성기는 다음 제한을 적용한다.
 
 - `url`은 `https://github.com/ablecloud-team/`로 시작하는 URL만 허용한다.
 - `text`는 제어 문자를 제거하고 최대 4,000자로 제한한다.
@@ -266,7 +269,7 @@ Content-Type: application/x-www-form-urlencoded
 payload={"text":"<rendered message>"}
 ```
 
-`url`은 별도 Secret Query에 추가하지 않고 `text`의 링크로 렌더링한다. Webhook URL 전체는 Token을 포함하므로 Flow 정의의 일반 URL 필드가 아니라 `TechFlow Synology Chat` Connection의 `SecretText`로만 저장한다.
+`url`은 별도 Secret Query에 추가하지 않고 `text`의 링크로 렌더링한다. Webhook URL 전체는 Token을 포함하므로 Flow 정의가 아닌 서버 보호 Secret 파일에 저장하고 Event Gateway의 내부 Adapter만 읽는다.
 
 성공 조건:
 
@@ -276,7 +279,7 @@ AND response Content-Type is JSON-compatible
 AND response body.success == true
 ```
 
-HTTP `200`이어도 `success=false`, 응답 파싱 실패 또는 성공 필드 누락이면 실패다. 오류 응답 원문은 저장하지 않고 HTTP 상태, 허용된 오류 코드와 Flow Run ID만 남긴다.
+HTTP `200`이어도 `success=false`, 응답 파싱 실패 또는 성공 필드 누락이면 실패다. 오류 응답 원문은 저장하지 않고 허용된 오류 코드와 Event ID만 남긴다. Synology 공식 운영 지침의 0.5초 최소 간격보다 여유 있게 600 ms 전송 슬롯을 Redis로 직렬화한다.
 
 참고: [Synology Chat Integration 공식 문서](https://kb.synology.com/en-global/DSM/help/Chat/chat_integration?version=7)
 
@@ -285,8 +288,8 @@ HTTP `200`이어도 `success=false`, 응답 파싱 실패 또는 성공 필드 �
 | Secret | 저장 위치 | 규칙 |
 |---|---|---|
 | GitHub 조직 Webhook Secret | 서버 보호 Secret 저장소 | 구현 시 새 고엔트로피 값 생성, GitHub와 Gateway에만 주입 |
-| TechFlow 내부 전달 Secret | 서버 보호 Secret 저장소와 Activepieces Connection | Gateway→Flow 서명 검증 전용 |
-| Synology Chat Webhook URL | Activepieces `SecretText` Connection | URL 전체를 Secret으로 취급, Flow JSON·로그·문서에서 제외 |
+| TechFlow 내부 전달 Secret | 서버 보호 Secret 저장소 | 기존 범용 서명 Webhook 전용, Issue #19 경로와 분리 |
+| Synology Chat Webhook URL | 서버 보호 Secret 저장소 | URL 전체를 Secret으로 취급, Flow JSON·로그·문서에서 제외 |
 | Activepieces 운영자 인증 | 런타임 로그인에만 사용 | 문서·명령·Issue·로그에 저장하지 않음 |
 
 현재 `gh` 인증은 조직 Webhook 조회·생성·수정에 필요한 `admin:org_hook` 권한이 확인되어 별도 GitHub Access Token이 필요하지 않다. 다만 GitHub Webhook Secret은 GitHub 로그인 자격증명이 아니라 발신 Payload의 HMAC을 검증하는 별도 공유 Secret이므로 구현 시 반드시 새로 생성한다.
@@ -430,9 +433,9 @@ Phase 6  임시 Hook 제거·증적과 Runbook 확정
 
 정상 동작 중인 다른 조직 Webhook은 롤백 대상에 포함하지 않는다.
 
-## 14. 실행 전 승인 체크포인트
+## 14. 승인·구현 체크포인트
 
-이 문서로 다음 사항은 확정한다.
+승인된 결정과 구현 결과는 다음과 같다.
 
 - 대상: `chat.ablecloud.io` 기존 조직 Webhook만 전환
 - 이벤트: Push와 PR Merge 모두 처리
@@ -441,9 +444,9 @@ Phase 6  임시 Hook 제거·증적과 Runbook 확정
 - 성공: HTTP 2xx와 `success=true` 모두 필요
 - 실패 확인: Activepieces와 TechFlow Observer
 - 테스트: `ablestack-techflow` Repository Hook Canary와 테스트 PR Merge
-- Secret: 런타임 저장·Connection 참조만 사용
+- Secret: 서버 보호 런타임 저장소만 사용
 
-실제 Webhook, Flow와 서버 설정 변경은 이 설계 승인 이후 별도 구현 단계에서 수행한다.
+구현·배포·조직 Hook 전환과 실제 Push·PR Merge 검증은 완료했다. 최종 근거는 [Issue #19 검증 보고서](../reports/issue-19-github-chat-webhook-validation.md)와 [운영 Runbook](../runbooks/github-chat-webhook.md)을 따른다.
 
 ## 15. 참고자료
 
