@@ -1,0 +1,12 @@
+[Unit]
+Description=Collect ABLESTACK TechFlow observability data every minute
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=1min
+AccuracySec=10s
+Persistent=true
+Unit=techflow-observer.service
+
+[Install]
+WantedBy=timers.target

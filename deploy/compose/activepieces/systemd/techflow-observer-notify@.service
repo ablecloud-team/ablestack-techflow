@@ -1,0 +1,14 @@
+[Unit]
+Description=Record ABLESTACK TechFlow observer failure for %i
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+WorkingDirectory=/opt/ablestack-techflow/activepieces
+ExecStart=/usr/local/libexec/techflow-observer notify --source %i
+SyslogIdentifier=techflow-alert
+NoNewPrivileges=true
+ProtectHome=true
+ProtectSystem=strict
+ReadOnlyPaths=/var/lib/ablestack-techflow/observability

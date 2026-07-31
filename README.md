@@ -164,3 +164,16 @@ Activepieces Community Edition을 기본 실행 엔진으로 사용합니다. En
 
 - [Activepieces 라이선스](https://github.com/activepieces/activepieces/blob/main/LICENSE)
 - [Activepieces 공식 문서](https://www.activepieces.com/docs/overview/welcome)
+
+## 관측성과 장애 추적
+
+TechFlow 테스트 서버에는 1분 주기의 경량 Observer가 배포되어 6개 Compose 서비스, 내부·외부 Health, PostgreSQL, Redis, 상태 백업과 허용된 로그 집계값을 확인합니다. 최신 상태는 JSON, 메트릭은 Prometheus Text Format, 경보는 발생·해제 전이로 관리합니다. 원문 로그, Flow Payload, 사용자 식별자와 Secret은 관측 자산에 복제하지 않습니다.
+
+Docker 로그는 6개 서비스 모두 `local` driver와 서비스별 `10m × 3` 한도를 적용했습니다. `event-gateway` 중단 훈련에서 Critical 감지, 원인 식별, systemd 로컬 알림과 복구 후 경보 해제를 확인했습니다.
+
+- [ADR-0004: TechFlow 관측성과 최소 경보 기준](docs/adr/0004-techflow-observability.md)
+- [TechFlow 관측성 운영 Runbook](docs/runbooks/observability.md)
+- [Issue #17 로그·메트릭·상태 점검 완료 보고서](docs/reports/issue-17-observability-validation.md)
+- [관측성 완료 보고서 PDF](output/pdf/techflow-observability-report.pdf)
+- [관측성 프레젠테이션 PDF](output/pdf/techflow-observability-presentation.pdf)
+- [관측성 프레젠테이션 PPTX](output/presentation/techflow-observability.pptx)

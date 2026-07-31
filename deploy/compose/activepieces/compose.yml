@@ -1,5 +1,11 @@
 name: techflow-activepieces
 
+x-logging: &default-logging
+  driver: local
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   postgres:
     image: pgvector/pgvector:0.8.0-pg14
@@ -22,6 +28,7 @@ services:
       start_period: 20s
     security_opt:
       - no-new-privileges:true
+    logging: *default-logging
     networks:
       - backend
 
@@ -46,6 +53,7 @@ services:
       start_period: 10s
     security_opt:
       - no-new-privileges:true
+    logging: *default-logging
     networks:
       - backend
 
@@ -73,6 +81,7 @@ services:
       start_period: 60s
     security_opt:
       - no-new-privileges:true
+    logging: *default-logging
     networks:
       - frontend
       - backend
@@ -103,6 +112,7 @@ services:
       - /tmp:size=16m,mode=1777
     security_opt:
       - no-new-privileges:true
+    logging: *default-logging
     networks:
       - frontend
       - backend
@@ -136,6 +146,7 @@ services:
       - /data:size=16m,mode=0750
     security_opt:
       - no-new-privileges:true
+    logging: *default-logging
     networks:
       - frontend
 
@@ -163,6 +174,7 @@ services:
       start_period: 60s
     security_opt:
       - no-new-privileges:true
+    logging: *default-logging
     networks:
       - backend
 

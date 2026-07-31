@@ -1,0 +1,112 @@
+{
+  "schemaVersion": "1.0",
+  "issue": 17,
+  "title": "로그·메트릭·상태 점검 구성",
+  "status": "completed",
+  "generatedAt": "2026-07-31T09:38:05Z",
+  "hashPolicy": "binary raw bytes; UTF-8 text normalized to LF",
+  "files": [
+    {
+      "path": "README.md",
+      "size": 11815,
+      "sha256": "0717AD69682CDBD4116FB135FFCFA32615B8BCA7BECA331757A9162DAE9C1098",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "docs/adr/0004-techflow-observability.md",
+      "size": 6747,
+      "sha256": "A36372E3D5037CE132139D0CD8F8BF150DAD033D33A15843B8827362CCD40202",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "docs/decisions/techflow-observability.json",
+      "size": 3324,
+      "sha256": "F6C70D98EEBA803D03908E74A49914DD720ABDD4E9146052DE98B3B97FD81436",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "docs/reports/issue-17-observability-validation.md",
+      "size": 6393,
+      "sha256": "BF8F0E2ADEF5DDE61E73B17B03FF01FE6CC1653482D1926F2B2DC5505DFBFF6F",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "docs/runbooks/observability.md",
+      "size": 4638,
+      "sha256": "ACC2912D673AB9AF4202EFC8C078B9FCAAF559ECA862E3A1B42CC85031F71B54",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "deploy/compose/activepieces/compose.yml",
+      "size": 4288,
+      "sha256": "EAFB2E66AE24720889A51F55A7F572EFC34C3AF3FD3F13CD57C99B2E045D850B",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "deploy/compose/activepieces/observability/observer.py",
+      "size": 25510,
+      "sha256": "D6D436E4F2593FF8E481A0644482A1215EFC5F25B80512E0C6368910D0179B74",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "deploy/compose/activepieces/observability/test_observer.py",
+      "size": 4379,
+      "sha256": "9A287196E3862BEEA234381C7BE7891B1C260150E3E048586C150656FD31A4F1",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "deploy/compose/activepieces/scripts/install-observability.sh",
+      "size": 1174,
+      "sha256": "8225486AA9F70F54FD0D416917508A265A73C639A135A4875395256690BB25F9",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "deploy/compose/activepieces/scripts/verify-observability.sh",
+      "size": 1411,
+      "sha256": "EAE91C07590A051BEA46C3112716FB5456543D3EB4A413150DA7DB2C0212331C",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "deploy/compose/activepieces/scripts/test-observability.sh",
+      "size": 3440,
+      "sha256": "FB71F970593D912BF7905A01314443E472AD0EBF960F97781CA17CE226F079CA",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "deploy/compose/activepieces/systemd/techflow-observer.service",
+      "size": 566,
+      "sha256": "11AB0C62FC072274EE0A3DE00A5E60FA916A9C97858746D7F97505B123A1F544",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "deploy/compose/activepieces/systemd/techflow-observer.timer",
+      "size": 220,
+      "sha256": "F40693E7CE3BAA85961AA4D8B23AE887871B2C6F0F89E081B68B61F280EBD3A4",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "deploy/compose/activepieces/systemd/techflow-observer-notify@.service",
+      "size": 381,
+      "sha256": "DDB33B0F47D0153931B263632052610BA92C4CA5B85D24980A6A9F89CCBE7806",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "output/pdf/techflow-observability-report.pdf",
+      "size": 124364,
+      "sha256": "1162A2124F7C891825928EF8211A3F76A61F017D36C3C319E6A04A46E6242465",
+      "contentMode": "binary-raw"
+    },
+    {
+      "path": "output/pdf/techflow-observability-presentation.pdf",
+      "size": 545834,
+      "sha256": "B39CCEEFAA2868FCF8360D536B1F65974011BE0C0D6A38CF864E88E568C8C4D3",
+      "contentMode": "binary-raw"
+    },
+    {
+      "path": "output/presentation/techflow-observability.pptx",
+      "size": 47477,
+      "sha256": "FE4E36B365502CFFDDE2A93DB920716AD50250118F0A6EBC5CECAEB45A04ED50",
+      "contentMode": "binary-raw"
+    }
+  ]
+}
