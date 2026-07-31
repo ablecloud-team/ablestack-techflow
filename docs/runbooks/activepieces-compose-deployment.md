@@ -14,7 +14,8 @@
 | PostgreSQL | `pgvector/pgvector:0.8.0-pg14` |
 | Redis | `redis:7.0.7` |
 | 내부 접속 URL | `http://172.16.0.231:8080` |
-| 외부 HTTPS·Webhook | Issue #14에서 구성 |
+| 외부 접속 URL | `https://techflow.ablecloud.io` |
+| 외부 HTTPS·Webhook | Issue #14 구성·검증 완료 |
 
 현재 구성은 사내 실증용 단일 서버 배포다. Activepieces는 시각적 Flow 실행 계층이며 제품 정책, 승인, 감사와 ABLESTACK 자원 상태의 원장이 아니다.
 
@@ -36,7 +37,7 @@ ss -lnt
 - 4 vCPU, 3.8 GiB RAM과 Swap
 - 루트 파일시스템 여유 20 GiB 이상
 - NTP 동기화
-- TCP `8080` 포트 미사용
+- 사설 주소 TCP `8080` 포트 미사용
 - Docker Hub, GHCR과 Ubuntu 저장소로 HTTPS 통신 가능
 
 ## 4. 배포 자산 설치
@@ -86,6 +87,7 @@ stat -c '%a %U:%G %n' .env
 - JWT Secret
 - PostgreSQL 비밀번호
 - Redis 비밀번호
+- TechFlow Webhook HMAC Secret
 
 `.env`를 저장소, Issue, 채팅, 백업 로그 또는 보고서에 복사하지 않는다. `--force`는 의도적인 비밀값 교체와 영향 검토가 끝난 경우에만 사용한다.
 
@@ -93,6 +95,7 @@ stat -c '%a %U:%G %n' .env
 
 ```bash
 cd /opt/ablestack-techflow/activepieces
+./scripts/configure-ingress.sh https://techflow.ablecloud.io
 docker compose --env-file .env config --quiet
 ./scripts/deploy.sh
 ```
@@ -103,9 +106,9 @@ docker compose --env-file .env config --quiet
 2. Compose 문법과 필수 변수 확인
 3. 고정 태그 이미지 Pull
 4. PostgreSQL·Redis 기동과 헬스체크
-5. Activepieces App 기동과 헬스체크
-6. Worker 기동과 헬스체크
-7. HTTP, PostgreSQL, Redis 종합 상태 확인
+5. Activepieces App과 Worker 기동
+6. Event Gateway와 Caddy Ingress 기동
+7. 6개 서비스, 내부 HTTP와 Worker Polling 종합 확인
 
 ## 8. 상태 확인
 
@@ -119,22 +122,23 @@ cd /opt/ablestack-techflow/activepieces
 
 ```bash
 curl -fsS http://172.16.0.231:8080/api/v1/health
+curl -fsS https://techflow.ablecloud.io/api/v1/health
 docker compose --env-file .env ps
-docker compose --env-file .env logs --tail 100 app worker
+docker compose --env-file .env logs --tail 100 app worker event-gateway ingress
 ```
 
-정상 기준은 네 서비스가 `running/healthy`이고 HTTP Health API가 성공하는 것이다. 로그를 공유할 때는 연결정보, 사용자 입력과 토큰을 먼저 제거한다.
+정상 기준은 6개 서비스가 `running/healthy`이고 내부·외부 Health와 Worker Polling이 성공하는 것이다. HTTPS·Webhook 세부 검증은 [전용 Runbook](https-webhook-ingress.md)을 따른다. 로그를 공유할 때는 연결정보, 사용자 입력과 토큰을 먼저 제거한다.
 
 ## 9. 초기 플랫폼 관리자 생성
 
-배포와 Health 검증이 완료되면 운영자가 사설망에서 `http://172.16.0.231:8080`에 접속해 초기 플랫폼 관리자 계정을 생성한다.
+배포와 Health 검증이 완료되면 운영자가 `https://techflow.ablecloud.io`에 접속해 초기 플랫폼 관리자 계정을 생성한다. 장애 분석과 제한된 관리 작업에는 사설망 URL을 사용할 수 있다.
 
 - 관리자 이메일과 비밀번호는 운영자가 UI에서 직접 입력한다.
 - 관리자 자격 증명은 저장소, GitHub Issue, 배포 스크립트, 채팅과 보고서에 기록하지 않는다.
 - 계정 생성 결과와 접근 권한은 운영자가 별도 보안 절차에 따라 확인한다.
 - 초기 관리자 생성은 App, Worker, PostgreSQL과 Redis의 배포 및 Health 판정과 분리한다.
 
-외부 HTTPS가 구성되기 전에는 사설망에서만 초기 설정을 수행한다.
+외부 접속은 HTTPS만 사용하고 HTTP URL을 사용자에게 배포하지 않는다.
 
 ## 10. 영속성 검증
 
@@ -215,13 +219,13 @@ Blind Retry나 데이터 볼륨 삭제로 장애를 우회하지 않는다. 원�
 
 ## 15. 보안 영향
 
-- App 포트는 사설 주소에만 바인딩한다.
+- Ingress 포트는 사설 주소에만 바인딩하고 외부는 TLS Proxy를 경유한다.
 - PostgreSQL과 Redis 포트를 호스트에 공개하지 않는다.
 - Redis 인증과 PostgreSQL 인증을 사용한다.
 - `AP_NETWORK_MODE=STRICT`와 `AP_EXECUTION_MODE=SANDBOX_CODE_ONLY`를 사용한다.
 - Worker 동시성은 `1`로 제한한다.
 - Compose 컨테이너에 `no-new-privileges`를 적용한다.
-- 외부 HTTPS, Webhook 서명과 프록시는 Issue #14 범위다.
+- 외부 HTTPS, Webhook 서명과 프록시는 Issue #14에서 검증되었다.
 - 정식 Secret Broker와 교체 정책은 Issue #15 범위다.
 - PostgreSQL·Redis 백업과 복구 훈련은 Issue #16 범위다.
 - 로그·메트릭·경보는 Issue #17 범위다.

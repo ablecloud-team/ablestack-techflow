@@ -1,0 +1,214 @@
+{
+  "schemaVersion": "1.0",
+  "issue": 14,
+  "title": "외부 HTTPS·Webhook 접속 경로 구성",
+  "status": "validated",
+  "validatedAt": "2026-07-31",
+  "endpoints": {
+    "publicUrl": "https://techflow.ablecloud.io",
+    "privateUrl": "http://172.16.0.231:8080",
+    "webhookPath": "/techflow/hooks/events",
+    "deploymentPath": "/opt/ablestack-techflow/activepieces"
+  },
+  "edge": {
+    "provider": "Cloudflare",
+    "dnsProxy": true,
+    "origin": "211.115.222.251",
+    "originTlsVerification": "valid",
+    "configurationRules": [
+      {
+        "name": "TechFlow HTTPS Origin TLS",
+        "scope": "(http.host eq \"techflow.ablecloud.io\")",
+        "setting": "Full (strict)",
+        "active": true
+      },
+      {
+        "name": "TechFlow HTTP to HTTPS",
+        "scope": "http://techflow.ablecloud.io/*",
+        "target": "https://techflow.ablecloud.io/${1}",
+        "statusCode": 308,
+        "preserveQueryString": true,
+        "active": true
+      }
+    ],
+    "zoneWideSslModeChanged": false
+  },
+  "routing": [
+    "Cloudflare edge",
+    "public OpenResty TLS origin",
+    "Caddy ingress on 172.16.0.231:8080",
+    "event-gateway or Activepieces app"
+  ],
+  "services": [
+    {
+      "name": "app",
+      "image": "ghcr.io/activepieces/activepieces:0.86.3",
+      "digest": "sha256:208517c4f0d798a477a0c594bf432dd0f4918433f4b6f5b5f188a6e10e638c6c",
+      "health": "healthy"
+    },
+    {
+      "name": "worker",
+      "image": "ghcr.io/activepieces/activepieces:0.86.3",
+      "digest": "sha256:208517c4f0d798a477a0c594bf432dd0f4918433f4b6f5b5f188a6e10e638c6c",
+      "health": "healthy",
+      "polling": "ready",
+      "frontendUrlOverride": "http://app:80"
+    },
+    {
+      "name": "postgres",
+      "image": "pgvector/pgvector:0.8.0-pg14",
+      "digest": "sha256:c55d7e7deac05dde62139e0ded4fcf4f58363656cbc382dbea82fbed995aa767",
+      "health": "healthy"
+    },
+    {
+      "name": "redis",
+      "image": "redis:7.0.7",
+      "digest": "sha256:bb474c35022ca2c5618f4c49ca759bd2c0eea1daf5d934c560bd30092b97b498",
+      "health": "healthy"
+    },
+    {
+      "name": "event-gateway",
+      "image": "techflow-event-gateway:local",
+      "digest": "sha256:eb5bf8b2e069f3de91d55f718f14f54fd56f63fc5741ce50979143947d75a5df",
+      "health": "healthy"
+    },
+    {
+      "name": "ingress",
+      "image": "caddy:2.8.4-alpine",
+      "digest": "sha256:af32e97344dc5b105fb68042792e80399ff8a4f01b46c5c17a00f6169b262c17",
+      "health": "healthy"
+    }
+  ],
+  "webhookContract": {
+    "method": "POST",
+    "signatureAlgorithm": "HMAC-SHA256",
+    "signatureInput": "<unix-timestamp>.<raw-body>",
+    "headers": {
+      "timestamp": "X-TechFlow-Timestamp",
+      "eventId": "X-TechFlow-Event-Id",
+      "signature": "X-TechFlow-Signature: sha256=<hex>"
+    },
+    "clockSkewSeconds": 300,
+    "deduplicationTtlSeconds": 86400,
+    "maximumBodyBytes": 1048576,
+    "deduplicationStore": "Redis SET NX EX",
+    "redisFailurePolicy": "fail-closed",
+    "upstreamForwarding": "optional; signature secret is never forwarded",
+    "logPolicy": "request ID, event ID and status only; no body, signature or secret"
+  },
+  "network": {
+    "hostBinding": "172.16.0.231:8080",
+    "publicPorts": [
+      80,
+      443
+    ],
+    "publicPort8080Open": false,
+    "postgresHostPortExposed": false,
+    "redisHostPortExposed": false
+  },
+  "verification": [
+    {
+      "id": "V1",
+      "name": "HTTP to HTTPS redirect",
+      "result": "pass",
+      "httpStatus": 308,
+      "pathAndQueryPreserved": true
+    },
+    {
+      "id": "V2",
+      "name": "Public HTTPS TLS and UI",
+      "result": "pass",
+      "httpStatus": 200,
+      "certificateVerified": true
+    },
+    {
+      "id": "V3",
+      "name": "Public and private health endpoints",
+      "result": "pass",
+      "httpStatus": 200
+    },
+    {
+      "id": "V4",
+      "name": "Valid signed webhook",
+      "result": "pass",
+      "httpStatus": 202
+    },
+    {
+      "id": "V5",
+      "name": "Duplicate event rejection",
+      "result": "pass",
+      "httpStatus": 409
+    },
+    {
+      "id": "V6",
+      "name": "Invalid signature rejection",
+      "result": "pass",
+      "httpStatus": 401
+    },
+    {
+      "id": "V7",
+      "name": "Stale timestamp rejection",
+      "result": "pass",
+      "httpStatus": 401
+    },
+    {
+      "id": "V8",
+      "name": "Missing signed headers rejection",
+      "result": "pass",
+      "httpStatus": 400
+    },
+    {
+      "id": "V9",
+      "name": "Gateway unit tests",
+      "result": "pass",
+      "passed": 4,
+      "failed": 0
+    },
+    {
+      "id": "V10",
+      "name": "Service restart recovery",
+      "result": "pass"
+    },
+    {
+      "id": "V11",
+      "name": "Host reboot recovery",
+      "result": "pass",
+      "bootTimeObserved": "2026-07-31 03:33:24"
+    },
+    {
+      "id": "V12",
+      "name": "Runtime secret log exposure",
+      "result": "pass",
+      "leaks": 0
+    }
+  ],
+  "securityDecisions": [
+    "Cloudflare rules are scoped to techflow.ablecloud.io; zone-wide SSL settings were not changed.",
+    "HTTP requests are redirected with 308 so the method and body semantics are preserved.",
+    "The Webhook gateway verifies freshness and HMAC before accepting an event.",
+    "Redis-backed event IDs prevent duplicate acceptance and fail closed when state is unavailable.",
+    "PostgreSQL and Redis remain unreachable from host and public networks.",
+    "Runtime secrets are generated and stored only in the server-side .env with mode 0600."
+  ],
+  "followUps": [
+    15,
+    16,
+    17,
+    18,
+    19
+  ],
+  "references": [
+    {
+      "title": "GitHub Issue #14",
+      "url": "https://github.com/ablecloud-team/ablestack-techflow/issues/14"
+    },
+    {
+      "title": "ADR-0001",
+      "path": "../adr/0001-techflow-activepieces-responsibility-boundary.md"
+    },
+    {
+      "title": "HTTPS and Webhook ingress Runbook",
+      "path": "../runbooks/https-webhook-ingress.md"
+    }
+  ]
+}

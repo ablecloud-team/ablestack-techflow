@@ -22,7 +22,7 @@ fi
 
 docker compose --env-file .env config --quiet
 docker compose --env-file .env pull
-docker compose --env-file .env up -d --remove-orphans
+docker compose --env-file .env up -d --build --remove-orphans
 "${script_dir}/healthcheck.sh" --wait 300
 
 echo "Activepieces Compose deployment is healthy."

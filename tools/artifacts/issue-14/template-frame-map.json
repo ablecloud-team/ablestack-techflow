@@ -1,0 +1,246 @@
+{
+  "outputSlides": [
+    {
+      "outputSlide": 1,
+      "sourceSlide": 1,
+      "narrativeRole": "HTTPS and webhook outcome",
+      "reuseMode": "duplicate-slide",
+      "editTargets": [
+        {
+          "action": "rewrite",
+          "sourceElementIds": [
+            "sh/ts7md4r2",
+            "sh/547294r6",
+            "sh/k3yl0zql",
+            "sh/65g3298r"
+          ]
+        }
+      ]
+    },
+    {
+      "outputSlide": 2,
+      "sourceSlide": 2,
+      "narrativeRole": "validated ingress baseline",
+      "reuseMode": "duplicate-slide",
+      "editTargets": [
+        {
+          "action": "rewrite",
+          "sourceElementIds": [
+            "sh/nu58f2hs",
+            "sh/ozy1ofad",
+            "sh/a10jqpsj",
+            "sh/x4r21kru",
+            "sh/r65knqtk",
+            "sh/q5wjelsz",
+            "sh/9wnqhczy",
+            "sh/mtwrmxg7"
+          ]
+        }
+      ]
+    },
+    {
+      "outputSlide": 3,
+      "sourceSlide": 3,
+      "narrativeRole": "edge and runtime architecture",
+      "reuseMode": "duplicate-slide",
+      "editTargets": [
+        {
+          "action": "rewrite",
+          "sourceElementIds": [
+            "sh/w7ulsvqp",
+            "sh/d0jax03i",
+            "sh/3ah8rqlg",
+            "sh/obq90bml",
+            "sh/pcjqtg36",
+            "sh/n6ls3alk",
+            "sh/n2l4fq98",
+            "sh/m1c3mlsn",
+            "sh/83ulovat",
+            "sh/v6l4jq94",
+            "sh/a5c3ql8z",
+            "sh/x8nml0ra"
+          ]
+        }
+      ]
+    },
+    {
+      "outputSlide": 4,
+      "sourceSlide": 4,
+      "narrativeRole": "webhook policy table",
+      "reuseMode": "duplicate-slide",
+      "editTargets": [
+        {
+          "action": "rewrite",
+          "sourceElementIds": [
+            "sh/doj29oba",
+            "sh/0ba143al",
+            "tb/1w7ux0vy",
+            "sh/ql8jytsj"
+          ]
+        }
+      ]
+    },
+    {
+      "outputSlide": 5,
+      "sourceSlide": 5,
+      "narrativeRole": "ingress runbook process",
+      "reuseMode": "duplicate-slide",
+      "editTargets": [
+        {
+          "action": "rewrite",
+          "sourceElementIds": [
+            "sh/ihw3mxg3",
+            "sh/cf2tcr61",
+            "sh/yhkbe1o7",
+            "sh/l4bupwny",
+            "sh/032tgr6d",
+            "sh/n6dcr65o",
+            "sh/w32dkbuh",
+            "sh/x4vedgvm",
+            "sh/ahkvi1cb",
+            "sh/v2twb6dw",
+            "sh/58vehgvy",
+            "sh/i54fmlc7",
+            "sh/j6dwfqds",
+            "sh/sb6xsvu9",
+            "sh/hgrmpwj2",
+            "sh/gfi5grih",
+            "sh/fe94nm1w",
+            "sh/ud0ne10b",
+            "sh/4ji5kbid",
+            "sh/3i94r61s",
+            "sh/2h0ni107",
+            "sh/5o7mhcju",
+            "sh/atcjidg7",
+            "sh/vu5kbihc",
+            "sh/wve1knyx",
+            "sh/xwn2dszi"
+          ]
+        }
+      ]
+    },
+    {
+      "outputSlide": 6,
+      "sourceSlide": 6,
+      "narrativeRole": "trusted event flow",
+      "reuseMode": "duplicate-slide",
+      "editTargets": [
+        {
+          "action": "rewrite",
+          "sourceElementIds": [
+            "sh/lg76d8zy",
+            "sh/zi98nu94",
+            "sh/pc76hkr2",
+            "sh/h4bupgn6",
+            "sh/v2tcn650",
+            "sh/u1kbu1ov",
+            "sh/47mt0b6x",
+            "sh/j6dcr65c",
+            "sh/twfux0ne",
+            "sh/svmt4v6t",
+            "sh/dcnm98zm",
+            "sh/qpwnet0b",
+            "sh/bq547yhw",
+            "sh/0fy5k3id"
+          ]
+        }
+      ]
+    },
+    {
+      "outputSlide": 7,
+      "sourceSlide": 7,
+      "narrativeRole": "verification and recovery evidence",
+      "reuseMode": "duplicate-slide",
+      "editTargets": [
+        {
+          "action": "rewrite",
+          "sourceElementIds": [
+            "sh/jedkn654",
+            "sh/ydkbm5sv",
+            "sh/zedcfa9g",
+            "sh/kzmdova1",
+            "sh/eh0ba1sr",
+            "sh/fi9c369c",
+            "sh/baxkjqlk",
+            "sh/xcz2l03q",
+            "sh/cbq1sv25",
+            "sh/n6x0fqlo",
+            "sh/25ojml43",
+            "sh/o761ov2t",
+            "sh/eh4jil4r"
+          ]
+        }
+      ]
+    },
+    {
+      "outputSlide": 8,
+      "sourceSlide": 8,
+      "narrativeRole": "security controls and assetization",
+      "reuseMode": "duplicate-slide",
+      "editTargets": [
+        {
+          "action": "rewrite",
+          "sourceElementIds": [
+            "sh/1k7edwv2",
+            "sh/g72x4zyd",
+            "sh/6h0fypgb",
+            "sh/tkby9kzm",
+            "sh/je9g3ahk",
+            "sh/id0fu50z",
+            "sh/98rehwve",
+            "sh/m5gvmhwn",
+            "sh/0jydkreh"
+          ]
+        }
+      ]
+    },
+    {
+      "outputSlide": 9,
+      "sourceSlide": 9,
+      "narrativeRole": "follow-up issue sequence",
+      "reuseMode": "duplicate-slide",
+      "editTargets": [
+        {
+          "action": "rewrite",
+          "sourceElementIds": [
+            "sh/ml8j6p8n",
+            "sh/0b65obm9",
+            "sh/9gzml0nq",
+            "sh/bih4na5w",
+            "sh/oza1gfyh",
+            "sh/2xsjepgb",
+            "sh/3y107axw",
+            "sh/cnu1kzyd",
+            "sh/do3id4fy",
+            "sh/qlcjipgn",
+            "sh/bml0buxs",
+            "sh/0ru1ozyp",
+            "sh/lsn2h4fa",
+            "sh/98ji147e",
+            "sh/76h0zup8"
+          ]
+        }
+      ]
+    },
+    {
+      "outputSlide": 10,
+      "sourceSlide": 10,
+      "narrativeRole": "closing result",
+      "reuseMode": "duplicate-slide",
+      "editTargets": [
+        {
+          "action": "rewrite",
+          "sourceElementIds": [
+            "sh/m1cnetkj",
+            "sh/xc3mho32",
+            "sh/zelojyl8",
+            "sh/ydcnatkn",
+            "sh/kzu5c32t",
+            "sh/725onyl4"
+          ]
+        }
+      ]
+    }
+  ],
+  "omittedSourceSlides": []
+}

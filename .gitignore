@@ -13,3 +13,7 @@ secrets/
 # Generated research and rendering workspace
 tmp/
 *.pptx.inspect.ndjson
+
+# Python bytecode
+__pycache__/
+*.py[cod]
