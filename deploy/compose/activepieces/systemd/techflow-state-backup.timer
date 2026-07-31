@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily ABLESTACK TechFlow state backup
+
+[Timer]
+OnCalendar=*-*-* 02:30:00 UTC
+Persistent=true
+RandomizedDelaySec=10m
+Unit=techflow-state-backup.service
+
+[Install]
+WantedBy=timers.target

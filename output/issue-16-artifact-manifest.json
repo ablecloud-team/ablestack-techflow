@@ -1,0 +1,160 @@
+{
+  "schemaVersion": "1.0",
+  "issue": 16,
+  "title": "PostgreSQL·Redis 백업과 복구 검증",
+  "status": "completed",
+  "generatedAt": "2026-07-31T08:09:14Z",
+  "hashPolicy": "binary raw bytes; UTF-8 text normalized to LF",
+  "files": [
+    {
+      "path": "README.md",
+      "size": 10562,
+      "sha256": "4D801A86BF4D530C68DB0505092F9D5CDD10FAB95831B43CBE3782E3FB3D31AC",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "docs/adr/0002-techflow-secret-lifecycle.md",
+      "size": 6755,
+      "sha256": "1903AC1E9B42A68B16733BC5217396F32EBDFCF7EE6CB34331561BAA719834E2",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "docs/adr/0003-techflow-state-backup-recovery.md",
+      "size": 6884,
+      "sha256": "50D54DA422E48FF7CDA5E54B7B8FD487E24F9CD7F796E217C92D492BEFDAD7E7",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "docs/decisions/techflow-state-backup-recovery.json",
+      "size": 3570,
+      "sha256": "BE8E6701CF8A3CC005979449D3B23D4AD64EE7D3107A5A3631A7E0F9F3ED31FC",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "docs/reports/issue-16-backup-recovery-validation.md",
+      "size": 6494,
+      "sha256": "5DD125538DB54B31D298F2258E6A2E4244BD53E45A5D34D4B71F9D3401072EBE",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "docs/runbooks/secret-lifecycle.md",
+      "size": 6557,
+      "sha256": "2448D29AA2533FD07CD48FA41834E03124C2A82411C985F641CA60D3884120EB",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "docs/runbooks/state-backup-recovery.md",
+      "size": 7941,
+      "sha256": "CAE6C11F501D582EE5AFDB1E9F0EEF3A83DDA01F5537272E7D372BA38A1AD654",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "docs/runbooks/activepieces-compose-deployment.md",
+      "size": 10031,
+      "sha256": "6DAF36C7E777D421DDF37A1C49CC6D1F8EE2AC08BCB6BAF5E21567DE84B5E036",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "docs/runbooks/https-webhook-ingress.md",
+      "size": 7580,
+      "sha256": "116C5F7F89956EFEE1174CF4E7ED550BF3732FA8B17231937162B892BCA39A59",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "docs/environments/activepieces-test-server.md",
+      "size": 7511,
+      "sha256": "8C50C02A7921FC6E86E71C9167475C04EB656B005EBD1AC154ACE0FAED7E64FB",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "deploy/compose/activepieces/README.md",
+      "size": 2212,
+      "sha256": "53134D53B170C660E2D455951532C91E7DF4C1293543BC386E37975924ACADA9",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "deploy/compose/activepieces/scripts/backup_manifest.py",
+      "size": 4818,
+      "sha256": "A6A380A1E5B5FC6CAF729C3A98E6016FD1F62927EF0211BB3DF168D2D7D01B3D",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "deploy/compose/activepieces/scripts/backup-state.sh",
+      "size": 4104,
+      "sha256": "E94FFEFA2701120331C072D955EF5E716F4AB00B30DD4825859A1EAC657DE802",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "deploy/compose/activepieces/scripts/restore-state-drill.sh",
+      "size": 7383,
+      "sha256": "1202BE4279E00D21BD55E4928D44E99D50AD89CA242AA520648CE83862BDFB15",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "deploy/compose/activepieces/scripts/test-backup-recovery.sh",
+      "size": 2780,
+      "sha256": "06B5741ABA0D9D18D947874DC12EE81CED08F755804F6E758CA80912AD1140BA",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "deploy/compose/activepieces/scripts/install-backup-timer.sh",
+      "size": 894,
+      "sha256": "71C5E6BC3A86017DC4F9FEAA6E71540DF34C717AA73229196FC6DD4DAFC0D075",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "deploy/compose/activepieces/scripts/verify-backup.sh",
+      "size": 1353,
+      "sha256": "535582A5B4F9DF2077608DDB244815EC0D1F60A03719C76073AF6B4228815988",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "deploy/compose/activepieces/scripts/backup-secret-store.sh",
+      "size": 2771,
+      "sha256": "749BA26BCA8854D9640288D73C189C2055531DBDA006F41C3A558CBBF3D93978",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "deploy/compose/activepieces/scripts/restore-secret-store-drill.sh",
+      "size": 2253,
+      "sha256": "0208A45D381AD36C873F2CCD89100ED6BAFD3DED2482AB0477E44BA66F68FD26",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "deploy/compose/activepieces/scripts/test-secret-escrow.sh",
+      "size": 970,
+      "sha256": "609C1389D3879FF823E5819261E5B3B07E85EB8C3E31DF1CAB23EB25F3B3DFE1",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "deploy/compose/activepieces/systemd/techflow-state-backup.service",
+      "size": 461,
+      "sha256": "54F6D1D06D97BDD321F212FDB9A42C2B45E50AAB7E6103B4D512D651CF38FF4E",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "deploy/compose/activepieces/systemd/techflow-state-backup.timer",
+      "size": 204,
+      "sha256": "361134C749577D1CA98BE5EB76C946EA729118C81699466FAF84E71C7CC43BEB",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "output/pdf/techflow-backup-recovery-report.pdf",
+      "size": 125463,
+      "sha256": "45175BC14F671131E16A7F69AABCE0C5E118D14DCA2F308873A6C206B1BF0F3F",
+      "contentMode": "binary-raw"
+    },
+    {
+      "path": "output/pdf/techflow-backup-recovery-presentation.pdf",
+      "size": 568833,
+      "sha256": "29D72C5183EA2F974BEF8A281014321749B696124D2CAAA1A0727CAFAE063183",
+      "contentMode": "binary-raw"
+    },
+    {
+      "path": "output/presentation/techflow-backup-recovery.pptx",
+      "size": 47481,
+      "sha256": "4B77D94758B2484F2264506DB7A73B708C86AB8DCA70569AB6CE727AE36E6DF9",
+      "contentMode": "binary-raw"
+    }
+  ]
+}

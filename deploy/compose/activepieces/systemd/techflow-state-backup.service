@@ -1,0 +1,17 @@
+[Unit]
+Description=ABLESTACK TechFlow PostgreSQL and Redis state backup
+Requires=docker.service
+After=docker.service network-online.target
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+WorkingDirectory=/opt/ablestack-techflow/activepieces
+ExecStart=/opt/ablestack-techflow/activepieces/scripts/backup-state.sh --label scheduled --retention-days 7
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=6
+PrivateTmp=true
+NoNewPrivileges=true
+ProtectHome=true
