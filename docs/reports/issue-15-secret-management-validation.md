@@ -61,9 +61,9 @@ Webhook Secret은 현재·직전 두 상태의 Grace Period를 지원한다. 실
 
 ## 6. 백업 판정
 
-Issue #14의 기존 Archive 한 개에는 `.env`가 포함되어 있으나 root 전용 디렉터리 `0700`, Archive `0600`으로 격리되어 있다. Issue #15에서 생성한 신규 사전 배포 Archive는 `.env`를 제외했다.
+Issue #14의 `.env` 포함 Archive 한 개는 root 전용 디렉터리 `0700`, Archive `0600`으로 격리했다. Issue #16의 복구 검증 완료 후 해당 구형 Archive만 안전 삭제했고, Issue #15에서 생성한 값이 없는 사전 배포 Archive는 보존했다.
 
-Secret 복구본의 외부 암호화 저장과 실제 복원 훈련은 Issue #16에서 수행한다. 이 후속 작업은 현재 저장·주입·교체·폐기 정책의 완료를 제한하지 않는다.
+Secret 복구본의 상태 Archive 분리, OpenPGP AES-256 암호화와 실제 격리 복원 훈련은 Issue #16에서 완료했다. 고객 배포에서는 암호화 Bundle과 Passphrase를 서로 다른 승인된 외부 장애 영역에 보관해야 한다.
 
 ## 7. 보안 영향
 
@@ -79,4 +79,4 @@ Secret 복구본의 외부 암호화 저장과 실제 복원 훈련은 Issue #16
 
 Issue #15의 완료 기준인 Git·Issue·로그 비노출 운영 기준, 런타임 주입, 접근 권한, 교체·폐기, 감사와 사고 대응을 ADR·코드·Runbook으로 확정했다. 실제 서버에서 대표 Secret 수명주기와 재부팅 복구까지 통과했으므로 Issue #15를 완료로 판정한다.
 
-다음 작업은 Issue #16 PostgreSQL·Redis 백업과 격리 복구 훈련이다.
+후속 Issue #16에서 PostgreSQL·Redis 백업, 격리 복구 훈련과 Secret Escrow 복구 검증을 완료했다.

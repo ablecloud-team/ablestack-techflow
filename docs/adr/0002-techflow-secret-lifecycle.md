@@ -70,9 +70,9 @@ Grace Period에서는 현재 값과 직전 값만 허용한다. 세 번째 값�
 
 ## 6. 백업과 복구
 
-일반 구성·데이터 백업에서 `.env`와 Secret 저장소를 제외한다. Secret 복구본은 별도 보호 경로, 별도 접근 권한과 별도 보존 정책을 사용해야 한다. Issue #16에서 외부 복구 위치, 암호화, 보존과 복원 훈련을 확정한다.
+일반 구성·데이터 백업에서 `.env`와 Secret 저장소를 제외한다. Secret 복구본은 별도 보호 경로, 별도 접근 권한과 별도 보존 정책을 사용한다. Issue #16에서 OpenPGP AES-256 Escrow, 별도 Passphrase와 격리 복원 훈련을 확정·검증했다.
 
-Issue #14의 기존 사전 배포 Archive 한 개에는 `.env`가 포함되어 있으나 `/opt/ablestack-techflow/backups`의 `root:root 0700`, 파일 `0600`으로 격리되어 있다. 신규 Issue #15 백업은 `.env`를 제외한다. 기존 Archive의 분리·암호화·폐기는 Issue #16의 복구 훈련에서 수행한다.
+Issue #14의 사전 배포 Archive 한 개에는 `.env`가 포함되어 있어 `/opt/ablestack-techflow/backups`의 `root:root 0700`, 파일 `0600`으로 격리했다. Issue #16의 복구 검증 완료 후 이 구형 Archive만 안전 삭제했으며 값이 없는 Issue #15 사전 배포 Archive는 보존했다.
 
 ## 7. 사고 대응
 

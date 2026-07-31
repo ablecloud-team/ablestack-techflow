@@ -105,6 +105,10 @@ Activepieces 서비스는 사설 주소 `172.16.0.231:8080`에만 바인딩한�
 | 유효 서명 Webhook | `202` |
 | 중복·위조·오래된 요청 | `409`·`401`·`401` |
 | Ingress 재시작·서버 재부팅 | 6개 서비스와 Webhook 재검증 통과 |
+| PostgreSQL·Redis 상태 백업 | Manifest·SHA-256·Secret 제외 검증 통과 |
+| 격리 복구 | 40초, PostgreSQL·Redis Probe 통과 |
+| 복구 임시 자원 | Container·Network·Volume 모두 0개 |
+| 정기 Backup Timer | 활성, 실제 1회 실행 `success` |
 
 재부팅 검증 시 서버 Boot Time은 `2026-07-30 08:05:23 UTC`였으며, 복구 후 App은 약 807 MiB, Worker는 약 200 MiB, PostgreSQL은 약 176 MiB, Redis는 약 34 MiB를 사용했다. 이 수치는 단일 시점 관측값이며 용량 계획 기준은 아니다.
 
@@ -126,4 +130,6 @@ Issue #15에서 실제 비밀값을 `/etc/ablestack-techflow/secrets/activepiece
 
 Secret 변경 감사는 `/var/log/ablestack-techflow/secret-audit.jsonl`에 실제 값 없이 기록한다. Webhook Secret의 현재·직전 Grace Period와 폐기, 저장소·로그 노출 0건 및 서버 재부팅 복구를 Issue #15에서 검증했다. 상세 절차는 [Secret 수명주기 Runbook](../runbooks/secret-lifecycle.md)을 따른다.
 
-Issue #14의 기존 root 전용 Archive 한 개에는 `.env`가 포함되어 있으나 디렉터리 `0700`, 파일 `0600`으로 격리되어 있다. Issue #15의 신규 일반 백업은 `.env`를 제외하며, Secret 복구본의 외부 암호화 저장과 복원 훈련은 Issue #16에서 수행한다.
+Issue #14에서 생성한 `.env` 포함 구형 Archive는 Issue #16 복구 검증 후 안전 삭제했다. 값이 없는 Issue #15 사전 배포 Archive만 `root:root 0600`으로 보존한다. Issue #16의 상태 Archive는 `.env`와 Secret 저장소를 제외한다. 보호된 Secret 파일은 별도 OpenPGP AES-256 Escrow와 격리 복호화 절차를 검증했으며, 실제 고객 배포에서는 암호화 Bundle과 Passphrase를 서로 다른 승인된 외부 장애 영역에 보관해야 한다.
+
+PostgreSQL·Redis Backup은 `/var/backups/ablestack-techflow/state`에 `root:ablecloud 0640`으로 저장된다. 매일 `02:30 UTC`에 실행하는 Timer와 운영 Volume을 사용하지 않는 격리 복구 절차는 [상태 백업·복구 Runbook](../runbooks/state-backup-recovery.md)을 따른다.

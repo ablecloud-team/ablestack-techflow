@@ -152,6 +152,14 @@ cd /opt/ablestack-techflow/activepieces
 
 이 스크립트는 PostgreSQL의 테이블 상태와 Redis의 임시 Probe를 기록한 후 PostgreSQL·Redis를 재시작한다. 재시작 후 동일 상태를 확인하고 Redis Probe를 삭제한다. 영속 볼륨 자체를 삭제하지 않는다.
 
+백업 Timer 설치와 실제 격리 복구는 [상태 백업·복구 Runbook](state-backup-recovery.md)을 따른다.
+
+```bash
+sudo ./scripts/install-backup-timer.sh
+sudo ./scripts/test-backup-recovery.sh
+sudo ./scripts/verify-backup.sh
+```
+
 ## 11. 재시작과 서버 재부팅
 
 컨테이너만 재시작한다.
@@ -230,7 +238,7 @@ Blind Retry나 데이터 볼륨 삭제로 장애를 우회하지 않는다. 원�
 - Compose 컨테이너에 `no-new-privileges`를 적용한다.
 - 외부 HTTPS, Webhook 서명과 프록시는 Issue #14에서 검증되었다.
 - Secret 저장·교체·폐기 정책은 Issue #15에서 검증되었으며 ADR-0002를 따른다.
-- PostgreSQL·Redis 백업과 복구 훈련은 Issue #16 범위다.
+- PostgreSQL·Redis 백업과 격리 복구는 Issue #16에서 검증했으며 ADR-0003을 따른다.
 - 로그·메트릭·경보는 Issue #17 범위다.
 
 ## 16. 근거

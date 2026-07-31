@@ -1,0 +1,90 @@
+{
+  "schemaVersion": "1.0",
+  "issue": 16,
+  "title": "PostgreSQL·Redis 백업과 복구 검증",
+  "status": "completed",
+  "validatedAt": "2026-07-31T08:09:14Z",
+  "environment": {
+    "hostname": "u24-base",
+    "deploymentPath": "/opt/ablestack-techflow/activepieces",
+    "backupPath": "/var/backups/ablestack-techflow/state",
+    "evidencePath": "/var/log/ablestack-techflow/recovery-drills",
+    "publicUrl": "https://techflow.ablecloud.io"
+  },
+  "policy": {
+    "schedule": "daily at 02:30 UTC",
+    "randomizedDelayMinutes": 10,
+    "scheduledRetentionDays": 7,
+    "recoveryDrillRetentionDays": 30,
+    "rpoMaximumMinutes": 1450,
+    "rtoTargetSeconds": 900,
+    "crossStoreAtomicSnapshot": false
+  },
+  "baseline": {
+    "postgresVersion": "14.19",
+    "postgresDatabaseBytes": 206766883,
+    "postgresPublicTables": 79,
+    "postgresVolumeObserved": "447M",
+    "redisVersion": "7.0.7",
+    "redisKeysAfterDrill": 48,
+    "redisVolumeObserved": "3.1M",
+    "redisAofEnabled": true,
+    "redisLastRdbStatus": "ok"
+  },
+  "backup": {
+    "postgresFormat": "pg_dump custom",
+    "redisFormat": "RDB",
+    "archiveBytesObserved": 75441717,
+    "scheduledRunResult": "success",
+    "scheduledRunExitCode": 0,
+    "archiveMode": "0640",
+    "directoryMode": "0750",
+    "checksums": "PASS",
+    "runtimeSecretsIncluded": false
+  },
+  "recovery": {
+    "status": "PASS",
+    "isolated": true,
+    "publishedPorts": 0,
+    "restoreDurationSeconds": 40,
+    "postgresRestoredTables": 80,
+    "postgresProbe": "PASS",
+    "redisSourceObservedKeys": 51,
+    "redisRestoredKeys": 48,
+    "redisRdbIntegrity": "PASS",
+    "redisProbe": "PASS",
+    "productionContainersUnchanged": true,
+    "productionHealthAfterDrill": "PASS",
+    "temporaryContainersAfterDrill": 0,
+    "temporaryNetworksAfterDrill": 0,
+    "temporaryVolumesAfterDrill": 0
+  },
+  "secretEscrow": {
+    "stateArchiveExcludesSecretStore": true,
+    "cipher": "OpenPGP symmetric AES256 with integrity protection",
+    "isolatedRestoreDrill": "PASS",
+    "requiredKeysPresent": true,
+    "sourceFingerprintMatch": true,
+    "temporaryPlaintextRemoved": true,
+    "legacySecretBearingArchiveRemoved": true,
+    "persistentOffHostVaultConfigured": false,
+    "productionGate": "Store encrypted bundle and passphrase in separate approved off-host failure domains"
+  },
+  "verification": [
+    {"id": "V1", "name": "PostgreSQL custom dump creation", "result": "PASS"},
+    {"id": "V2", "name": "Redis RDB creation and integrity", "result": "PASS"},
+    {"id": "V3", "name": "Manifest and SHA-256 verification", "result": "PASS"},
+    {"id": "V4", "name": "Runtime secret exclusion", "result": "PASS"},
+    {"id": "V5", "name": "Systemd timer installation and execution", "result": "PASS"},
+    {"id": "V6", "name": "Isolated PostgreSQL restore", "result": "PASS"},
+    {"id": "V7", "name": "Isolated Redis restore", "result": "PASS"},
+    {"id": "V8", "name": "Cross-store recovery probes", "result": "PASS"},
+    {"id": "V9", "name": "No published recovery ports", "result": "PASS"},
+    {"id": "V10", "name": "Production container IDs unchanged", "result": "PASS"},
+    {"id": "V11", "name": "Production health after drill", "result": "PASS"},
+    {"id": "V12", "name": "Temporary resource cleanup", "result": "PASS"},
+    {"id": "V13", "name": "Secret escrow encryption and isolated restore", "result": "PASS"},
+    {"id": "V14", "name": "Public HTTPS endpoint after drill", "result": "PASS", "statusCode": 200},
+    {"id": "V15", "name": "Legacy secret-bearing archive removal", "result": "PASS"}
+  ]
+}

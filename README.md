@@ -4,7 +4,7 @@ ABLESTACK TechFlow는 **ABLESTACK 기술지원과 인프라 운영을 연결하�
 
 Activepieces를 워크플로우 실행 엔진으로 사용하고, ABLESTACK 전용 연동, 기술지원 지식, AI 정책, 승인·권한·감사 및 안전한 운영 자동화를 제품 기능으로 개발합니다.
 
-> 현재 상태: 제품 기반, 사내 실증 실행 환경 및 외부 HTTPS·서명 Webhook Ingress 구축 완료
+> 현재 상태: 제품 기반, 사내 실증 실행 환경, 외부 HTTPS·서명 Webhook Ingress와 상태 백업·격리 복구 체계 구축 완료
 
 ## 프로젝트 목표
 
@@ -80,6 +80,8 @@ Activepieces는 실행 엔진으로 사용하며 TechFlow의 제품 정책과 AB
 
 Secret 저장·주입·교체·폐기와 사고 대응은 [ADR-0002: TechFlow 비밀정보 수명주기](docs/adr/0002-techflow-secret-lifecycle.md)를 구현 기준으로 사용합니다.
 
+PostgreSQL·Redis 백업, 격리 복구, RPO·RTO와 Secret 복구 분리는 [ADR-0003: TechFlow 상태 백업과 복구 기준](docs/adr/0003-techflow-state-backup-recovery.md)을 구현 기준으로 사용합니다.
+
 ## 단계별 로드맵
 
 | 단계 | 목표 |
@@ -112,7 +114,7 @@ Secret 저장·주입·교체·폐기와 사고 대응은 [ADR-0002: TechFlow �
 
 현재 테스트 서버는 기능 실증 목적으로만 사용합니다.
 
-Activepieces Compose 기준선은 테스트 서버에 배포되어 Health, Worker Polling, 데이터 영속성과 서버 재부팅 복구 검증을 통과했습니다. `techflow.ablecloud.io`에는 호스트 한정 HTTPS 전환과 엄격한 Origin TLS, HMAC 서명·Timestamp·중복 방지를 적용한 Webhook Ingress가 구성되었습니다. 재현 가능한 절차는 [Activepieces Compose 배포 Runbook](docs/runbooks/activepieces-compose-deployment.md)과 [HTTPS·Webhook Ingress 운영 Runbook](docs/runbooks/https-webhook-ingress.md)에서 관리합니다.
+Activepieces Compose 기준선은 테스트 서버에 배포되어 Health, Worker Polling, 데이터 영속성과 서버 재부팅 복구 검증을 통과했습니다. `techflow.ablecloud.io`에는 호스트 한정 HTTPS 전환과 엄격한 Origin TLS, HMAC 서명·Timestamp·중복 방지를 적용한 Webhook Ingress가 구성되었습니다. PostgreSQL·Redis는 매일 백업되며 운영 Volume을 변경하지 않는 격리 복구와 40초 RTO 실증을 통과했습니다. 재현 가능한 절차는 [Activepieces Compose 배포 Runbook](docs/runbooks/activepieces-compose-deployment.md), [HTTPS·Webhook Ingress 운영 Runbook](docs/runbooks/https-webhook-ingress.md)과 [상태 백업·복구 Runbook](docs/runbooks/state-backup-recovery.md)에서 관리합니다.
 
 ## 문서
 
@@ -140,6 +142,12 @@ Activepieces Compose 기준선은 테스트 서버에 배포되어 Health, Worke
 - [Secret 관리 보고서 PDF](output/pdf/techflow-secret-management-report.pdf)
 - [Secret 관리 프레젠테이션 PDF](output/pdf/techflow-secret-management-presentation.pdf)
 - [Secret 관리 프레젠테이션 PPTX](output/presentation/techflow-secret-management.pptx)
+- [ADR-0003: TechFlow 상태 백업과 복구 기준](docs/adr/0003-techflow-state-backup-recovery.md)
+- [상태 백업·복구 Runbook](docs/runbooks/state-backup-recovery.md)
+- [Issue #16 백업·복구 완료 보고서](docs/reports/issue-16-backup-recovery-validation.md)
+- [백업·복구 보고서 PDF](output/pdf/techflow-backup-recovery-report.pdf)
+- [백업·복구 프레젠테이션 PDF](output/pdf/techflow-backup-recovery-presentation.pdf)
+- [백업·복구 프레젠테이션 PPTX](output/presentation/techflow-backup-recovery.pptx)
 
 ## 보안 원칙
 

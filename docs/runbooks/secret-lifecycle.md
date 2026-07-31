@@ -103,7 +103,7 @@ sudo ./scripts/secretctl.sh test-webhook-rotation
 
 ### AP Encryption Key
 
-`AP_ENCRYPTION_KEY`는 Activepieces Connection 복호화의 Root다. 백업·호환성 검증 없이 교체하지 않는다. 손상·분실 시 기존 Connection을 읽지 못할 수 있으므로 Issue #16의 Secret 복구본과 복원 훈련이 선행되어야 한다.
+`AP_ENCRYPTION_KEY`는 Activepieces Connection 복호화의 Root다. 백업·호환성 검증 없이 교체하지 않는다. 손상·분실 시 기존 Connection을 읽지 못할 수 있으므로 Issue #16에서 검증한 Secret Escrow와 복원 훈련을 먼저 확인해야 한다.
 
 ### JWT·Platform API Key
 
@@ -149,7 +149,7 @@ sudo tail -n 20 /var/log/ablestack-techflow/secret-audit.jsonl
 /var/log/ablestack-techflow/secret-audit.jsonl
 ```
 
-Secret 복구본은 일반 데이터 백업과 분리한다. 기존 Issue #14 Archive는 root 전용 디렉터리에 격리되어 있으며 신규 Issue #15 Archive에는 `.env`가 없다. 외부 암호화 저장, 보존 기간과 복원 훈련은 Issue #16에서 확정한다.
+Secret 복구본은 일반 데이터 백업과 분리한다. `.env`를 포함했던 구형 Issue #14 Archive는 Issue #16에서 안전 삭제했으며 신규 상태 Archive에는 `.env`가 없다. OpenPGP AES-256 Escrow와 격리 복호화 훈련은 Issue #16에서 검증했다. 암호화 Bundle과 Passphrase는 같은 위치에 저장하지 않으며 자세한 절차는 [상태 백업·복구 Runbook](state-backup-recovery.md)을 따른다.
 
 ## 10. 사고 대응
 
