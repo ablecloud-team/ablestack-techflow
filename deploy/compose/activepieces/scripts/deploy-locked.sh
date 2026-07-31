@@ -48,6 +48,10 @@ if [[ ${gateway_id} != "${gateway_lock[1]}" ]]; then
 fi
 
 docker compose --env-file .env --env-file "${release_env}" up -d --no-build --remove-orphans
+# Caddy's admin endpoint is intentionally disabled. Recreate the ingress so
+# bind-mounted policy changes are loaded even when the Compose model is stable.
+docker compose --env-file .env --env-file "${release_env}" up -d --no-deps \
+  --no-build --force-recreate ingress
 ./scripts/healthcheck.sh --wait 300
 python3 scripts/release_lock.py verify-running --lock "${lock_file}"
 /usr/local/libexec/techflow-observer collect --strict >/dev/null

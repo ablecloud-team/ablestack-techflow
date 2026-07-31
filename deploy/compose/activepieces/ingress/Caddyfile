@@ -9,6 +9,12 @@
 		reverse_proxy event-gateway:8081
 	}
 
+	# All public Webhooks must pass through the validating Event Gateway.
+	@direct_activepieces_webhook path /api/v1/webhooks/*
+	handle @direct_activepieces_webhook {
+		respond 404
+	}
+
 	handle {
 		reverse_proxy app:80
 	}
