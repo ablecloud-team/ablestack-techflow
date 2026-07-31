@@ -188,7 +188,7 @@
     "The Webhook gateway verifies freshness and HMAC before accepting an event.",
     "Redis-backed event IDs prevent duplicate acceptance and fail closed when state is unavailable.",
     "PostgreSQL and Redis remain unreachable from host and public networks.",
-    "Runtime secrets are generated and stored only in the server-side .env with mode 0600."
+    "At Issue #14 validation time, runtime secrets were generated and stored in the server-side .env with mode 0600. ADR-0002 and Issue #15 supersede this storage location with a protected root-owned secret store and deployment symlink."
   ],
   "followUps": [
     15,

@@ -42,7 +42,13 @@ class Config:
         self.path_prefix = os.environ.get(
             "TECHFLOW_WEBHOOK_PATH_PREFIX", "/techflow/hooks/"
         )
-        self.secret = required_env("TECHFLOW_WEBHOOK_SECRET").encode("utf-8")
+        current_secret = required_env("TECHFLOW_WEBHOOK_SECRET").encode("utf-8")
+        previous_secret = os.environ.get(
+            "TECHFLOW_WEBHOOK_SECRET_PREVIOUS", ""
+        ).encode("utf-8")
+        self.secrets = tuple(
+            secret for secret in (current_secret, previous_secret) if secret
+        )
         self.max_skew = int_env("TECHFLOW_WEBHOOK_MAX_SKEW_SECONDS", 300, 1)
         self.event_ttl = int_env("TECHFLOW_WEBHOOK_EVENT_TTL_SECONDS", 86400, 60)
         self.body_limit = int_env(
@@ -131,13 +137,21 @@ def expected_signature(secret: bytes, timestamp: str, body: bytes) -> str:
 
 
 def signature_is_valid(
-    secret: bytes, timestamp: str, body: bytes, supplied: str
+    secrets: bytes | tuple[bytes, ...] | list[bytes],
+    timestamp: str,
+    body: bytes,
+    supplied: str,
 ) -> bool:
     match = SIGNATURE_PATTERN.fullmatch(supplied)
     if not match:
         return False
-    expected = expected_signature(secret, timestamp, body)
-    return hmac.compare_digest(expected, match.group(1).lower())
+    candidates = (secrets,) if isinstance(secrets, bytes) else tuple(secrets)
+    supplied_digest = match.group(1).lower()
+    valid = False
+    for secret in candidates:
+        expected = expected_signature(secret, timestamp, body)
+        valid = hmac.compare_digest(expected, supplied_digest) or valid
+    return valid
 
 
 class GatewayHandler(BaseHTTPRequestHandler):
@@ -229,7 +243,7 @@ class GatewayHandler(BaseHTTPRequestHandler):
             )
             self.send_json(HTTPStatus.UNAUTHORIZED, {"error": "stale_request"})
             return
-        if not signature_is_valid(self.config.secret, timestamp, body, signature):
+        if not signature_is_valid(self.config.secrets, timestamp, body, signature):
             self.log_event(
                 "warning",
                 "webhook_rejected",

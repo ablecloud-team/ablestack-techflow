@@ -28,6 +28,7 @@ replace_value AP_JWT_SECRET "$(openssl rand -hex 32)"
 replace_value AP_POSTGRES_PASSWORD "$(openssl rand -hex 32)"
 replace_value AP_REDIS_PASSWORD "$(openssl rand -hex 32)"
 replace_value TECHFLOW_WEBHOOK_SECRET "$(openssl rand -hex 32)"
+replace_value TECHFLOW_WEBHOOK_SECRET_PREVIOUS ""
 
 if [[ -n ${TF_AP_BIND_ADDRESS:-} ]]; then
   replace_value AP_BIND_ADDRESS "${TF_AP_BIND_ADDRESS}"

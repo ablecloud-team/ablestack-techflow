@@ -51,6 +51,9 @@ set_default TECHFLOW_WEBHOOK_MAX_SKEW_SECONDS "300"
 set_default TECHFLOW_WEBHOOK_EVENT_TTL_SECONDS "86400"
 set_default TECHFLOW_WEBHOOK_BODY_LIMIT_BYTES "1048576"
 set_default TECHFLOW_WEBHOOK_UPSTREAM_URL ""
+set_default TECHFLOW_WEBHOOK_SECRET_PREVIOUS ""
 
-chmod 600 "${env_file}"
+if [[ -w ${env_file} ]]; then
+  chmod 600 "${env_file}"
+fi
 echo "Configured canonical HTTPS URL and signed Webhook settings. Secret values were not printed."

@@ -71,9 +71,9 @@ docker compose --env-file .env config --quiet
 - Gateway 수신 주소, 허용 시각차, 중복 방지 TTL, 본문 크기 제한
 - Redis 중복 방지 연결
 - 값이 없을 때만 Webhook HMAC Secret 생성
-- `.env` 파일 권한 `0600` 유지
+- 보호 저장소 전환 전 임시 `.env` 파일 권한 `0600` 유지
 
-실제 Secret 값은 출력·문서화·커밋하지 않는다. App은 공개 기준 URL을 사용하지만 Worker는 Compose 내부 Socket.IO 연결을 위해 `http://app:80`을 사용한다.
+실제 Secret 값은 출력·문서화·커밋하지 않는다. 최초 구성 후 Secret은 [Secret 수명주기 Runbook](secret-lifecycle.md)에 따라 보호된 저장소로 이동하고 교체한다. App은 공개 기준 URL을 사용하지만 Worker는 Compose 내부 Socket.IO 연결을 위해 `http://app:80`을 사용한다.
 
 ## 5. Webhook 요청 계약
 
@@ -184,11 +184,11 @@ docker compose --env-file .env logs --since 10m ingress event-gateway app worker
 4. `docker compose --env-file .env up -d --build --remove-orphans`를 실행한다.
 5. 내부 App Health, Worker Polling과 데이터 영속성을 다시 확인한다.
 
-롤백 중에도 데이터 볼륨과 Secret을 삭제하지 않는다. Webhook Secret 교체가 필요하면 Issue #15의 수명주기 절차로 수행한다.
+롤백 중에도 데이터 볼륨과 Secret을 삭제하지 않는다. Webhook Secret 교체는 ADR-0002의 현재·직전 Grace Period와 폐기 절차로 수행한다.
 
 ## 11. 후속 범위
 
-- Issue #15: Secret 저장·교체·폐기
+- Issue #15: Secret 저장·교체·폐기 완료
 - Issue #16: PostgreSQL·Redis 백업과 복구 훈련
 - Issue #17: 로그·메트릭·경보
 - Issue #18: 버전·Digest·회귀 정책

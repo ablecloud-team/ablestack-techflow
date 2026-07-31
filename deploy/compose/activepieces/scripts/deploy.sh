@@ -15,8 +15,9 @@ if [[ ! -f .env ]]; then
   exit 1
 fi
 
-if [[ $(stat -c '%a' .env) != "600" ]]; then
-  echo "${deploy_dir}/.env must have mode 0600." >&2
+env_mode=$(stat -Lc '%a' .env)
+if [[ ${env_mode} != "600" && ${env_mode} != "640" ]]; then
+  echo "${deploy_dir}/.env target must have mode 0600 or 0640." >&2
   exit 1
 fi
 

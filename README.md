@@ -78,6 +78,8 @@ Activepieces는 실행 엔진으로 사용하며 TechFlow의 제품 정책과 AB
 
 책임·상태·멱등성·실패 경계와 실행 명령 규칙은 [ADR-0001: TechFlow와 Activepieces 책임 경계](docs/adr/0001-techflow-activepieces-responsibility-boundary.md)를 구현 기준으로 사용합니다.
 
+Secret 저장·주입·교체·폐기와 사고 대응은 [ADR-0002: TechFlow 비밀정보 수명주기](docs/adr/0002-techflow-secret-lifecycle.md)를 구현 기준으로 사용합니다.
+
 ## 단계별 로드맵
 
 | 단계 | 목표 |
@@ -132,6 +134,12 @@ Activepieces Compose 기준선은 테스트 서버에 배포되어 Health, Worke
 - [HTTPS·Webhook Ingress 보고서 PDF](output/pdf/https-webhook-ingress-report.pdf)
 - [HTTPS·Webhook Ingress 프레젠테이션 PDF](output/pdf/https-webhook-ingress-presentation.pdf)
 - [HTTPS·Webhook Ingress 프레젠테이션 PPTX](output/presentation/https-webhook-ingress.pptx)
+- [ADR-0002: TechFlow 비밀정보 수명주기](docs/adr/0002-techflow-secret-lifecycle.md)
+- [Secret 수명주기 Runbook](docs/runbooks/secret-lifecycle.md)
+- [Issue #15 비밀정보 관리 완료 보고서](docs/reports/issue-15-secret-management-validation.md)
+- [Secret 관리 보고서 PDF](output/pdf/techflow-secret-management-report.pdf)
+- [Secret 관리 프레젠테이션 PDF](output/pdf/techflow-secret-management-presentation.pdf)
+- [Secret 관리 프레젠테이션 PPTX](output/presentation/techflow-secret-management.pptx)
 
 ## 보안 원칙
 

@@ -16,7 +16,7 @@ ABLESTACK TechFlow 사내 실증 서버에 Activepieces Community Edition을 재
 
 실제 설치와 운영 절차는 [Activepieces Compose 배포 Runbook](../../../docs/runbooks/activepieces-compose-deployment.md)과 [HTTPS·Webhook Ingress 운영 Runbook](../../../docs/runbooks/https-webhook-ingress.md)을 따른다.
 
-`.env`는 `scripts/init-env.sh`로 서버에서 생성하고 저장소에 커밋하지 않는다.
+최초 `.env`는 `scripts/init-env.sh`로 서버에서 생성한 뒤 `secretctl.sh bootstrap`으로 보호된 저장소에 이동한다. 저장소에는 실제 값을 커밋하지 않는다.
 
 ## 기본 실행
 
@@ -24,11 +24,13 @@ ABLESTACK TechFlow 사내 실증 서버에 Activepieces Community Edition을 재
 sudo bash scripts/install-docker-ubuntu.sh
 ./scripts/init-env.sh
 ./scripts/configure-ingress.sh https://techflow.ablecloud.io
+sudo ./scripts/secretctl.sh bootstrap
 ./scripts/deploy.sh
 ./scripts/verify-persistence.sh
 ./scripts/verify-ingress.sh
+./scripts/verify-secrets.sh
 ```
 
 배포 후 운영자는 외부 HTTPS UI 또는 사설망 관리 경로에서 초기 플랫폼 관리자를 생성한다. 관리자 이메일과 비밀번호는 이 자산이나 GitHub Issue에 기록하지 않는다.
 
-상세한 사전 점검, 재부팅 복구, 업그레이드, 장애 분석과 안전한 제거 절차는 Runbook을 단일 운영 기준으로 사용한다.
+Secret 교체·폐기와 사고 대응은 [Secret 수명주기 Runbook](../../../docs/runbooks/secret-lifecycle.md)을 따른다. 상세한 사전 점검, 재부팅 복구, 업그레이드, 장애 분석과 안전한 제거 절차는 Runbook을 단일 운영 기준으로 사용한다.

@@ -1,0 +1,124 @@
+{
+  "schemaVersion": "1.0",
+  "issue": 15,
+  "title": "비밀정보 관리 방식 결정",
+  "status": "validated",
+  "generatedAt": "2026-07-31",
+  "files": [
+    {
+      "path": "README.md",
+      "size": 9699,
+      "sha256": "58CD0AA409F494751594D9C453C30FF564AC9E326C385FC91BD3E6CDD92065C3"
+    },
+    {
+      "path": "docs/adr/0002-techflow-secret-lifecycle.md",
+      "size": 6761,
+      "sha256": "A40E59EB01D6BDC73C844C385D00BE6BF2225E60986587FCC5056B0430D544C9"
+    },
+    {
+      "path": "docs/decisions/techflow-secret-management.json",
+      "size": 5165,
+      "sha256": "1A915A44931DCC18BDFE72B61079AB6993FECDE24B714D91F90501159FABFA20"
+    },
+    {
+      "path": "docs/reports/issue-15-secret-management-validation.md",
+      "size": 4579,
+      "sha256": "EFD043DE844DCD7B659BB19B8DC65FBB96AC1CC41319F5C598633776A672CD15"
+    },
+    {
+      "path": "docs/runbooks/secret-lifecycle.md",
+      "size": 6375,
+      "sha256": "CE79C53379BB8E9ADB49A46F6DC619C892D40D2A86B33B542E0704F546996E97"
+    },
+    {
+      "path": "docs/runbooks/activepieces-compose-deployment.md",
+      "size": 9984,
+      "sha256": "F32E88F9B6DB9C18722BED662493843F7C8C9BB5F7951EAF059F08B82EC3D6B8"
+    },
+    {
+      "path": "docs/runbooks/https-webhook-ingress.md",
+      "size": 7771,
+      "sha256": "378F835F069F632FF374851EAA25305427B29B93DBC330A3BE8772FE15B19916"
+    },
+    {
+      "path": "docs/environments/activepieces-test-server.md",
+      "size": 6860,
+      "sha256": "C26E039B198D140D78BE7996C4507E30057E431B9C7B57F62C48ECBF7D344A57"
+    },
+    {
+      "path": "deploy/compose/activepieces/.env.example",
+      "size": 1464,
+      "sha256": "9D9E578221363DF75A177A26367BB2BB7285A555C094DDF0168E7306DE1B4B92"
+    },
+    {
+      "path": "deploy/compose/activepieces/README.md",
+      "size": 1925,
+      "sha256": "958F2AF72A24607AD31521A48FBB6C9F36239110BC90D244F37E03BA0A2F2BF0"
+    },
+    {
+      "path": "deploy/compose/activepieces/event-gateway/gateway.py",
+      "size": 13180,
+      "sha256": "7A7F79C856A68B01D41E710E4F0695742B4D33886F1A3CF756A302DB6C4A74E5"
+    },
+    {
+      "path": "deploy/compose/activepieces/event-gateway/test_gateway.py",
+      "size": 2347,
+      "sha256": "FEE23E5F5A787DEF0274155ADCCB69C85A9FD54CBA16A17F4D99B899971E12B9"
+    },
+    {
+      "path": "deploy/compose/activepieces/scripts/init-env.sh",
+      "size": 1283,
+      "sha256": "213559FBB598774B3C62683964C7852FC8EE2C9D451C36F7E9B63205451A7AC8"
+    },
+    {
+      "path": "deploy/compose/activepieces/scripts/configure-ingress.sh",
+      "size": 1652,
+      "sha256": "887C4686C93FB3E65A1D6B973DF6D30D90EF5E9F5B6D04062580BE34C1E41927"
+    },
+    {
+      "path": "deploy/compose/activepieces/scripts/deploy.sh",
+      "size": 754,
+      "sha256": "C2864893B905F053E4B441F8FF7540AF8306A380F935686706C02E8EE401E092"
+    },
+    {
+      "path": "deploy/compose/activepieces/scripts/verify-webhook.sh",
+      "size": 2581,
+      "sha256": "974C839BE5DCFEC961C13FDB2555B5E1502F1E9713ACDA89FF5D133B867B0F24"
+    },
+    {
+      "path": "deploy/compose/activepieces/scripts/secret_env.py",
+      "size": 3233,
+      "sha256": "5F8F8E2954A3CD2BFAC3402B4A6D4ED9762D2A1953500A8076417BA37D9216CD"
+    },
+    {
+      "path": "deploy/compose/activepieces/scripts/secret_scan.py",
+      "size": 2359,
+      "sha256": "5743953657194EAC9FE65F5D71264226475C7EB0A5CD2C5288406EEEF96AFF31"
+    },
+    {
+      "path": "deploy/compose/activepieces/scripts/secretctl.sh",
+      "size": 8641,
+      "sha256": "3FA7126BAE68514DBB0C17038E2C83B089A176F06DC00FF8D05D376C31BA8AA4"
+    },
+    {
+      "path": "deploy/compose/activepieces/scripts/verify-secrets.sh",
+      "size": 1010,
+      "sha256": "A07F457EEEDD772568BCDCBF1E30E156A5C0757A3D5FE5F93F85996AF1441B35"
+    },
+    {
+      "path": "output/pdf/techflow-secret-management-report.pdf",
+      "size": 127807,
+      "sha256": "E0824CC477A57D2A6AC01F6980751AB7D4DDB5507F0FC9AC3323FA4D4A1B1856"
+    },
+    {
+      "path": "output/pdf/techflow-secret-management-presentation.pdf",
+      "size": 579287,
+      "sha256": "ED7B8FC96147C392C4ADD0F6378153842CE7A2221E8DC463544854580B3590C0"
+    },
+    {
+      "path": "output/presentation/techflow-secret-management.pptx",
+      "size": 47736,
+      "sha256": "F2061D623193E52C3BFBA5D42C618B25B62EBD0E9C2DEC40CE3EA227D44E4378"
+    }
+  ]
+}

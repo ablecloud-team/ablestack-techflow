@@ -114,7 +114,7 @@ Activepieces 서비스는 사설 주소 `172.16.0.231:8080`에만 바인딩한�
 - [Activepieces Compose 배포 Runbook](../runbooks/activepieces-compose-deployment.md)
 - [HTTPS·Webhook Ingress 운영 Runbook](../runbooks/https-webhook-ingress.md)
 
-실제 비밀값은 서버의 `/opt/ablestack-techflow/activepieces/.env`에 권한 `0600`으로 생성했다. 저장소와 문서에는 값이 없는 `.env.example`만 포함한다.
+Issue #15에서 실제 비밀값을 `/etc/ablestack-techflow/secrets/activepieces.env`로 이동했다. 파일은 `root:ablecloud 0640`, 상위 디렉터리는 `0750`이며 배포 경로의 `.env`는 보호된 파일을 가리키는 심볼릭 링크다. 저장소와 문서에는 값이 없는 `.env.example`만 포함한다.
 
 다음 정보는 저장소에 커밋하지 않고 배포 환경의 비밀값으로 관리한다.
 
@@ -124,4 +124,6 @@ Activepieces 서비스는 사설 주소 `172.16.0.231:8080`에만 바인딩한�
 - AI 서비스 API 키
 - 사내 메신저 및 커뮤니티 연동 자격 증명
 
-정식 비밀정보 저장·교체·폐기 방식은 Issue #15에서 확정한다. 현재 서버의 외부 HTTPS·서명 Webhook 경로는 Issue #14 기준으로 검증되었으며, 고객 공개 여부는 별도 제품 의사결정으로 관리한다.
+Secret 변경 감사는 `/var/log/ablestack-techflow/secret-audit.jsonl`에 실제 값 없이 기록한다. Webhook Secret의 현재·직전 Grace Period와 폐기, 저장소·로그 노출 0건 및 서버 재부팅 복구를 Issue #15에서 검증했다. 상세 절차는 [Secret 수명주기 Runbook](../runbooks/secret-lifecycle.md)을 따른다.
+
+Issue #14의 기존 root 전용 Archive 한 개에는 `.env`가 포함되어 있으나 디렉터리 `0700`, 파일 `0600`으로 격리되어 있다. Issue #15의 신규 일반 백업은 `.env`를 제외하며, Secret 복구본의 외부 암호화 저장과 복원 훈련은 Issue #16에서 수행한다.
