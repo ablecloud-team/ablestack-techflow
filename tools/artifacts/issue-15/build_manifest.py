@@ -39,14 +39,25 @@ FILES = [
     ROOT / "output" / "presentation" / "techflow-secret-management.pptx",
 ]
 OUTPUT = ROOT / "output" / "issue-15-artifact-manifest.json"
+BINARY_SUFFIXES = {".pdf", ".pptx"}
 
 
-def digest(path: Path) -> str:
-    hasher = hashlib.sha256()
-    with path.open("rb") as stream:
-        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
-            hasher.update(chunk)
-    return hasher.hexdigest().upper()
+def canonical_content(path: Path) -> tuple[bytes, str]:
+    data = path.read_bytes()
+    if path.suffix.lower() in BINARY_SUFFIXES:
+        return data, "binary-raw"
+    normalized = data.decode("utf-8").replace("\r\n", "\n").replace("\r", "\n")
+    return normalized.encode("utf-8"), "text-lf-normalized"
+
+
+def file_record(path: Path) -> dict[str, object]:
+    content, content_mode = canonical_content(path)
+    return {
+        "path": path.relative_to(ROOT).as_posix(),
+        "size": len(content),
+        "sha256": hashlib.sha256(content).hexdigest().upper(),
+        "contentMode": content_mode,
+    }
 
 
 missing = [str(path) for path in FILES if not path.exists()]
@@ -59,14 +70,8 @@ manifest = {
     "title": DATA["title"],
     "status": DATA["status"],
     "generatedAt": DATA["validatedAt"],
-    "files": [
-        {
-            "path": path.relative_to(ROOT).as_posix(),
-            "size": path.stat().st_size,
-            "sha256": digest(path),
-        }
-        for path in FILES
-    ],
+    "hashPolicy": "binary raw bytes; UTF-8 text normalized to LF",
+    "files": [file_record(path) for path in FILES],
 }
 OUTPUT.parent.mkdir(parents=True, exist_ok=True)
 OUTPUT.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
