@@ -8,7 +8,7 @@ x-logging: &default-logging
 
 services:
   postgres:
-    image: pgvector/pgvector:0.8.0-pg14
+    image: "${POSTGRES_IMAGE_REF:-pgvector/pgvector:0.8.0-pg14@sha256:c55d7e7deac05dde62139e0ded4fcf4f58363656cbc382dbea82fbed995aa767}"
     restart: unless-stopped
     env_file:
       - .env
@@ -33,7 +33,7 @@ services:
       - backend
 
   redis:
-    image: redis:7.0.7
+    image: "${REDIS_IMAGE_REF:-redis:7.0.7@sha256:bb474c35022ca2c5618f4c49ca759bd2c0eea1daf5d934c560bd30092b97b498}"
     restart: unless-stopped
     env_file:
       - .env
@@ -58,7 +58,7 @@ services:
       - backend
 
   app:
-    image: ${AP_IMAGE:-ghcr.io/activepieces/activepieces:0.86.3}
+    image: "${AP_IMAGE_REF:-ghcr.io/activepieces/activepieces:0.86.3@sha256:208517c4f0d798a477a0c594bf432dd0f4918433f4b6f5b5f188a6e10e638c6c}"
     restart: unless-stopped
     env_file:
       - .env
@@ -87,8 +87,13 @@ services:
       - backend
 
   event-gateway:
+    image: "${TECHFLOW_GATEWAY_IMAGE:-ablestack-techflow/event-gateway:0.1.0}"
     build:
       context: ./event-gateway
+      args:
+        TECHFLOW_GATEWAY_VERSION: "${TECHFLOW_GATEWAY_VERSION:-0.1.0}"
+        SOURCE_DATE_EPOCH: "0"
+      provenance: false
     restart: unless-stopped
     env_file:
       - .env
@@ -118,7 +123,7 @@ services:
       - backend
 
   ingress:
-    image: caddy:2.8.4-alpine
+    image: "${CADDY_IMAGE_REF:-caddy:2.8.4-alpine@sha256:af32e97399febea808609119bb21544d0265c58a02836576e32a2d082c262c17}"
     restart: unless-stopped
     ports:
       - ${AP_BIND_ADDRESS:-172.16.0.231}:${AP_HTTP_PORT:-8080}:8080
@@ -151,7 +156,7 @@ services:
       - frontend
 
   worker:
-    image: ${AP_IMAGE:-ghcr.io/activepieces/activepieces:0.86.3}
+    image: "${AP_IMAGE_REF:-ghcr.io/activepieces/activepieces:0.86.3@sha256:208517c4f0d798a477a0c594bf432dd0f4918433f4b6f5b5f188a6e10e638c6c}"
     restart: unless-stopped
     env_file:
       - .env

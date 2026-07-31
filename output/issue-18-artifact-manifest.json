@@ -1,0 +1,142 @@
+{
+  "schemaVersion": "1.0",
+  "issue": 18,
+  "title": "Activepieces 버전과 이미지 Digest 고정",
+  "status": "completed",
+  "generatedAt": "2026-07-31T11:38:49Z",
+  "hashPolicy": "binary raw bytes; UTF-8 text normalized to LF",
+  "files": [
+    {
+      "path": ".gitattributes",
+      "size": 106,
+      "sha256": "AB46F1171DCD23A48298B71DE8770B7FCA7C6A87AD5FB31C8C81F0CD042FCAF2",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "README.md",
+      "size": 13121,
+      "sha256": "75E85B97D28C7AE79FE764FBF558DD0DC5BA5833EFBF12FFAC13796C5544ACE1",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "docs/adr/0005-techflow-image-version-lock.md",
+      "size": 6301,
+      "sha256": "169E79D5EDED3CDAB71855CAAFBA95CD68813A6664566500D06C888EA36D6ADA",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "docs/decisions/techflow-image-version-lock.json",
+      "size": 2845,
+      "sha256": "725C0DE7308375279F1B883369BDBBBA0D04852D2209B926D5A605E24533210C",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "docs/reports/issue-18-image-digest-validation.md",
+      "size": 7295,
+      "sha256": "5CE4046A83739022001F43C0FCD7C767F023BB9CD488494712FCF17DD01F3CB8",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "docs/runbooks/image-version-upgrade-rollback.md",
+      "size": 5866,
+      "sha256": "B9FADA6ED00CE8F29906937B136651B924A6E8B4CC406CF320AB0EE1A6117D71",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "deploy/compose/activepieces/.env.example",
+      "size": 1991,
+      "sha256": "60DF108B5DEC923D202EE3E2114C00661FB39EA1D69439AA972516A89A6D3DC4",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "deploy/compose/activepieces/README.md",
+      "size": 3035,
+      "sha256": "F050B9454794CDFAE857A0726B9C0F3ACCD80FC47A5CD500279B5149AC4CD747",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "deploy/compose/activepieces/compose.yml",
+      "size": 4946,
+      "sha256": "5C8FB554EB6C7191AA9C1E76322DA489C5C7BF77C5AF85BBA12CB878F345EC6D",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "deploy/compose/activepieces/image-lock.json",
+      "size": 2388,
+      "sha256": "F87E8526E9A9DE20DDA39D44A9925BD0639A65919B129C67FF4527742A403BE8",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "deploy/compose/activepieces/event-gateway/Dockerfile",
+      "size": 557,
+      "sha256": "85ECC8FBD6E8CDCD4C3E45EC7881D1D4BA16F142BCED1BFDB8965ABFCBA8DD5B",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "deploy/compose/activepieces/event-gateway/gateway.py",
+      "size": 12830,
+      "sha256": "3DF48917859FB4865EC8D4406DB30C95E3D201E36F85F0303D5AE3ED3F40A70B",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "deploy/compose/activepieces/scripts/release_lock.py",
+      "size": 11690,
+      "sha256": "39DB977A084814E3C051059D51EAD5D84AB4E30D8DAF77CFDE897B8B4366D38B",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "deploy/compose/activepieces/scripts/test_release_lock.py",
+      "size": 4604,
+      "sha256": "6F42A0B6B7A45F35DA018623D88D2D001F51AD8789247468E7CFD951439FB3D8",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "deploy/compose/activepieces/scripts/build-gateway-release.sh",
+      "size": 1119,
+      "sha256": "A17A33A529DDC3F394821F0A1E6DBAF1446A367DD063980859058392DA63A9F7",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "deploy/compose/activepieces/scripts/deploy-locked.sh",
+      "size": 2577,
+      "sha256": "C1A1643DBC39F6E3AC58946B0766EE6001EB982469C30C90B69D40180775F196",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "deploy/compose/activepieces/scripts/rollback-release.sh",
+      "size": 1699,
+      "sha256": "A288334B5CC2CF392933DDB6773DE249511742068780684CCAE453569336A6EB",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "deploy/compose/activepieces/scripts/verify-image-lock.sh",
+      "size": 1356,
+      "sha256": "5E080D03057166332AF4CFF1D1B8D3258E94EDBF7BAFDB3F7CE100524D8DA5D1",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "deploy/compose/activepieces/scripts/test-image-release.sh",
+      "size": 3472,
+      "sha256": "5DC5A2774FADA89FAB21ED9E4CEF886E7F2F16D21A6F6CD29D96097332DFCE8B",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "output/pdf/techflow-image-version-lock-report.pdf",
+      "size": 124487,
+      "sha256": "89DA9A6BB9F4AD2DA2A04D06BC92C17683C349BF4FCB00A520DE50E15CB75C76",
+      "contentMode": "binary-raw"
+    },
+    {
+      "path": "output/pdf/techflow-image-version-lock-presentation.pdf",
+      "size": 546031,
+      "sha256": "903C000E6F6308CF9040F1D28678811ECFEF4764FA19181E3FAD0D0014A48B69",
+      "contentMode": "binary-raw"
+    },
+    {
+      "path": "output/presentation/techflow-image-version-lock.pptx",
+      "size": 47469,
+      "sha256": "AFE399A9F5A56CBF0F197AD261C9C16C15B42965C12A8D320A9A048B4B53EAF8",
+      "contentMode": "binary-raw"
+    }
+  ]
+}
