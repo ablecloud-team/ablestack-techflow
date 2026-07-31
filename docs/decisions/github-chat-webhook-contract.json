@@ -1,0 +1,129 @@
+{
+  "schemaVersion": "1.0",
+  "issue": 19,
+  "title": "GitHub 조직 Webhook to Synology Chat 이벤트 계약",
+  "status": "implemented",
+  "decisionDate": "2026-07-31",
+  "scope": {
+    "organization": "ablecloud-team",
+    "targetHookId": 650151350,
+    "targetEndpointHost": "chat.ablecloud.io",
+    "events": ["push", "pull_request"],
+    "pullRequestCondition": "action == closed && pull_request.merged == true",
+    "preserveOtherOrganizationHooks": true,
+    "testRepository": "ablecloud-team/ablestack-techflow"
+  },
+  "observedFailure": {
+    "checkedAt": "2026-07-31",
+    "deliveriesChecked": 30,
+    "http2xx": 30,
+    "applicationSuccess": 0,
+    "applicationFailure": 30,
+    "errorCode": "407",
+    "cause": "GitHub push payload was sent directly without Synology Chat message transformation"
+  },
+  "githubIngress": {
+    "method": "POST",
+    "path": "/techflow/hooks/github/chat",
+    "contentType": "application/json",
+    "allowedEvents": ["ping", "push", "pull_request"],
+    "requiredHeaders": ["X-GitHub-Delivery", "X-GitHub-Event", "X-Hub-Signature-256"],
+    "signatureAlgorithm": "HMAC-SHA256 over raw body",
+    "deduplicationKey": "X-GitHub-Delivery",
+    "deduplicationTtlSeconds": 604800,
+    "maximumBodyBytes": 1048576,
+    "redisFailurePolicy": "fail-closed",
+    "duplicateResponse": {"status": 200, "result": "duplicate"},
+    "acceptedResponse": {"status": 202, "result": "accepted"}
+  },
+  "normalizedEnvelope": {
+    "contractVersion": "1.0",
+    "required": [
+      "eventId",
+      "eventType",
+      "receivedAt",
+      "source.organization",
+      "repository.fullName",
+      "repository.url",
+      "actor.login",
+      "data"
+    ],
+    "eventTypes": {
+      "github.push": {
+        "requiredData": ["ref", "before", "after", "created", "deleted", "forced", "commitCount", "url"]
+      },
+      "github.pull_request.merged": {
+        "requiredData": ["number", "title", "url", "baseRef", "headRef", "mergedAt", "mergedBy"]
+      }
+    },
+    "excluded": ["raw GitHub payload", "email addresses", "access tokens", "commit message bodies"]
+  },
+  "activepiecesFlow": {
+    "displayName": "TechFlow - GitHub to Synology Chat v1",
+    "logicalId": "github-chat-v1",
+    "trigger": "Catch Webhook",
+    "runtimeFlowId": "BjLSSjbSp3tyNLjnxWUS8",
+    "steps": [
+      "receive normalized event on internal Catch Webhook",
+      "post eventId url and text to internal Chat adapter",
+      "record run result"
+    ],
+    "resultStates": ["ACCEPTED", "IGNORED", "SUCCEEDED", "FAILED", "UNKNOWN"]
+  },
+  "chatDelivery": {
+    "endpointStorage": "protected server environment",
+    "method": "POST",
+    "contentType": "application/x-www-form-urlencoded",
+    "body": "payload={\"text\":\"<rendered message with URL>\"}",
+    "successCondition": "HTTP 2xx && response.body.success == true",
+    "http2xxWithFalseSuccess": "FAILED",
+    "timeoutOrConnectionClose": "UNKNOWN",
+    "minimumIntervalMilliseconds": 600,
+    "automaticRetry": {"rateLimit429": 0, "timeout": 0, "connectionClose": 0, "server5xx": 0}
+  },
+  "secrets": {
+    "persistInRepository": false,
+    "persistInIssueOrPullRequest": false,
+    "githubCliNeedsSeparateCredential": false,
+    "githubWebhookHmacSecretRequired": true,
+    "chatWebhookUrlIsSecret": true,
+    "activepiecesCredentialRuntimeOnly": true
+  },
+  "observability": {
+    "flowFailures": "Activepieces Flow Runs",
+    "aggregatedAlerts": "TechFlow Observer",
+    "externalFailureOwner": "deferred",
+    "rawPayloadCollection": false,
+    "secretCollection": false
+  },
+  "testing": {
+    "canary": "temporary repository webhook followed by organization webhook cutover",
+    "testPullRequestMergeApproved": true,
+    "requiredScenarios": [
+      "valid ping",
+      "invalid signature",
+      "push",
+      "pull request closed without merge",
+      "pull request merged",
+      "duplicate redelivery",
+      "HTTP 200 with success false",
+      "timeout unknown state",
+      "secret exposure scan"
+    ]
+  },
+  "rollback": {
+    "firstAction": "disable the changed organization webhook",
+    "secondAction": "disable github-chat-v1 flow",
+    "restoreSource": "protected pre-change hook configuration",
+    "preserveVolumes": true,
+    "preserveRunHistory": true,
+    "otherOrganizationHooksInScope": false,
+    "implementedAt": "2026-07-31"
+  },
+  "references": [
+    {"title": "Issue #19 design", "path": "../plans/issue-19-github-chat-webhook-design.md"},
+    {"title": "ADR-0001", "path": "../adr/0001-techflow-activepieces-responsibility-boundary.md"},
+    {"title": "ADR-0002", "path": "../adr/0002-techflow-secret-lifecycle.md"},
+    {"title": "ADR-0004", "path": "../adr/0004-techflow-observability.md"}
+  ]
+}

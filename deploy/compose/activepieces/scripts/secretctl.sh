@@ -268,7 +268,9 @@ status() {
     AP_POSTGRES_PASSWORD \
     AP_REDIS_PASSWORD \
     TECHFLOW_WEBHOOK_SECRET \
-    TECHFLOW_WEBHOOK_SECRET_PREVIOUS
+    TECHFLOW_WEBHOOK_SECRET_PREVIOUS \
+    TECHFLOW_GITHUB_WEBHOOK_SECRET \
+    TECHFLOW_CHAT_WEBHOOK_URL
   if [[ -f ${audit_file} ]]; then
     stat -c 'audit_mode=%a audit_owner=%U audit_group=%G' "${audit_file}"
   else

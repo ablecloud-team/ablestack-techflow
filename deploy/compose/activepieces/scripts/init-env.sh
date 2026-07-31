@@ -29,6 +29,8 @@ replace_value AP_POSTGRES_PASSWORD "$(openssl rand -hex 32)"
 replace_value AP_REDIS_PASSWORD "$(openssl rand -hex 32)"
 replace_value TECHFLOW_WEBHOOK_SECRET "$(openssl rand -hex 32)"
 replace_value TECHFLOW_WEBHOOK_SECRET_PREVIOUS ""
+replace_value TECHFLOW_GITHUB_WEBHOOK_SECRET "$(openssl rand -hex 32)"
+replace_value TECHFLOW_CHAT_WEBHOOK_URL ""
 
 if [[ -n ${TF_AP_BIND_ADDRESS:-} ]]; then
   replace_value AP_BIND_ADDRESS "${TF_AP_BIND_ADDRESS}"

@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "1.0",
+  "logicalId": "github-chat-v1",
+  "displayName": "TechFlow - GitHub to Synology Chat v1",
+  "activepiecesVersion": "0.86.3",
+  "status": "enabled",
+  "trigger": {
+    "piece": "@activepieces/piece-webhook",
+    "pieceVersion": "0.1.39",
+    "triggerName": "catch_webhook",
+    "authentication": "none",
+    "publicIngress": "blocked-by-caddy"
+  },
+  "action": {
+    "name": "post_chat",
+    "piece": "@activepieces/piece-http",
+    "pieceVersion": "0.11.14",
+    "actionName": "send_request",
+    "method": "POST",
+    "url": "http://chat-adapter:8081/internal/chat/github",
+    "contentType": "application/json",
+    "body": {
+      "eventId": "{{trigger['output']['body']['eventId']}}",
+      "url": "{{trigger['output']['body']['data']['url']}}",
+      "text": "{{trigger['output']['body']['message']['text']}}"
+    },
+    "timeoutSeconds": 15,
+    "automaticRetry": false
+  },
+  "security": {
+    "githubHmacVerifiedBy": "event-gateway",
+    "normalizedPayloadOnly": true,
+    "chatCredentialStoredBy": "protected-server-environment",
+    "allowedWorkerDestinations": ["172.30.19.9", "172.30.19.10"]
+  },
+  "runtime": {
+    "flowId": "BjLSSjbSp3tyNLjnxWUS8",
+    "publishedVersionId": "pRg5UyXXPlVUwdutbrNMz",
+    "projectId": "XpPFDYbaqc3jmXrsxEDt4"
+  }
+}

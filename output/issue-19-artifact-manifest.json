@@ -1,0 +1,148 @@
+{
+  "schemaVersion": "1.0",
+  "issue": 19,
+  "title": "GitHub 조직 Webhook to Synology Chat 이벤트 계약",
+  "status": "completed",
+  "generatedAt": "2026-07-31T14:50:00Z",
+  "hashPolicy": "binary raw bytes; UTF-8 text normalized to LF",
+  "files": [
+    {
+      "path": "README.md",
+      "size": 13734,
+      "sha256": "DCF5315D387F7C0278B033E482A9D388C04D5B2158CDDB79DDDC15C3B6541C17",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "docs/plans/issue-19-github-chat-webhook-design.md",
+      "size": 22733,
+      "sha256": "01983F9029684A4888F928A2ECCC9E6C39D37B6CC5620C46914DDD7430294B54",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "docs/decisions/github-chat-webhook-contract.json",
+      "size": 4694,
+      "sha256": "5EDA8D8506DE6B8056403E2D4E7F7AAF1D3953A43BD47700F7B34BD46DC505A2",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "docs/runbooks/github-chat-webhook.md",
+      "size": 8946,
+      "sha256": "2D25D50441AC146D6D9CA1710BE58A3CED096350C3CD9FF185B6A8C8D2A06B0A",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "docs/reports/issue-19-github-chat-webhook-validation.md",
+      "size": 8086,
+      "sha256": "AFACC8833AC8F2301E97D45329914C11BE4426F3075DE5A451A87E86991A6549",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "deploy/compose/activepieces/.env.example",
+      "size": 2538,
+      "sha256": "36908A86585C1F8371F52ACDF59A00AE377E845FFAEEDE977035A5AB6451D126",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "deploy/compose/activepieces/README.md",
+      "size": 3421,
+      "sha256": "49ECC5ECA1B8A68A956C1F3AB009AA1AF867BAAA7455D3D1B294DD1666EBC5E8",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "deploy/compose/activepieces/compose.yml",
+      "size": 5274,
+      "sha256": "C23232DA2F660648E6AAC3FEE973E04FD04082605A873C98F1E2C17998E145A9",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "deploy/compose/activepieces/image-lock.json",
+      "size": 2396,
+      "sha256": "A2FF05F307D31BE79F8F3C156917CDCBCA3FC3E90D8D5A1F736C1AA9ABE109F0",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "deploy/compose/activepieces/event-gateway/Dockerfile",
+      "size": 557,
+      "sha256": "5C7D2438F09A699BF2D843FAF5BB0797AFC34C444563E66894A68377D3E64C93",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "deploy/compose/activepieces/event-gateway/gateway.py",
+      "size": 29381,
+      "sha256": "0B874C28347696017D201DEE5EBDEE559D58F308562FE18712C900D997D366B2",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "deploy/compose/activepieces/event-gateway/test_gateway.py",
+      "size": 9515,
+      "sha256": "094EB08C311E0B7FD0BC81B59B87D3D09D072F31D478A6E0B98CBD87704A4972",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "deploy/compose/activepieces/ingress/Caddyfile",
+      "size": 525,
+      "sha256": "43373B12618260297EAE8988425136989B86E8ED98EDFEB3720F7756FBC82996",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "deploy/compose/activepieces/flows/github-chat-v1.json",
+      "size": 1290,
+      "sha256": "27BEFD2A60A6FDCB587D5CA2D281CEC7D523014ABC803217F14F494DADBE87F6",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "deploy/compose/activepieces/scripts/configure-ingress.sh",
+      "size": 2291,
+      "sha256": "FF63B973E23A80CE065F65B9D22D14535C2346AE3FF23E4E39BFB61E636A2201",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "deploy/compose/activepieces/scripts/deploy-locked.sh",
+      "size": 2848,
+      "sha256": "C7D1A43F76400CAF204BC52E16F847D97793AEB5DC7CDEBED79C283C661C0366",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "deploy/compose/activepieces/scripts/init-env.sh",
+      "size": 1397,
+      "sha256": "114CD03242E6A63D5732B5A1A883201946688EE94FB41BB979FB35059C034805",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "deploy/compose/activepieces/scripts/secret_scan.py",
+      "size": 2430,
+      "sha256": "EF357407D78AE00623631909D7A33D22852DE4CEC29CED6F97A66251842C6206",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "deploy/compose/activepieces/scripts/secretctl.sh",
+      "size": 8710,
+      "sha256": "0E3E4FEA5775A494D91CBDD1DFDEA6C293131ECAD3555E1587BB5F6EB8391A78",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "deploy/compose/activepieces/scripts/verify-github-chat.py",
+      "size": 4988,
+      "sha256": "E149766BF58654AFC7C8C0487A5D4493E6F52D15F66273644939CCE8FE5B48B8",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "output/pdf/github-chat-webhook-report.pdf",
+      "size": 130018,
+      "sha256": "5BC7A0CCB20A58D9F0D31BE53BF9A3C8014788562B41826697FC19428AF5E44D",
+      "contentMode": "binary-raw"
+    },
+    {
+      "path": "output/pdf/github-chat-webhook-presentation.pdf",
+      "size": 587926,
+      "sha256": "B8FA44130E11045821E38CCBD6B197AC0923DD760F04EBFAC77B91A843028A32",
+      "contentMode": "binary-raw"
+    },
+    {
+      "path": "output/presentation/github-chat-webhook.pptx",
+      "size": 47055,
+      "sha256": "F191E6907D9D5CDE5E743EBA2AD387189B542A65DB716A93F2422D28431E8178",
+      "contentMode": "binary-raw"
+    }
+  ]
+}
