@@ -11,7 +11,7 @@ source .env
 set +a
 
 command -v curl >/dev/null
-command -v openssl >/dev/null
+command -v python3 >/dev/null
 
 base_url=${1:-${TECHFLOW_PUBLIC_URL}}
 webhook_url="${base_url%/}/techflow/hooks/test"
@@ -21,9 +21,17 @@ timestamp=$(date +%s)
 
 sign() {
   local ts=$1
-  printf '%s.%s' "${ts}" "${body}" |
-    openssl dgst -sha256 -hmac "${TECHFLOW_WEBHOOK_SECRET}" -hex |
-    awk '{print "sha256="$2}'
+  {
+    printf '%s\n' "${TECHFLOW_WEBHOOK_SECRET}"
+    printf '%s.%s' "${ts}" "${body}"
+  } | python3 -c '
+import hashlib
+import hmac
+import sys
+secret = sys.stdin.buffer.readline().rstrip(b"\n")
+message = sys.stdin.buffer.read()
+print("sha256=" + hmac.new(secret, message, hashlib.sha256).hexdigest())
+'
 }
 
 request() {

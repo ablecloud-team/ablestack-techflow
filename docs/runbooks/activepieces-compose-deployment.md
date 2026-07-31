@@ -77,10 +77,13 @@ systemctl is-active docker
 ```bash
 cd /opt/ablestack-techflow/activepieces
 ./scripts/init-env.sh
-stat -c '%a %U:%G %n' .env
+sudo ./scripts/secretctl.sh bootstrap
+./scripts/secretctl.sh status
 ```
 
-정상 결과는 `.env` 권한 `600`이다. 스크립트는 다음 값을 서버에서 무작위로 생성하며 값을 출력하지 않는다.
+`init-env.sh`는 최초 설치용 임시 `.env 0600`을 만들고, `secretctl.sh bootstrap`은 이를 `/etc/ablestack-techflow/secrets/activepieces.env`로 이동한다. 정상 결과는 보호 파일 `root:ablecloud 0640`, 상위 디렉터리 `0750`과 배포 경로의 심볼릭 링크다.
+
+초기화 스크립트는 다음 값을 서버에서 무작위로 생성하며 값을 출력하지 않는다.
 
 - Activepieces API Key
 - Activepieces Encryption Key
@@ -89,7 +92,7 @@ stat -c '%a %U:%G %n' .env
 - Redis 비밀번호
 - TechFlow Webhook HMAC Secret
 
-`.env`를 저장소, Issue, 채팅, 백업 로그 또는 보고서에 복사하지 않는다. `--force`는 의도적인 비밀값 교체와 영향 검토가 끝난 경우에만 사용한다.
+`.env`를 저장소, Issue, 채팅, 일반 백업, 로그 또는 보고서에 복사하지 않는다. 전체 `--force` 재생성은 암호화 키와 데이터 저장소 자격증명을 동시에 바꿀 수 있으므로 운영 교체 방식으로 사용하지 않는다. 이후 교체는 [Secret 수명주기 Runbook](secret-lifecycle.md)에 따라 유형별로 수행한다.
 
 ## 7. 구성 검증과 배포
 
@@ -202,7 +205,7 @@ docker compose --env-file .env up -d --remove-orphans
 CONFIRM_TECHFLOW_DATA_PURGE=DELETE ./scripts/remove.sh --purge-data
 ```
 
-운영 디렉터리의 `.env`는 별도로 남는다. 제거 또는 서버 폐기 시 승인된 비밀정보 폐기 절차를 적용한다.
+보호된 Secret 저장소는 Compose 제거와 별도로 남는다. 서버 폐기 시 [ADR-0002](../adr/0002-techflow-secret-lifecycle.md)의 비밀정보 폐기 절차를 적용한다.
 
 ## 14. 장애 분석
 
@@ -226,7 +229,7 @@ Blind Retry나 데이터 볼륨 삭제로 장애를 우회하지 않는다. 원�
 - Worker 동시성은 `1`로 제한한다.
 - Compose 컨테이너에 `no-new-privileges`를 적용한다.
 - 외부 HTTPS, Webhook 서명과 프록시는 Issue #14에서 검증되었다.
-- 정식 Secret Broker와 교체 정책은 Issue #15 범위다.
+- Secret 저장·교체·폐기 정책은 Issue #15에서 검증되었으며 ADR-0002를 따른다.
 - PostgreSQL·Redis 백업과 복구 훈련은 Issue #16 범위다.
 - 로그·메트릭·경보는 Issue #17 범위다.
 

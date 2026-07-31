@@ -34,6 +34,26 @@ class SignatureTests(unittest.TestCase):
             )
         )
 
+    def test_previous_secret_is_accepted_during_grace_period(self) -> None:
+        self.assertTrue(
+            gateway.signature_is_valid(
+                (b"new-secret", self.secret),
+                self.timestamp,
+                self.body,
+                self.signature,
+            )
+        )
+
+    def test_retired_secret_is_rejected_after_grace_period(self) -> None:
+        self.assertFalse(
+            gateway.signature_is_valid(
+                (b"new-secret",),
+                self.timestamp,
+                self.body,
+                self.signature,
+            )
+        )
+
     def test_modified_body_is_rejected(self) -> None:
         self.assertFalse(
             gateway.signature_is_valid(
