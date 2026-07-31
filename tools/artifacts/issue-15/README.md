@@ -20,3 +20,5 @@ powershell -ExecutionPolicy Bypass -File tools/artifacts/issue-15/build.ps1
 - `output/issue-15-artifact-manifest.json`
 
 빌드는 10개 원본 슬라이드 전체 검사, Starter Deck 생성, 프레임 충실도 검사, 보고서·슬라이드 렌더링과 Overflow 검사를 수행한다. 중간 파일은 `tmp/artifacts/issue-15`에 생성하며 커밋하지 않는다.
+
+Manifest는 PDF·PPTX의 원본 바이트를 해시하고 UTF-8 텍스트는 LF로 정규화한 뒤 해시한다. 따라서 Windows CRLF와 Linux LF 작업 트리에서 동일한 체크섬을 유지한다.
