@@ -1,0 +1,52 @@
+{
+  "schemaVersion": "1.0",
+  "releaseId": "techflow-m0-2026.07.31",
+  "createdAt": "2026-07-31T00:00:00Z",
+  "platform": "linux/amd64",
+  "services": {
+    "postgres": {
+      "version": "pgvector 0.8.0 / PostgreSQL 14",
+      "environmentKey": "POSTGRES_IMAGE_REF",
+      "imageRef": "pgvector/pgvector:0.8.0-pg14@sha256:c55d7e7deac05dde62139e0ded4fcf4f58363656cbc382dbea82fbed995aa767",
+      "registryDigest": "sha256:c55d7e7deac05dde62139e0ded4fcf4f58363656cbc382dbea82fbed995aa767"
+    },
+    "redis": {
+      "version": "7.0.7",
+      "environmentKey": "REDIS_IMAGE_REF",
+      "imageRef": "redis:7.0.7@sha256:bb474c35022ca2c5618f4c49ca759bd2c0eea1daf5d934c560bd30092b97b498",
+      "registryDigest": "sha256:bb474c35022ca2c5618f4c49ca759bd2c0eea1daf5d934c560bd30092b97b498"
+    },
+    "app": {
+      "version": "Activepieces 0.86.3",
+      "environmentKey": "AP_IMAGE_REF",
+      "imageRef": "ghcr.io/activepieces/activepieces:0.86.3@sha256:208517c4f0d798a477a0c594bf432dd0f4918433f4b6f5b5f188a6e10e638c6c",
+      "registryDigest": "sha256:208517c4f0d798a477a0c594bf432dd0f4918433f4b6f5b5f188a6e10e638c6c"
+    },
+    "worker": {
+      "version": "Activepieces 0.86.3",
+      "environmentKey": "AP_IMAGE_REF",
+      "imageRef": "ghcr.io/activepieces/activepieces:0.86.3@sha256:208517c4f0d798a477a0c594bf432dd0f4918433f4b6f5b5f188a6e10e638c6c",
+      "registryDigest": "sha256:208517c4f0d798a477a0c594bf432dd0f4918433f4b6f5b5f188a6e10e638c6c"
+    },
+    "event-gateway": {
+      "version": "0.1.0",
+      "environmentKey": "TECHFLOW_GATEWAY_IMAGE",
+      "imageRef": "ablestack-techflow/event-gateway:0.1.0",
+      "expectedImageId": "sha256:1b24e1a2b7a310a92783bd43052746114b3a560524a6fca5dc0f9797a00613bc",
+      "baseImageRef": "python:3.12.11-alpine3.22@sha256:efcdfa6a6b2fd2afb9c7dfa9a5b288a6f68338b5cfdebe6b637d986067d85757"
+    },
+    "ingress": {
+      "version": "Caddy 2.8.4 Alpine",
+      "environmentKey": "CADDY_IMAGE_REF",
+      "imageRef": "caddy:2.8.4-alpine@sha256:af32e97399febea808609119bb21544d0265c58a02836576e32a2d082c262c17",
+      "registryDigest": "sha256:af32e97399febea808609119bb21544d0265c58a02836576e32a2d082c262c17"
+    }
+  },
+  "policy": {
+    "requireTagAndDigest": true,
+    "requirePreDeploymentBackup": true,
+    "requireNoBuildRollback": true,
+    "retainRuntimeLocks": 10,
+    "gatewayDistribution": "prebuilt-local-image-on-test-server"
+  }
+}

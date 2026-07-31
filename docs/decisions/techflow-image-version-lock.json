@@ -1,0 +1,77 @@
+{
+  "schemaVersion": "1.0",
+  "issue": 18,
+  "title": "Activepieces 버전과 이미지 Digest 고정",
+  "status": "completed",
+  "validatedAt": "2026-07-31T11:38:49Z",
+  "environment": {
+    "platform": "Ubuntu 24.04",
+    "architecture": "linux/amd64",
+    "dockerVersion": "29.6.2",
+    "composeVersion": "5.3.1",
+    "deploymentPath": "/opt/ablestack-techflow/activepieces",
+    "publicUrl": "https://techflow.ablecloud.io/"
+  },
+  "release": {
+    "releaseId": "techflow-m0-2026.07.31",
+    "services": 6,
+    "externalImagesPinnedByTagAndDigest": 5,
+    "gatewayPinnedByLocalImageId": true,
+    "preDeploymentBackupRequired": true,
+    "noBuildDeployment": true,
+    "noBuildRollback": true,
+    "runtimeLockHistoryLimit": 10
+  },
+  "drill": {
+    "id": "issue-18-image-lock",
+    "completedAt": "2026-07-31T11:36:08Z",
+    "firstAndRepeatedImagesIdentical": true,
+    "rollbackUsedLocalImagesOnly": true,
+    "rollbackHealth": "PASS",
+    "finalLockedReleaseHealth": "PASS",
+    "persistentVolumeNamesUnchanged": true,
+    "persistentVolumeCount": 3
+  },
+  "finalState": {
+    "healthyServices": 6,
+    "totalServices": 6,
+    "publicHttpsStatus": 200,
+    "observerCriticalAlerts": 0,
+    "observerWarningAlerts": 0,
+    "runtimeLockHistoryEntries": 2
+  },
+  "security": {
+    "runtimeSecretNamesChecked": 6,
+    "releaseObjectsScanned": 15,
+    "secretLeaks": 0,
+    "runtimeLockMode": "0640",
+    "rawLogsPersistedAsEvidence": false,
+    "credentialsPersisted": false
+  },
+  "gatewayBuild": {
+    "byteReproducibleNoCacheBuild": false,
+    "decision": "build once, approve image ID, deploy and rollback without build",
+    "productGate": [
+      "approved registry digest",
+      "SBOM",
+      "image signature",
+      "provenance or attestation",
+      "vulnerability policy"
+    ]
+  },
+  "verification": [
+    {"id": "V1", "name": "Lock schema and source consistency", "result": "PASS"},
+    {"id": "V2", "name": "Release lock unit tests", "result": "PASS", "count": 7},
+    {"id": "V3", "name": "Independent registry digest checks", "result": "PASS"},
+    {"id": "V4", "name": "Six locked runtime images", "result": "PASS"},
+    {"id": "V5", "name": "Six service health checks", "result": "PASS"},
+    {"id": "V6", "name": "Repeated deployment image ID equality", "result": "PASS"},
+    {"id": "V7", "name": "Local-only no-build rollback", "result": "PASS"},
+    {"id": "V8", "name": "Final locked release restoration", "result": "PASS"},
+    {"id": "V9", "name": "Persistent volume name preservation", "result": "PASS"},
+    {"id": "V10", "name": "Pre-deployment state backup", "result": "PASS"},
+    {"id": "V11", "name": "Public HTTPS endpoint", "result": "PASS", "status": 200},
+    {"id": "V12", "name": "Observer final state", "result": "PASS"},
+    {"id": "V13", "name": "Release asset secret scan", "result": "PASS"}
+  ]
+}
