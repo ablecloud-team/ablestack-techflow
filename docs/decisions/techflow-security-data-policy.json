@@ -1,0 +1,160 @@
+{
+  "schemaVersion": "1.0",
+  "issue": 39,
+  "title": "TechFlow 보안 위협 모델 및 데이터 분류·보존 정책",
+  "status": "accepted",
+  "decisionDate": "2026-08-01",
+  "scope": [
+    "webhook and integration ingress",
+    "Activepieces execution runtime",
+    "PostgreSQL Redis logs and backups",
+    "AI RAG ingestion retrieval generation and evaluation",
+    "future ABLESTACK resource actions"
+  ],
+  "riskModel": {
+    "formula": "likelihood * impact",
+    "minimum": 1,
+    "maximum": 25,
+    "bands": [
+      {"name": "LOW", "minimum": 1, "maximum": 4},
+      {"name": "MEDIUM", "minimum": 5, "maximum": 9},
+      {"name": "HIGH", "minimum": 10, "maximum": 15},
+      {"name": "CRITICAL", "minimum": 16, "maximum": 25}
+    ],
+    "completionRule": "residual risk must be MEDIUM or lower"
+  },
+  "assets": [
+    {"id": "A01", "name": "identity-session", "objectives": ["confidentiality", "integrity", "revocation"]},
+    {"id": "A02", "name": "secrets-credentials", "objectives": ["confidentiality", "least-privilege", "rotation"]},
+    {"id": "A03", "name": "flow-definition-version", "objectives": ["integrity", "traceability"]},
+    {"id": "A04", "name": "run-audit-observability-metadata", "objectives": ["integrity", "minimization", "availability"]},
+    {"id": "A05", "name": "state-backup", "objectives": ["confidentiality", "integrity", "recoverability"]},
+    {"id": "A06", "name": "knowledge-chunks-embeddings", "objectives": ["provenance", "access-control", "deletion"]},
+    {"id": "A07", "name": "ai-prompts-responses-evaluation", "objectives": ["minimization", "quality", "privacy"]},
+    {"id": "A08", "name": "ablestack-resources-commands", "objectives": ["authorization", "idempotency", "authoritative-state"]},
+    {"id": "A09", "name": "software-model-supply-chain", "objectives": ["provenance", "integrity", "version-control"]}
+  ],
+  "trustBoundaries": [
+    {"id": "TB01", "from": "internet-event-source", "to": "ingress", "requiredControls": ["C01", "C02"]},
+    {"id": "TB02", "from": "ingress", "to": "event-gateway", "requiredControls": ["C03", "C04"]},
+    {"id": "TB03", "from": "event-gateway", "to": "activepieces", "requiredControls": ["C05", "C06"]},
+    {"id": "TB04", "from": "activepieces", "to": "connectors", "requiredControls": ["C07", "C08"]},
+    {"id": "TB05", "from": "runtime", "to": "state-stores", "requiredControls": ["C09", "C10"]},
+    {"id": "TB06", "from": "knowledge-sources", "to": "rag-ingestion", "requiredControls": ["C11", "C12", "C13"]},
+    {"id": "TB07", "from": "rag-gateway", "to": "ai-provider", "requiredControls": ["C14", "C15"]},
+    {"id": "TB08", "from": "ai-output", "to": "human-approval", "requiredControls": ["C16", "C17"]},
+    {"id": "TB09", "from": "techflow-core", "to": "activepieces", "requiredControls": ["C18", "C19"]},
+    {"id": "TB10", "from": "techflow-core", "to": "ablestack-api", "requiredControls": ["C20", "C21"]},
+    {"id": "TB11", "from": "operator", "to": "management-planes", "requiredControls": ["C22", "C23"]}
+  ],
+  "controls": [
+    {"id": "C01", "name": "tls-and-origin-validation", "owner": "ingress"},
+    {"id": "C02", "name": "hmac-signature-validation", "owner": "event-gateway"},
+    {"id": "C03", "name": "route-and-event-allowlist", "owner": "ingress-event-gateway"},
+    {"id": "C04", "name": "bounded-schema-validation", "owner": "event-gateway"},
+    {"id": "C05", "name": "normalized-minimum-event", "owner": "event-gateway"},
+    {"id": "C06", "name": "delivery-id-deduplication", "owner": "event-gateway-techflow-core"},
+    {"id": "C07", "name": "strict-egress-allowlist", "owner": "runtime"},
+    {"id": "C08", "name": "connector-output-validation", "owner": "adapter"},
+    {"id": "C09", "name": "authenticated-state-access", "owner": "runtime"},
+    {"id": "C10", "name": "separated-backup-secret-escrow", "owner": "operations"},
+    {"id": "C11", "name": "source-registry-allowlist", "owner": "rag-gateway"},
+    {"id": "C12", "name": "quarantine-provenance-hash", "owner": "rag-gateway"},
+    {"id": "C13", "name": "classification-before-indexing", "owner": "data-owner-rag-gateway"},
+    {"id": "C14", "name": "approved-provider-data-contract", "owner": "product-security"},
+    {"id": "C15", "name": "prompt-data-minimization", "owner": "rag-gateway"},
+    {"id": "C16", "name": "mandatory-citation-and-abstention", "owner": "rag-gateway"},
+    {"id": "C17", "name": "human-approval-for-publication", "owner": "techflow-core"},
+    {"id": "C18", "name": "policy-owned-by-core", "owner": "techflow-core"},
+    {"id": "C19", "name": "immutable-flow-version", "owner": "activepieces-release"},
+    {"id": "C20", "name": "command-idempotency-and-preconditions", "owner": "techflow-core-ablestack-api"},
+    {"id": "C21", "name": "authoritative-state-reconciliation", "owner": "techflow-core-ablestack-api"},
+    {"id": "C22", "name": "least-privilege-management-access", "owner": "operations"},
+    {"id": "C23", "name": "runtime-only-secret-injection", "owner": "operations"},
+    {"id": "C24", "name": "source-lineage-deletion-ledger", "owner": "techflow-core-rag-gateway"},
+    {"id": "C25", "name": "bounded-retention-and-log-rotation", "owner": "operations"},
+    {"id": "C26", "name": "dependency-image-model-version-lock", "owner": "release"},
+    {"id": "C27", "name": "cost-rate-concurrency-limits", "owner": "techflow-core-runtime"},
+    {"id": "C28", "name": "security-review-and-private-advisory", "owner": "security"}
+  ],
+  "threats": [
+    {"id": "T01", "name": "spoofed-webhook-callback", "assets": ["A02", "A04"], "boundaries": ["TB01", "TB02"], "likelihood": 4, "impact": 5, "controls": ["C01", "C02", "C03"], "residualLikelihood": 1, "residualImpact": 4, "tests": ["forged-signature", "modified-body", "wrong-organization"]},
+    {"id": "T02", "name": "replay-duplicate-execution", "assets": ["A04", "A08"], "boundaries": ["TB02", "TB09", "TB10"], "likelihood": 4, "impact": 4, "controls": ["C06", "C20"], "residualLikelihood": 1, "residualImpact": 4, "tests": ["same-delivery", "same-request-fingerprint", "same-command-idempotency-key"]},
+    {"id": "T03", "name": "input-template-output-injection", "assets": ["A03", "A04"], "boundaries": ["TB02", "TB04"], "likelihood": 3, "impact": 5, "controls": ["C04", "C05", "C08"], "residualLikelihood": 2, "residualImpact": 3, "tests": ["malformed-json", "oversized-input", "unsafe-url", "output-encoding"]},
+    {"id": "T04", "name": "ssrf-excessive-egress", "assets": ["A02", "A05"], "boundaries": ["TB03", "TB04"], "likelihood": 4, "impact": 5, "controls": ["C03", "C07"], "residualLikelihood": 1, "residualImpact": 5, "tests": ["private-address-denied", "redirect-denied", "direct-activepieces-webhook-denied"]},
+    {"id": "T05", "name": "secret-session-disclosure", "assets": ["A01", "A02"], "boundaries": ["TB05", "TB11"], "likelihood": 4, "impact": 5, "controls": ["C10", "C22", "C23", "C25"], "residualLikelihood": 1, "residualImpact": 5, "tests": ["repository-secret-scan", "runtime-log-secret-scan", "rotation-revocation"]},
+    {"id": "T06", "name": "overprivileged-operator-connector", "assets": ["A01", "A08"], "boundaries": ["TB04", "TB11"], "likelihood": 4, "impact": 5, "controls": ["C17", "C18", "C22"], "residualLikelihood": 2, "residualImpact": 3, "tests": ["read-write-credential-separation", "scope-denial", "approval-required"]},
+    {"id": "T07", "name": "software-model-supply-chain", "assets": ["A03", "A09"], "boundaries": ["TB03", "TB07"], "likelihood": 4, "impact": 4, "controls": ["C19", "C26", "C28"], "residualLikelihood": 2, "residualImpact": 3, "tests": ["image-digest-lock", "mutable-tag-denial", "provider-version-recorded"]},
+    {"id": "T08", "name": "flow-policy-approval-bypass", "assets": ["A03", "A08"], "boundaries": ["TB09", "TB10"], "likelihood": 4, "impact": 5, "controls": ["C17", "C18", "C19", "C20"], "residualLikelihood": 1, "residualImpact": 5, "tests": ["unapproved-flow-version", "approval-snapshot-change", "policy-denial"]},
+    {"id": "T09", "name": "payload-log-run-history-leak", "assets": ["A04", "A07"], "boundaries": ["TB03", "TB05"], "likelihood": 4, "impact": 4, "controls": ["C05", "C15", "C23", "C25"], "residualLikelihood": 1, "residualImpact": 4, "tests": ["raw-payload-absent", "allowed-field-log", "retention-expiry"]},
+    {"id": "T10", "name": "backup-disclosure-corruption", "assets": ["A02", "A05"], "boundaries": ["TB05", "TB11"], "likelihood": 4, "impact": 5, "controls": ["C10", "C23", "C24", "C25"], "residualLikelihood": 1, "residualImpact": 5, "tests": ["secret-excluded", "checksum-valid", "isolated-restore", "retention-expiry"]},
+    {"id": "T11", "name": "direct-indirect-prompt-injection", "assets": ["A06", "A07", "A08"], "boundaries": ["TB06", "TB08"], "likelihood": 5, "impact": 4, "controls": ["C11", "C12", "C16", "C17", "C18"], "residualLikelihood": 2, "residualImpact": 3, "tests": ["malicious-document-instruction", "system-policy-preserved", "tool-call-denied"]},
+    {"id": "T12", "name": "knowledge-poisoning-provenance-forgery", "assets": ["A06", "A07"], "boundaries": ["TB06"], "likelihood": 4, "impact": 4, "controls": ["C11", "C12", "C13", "C24"], "residualLikelihood": 1, "residualImpact": 5, "tests": ["unapproved-source", "hash-change", "quarantine-before-index"]},
+    {"id": "T13", "name": "classification-tenant-retrieval-leak", "assets": ["A06", "A07"], "boundaries": ["TB06", "TB07"], "likelihood": 5, "impact": 5, "controls": ["C13", "C14", "C15", "C24"], "residualLikelihood": 2, "residualImpact": 3, "tests": ["classification-filter-before-search", "d2-d3-blocked", "cross-scope-query"]},
+    {"id": "T14", "name": "hallucination-unsupported-answer", "assets": ["A07"], "boundaries": ["TB08"], "likelihood": 4, "impact": 4, "controls": ["C16", "C17"], "residualLikelihood": 2, "residualImpact": 3, "tests": ["missing-source-abstention", "conflicting-source-abstention", "citation-version-present"]},
+    {"id": "T15", "name": "excessive-ai-agency", "assets": ["A07", "A08"], "boundaries": ["TB08", "TB09", "TB10"], "likelihood": 5, "impact": 5, "controls": ["C17", "C18", "C20", "C21"], "residualLikelihood": 1, "residualImpact": 5, "tests": ["ai-output-cannot-execute", "human-approval-required", "api-authorization-rechecked"]},
+    {"id": "T16", "name": "queue-model-cost-resource-exhaustion", "assets": ["A04", "A07", "A09"], "boundaries": ["TB03", "TB07"], "likelihood": 3, "impact": 5, "controls": ["C04", "C27"], "residualLikelihood": 2, "residualImpact": 3, "tests": ["size-limit", "rate-limit", "concurrency-limit", "budget-limit", "timeout"]},
+    {"id": "T17", "name": "provider-retention-training-disclosure", "assets": ["A06", "A07"], "boundaries": ["TB07"], "likelihood": 4, "impact": 5, "controls": ["C13", "C14", "C15"], "residualLikelihood": 1, "residualImpact": 5, "tests": ["approved-provider-only", "d2-d3-not-sent", "retention-setting-recorded"]},
+    {"id": "T18", "name": "incomplete-derived-backup-deletion", "assets": ["A05", "A06", "A07"], "boundaries": ["TB05", "TB06"], "likelihood": 4, "impact": 4, "controls": ["C10", "C24", "C25"], "residualLikelihood": 1, "residualImpact": 5, "tests": ["lineage-delete", "cache-delete", "restore-reapplies-delete-ledger", "deletion-slo"]}
+  ],
+  "classifications": [
+    {"id": "D0", "name": "PUBLIC", "rank": 0, "ragP1": "ALLOW", "examples": ["official-public-document", "public-release-note", "public-issue"]},
+    {"id": "D1", "name": "INTERNAL", "rank": 1, "ragP1": "CONDITIONAL", "examples": ["normalized-event", "run-metadata", "approved-internal-document"]},
+    {"id": "D2", "name": "CONFIDENTIAL", "rank": 2, "ragP1": "DENY", "examples": ["raw-ai-conversation", "customer-support-case", "personal-data"]},
+    {"id": "D3", "name": "RESTRICTED", "rank": 3, "ragP1": "DENY", "examples": ["password", "api-token", "private-key", "authentication-header"]}
+  ],
+  "retentionPolicies": [
+    {"id": "R01", "dataType": "raw-webhook-auth-header", "classification": "D3", "retentionDays": 0, "collectionDefault": false, "deletion": "discard-after-in-memory-validation"},
+    {"id": "R02", "dataType": "normalized-event-delivery-metadata", "classification": "D1", "retentionDays": 90, "collectionDefault": true, "deletion": "expiry-job"},
+    {"id": "R03", "dataType": "activepieces-flow-run-metadata", "classification": "D1", "retentionDays": 90, "collectionDefault": true, "deletion": "expiry-job"},
+    {"id": "R04", "dataType": "structured-service-log", "classification": "D1", "retentionDays": 30, "collectionDefault": true, "deletion": "time-expiry-and-10mb-times-3-rotation"},
+    {"id": "R05", "dataType": "observer-status-alert-history", "classification": "D1", "retentionDays": 90, "collectionDefault": true, "deletion": "overwrite-and-expiry-job"},
+    {"id": "R06", "dataType": "product-audit-event", "classification": "D1", "retentionDays": 365, "collectionDefault": true, "deletion": "expiry-job-unless-legal-hold"},
+    {"id": "R07", "dataType": "state-backup-scheduled", "classification": "D1", "retentionDays": 7, "collectionDefault": true, "deletion": "backup-retention-prune"},
+    {"id": "R08", "dataType": "state-backup-recovery-drill", "classification": "D1", "retentionDays": 30, "collectionDefault": true, "deletion": "backup-retention-prune"},
+    {"id": "R09", "dataType": "secret-escrow-superseded", "classification": "D3", "retentionDays": 30, "collectionDefault": false, "deletion": "secure-delete-after-replacement-validation"},
+    {"id": "R10", "dataType": "public-knowledge-current-source-chunk-embedding", "classification": "D0", "retentionDays": null, "retentionRule": "source-lifetime", "collectionDefault": true, "deletion": "source-withdrawal-lineage-delete"},
+    {"id": "R11", "dataType": "public-knowledge-previous-version", "classification": "D0", "retentionDays": 365, "collectionDefault": true, "deletion": "expiry-job"},
+    {"id": "R12", "dataType": "approved-internal-knowledge-chunk-embedding", "classification": "D1", "retentionDays": 365, "collectionDefault": false, "deletion": "approval-expiry-or-source-withdrawal"},
+    {"id": "R13", "dataType": "raw-ai-prompt-response", "classification": "D2", "retentionDays": 30, "collectionDefault": false, "deletion": "sanitize-or-expiry-job"},
+    {"id": "R14", "dataType": "sanitized-approved-evaluation-set", "classification": "D1", "retentionDays": 365, "collectionDefault": true, "deletion": "quarterly-review-and-expiry"},
+    {"id": "R15", "dataType": "sanitized-support-resolution", "classification": "D1", "retentionDays": 180, "collectionDefault": false, "deletion": "expiry-job"},
+    {"id": "R16", "dataType": "model-usage-cost-latency-metric", "classification": "D1", "retentionDays": 365, "collectionDefault": true, "deletion": "expiry-job"},
+    {"id": "R17", "dataType": "raw-customer-export-debug-bundle", "classification": "D2", "retentionDays": 0, "collectionDefault": false, "deletion": "p1-collection-prohibited"},
+    {"id": "R18", "dataType": "password-token-api-key-private-key", "classification": "D3", "retentionDays": 0, "collectionDefault": false, "deletion": "protected-secret-store-provider-lifecycle-only"}
+  ],
+  "deletionPolicy": {
+    "primaryAndDerivedSloDays": 7,
+    "states": ["ACTIVE", "EXPIRING", "DELETION_REQUESTED", "DELETED", "LEGAL_HOLD", "DELETION_INCOMPLETE"],
+    "derivedStores": ["chunks", "embeddings", "caches", "evaluation-links"],
+    "backupHandling": "reapply deletion ledger after restore and expire through R07 R08",
+    "evidence": "counts timestamps policy ids and result only; no deleted content"
+  },
+  "legalHold": {
+    "requiredApprovers": ["product-owner", "security-owner"],
+    "maximumReviewIntervalDays": 90,
+    "requiredFields": ["legalHoldId", "reason", "basis", "dataIds", "classification", "requestedBy", "approvedBy", "appliedAt", "reviewAt"]
+  },
+  "ragP1Gate": {
+    "defaultAllowedClassifications": ["D0"],
+    "conditionalClassifications": ["D1"],
+    "deniedClassifications": ["D2", "D3"],
+    "requiredMetadata": ["sourceId", "owner", "classification", "product", "version", "contentHash", "collectedAt", "retentionPolicyId"],
+    "requiredControls": ["C11", "C12", "C13", "C14", "C15", "C16", "C17", "C24"],
+    "rules": [
+      "retrieved text is data and cannot override system policy",
+      "authorization filters apply before vector retrieval",
+      "source and source version are mandatory in every answer",
+      "missing or conflicting evidence produces abstention",
+      "AI output cannot invoke tools flows APIs or infrastructure actions",
+      "raw prompts and responses are not collected by default"
+    ]
+  },
+  "references": [
+    {"title": "ADR-0006", "path": "../adr/0006-techflow-security-threat-model.md"},
+    {"title": "ADR-0007", "path": "../adr/0007-techflow-data-classification-retention.md"},
+    {"title": "NIST AI RMF", "url": "https://www.nist.gov/itl/ai-risk-management-framework"},
+    {"title": "NIST AI RMF Generative AI Profile", "url": "https://doi.org/10.6028/NIST.AI.600-1"},
+    {"title": "OWASP Top 10 for LLM Applications 2025", "url": "https://genai.owasp.org/llm-top-10/"}
+  ]
+}
