@@ -211,6 +211,17 @@ flowchart TB
 - 비밀정보, 네트워크 및 AI 데이터 처리 원칙이 승인돼 있다.
 - 다음 단계에서 구현할 세 가지 실증 플로우의 담당자와 성공 기준이 정해져 있다.
 
+#### 구현 상태 (2026-08-01)
+
+P0 하위 구현 이슈 #2와 #11~#18을 완료했고, Issue #39에서 남아 있던 두 정책 산출물을 다음 문서로 확정했다.
+
+- [ADR-0006: TechFlow 보안 위협 모델](../adr/0006-techflow-security-threat-model.md)
+- [ADR-0007: TechFlow 데이터 분류·보존·삭제 정책](../adr/0007-techflow-data-classification-retention.md)
+- [구조화 보안·데이터 정책](../decisions/techflow-security-data-policy.json)
+- [보안 위협·데이터 수명주기 운영 Runbook](../runbooks/security-data-governance.md)
+
+Issue #20 RAG PoC는 D0 공개 문서만 기본 수집하며, D1은 Source 소유자·접근 범위·만료·삭제 자동화가 승인된 경우에만 허용한다. D2·D3는 P1 RAG에서 차단한다. 실증 KPI와 담당자 알림의 제품 구현은 단계 1의 Issue #23·#24에서 이어간다.
+
 ### 단계 1. 사내 Assist 실증
 
 #### 목표

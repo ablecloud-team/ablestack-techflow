@@ -118,9 +118,18 @@ Activepieces Compose 기준선은 테스트 서버에 배포되어 Health, Worke
 
 현재 여섯 Compose 서비스는 `image-lock.json`의 검토된 버전과 불변 이미지 식별자로 고정됩니다. 외부 이미지는 Tag+Registry Digest, 자체 Event Gateway는 M1 테스트 서버에서 승인한 로컬 Image ID를 사용하며, 배포 전 상태 백업과 무빌드 배포·롤백을 강제합니다. 동일 잠금 반복 배포, 직전 Runtime Lock 롤백, 목표 릴리스 복귀와 영속 Volume 보존 드릴을 통과했습니다. 운영 절차는 [이미지 버전 업그레이드·롤백 Runbook](docs/runbooks/image-version-upgrade-rollback.md)을 따릅니다.
 
+P0 보안 기준은 인터넷 이벤트, Activepieces 실행면, 상태 저장소, AI/RAG와 향후 ABLESTACK 작업 경계를 위협 모델로 관리합니다. 데이터는 D0 Public부터 D3 Restricted까지 분류하고, 원문 Webhook·인증 Header와 Secret은 영속 저장하지 않으며, P1 RAG는 D0만 기본 허용합니다. Source 철회 시 Chunk·Embedding·Cache 삭제 SLO는 최대 7일입니다.
+
 ## 문서
 
 - [제품화 및 범용 확장 계획](docs/plans/techflow-product-roadmap.md)
+- [ADR-0006: TechFlow 보안 위협 모델](docs/adr/0006-techflow-security-threat-model.md)
+- [ADR-0007: TechFlow 데이터 분류·보존·삭제 정책](docs/adr/0007-techflow-data-classification-retention.md)
+- [보안 위협·데이터 수명주기 운영 Runbook](docs/runbooks/security-data-governance.md)
+- [Issue #39 보안·데이터 정책 완료 보고서](docs/reports/issue-39-security-data-policy-validation.md)
+- [보안·데이터 정책 보고서 PDF](output/pdf/techflow-security-data-policy-report.pdf)
+- [보안·데이터 정책 프레젠테이션 PDF](output/pdf/techflow-security-data-policy-presentation.pdf)
+- [보안·데이터 정책 프레젠테이션 PPTX](output/presentation/techflow-security-data-policy.pptx)
 - [ADR-0001: TechFlow와 Activepieces 책임 경계](docs/adr/0001-techflow-activepieces-responsibility-boundary.md)
 - [책임 경계 ADR 보고서 PDF](output/pdf/techflow-responsibility-boundary-report.pdf)
 - [책임 경계 ADR 프레젠테이션 PDF](output/pdf/techflow-responsibility-boundary-presentation.pdf)

@@ -1,0 +1,94 @@
+{
+  "schemaVersion": "1.0",
+  "issue": 39,
+  "title": "TechFlow 보안 위협 모델 및 데이터 분류·보존 정책",
+  "status": "completed",
+  "generatedAt": "2026-08-01T08:00:00Z",
+  "hashPolicy": "binary raw bytes; UTF-8 text normalized to LF",
+  "files": [
+    {
+      "path": "README.md",
+      "size": 14894,
+      "sha256": "89AECF873DBEF050DFC5CB782C09E499C9A1FE0F9A78D7572B623AC6B181DCDF",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "docs/plans/techflow-product-roadmap.md",
+      "size": 31277,
+      "sha256": "F07D39C0B05CCB07C0E5E907A678111F81A47AA4654848280EE065822ACBFA67",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "docs/adr/0006-techflow-security-threat-model.md",
+      "size": 9444,
+      "sha256": "15B2AB19E636704438188578D6121080211349552F2A23FFE6E71F59E5322989",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "docs/adr/0007-techflow-data-classification-retention.md",
+      "size": 10351,
+      "sha256": "FBB19113EC21D3EB1F28EBD1C36700D443A082B36AE05F753898AB49F35E913F",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "docs/decisions/techflow-security-data-policy.json",
+      "size": 17070,
+      "sha256": "39B71FE1FDFB4C0D81CD877B3C0DD34ADA0567355D56B9B62D08614DEBBEEACB",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "docs/runbooks/security-data-governance.md",
+      "size": 8226,
+      "sha256": "3E0F3CC893D5CB5A8D780FD7D34A25104008B86555506D60307AC94B1365EFAD",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "docs/reports/issue-39-security-data-policy-validation.md",
+      "size": 8551,
+      "sha256": "C7EE79EA392AAE21FE41A5352902179D48777B59BEEF2C8DB225D858FE692B1E",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "tools/policy/validate_security_data_policy.py",
+      "size": 8417,
+      "sha256": "F6B1D39F803FD5B756DD3574D9DD036B349BE90293D8623FB5C2DEE212BA8CF3",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "tools/policy/test_validate_security_data_policy.py",
+      "size": 3348,
+      "sha256": "5B503B4523B34E1166B1ADFDCFEA5A84947A56756664F34806970C1093016B9B",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "tools/artifacts/issue-39/build_manifest.py",
+      "size": 2652,
+      "sha256": "D8D6A996428E592AA8164A4BCE727AB9344165FBEA8630D2593339E49ED6AE93",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "tools/artifacts/issue-39/validate_artifacts.py",
+      "size": 3761,
+      "sha256": "02C24D8159DB27022CDB9B2F11336A991B8D143E0F9DA0C1562B39B02C0AAE1C",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "output/pdf/techflow-security-data-policy-report.pdf",
+      "size": 145619,
+      "sha256": "D70FDA45F48F4F92781119AB548AF22F20CE0BCAF0205FAF5852307069E5C0E1",
+      "contentMode": "binary-raw"
+    },
+    {
+      "path": "output/pdf/techflow-security-data-policy-presentation.pdf",
+      "size": 570105,
+      "sha256": "F6C1D1E835418617ACDFCAB23FF399B7B1283634AD3E8769526CAE4AD00849A4",
+      "contentMode": "binary-raw"
+    },
+    {
+      "path": "output/presentation/techflow-security-data-policy.pptx",
+      "size": 47133,
+      "sha256": "6C9DCB2D01C7A05F029ACBDEABA47723685FC9789EA20364B73F91E4F8C6C690",
+      "contentMode": "binary-raw"
+    }
+  ]
+}
