@@ -1,0 +1,94 @@
+{
+  "schemaVersion": "1.0",
+  "issue": 20,
+  "title": "ABLESTACK 지식 수집 및 RAG PoC 계약",
+  "status": "design-completed-approval-pending",
+  "generatedAt": "2026-08-03T09:00:00Z",
+  "hashPolicy": "binary raw bytes; UTF-8 text normalized to LF",
+  "files": [
+    {
+      "path": "README.md",
+      "size": 16054,
+      "sha256": "0598912F29E840197177E8F912FD728DAB49279F04B75C2ED7BC5101D09AFFD6",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "docs/plans/techflow-product-roadmap.md",
+      "size": 32298,
+      "sha256": "B75A67B1E6DCBFD429612BD0E57ABD1BCAC706BFA583393AC08B9FFBD1D42566",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "docs/adr/0008-techflow-rag-poc-architecture.md",
+      "size": 9369,
+      "sha256": "CEBFBDC93F35672941E4EC074E7A605E6972962504F6944D589089DBEB1BBC15",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "docs/plans/issue-20-rag-poc-design.md",
+      "size": 19430,
+      "sha256": "FBDCBF620F2930DD066BB8DF8198A670222B3AF89F8D8A53816FD0ABC1B86FFF",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "docs/decisions/techflow-rag-poc-contract.json",
+      "size": 9073,
+      "sha256": "A0F576E30E94633C9792509F770AC1D868330A32BD5DA23581B16112B1C98BE9",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "docs/runbooks/rag-poc-development.md",
+      "size": 7704,
+      "sha256": "69A4F820A762967006B511DA6C44D08EB429ABE0A02E8CA3C9E14172E1DE7FAA",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "docs/reports/issue-20-rag-poc-design-review.md",
+      "size": 7971,
+      "sha256": "34705C50ECA1D0550726451DCC3E99A1B79583FF8408A8DABB2D7EA2D6629521",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "tools/rag/validate_rag_poc_contract.py",
+      "size": 7955,
+      "sha256": "81FBAFC5CEE4685EEEB10DE0815AB47AF7CBE8F14F1FC3BEB284F42795E63C2F",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "tools/rag/test_validate_rag_poc_contract.py",
+      "size": 2465,
+      "sha256": "062FCD5D68C1DA8A6C16AEEEE86A0940A1DE8860F84A9E45769A88CEF5713B66",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "tools/artifacts/issue-20/build_manifest.py",
+      "size": 2368,
+      "sha256": "3B78D70441F3D77C46E44B375750364FC72D8E8D65FF6F54AFBF34875B1DE662",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "tools/artifacts/issue-20/validate_artifacts.py",
+      "size": 3187,
+      "sha256": "33C8E9A236117CC0733F3CCDDDE72A58E5506FB1A43713B0647B3396462040FD",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "output/pdf/techflow-rag-poc-design-report.pdf",
+      "size": 131728,
+      "sha256": "09A9642AD03DB2E2AD6DA8400DFF066073C1C85B710A587B68647F6160524F27",
+      "contentMode": "binary-raw"
+    },
+    {
+      "path": "output/pdf/techflow-rag-poc-design-presentation.pdf",
+      "size": 571896,
+      "sha256": "0A8F8B50AC926D41087D844CC0F6EF3C6580ACCA2758B95A0D7D2FB73A643FA8",
+      "contentMode": "binary-raw"
+    },
+    {
+      "path": "output/presentation/techflow-rag-poc-design.pptx",
+      "size": 46417,
+      "sha256": "A5BF278CCBA3450E3D92AFA7C057C73A62A53AE0FBB787B367C3A06588BA7F9B",
+      "contentMode": "binary-raw"
+    }
+  ]
+}
