@@ -1,0 +1,186 @@
+{
+  "schemaVersion": "1.0",
+  "issue": 20,
+  "parentEpic": 4,
+  "title": "ABLESTACK 지식 수집 및 RAG PoC 계약",
+  "status": "proposed",
+  "decisionDate": "2026-08-03",
+  "responsibility": {
+    "activepieces": ["source-change-orchestration", "human-approval", "job-trigger", "evaluation-trigger", "notification"],
+    "aiGateway": ["source-registry", "classification-gate", "quarantine", "lineage", "retrieval", "grounded-answer", "provider-adapter", "deletion", "evaluation"],
+    "techflowCore": ["product-policy", "authorization", "audit", "future-tenant-boundary"],
+    "forbiddenForActivepieces": ["classification-decision", "deletion-completion-decision", "document-body-persistence", "provider-credential-persistence"],
+    "forbiddenForAi": ["shell-execution", "api-execution", "activepieces-flow-execution", "ablestack-resource-action"]
+  },
+  "sourceSnapshot": {
+    "repository": "ablecloud-team/ablestack-docs",
+    "url": "https://github.com/ablecloud-team/ablestack-docs",
+    "site": "https://docs.ablecloud.io",
+    "branch": "master",
+    "commit": "50d50ad6c8c548dc58db866ca28b4cbb43cc74d0",
+    "allowedPath": "docs/**/*.md",
+    "observedMarkdownFiles": 276,
+    "classification": "D0",
+    "allowedMimeTypes": ["text/markdown", "text/plain"],
+    "excluded": ["images", "binary-attachments", "ocr-pdf", "private-repositories", "community-content", "messenger-content", "customer-logs"]
+  },
+  "dataGate": {
+    "D0": {"collectionDefault": true, "embeddingAllowed": true, "providerAllowed": true},
+    "D1": {"collectionDefault": false, "embeddingAllowed": false, "providerAllowed": false},
+    "D2": {"collectionDefault": false, "embeddingAllowed": false, "providerAllowed": false},
+    "D3": {"collectionDefault": false, "embeddingAllowed": false, "providerAllowed": false},
+    "rawPromptPersistence": false,
+    "rawResponsePersistence": false,
+    "credentialPersistence": false
+  },
+  "runtime": {
+    "language": "python-3.12",
+    "apiFramework": "fastapi",
+    "databaseEngine": "postgresql-14",
+    "vectorExtension": "pgvector-0.8.0",
+    "database": "techflow_rag",
+    "appRole": "techflow_rag_app",
+    "migrationRole": "techflow_rag_migrator",
+    "cache": "redis-short-ttl",
+    "externalIngress": false,
+    "allowedEgress": ["api.github.com", "approved-provider-endpoint"]
+  },
+  "sourceStates": [
+    "REGISTERED",
+    "QUARANTINED",
+    "APPROVED",
+    "INDEXING",
+    "ACTIVE",
+    "REJECTED",
+    "FAILED",
+    "WITHDRAWN",
+    "DELETION_REQUESTED",
+    "DELETED"
+  ],
+  "jobStates": ["QUEUED", "RUNNING", "SUCCEEDED", "FAILED", "CANCELLED"],
+  "queryStates": ["ANSWERED", "ABSTAINED", "FAILED"],
+  "failureClasses": ["RETRYABLE", "TERMINAL", "MANUAL_REVIEW"],
+  "tables": [
+    {"name": "rag_source", "purpose": "source identity classification owner and state"},
+    {"name": "rag_source_version", "purpose": "immutable commit blob and content hashes"},
+    {"name": "rag_ingestion_job", "purpose": "ingestion state attempt and allow-listed error"},
+    {"name": "rag_chunk", "purpose": "deterministic heading-aware D0 chunks"},
+    {"name": "rag_embedding_profile", "purpose": "provider model dimension and profile version without credentials"},
+    {"name": "rag_chunk_embedding", "purpose": "chunk vector by one active profile"},
+    {"name": "rag_deletion_ledger", "purpose": "withdrawal and derived-store deletion evidence"},
+    {"name": "rag_evaluation_case", "purpose": "approved D0 golden question and expected sources"},
+    {"name": "rag_evaluation_run", "purpose": "profile-bound evaluation run"},
+    {"name": "rag_evaluation_result", "purpose": "sanitized scores status and citation ids"}
+  ],
+  "api": [
+    {"method": "GET", "path": "/healthz", "purpose": "process database and vector health", "idempotencyRequired": false},
+    {"method": "POST", "path": "/v1/sources", "purpose": "register source version", "idempotencyRequired": true},
+    {"method": "GET", "path": "/v1/sources/{sourceId}", "purpose": "read source status", "idempotencyRequired": false},
+    {"method": "POST", "path": "/v1/sources/{sourceId}/approve", "purpose": "approve quarantined source", "idempotencyRequired": true},
+    {"method": "POST", "path": "/v1/sources/{sourceId}/ingestions", "purpose": "create ingestion job", "idempotencyRequired": true},
+    {"method": "DELETE", "path": "/v1/sources/{sourceId}", "purpose": "withdraw and delete source", "idempotencyRequired": true},
+    {"method": "GET", "path": "/v1/jobs/{jobId}", "purpose": "read job state", "idempotencyRequired": false},
+    {"method": "POST", "path": "/v1/rag/query", "purpose": "retrieve and produce grounded answer", "idempotencyRequired": false, "queryIdRequired": true},
+    {"method": "POST", "path": "/v1/evaluations/runs", "purpose": "create evaluation run", "idempotencyRequired": true},
+    {"method": "GET", "path": "/v1/evaluations/runs/{runId}", "purpose": "read evaluation result", "idempotencyRequired": false}
+  ],
+  "quarantine": {
+    "maxFileBytes": 2097152,
+    "maxCommitBytes": 104857600,
+    "checks": ["repository-allowlist", "path-allowlist", "mime", "encoding", "control-characters", "secret-patterns", "personal-data-patterns", "instruction-injection-patterns", "unsafe-links"],
+    "requiresHumanApproval": true,
+    "partialActivationAllowed": false
+  },
+  "chunking": {
+    "normalization": "unicode-nfc-lf",
+    "targetTokens": 700,
+    "overlapTokens": 100,
+    "preserve": ["heading-path", "lists", "table-header", "code-block"],
+    "deterministicId": true,
+    "profileVersionRequired": true
+  },
+  "retrieval": {
+    "mode": "hybrid-exact",
+    "vectorDistance": "cosine",
+    "vectorCandidateCount": 20,
+    "ftsCandidateCount": 20,
+    "fusion": "reciprocal-rank-fusion",
+    "fusionConstant": 60,
+    "finalTopK": 8,
+    "maxChunksPerSourceVersion": 3,
+    "authorizationFilterBeforeRetrieval": true,
+    "hnsw": {
+      "enabled": false,
+      "minimumActiveChunksForEvaluation": 50000,
+      "maximumRecallLossPercentagePoints": 2,
+      "requiresBenchmark": true
+    }
+  },
+  "answer": {
+    "citationRequiredForAnswered": true,
+    "citationFields": ["sourceId", "sourceVersion", "uri", "title", "section", "chunkId"],
+    "abstainReasons": ["no-grounding", "source-conflict", "unsupported-product", "unsupported-version", "citation-validation-failed"],
+    "documentsAreInstructions": false,
+    "toolsEnabled": false
+  },
+  "provider": {
+    "adapter": "openai-compatible",
+    "oneActiveEmbeddingProfile": true,
+    "credentialStorage": "protected-runtime-injection",
+    "profileFields": ["endpoint", "chatModel", "embeddingModel", "embeddingDimension", "profileVersion"],
+    "retry": {"classes": ["timeout", "http-429", "http-5xx"], "maximumAttempts": 3},
+    "retentionAndTrainingMustBeDisabled": true
+  },
+  "deletion": {
+    "immediateSearchExclusion": true,
+    "derivedStores": ["chunks", "embeddings", "caches", "evaluation-links"],
+    "testCompletionMinutes": 15,
+    "maximumCompletionDays": 7,
+    "ledgerRetentionDays": 365,
+    "reapplyLedgerAfterRestore": true
+  },
+  "qualityGates": {
+    "minimumGoldenQuestions": 30,
+    "answeredCitationRate": 1.0,
+    "minimumAcceptableAnswerRate": 0.8,
+    "minimumCorrectAbstentionRate": 0.9,
+    "maximumP95LatencySeconds": 10,
+    "maximumRestrictedIndexedDocuments": 0,
+    "maximumDerivedRowsAfterDeletion": 0,
+    "maximumPersistedRawPrompts": 0,
+    "maximumPersistedRawResponses": 0
+  },
+  "observability": {
+    "correlationFields": ["correlationId", "jobId", "queryId", "evaluationRunId"],
+    "allowedMetricDimensions": ["service", "operation", "status", "providerProfileVersion", "errorCode"],
+    "forbiddenMetricDimensions": ["sourceUri", "question", "answer", "user", "token", "credential"],
+    "eventFields": ["correlationId", "jobId", "errorCode", "failureClass", "attempt", "occurredAt"]
+  },
+  "workItems": [
+    {"issue": 41, "title": "AI Gateway API DB", "dependsOn": []},
+    {"issue": 42, "title": "D0 Source Registry Quarantine Approval", "dependsOn": [41]},
+    {"issue": 43, "title": "Chunk Embedding Hybrid Retrieval Lineage Deletion", "dependsOn": [42]},
+    {"issue": 44, "title": "Grounded Answer Provider Abstention", "dependsOn": [43]},
+    {"issue": 45, "title": "Activepieces Ingestion Reindex Evaluation Flows", "dependsOn": [42, 43, 44]},
+    {"issue": 46, "title": "Golden Set Security Quality E2E Assets", "dependsOn": [44, 45]}
+  ],
+  "implementationInputsRequired": [
+    "approved-provider-endpoint",
+    "chat-model-name",
+    "embedding-model-name",
+    "embedding-dimension",
+    "provider-credential",
+    "rag-database-app-credential",
+    "rag-database-migration-credential",
+    "github-api-authentication-decision",
+    "evaluation-reviewer"
+  ],
+  "references": [
+    "https://github.com/ablecloud-team/ablestack-docs",
+    "https://docs.ablecloud.io",
+    "https://github.com/pgvector/pgvector",
+    "https://fastapi.tiangolo.com/deployment/docker/",
+    "https://docs.github.com/en/rest/repos/contents",
+    "https://docs.github.com/en/rest/using-the-rest-api/best-practices-for-using-the-rest-api"
+  ]
+}

@@ -220,7 +220,9 @@ P0 하위 구현 이슈 #2와 #11~#18을 완료했고, Issue #39에서 남아 �
 - [구조화 보안·데이터 정책](../decisions/techflow-security-data-policy.json)
 - [보안 위협·데이터 수명주기 운영 Runbook](../runbooks/security-data-governance.md)
 
-Issue #20 RAG PoC는 D0 공개 문서만 기본 수집하며, D1은 Source 소유자·접근 범위·만료·삭제 자동화가 승인된 경우에만 허용한다. D2·D3는 P1 RAG에서 차단한다. 실증 KPI와 담당자 알림의 제품 구현은 단계 1의 Issue #23·#24에서 이어간다.
+Epic #3와 M0 Foundation은 2026-08-03 최종 승인·종료했다. Issue #20 RAG PoC는 [ADR-0008](../adr/0008-techflow-rag-poc-architecture.md), [상세 설계](issue-20-rag-poc-design.md), [구조화 계약](../decisions/techflow-rag-poc-contract.json)과 [개발 Runbook](../runbooks/rag-poc-development.md)으로 구현 경계를 정의했다.
+
+최초 Source는 `ablecloud-team/ablestack-docs`의 D0 공개 Markdown 276개로 제한한다. Activepieces는 수집·승인·재색인·평가 Flow를 담당하고, TechFlow AI Gateway는 Source Registry·검역·검색·근거 답변·삭제와 품질 정책을 소유한다. D1은 이번 PoC에서 허용하지 않으며 D2·D3는 차단한다. 구현은 #41 AI Gateway 골격, #42 Source 승인, #43 Hybrid Retrieval, #44 근거 답변, #45 Activepieces 연동, #46 품질·보안·E2E 검증 순으로 진행한다. 실증 KPI와 담당자 알림의 제품 구현은 단계 1의 Issue #23·#24에서 이어간다.
 
 ### 단계 1. 사내 Assist 실증
 
@@ -257,6 +259,8 @@ Issue #20 RAG PoC는 D0 공개 문서만 기본 수집하며, D1은 Source 소�
 - Activepieces App·Worker 로그와 상태 확인
 - AI Gateway 최소 기능과 지식 수집 파이프라인
 - 답변 승인 인터페이스 또는 승인 채널
+
+Issue #20 설계 승인 후 #41~#46을 실행한다. PoC 검색은 PostgreSQL FTS와 pgvector exact cosine 결과를 RRF로 결합하고, `ANSWERED` 응답에는 Source·Commit·Path·Chunk 근거를 필수로 포함한다. 근거 부족, 정책 위반 또는 제공자 장애는 `ABSTAINED`나 `FAILED`로 명시하여 자동 게시하지 않는다.
 
 #### 종료 기준
 
