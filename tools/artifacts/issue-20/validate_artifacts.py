@@ -52,9 +52,11 @@ for item in manifest["files"]:
     assert hashlib.sha256(content).hexdigest().upper() == item["sha256"], item["path"]
 
 missing = []
+checked_links = 0
 link_pattern = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
 for markdown in MARKDOWN:
     for target in link_pattern.findall(markdown.read_text(encoding="utf-8")):
+        checked_links += 1
         clean = target.strip().split("#", 1)[0]
         if clean and not clean.startswith(("http://", "https://", "mailto:")):
             if not (markdown.parent / clean).resolve().exists():
@@ -72,9 +74,9 @@ for item in manifest["files"]:
             hits.append(f"{item['path']}:{name}")
 assert not hits, "; ".join(hits)
 
-assert len(PdfReader(str(ROOT / "output/pdf/techflow-rag-poc-design-report.pdf")).pages) == 9
+assert len(PdfReader(str(ROOT / "output/pdf/techflow-rag-poc-design-report.pdf")).pages) == 10
 assert len(PdfReader(str(ROOT / "output/pdf/techflow-rag-poc-design-presentation.pdf")).pages) == 10
 with zipfile.ZipFile(ROOT / "output/presentation/techflow-rag-poc-design.pptx") as archive:
     slides = [name for name in archive.namelist() if re.fullmatch(r"ppt/slides/slide\d+\.xml", name)]
     assert len(slides) == 10
-print("artifacts=valid files=14 links=6 secrets=0 report_pages=9 deck_pages=10 slides=10")
+print(f"artifacts=valid files=14 links={checked_links} secrets=0 report_pages=10 deck_pages=10 slides=10")
