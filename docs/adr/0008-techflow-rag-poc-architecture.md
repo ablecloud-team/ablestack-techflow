@@ -7,6 +7,7 @@
 - 상위 결정: [ADR-0001](0001-techflow-activepieces-responsibility-boundary.md), [ADR-0006](0006-techflow-security-threat-model.md), [ADR-0007](0007-techflow-data-classification-retention.md)
 - 상세 설계: [Issue #20 RAG PoC 상세 설계](../plans/issue-20-rag-poc-design.md)
 - 구조화 계약: [techflow-rag-poc-contract.json](../decisions/techflow-rag-poc-contract.json)
+- 하위 결정: [ADR-0009 OpenAI 런타임 통합 및 모델 라우팅](0009-openai-runtime-integration.md)
 
 ## 1. 결정
 
@@ -30,7 +31,7 @@ TechFlow RAG PoC는 공식 제품 문서뿐 아니라 ABLESTACK 제품을 구성
 
 Cloud의 세 Branch는 한 Query에서 결합하지 않는다. 서로 다른 저장소의 Code Chunk도 운영자가 승인한 `Compatibility Set`에 속할 때만 결합한다. 질문은 하나 이상의 `sourceProfile` 또는 승인된 `compatibilitySetId`를 지정해야 하며, 지정하지 못하면 코드 근거 답변을 생성하지 않고 제품·구성 확인을 요청한다.
 
-RAG는 별도 `TechFlow AI Gateway`로 구현한다. Activepieces는 Source 변경 감지, 승인, 수집·재색인·평가 Job과 알림만 오케스트레이션한다. AI Gateway가 Source Registry, 코드 검역·구문 분석, Symbol·Lineage, 검색, 근거 답변, 보류, Provider와 삭제 상태를 소유한다.
+RAG는 별도 `TechFlow AI Gateway`로 구현한다. Activepieces는 Source 변경 감지, 승인, 수집·재색인·평가 Job과 알림만 오케스트레이션한다. AI Gateway가 Source Registry, 코드 검역·구문 분석, Symbol·Lineage, 검색, 근거 답변, 보류, OpenAI Provider Profile과 삭제 상태를 소유한다. 제품 런타임은 OpenAI Responses API와 Embeddings API를 직접 사용하며, ChatGPT Work와 Codex는 런타임 경로에 포함하지 않는다.
 
 ## 2. 책임 경계
 
@@ -56,7 +57,8 @@ flowchart LR
     FETCH --> GW
     GW --> PARSER["Document·Code Parser\nTree-sitter + Fallback"]
     PARSER --> PG["techflow_rag DB\nFTS + pg_trgm + pgvector"]
-    GW --> LLM["Provider Adapter\nEmbedding·Chat"]
+    GW --> EMB["OpenAI Embeddings API\ntext-embedding-3-large"]
+    GW --> LLM["OpenAI Responses API\nTerra 기본 · Sol 승격"]
     GW --> OBS["Metrics·Audit\n원문 미포함"]
 ```
 
@@ -65,6 +67,8 @@ flowchart LR
 - Activepieces는 허용 Branch의 최신 Head를 후보로 감지하지만, Git Tree와 Blob은 승인 시 고정한 Commit을 기준으로 읽고 승인되지 않은 Head를 자동 활성화하지 않는다.
 - 기존 PostgreSQL 14에는 `techflow_rag` Database와 app·migration·fetcher Role을 분리한다.
 - `pgvector`는 의미 검색, FTS는 자연어·코드 Token, `pg_trgm`은 Class·Method·API Identifier 검색에 사용한다.
+- 원본 저장소는 OpenAI File·Vector Store·ChatGPT Project에 업로드하지 않는다. Gateway가 선택한 D0 최소 Chunk만 API로 전송한다.
+- 기본 답변 Profile은 `gpt-5.6-terra/medium`, 검색 단계에서 복수 구성요소·문서/코드 충돌이 확인된 질의만 `gpt-5.6-sol/high`로 요청 전에 승격한다.
 
 ## 4. Source 허용·제외 정책
 
@@ -120,6 +124,7 @@ flowchart LR
 - 검색된 주석·문자열·문서는 지시가 아니라 데이터다.
 - AI는 코드·Shell·API·Activepieces Flow·ABLESTACK 작업을 실행하지 않는다.
 - Prompt와 응답 원문은 기본 저장하지 않는다.
+- OpenAI Responses 요청은 `store=false`, Structured Output, Tool 0개로 고정하고 Gateway가 Citation을 사후 검증한다.
 
 ## 8. 데이터와 삭제
 
@@ -149,15 +154,18 @@ Source 또는 Branch Profile 철회 시 Chunk, Embedding, Symbol, Relation, Cach
 | Test-only `ANSWERED` | 0건 |
 | D1~D3 색인·Provider 전송 | 0건 |
 | 철회 Source 파생 데이터 | 0건 |
+| Provider Tool 호출 | 0건 |
+| Structured Output Schema 위반 | 0건 |
+| 승인 없는 Model Profile 변경 | 0건 |
 
 ## 10. 작업 분해
 
 | 순서 | Issue | 개정 결과 |
 |---:|---|---|
-| 1 | [#41](https://github.com/ablecloud-team/ablestack-techflow/issues/41) | Source Profile·Compatibility Set·Symbol·Relation을 포함한 API·DB |
+| 1 | [#41](https://github.com/ablecloud-team/ablestack-techflow/issues/41) | Source Profile·Compatibility Set·Symbol·Relation·Provider Profile·Call Metadata를 포함한 API·DB |
 | 2 | [#42](https://github.com/ablecloud-team/ablestack-techflow/issues/42) | 7개 저장소·9개 Profile Registry, 최신 Head 후보·고정 Commit Fetch, 검역·승인 |
-| 3 | [#43](https://github.com/ablecloud-team/ablestack-techflow/issues/43) | 문서·코드 Chunker, Symbol, Identifier·FTS·Vector 검색, 삭제 |
-| 4 | [#44](https://github.com/ablecloud-team/ablestack-techflow/issues/44) | Branch-aware Citation, 문서·코드 근거 답변·보류 |
+| 3 | [#43](https://github.com/ablecloud-team/ablestack-techflow/issues/43) | 문서·코드 Chunker, Symbol, OpenAI Embeddings, Identifier·FTS·Vector 검색, 삭제 |
+| 4 | [#44](https://github.com/ablecloud-team/ablestack-techflow/issues/44) | OpenAI Responses, 모델 라우팅, Branch-aware Citation, 문서·코드 근거 답변·보류 |
 | 5 | [#45](https://github.com/ablecloud-team/ablestack-techflow/issues/45) | 문서·코드 수집·재색인·평가 Flow |
 | 6 | [#46](https://github.com/ablecloud-team/ablestack-techflow/issues/46) | 문서·코드 Golden Set, 보안·품질·E2E |
 
@@ -191,3 +199,6 @@ ACL·만료·삭제 자동화 증적이 아직 없으므로 이번 PoC는 공개
 - [pgvector](https://github.com/pgvector/pgvector)
 - [GitHub Git Trees API](https://docs.github.com/en/rest/git/trees)
 - [GitHub REST API Best Practices](https://docs.github.com/en/rest/using-the-rest-api/best-practices-for-using-the-rest-api)
+- [OpenAI Model Guidance](https://developers.openai.com/api/docs/guides/latest-model)
+- [OpenAI Structured Outputs](https://developers.openai.com/api/docs/guides/structured-outputs)
+- [OpenAI API Data Controls](https://platform.openai.com/docs/models/default-usage-policies-by-endpoint)

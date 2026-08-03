@@ -4,7 +4,7 @@
 >
 > 기준일: 2026-08-03
 >
-> 관련 PR: 최초 설계 [#47](https://github.com/ablecloud-team/ablestack-techflow/pull/47)
+> 관련 PR: 최초 설계 [#47](https://github.com/ablecloud-team/ablestack-techflow/pull/47), 개정 설계 [#48](https://github.com/ablecloud-team/ablestack-techflow/pull/48)
 
 ## 1. 개정 결론
 
@@ -38,9 +38,28 @@ Git Tree 전체 46,579개 Blob 중 39,836개가 확장자·경로·1 MiB 정책�
 | 검색 | FTS + Vector | FTS + Identifier/Trigram + Vector |
 | Citation | Source·Section·Chunk | Repository·Branch·Commit·Path·Line·Symbol |
 | Test | 별도 정책 없음 | 보강 근거, 단독 답변 금지 |
-| 데이터 | 10개 논리 Table | Compatibility Set·Symbol·Relation 추가 14개 Table |
+| 데이터 | 10개 논리 Table | Compatibility Set·Symbol·Relation·Provider Call 추가 15개 Table |
 | 평가 | 30개 질문 | 50개, 코드 질문 20개 이상 |
 | P95 | 10초 | 코드 Context를 반영해 12초 |
+
+## 3.1 OpenAI 런타임 보강 결론
+
+기존 설계는 AI Gateway가 Provider Adapter를 소유한다고만 정의해 문서·소스코드와 AI Engine이 실제로 어떤 API와 데이터 경계로 연결되는지 부족했다. 구현 전에 다음과 같이 확정했다.
+
+| 방식 | 결정 | 역할 |
+|---|---|---|
+| Responses API | 채택 | TechFlow 고객 질의의 구조화 답변 생성 |
+| Embeddings API | 채택 | 승인된 Chunk와 Query Vector 생성 |
+| Batch API | 조건부 채택 | 최초 대량 색인·전체 재색인·평가 |
+| ChatGPT Work | 런타임 제외 | 사람 중심 분석·보고·평가 자산 작성에 선택 사용 |
+| Codex | 런타임 제외 | 개발·코드 리뷰·오프라인 평가 케이스 작성에 선택 사용 |
+| Agents SDK·Hosted Tool | P1 제외 | 현재 제품 경로는 Tool 없는 단일 구조화 답변 |
+
+기본 답변은 `gpt-5.6-terra/medium`, 검색 단계에서 문서·코드 충돌 또는 복수 구성요소 분석이 확인된 질의만 `gpt-5.6-sol/high`로 호출 전에 승격한다. Embedding 기준선은 `text-embedding-3-large/3072`이며 #43의 Golden Set에서 저차원·Small 대안을 비교한다.
+
+원본 Repository는 OpenAI File·Vector Store·ChatGPT Project에 업로드하지 않는다. TechFlow가 고정 Commit 기준으로 로컬 Parse·Hybrid Retrieval을 수행하고, 최종 최대 10개 D0 Chunk와 Citation Metadata만 Responses API에 전달한다. 요청은 `store=false`, `background=false`, Tool 0개, Structured Output을 강제하고 반환 Citation을 Gateway가 다시 검증한다.
+
+`store=false`만으로 Abuse Monitoring 보존이 사라진다고 간주하지 않는다. 운영 전 OpenAI API Organization·Project의 ZDR·MAM·Data Residency 적용 상태를 확인·기록하며, P1은 D0만 전송한다.
 
 ## 4. 안전한 코드 수집
 
@@ -78,6 +97,7 @@ PoC는 Import, Inheritance, Declaration과 정적으로 확인 가능한 Referen
 - `rag_compatibility_set_source`: Source Profile·Commit Membership
 - `rag_code_symbol`: Language, Package, Qualified Name, Signature, Line Range
 - `rag_code_relation`: Import, Inheritance, Declaration, Reference
+- `rag_provider_call`: Query·Evaluation, Provider Request·Response ID, Model Profile, Token·Latency·상태·오류; 원문 제외
 
 Source Profile 철회 시 Chunk, Embedding, Symbol, Relation, Cache와 Evaluation Link를 즉시 검색에서 제외한다. 테스트 목표는 15분, 정책 상한은 7일이며 복구 후 Deletion Ledger를 재적용한다.
 
@@ -96,23 +116,27 @@ Source Profile 철회 시 Chunk, Embedding, Symbol, Relation, Cache와 Evaluatio
 | Test-only `ANSWERED` | 0건 |
 | D1~D3·Secret 색인 | 0건 |
 | 철회 파생 데이터 | 0건 |
+| Structured Output·Citation 사후 검증 | 100% |
+| Provider Tool 호출 | 0건 |
+| 승인 없는 Model Profile 변경 | 0건 |
 
 ## 9. 하위 Issue 개정
 
 | Issue | 개정 범위 |
 |---|---|
-| [#41](https://github.com/ablecloud-team/ablestack-techflow/issues/41) | Source Profile·Compatibility Set·Symbol·Relation Schema와 API |
+| [#41](https://github.com/ablecloud-team/ablestack-techflow/issues/41) | Source·Compatibility·Provider Profile, Symbol·Relation·Provider Call Schema와 API |
 | [#42](https://github.com/ablecloud-team/ablestack-techflow/issues/42) | 7개 저장소·9개 Profile 최신 Head 후보·고정 Commit Fetch·검역·승인 |
-| [#43](https://github.com/ablecloud-team/ablestack-techflow/issues/43) | 문서·코드 Parser, Identifier·FTS·Vector, Lineage 삭제 |
-| [#44](https://github.com/ablecloud-team/ablestack-techflow/issues/44) | Branch-aware Citation, 문서·코드 답변·보류 |
+| [#43](https://github.com/ablecloud-team/ablestack-techflow/issues/43) | 문서·코드 Parser, OpenAI Embeddings, Identifier·FTS·Vector, Lineage 삭제 |
+| [#44](https://github.com/ablecloud-team/ablestack-techflow/issues/44) | OpenAI Responses·모델 라우팅·Structured Output·Branch-aware Citation·보류 |
 | [#45](https://github.com/ablecloud-team/ablestack-techflow/issues/45) | 문서·코드 수집·재색인·평가 Flow |
 | [#46](https://github.com/ablecloud-team/ablestack-techflow/issues/46) | 50개 Golden Set, Branch Isolation·보안·E2E |
 
 ## 10. 검증 자산
 
-- 구조화 계약 Version `1.2`
+- 구조화 계약 Version `1.3`
 - 문서·코드 Source, Branch 격리, 실행 금지, Parser, Citation, 삭제, 품질 자동 검증
 - README·로드맵·ADR·상세 설계·Runbook
+- OpenAI 런타임 ADR-0009와 Provider 요청·보존·모델 라우팅 계약
 - 개정 보고서 PDF
 - 개정 프레젠테이션 PPTX와 PDF
 - Artifact Manifest·Page/Slide·Link·Secret Pattern 검증
@@ -128,7 +152,21 @@ Source Profile 철회 시 Chunk, Embedding, Symbol, Relation, Cache와 Evaluatio
 7. Repository·Branch·Commit·Path·Line·Symbol Citation
 8. 50개 Golden Set 중 Code 질문 20개 이상 및 6개 코드 저장소별 최소 1개
 9. Source Code Build·Test·실행 제외
+10. Responses API·Embeddings API를 제품 런타임으로 사용
+11. `gpt-5.6-terra/medium` 기본과 규칙 기반 `gpt-5.6-sol/high` 승격
+12. `text-embedding-3-large/3072` PoC 기준선
+13. OpenAI File·Vector Store·Agent Tool을 P1에서 사용하지 않음
+14. 운영 전 OpenAI API Project의 ZDR·MAM·Data Residency 상태 확인
+15. ChatGPT Work·Codex는 운영·개발 보조이며 제품 런타임이 아님
 
 ## 12. 다음 실행
 
-개정 설계 승인 후 #41부터 구현한다. Provider가 준비되지 않아도 Mock Provider로 Source Profile·API·DB·Fetcher·Parser·Branch Filter 구현을 시작할 수 있다. 실제 Credential은 런타임으로만 제공한다.
+OpenAI 런타임 결정을 포함한 개정 설계 승인 후 #41부터 구현한다. #41은 Provider Profile과 `rag_provider_call`까지 Mock Adapter로 구현하고, 실제 Embeddings·Responses 호출은 #43·#44에서 진행한다. 실제 Credential은 런타임으로만 제공한다.
+
+## 13. 참고 자료
+
+- [ADR-0009 OpenAI 런타임 통합 및 모델 라우팅](../adr/0009-openai-runtime-integration.md)
+- [OpenAI Model Guidance](https://developers.openai.com/api/docs/guides/latest-model)
+- [OpenAI Structured Outputs](https://developers.openai.com/api/docs/guides/structured-outputs)
+- [OpenAI Vector Embeddings](https://developers.openai.com/api/docs/guides/embeddings)
+- [OpenAI API Data Controls](https://platform.openai.com/docs/models/default-usage-policies-by-endpoint)

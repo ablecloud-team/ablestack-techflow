@@ -95,7 +95,8 @@ flowchart TB
         DELETE["Lineage Deletion"]
     end
     PG["PostgreSQL\nFTS·pg_trgm·pgvector"]
-    LLM["Approved Provider"]
+    EMB["OpenAI Embeddings API\ntext-embedding-3-large"]
+    LLM["OpenAI Responses API\nTerra 기본 · Sol 승격"]
     DOCS --> FETCH
     CLOUD --> FETCH
     COMPONENTS --> FETCH
@@ -104,9 +105,45 @@ flowchart TB
     JOB --> REG
     FETCH --> REG --> PARSE --> PG
     RET --> PG
+    PARSE --> EMB --> PG
     RET --> ANSWER --> LLM
     DELETE --> PG
 ```
+
+### 5.1 OpenAI 런타임 선택
+
+| 선택지 | 제품 내 사용 | 이유 |
+|---|---|---|
+| Responses API | 고객 기술지원 답변의 동기식 생성 | 서버 측 인증·비용·지연·상태·Structured Output을 Gateway가 통제 |
+| Embeddings API | 승인 Chunk와 Query Vector 생성 | 로컬 PostgreSQL 검색과 Branch·Commit Lineage 유지 |
+| Batch API | 최초 대량 색인·전체 재색인·평가 | 즉시 응답이 필요 없는 작업만 비용·Rate Limit 효율화 |
+| ChatGPT Work | 선택적 사람 중심 분석·보고·평가 자산 작성 | 운영 보조 도구이며 고객 Query API 계약이 아님 |
+| Codex | 선택적 개발·코드 리뷰·오프라인 평가 케이스 작성 | 소프트웨어 엔지니어링 보조 도구이며 제품 런타임이 아님 |
+| Agents SDK·Hosted Tool | 사용하지 않음 | P1은 검색 후 한 번의 구조화 답변이며 Tool 실행이 금지됨 |
+
+제품 Runtime은 OpenAI 공식 Python SDK로 Responses API와 Embeddings API를 직접 호출한다. 원본 저장소를 OpenAI File Search·Vector Store·ChatGPT Project에 업로드하지 않고, TechFlow가 로컬에서 검색한 D0 최종 Chunk만 전송한다. 자세한 결정은 [ADR-0009](../adr/0009-openai-runtime-integration.md)을 따른다.
+
+### 5.2 실제 질의 호출 경로
+
+```mermaid
+sequenceDiagram
+    participant C as Channel·TechFlow API
+    participant G as AI Gateway
+    participant P as PostgreSQL Retrieval
+    participant O as OpenAI Responses API
+    C->>G: question·profile/compatibilitySet·queryId
+    G->>G: 인증·등급·Branch·Commit 검증
+    G->>P: FTS·Identifier·Vector·RRF
+    P-->>G: 최대 10개 Citation 후보
+    G->>G: 충돌·Test-only·모델 Profile 판정
+    G->>O: Policy + Question + 최소 Context
+    Note over G,O: store=false · Tool 0 · Structured Output
+    O-->>G: state·answer·citationsUsed·usage
+    G->>G: Schema·Citation·Source Version 재검증
+    G-->>C: ANSWERED·ABSTAINED·FAILED
+```
+
+기본 답변 Profile은 `gpt-5.6-terra`와 `reasoning.effort=medium`이다. Retrieval이 문서·코드 충돌 또는 복수 구성요소 분석을 사전에 확인한 경우에만 `gpt-5.6-sol/high`로 한 번 승격한다. 모델의 자체 판단이나 낮은 자신감만으로 두 번째 호출을 만들지 않는다. Embedding은 한국어·영어·코드 검색 품질을 우선해 `text-embedding-3-large/3072`를 기준선으로 사용하고 #43에서 저차원·Small Profile을 비교한다.
 
 ## 6. 구현 구조
 
@@ -118,7 +155,8 @@ services/ai-gateway/
 │   ├── fetchers/        # 고정 Repository·Commit Tree/Blob 읽기
 │   ├── parsers/         # Markdown, Tree-sitter, Config·SQL
 │   ├── retrieval/       # FTS, Identifier, Vector, RRF
-│   ├── providers/
+│   ├── providers/       # OpenAI Responses·Embeddings·Batch Adapter
+│   ├── model_routing/   # Terra 기본·Sol 승격 결정 규칙
 │   ├── repositories/
 │   └── workers/
 ├── migrations/
@@ -197,6 +235,7 @@ Fetcher는 임시 Volume, 읽기 전용 설정과 별도 Role을 사용한다. A
 | `rag_deletion_ledger` | Chunk·Embedding·Symbol·Relation·Cache 삭제 증적 |
 | `rag_evaluation_case` | 문서·코드 Question·Expected Citation·금지 주장 |
 | `rag_evaluation_run`, `rag_evaluation_result` | Profile·Commit별 평가 결과 |
+| `rag_provider_call` | Query·Evaluation, Request·Response ID, Model Profile, Token·Latency·상태·오류; 원문 제외 |
 
 Database는 `techflow_rag`, Role은 app·migration·source_fetcher로 분리한다. Activepieces는 Table에 직접 접근하지 않는다.
 
@@ -251,6 +290,7 @@ Code Chunk는 Package, Import, Annotation, Signature, Doc Comment와 Line Range�
 - 최종 Context: 10개, 한 Source Version 최대 4개
 - Cross-Branch Fusion: 금지
 - 미승인 Cross-Repository Fusion: 금지
+- Provider Context: 최종 최대 10개 Chunk와 Citation Metadata만 전송
 
 코드 Corpus에서 활성 Chunk가 50,000개 이상이면 #43에서 HNSW를 평가한다. 정확 검색 대비 Recall 손실 2%p 이하와 Latency 개선을 모두 충족해야 Profile별 전환을 허용한다.
 
@@ -264,6 +304,9 @@ Code Chunk는 Package, Import, Annotation, Signature, Doc Comment와 Line Range�
 - Source 주석·문자열의 지시를 실행하지 않는다.
 - Shell·API·Tool·Flow·ABLESTACK 작업과 Source Code를 실행하지 않는다.
 - Prompt·응답 원문은 기본 저장하지 않는다.
+- Responses API는 `store=false`, `background=false`, Tool 0개와 Structured Output을 강제한다.
+- 반환된 Citation ID가 요청 Context에 없거나 현재 Source Version과 다르면 `ABSTAINED`다.
+- 원본 Repository·파일·Vector Store를 OpenAI에 업로드하지 않는다.
 
 ## 13. 실패·재처리
 
@@ -275,6 +318,8 @@ Code Chunk는 Package, Import, Annotation, Signature, Doc Comment와 Line Range�
 
 오류에는 Correlation·Job·Error Code·Failure Class·Attempt·Time만 기록하며 질문·코드·답변 원문을 포함하지 않는다.
 
+OpenAI 호출은 Connect Timeout 3초, 전체 Timeout 12초를 초기값으로 사용한다. 429·5xx·Network Timeout만 지수 Backoff와 Jitter로 최대 3회 시도한다. 5분 동안 최소 10건 중 실패율 50% 이상이면 60초 Circuit Open 후 Half-open 1건만 허용한다. Provider 장애는 `FAILED`이며 Mock 또는 오래된 답변으로 위장하지 않는다.
+
 ## 14. 보안 Gate
 
 - D0 공개 Source라도 Secret Scan을 생략하지 않는다.
@@ -284,6 +329,9 @@ Code Chunk는 Package, Import, Annotation, Signature, Doc Comment와 Line Range�
 - GitHub와 승인 Provider 외 Egress를 차단한다.
 - Provider Credential은 런타임 주입한다.
 - AI Tool과 Source Code 실행 기능은 존재하지 않는다.
+- OpenAI `store=false`는 기본 Abuse Monitoring 보존까지 제거한다는 뜻이 아니므로 Organization·Project의 ZDR·MAM·Data Residency 적용 상태를 운영 전 기록한다.
+- ZDR 또는 MAM이 승인되지 않은 P1 환경은 D0만 전송하며 Background Mode·Files·Vector Stores·Web Search·Code Interpreter·MCP를 금지한다.
+- 개인 사용자의 내부 ID는 단방향 가명화해 안정적인 `safety_identifier`로 전송한다.
 - Source 철회는 즉시 검색 제외 후 최대 7일 내 파생 삭제한다.
 
 ## 15. 평가 설계
@@ -318,6 +366,9 @@ Golden Set은 최소 50개이며 코드 질문을 최소 20개 포함한다.
 - PostgreSQL FTS·`pg_trgm`·pgvector
 - Tree-sitter Parser 지원 언어와 Fallback
 - Provider 정상·429·5xx·Timeout
+- Terra 기본·Sol 사전 승격 규칙과 자동 이중 호출 금지
+- Structured Output Schema·Citation 사후 검증
+- `store=false`, Tool 0개, OpenAI File·Vector Store 0건
 - 삭제 Lineage와 복구 후 Ledger 재적용
 
 ### E2E
@@ -339,9 +390,10 @@ Golden Set은 최소 50개이며 코드 질문을 최소 20개 포함한다.
 3. Gateway·Fetcher Image와 Parser Dependency 잠금
 4. 외부 공개 없이 내부 Network에 추가
 5. Mock Provider와 저장소별 소형 Canary Source 검증
-6. `SHARED_DOCS`와 8개 코드 Source Profile 순차 색인
-7. 50개 Golden Set, Branch Isolation과 Compatibility Set Gate 통과
-8. Activepieces Flow Publish
+6. OpenAI API Project·Model 접근·Data Control 상태를 비밀정보 없이 기록
+7. `SHARED_DOCS`와 8개 코드 Source Profile 순차 색인
+8. 50개 Golden Set, Branch Isolation·Compatibility Set·Model Routing Gate 통과
+9. Activepieces Flow Publish
 
 ### 롤백
 
@@ -355,10 +407,10 @@ Golden Set은 최소 50개이며 코드 질문을 최소 20개 포함한다.
 
 | Issue | 개정 핵심 산출물 | 선행 |
 |---|---|---|
-| [#41](https://github.com/ablecloud-team/ablestack-techflow/issues/41) | Source Profile·Compatibility Set·Symbol·Relation 포함 API·DB | 설계 승인 |
+| [#41](https://github.com/ablecloud-team/ablestack-techflow/issues/41) | Source Profile·Compatibility Set·Symbol·Relation·Provider Profile·Provider Call 포함 API·DB | 설계 승인 |
 | [#42](https://github.com/ablecloud-team/ablestack-techflow/issues/42) | 7개 저장소·9개 Profile 최신 Head 후보·고정 Commit Fetch·Registry·검역·승인 | #41 |
-| [#43](https://github.com/ablecloud-team/ablestack-techflow/issues/43) | 문서·코드 Parser·Chunk·Identifier·FTS·Vector·삭제 | #42 |
-| [#44](https://github.com/ablecloud-team/ablestack-techflow/issues/44) | Branch-aware Citation·문서/코드 답변·보류 | #43 |
+| [#43](https://github.com/ablecloud-team/ablestack-techflow/issues/43) | 문서·코드 Parser·Chunk·OpenAI Embeddings·Identifier·FTS·Vector·삭제 | #42 |
+| [#44](https://github.com/ablecloud-team/ablestack-techflow/issues/44) | OpenAI Responses·모델 라우팅·Branch-aware Citation·문서/코드 답변·보류 | #43 |
 | [#45](https://github.com/ablecloud-team/ablestack-techflow/issues/45) | 문서·코드 수집·재색인·평가 Flow | #42~#44 |
 | [#46](https://github.com/ablecloud-team/ablestack-techflow/issues/46) | 50개 Golden Set·보안·품질·E2E·운영 자산 | #44·#45 |
 
@@ -371,15 +423,17 @@ Golden Set은 최소 50개이며 코드 질문을 최소 20개 포함한다.
 - 수용 가능 답변 80% 이상, 올바른 보류 90% 이상이다.
 - 정상 Provider 구간 P95가 12초 이하다.
 - D1~D3, Binary, Secret, Raw Prompt·응답 저장이 0건이다.
+- Structured Output·Citation 사후 검증률이 100%이고 Provider Tool 호출과 승인 없는 Model Profile 변경이 0건이다.
 - 철회 Profile의 Chunk·Embedding·Symbol·Relation·Cache 잔존이 0건이다.
 - Activepieces와 AI Gateway가 Correlation ID로 추적된다.
 - 배포·롤백·복구·삭제와 PDF/PPTX 증적이 저장소에 포함된다.
 
 ## 20. 구현 전 런타임 입력
 
-- 승인 Provider Endpoint
-- Chat·Embedding Model과 Dimension
-- Provider·RAG DB Credential
+- OpenAI API Organization·Project와 API Key
+- API Project의 ZDR·MAM·Data Residency 적용 상태
+- 승인 시점에 계정에서 사용 가능한 Model Snapshot 또는 Alias
+- RAG DB Credential
 - GitHub API 인증 방식
 - 평가 Reviewer와 Source 승인자
 
@@ -397,3 +451,9 @@ Credential 값은 저장소·Issue·PR·보고서에 기록하지 않는다.
 - [pgvector](https://github.com/pgvector/pgvector)
 - [GitHub Git Trees API](https://docs.github.com/en/rest/git/trees)
 - [GitHub REST API Best Practices](https://docs.github.com/en/rest/using-the-rest-api/best-practices-for-using-the-rest-api)
+- [OpenAI Model Guidance](https://developers.openai.com/api/docs/guides/latest-model)
+- [OpenAI Structured Outputs](https://developers.openai.com/api/docs/guides/structured-outputs)
+- [OpenAI Vector Embeddings](https://developers.openai.com/api/docs/guides/embeddings)
+- [OpenAI Batch API](https://developers.openai.com/api/docs/guides/batch)
+- [OpenAI API Data Controls](https://platform.openai.com/docs/models/default-usage-policies-by-endpoint)
+- [ChatGPT Work](https://chatgpt.com/work/)

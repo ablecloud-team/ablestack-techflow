@@ -53,8 +53,8 @@ def load_contract(path: Path) -> dict:
 
 def validate_contract(data: dict) -> list[str]:
     errors: list[str] = []
-    if data.get("schemaVersion") != "1.2":
-        errors.append("schemaVersion must be 1.2")
+    if data.get("schemaVersion") != "1.3":
+        errors.append("schemaVersion must be 1.3")
     if data.get("issue") != 20 or data.get("parentEpic") != 4:
         errors.append("issue and parentEpic must be 20 and 4")
 
@@ -129,8 +129,8 @@ def validate_contract(data: dict) -> list[str]:
         errors.append("failure classes are incomplete")
 
     table_names = {item.get("name") for item in data.get("tables", [])}
-    if not {"rag_compatibility_set", "rag_compatibility_set_source"}.issubset(table_names):
-        errors.append("compatibility set tables are required")
+    if not {"rag_compatibility_set", "rag_compatibility_set_source", "rag_provider_call"}.issubset(table_names):
+        errors.append("compatibility set and provider call tables are required")
 
     endpoints = data.get("api", [])
     seen: set[tuple[str, str]] = set()
@@ -187,9 +187,43 @@ def validate_contract(data: dict) -> list[str]:
         errors.append("code citation fields are incomplete")
 
     provider = data.get("provider", {})
-    if provider.get("credentialStorage") != "protected-runtime-injection" or not provider.get("retentionAndTrainingMustBeDisabled"):
-        errors.append("provider credential retention and training policy invalid")
-    if provider.get("retry", {}).get("maximumAttempts", 0) > 3:
+    if provider.get("vendor") != "openai" or provider.get("adapter") != "openai-official-python-sdk":
+        errors.append("provider must use the official OpenAI Python SDK")
+    if provider.get("runtimeSurface") != "responses-api" or provider.get("embeddingSurface") != "embeddings-api":
+        errors.append("provider runtime and embedding surfaces are invalid")
+    if provider.get("agentsSdkEnabled") is not False or provider.get("hostedToolsEnabled") is not False:
+        errors.append("Agents SDK and hosted provider tools must be disabled")
+    if provider.get("credentialStorage") != "protected-runtime-injection":
+        errors.append("provider credential policy invalid")
+    profiles = provider.get("profiles", {})
+    if profiles.get("default", {}).get("model") != "gpt-5.6-terra" or profiles.get("default", {}).get("reasoningEffort") != "medium":
+        errors.append("default answer profile must be gpt-5.6-terra medium")
+    if profiles.get("escalation", {}).get("model") != "gpt-5.6-sol" or profiles.get("escalation", {}).get("reasoningEffort") != "high":
+        errors.append("escalation answer profile must be gpt-5.6-sol high")
+    embedding = profiles.get("embedding", {})
+    if embedding.get("model") != "text-embedding-3-large" or embedding.get("dimension") != 3072:
+        errors.append("embedding baseline must be text-embedding-3-large with 3072 dimensions")
+    routing = provider.get("routing", {})
+    if routing.get("decisionOwner") != "techflow-ai-gateway" or routing.get("decisionTime") != "before-provider-call":
+        errors.append("model routing must be owned by the gateway before the provider call")
+    if routing.get("modelSelfRoutingAllowed") is not False or routing.get("automaticSecondCallOnLowConfidenceAllowed") is not False:
+        errors.append("model self routing and automatic low confidence second calls are disabled")
+    request = provider.get("request", {})
+    if request.get("store") is not False or request.get("background") is not False or request.get("structuredOutputRequired") is not True:
+        errors.append("Responses requests require store false background false and structured output")
+    if request.get("tools") != [] or request.get("wholeRepositoryUploadAllowed") is not False:
+        errors.append("provider tools and whole repository upload must be disabled")
+    if request.get("openaiFilesAllowed") is not False or request.get("openaiVectorStoresAllowed") is not False:
+        errors.append("OpenAI Files and Vector Stores must be disabled")
+    controls = provider.get("dataControls", {})
+    if controls.get("allowedClassifications") != ["D0"] or controls.get("storeFalseRequired") is not True:
+        errors.append("provider data controls must allow only D0 and require store false")
+    if controls.get("storeFalseDoesNotEqualZeroAbuseMonitoringRetention") is not True:
+        errors.append("provider data controls must preserve the store false retention caveat")
+    if controls.get("zeroDataRetentionOrModifiedAbuseMonitoringRequiredForD1Plus") is not True:
+        errors.append("D1 plus provider use requires approved retention controls")
+    retry = provider.get("retry", {})
+    if retry.get("maximumAttempts", 0) > 3 or retry.get("totalTimeoutSeconds", 999) > 12:
         errors.append("provider retry maximum must not exceed 3")
 
     deletion = data.get("deletion", {})
@@ -216,6 +250,10 @@ def validate_contract(data: dict) -> list[str]:
     for field in ("maximumRestrictedIndexedDocuments", "maximumDerivedRowsAfterDeletion", "maximumPersistedRawPrompts", "maximumPersistedRawResponses"):
         if quality.get(field) != 0:
             errors.append(f"{field} must be zero")
+    if quality.get("structuredOutputValidityRate") != 1.0 or quality.get("postGenerationCitationValidationRate") != 1.0:
+        errors.append("structured output and post generation citation validation must be complete")
+    if quality.get("maximumProviderToolCalls") != 0 or quality.get("maximumUnapprovedModelProfileChanges") != 0:
+        errors.append("provider tool calls and unapproved model profile changes must be zero")
 
     work_items = data.get("workItems", [])
     issue_ids = {item.get("issue") for item in work_items}

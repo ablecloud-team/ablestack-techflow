@@ -2,7 +2,7 @@
 
 > 대상: Issue #20, 하위 Issue #41~#46
 >
-> 개정: 2026-08-03 - ABLESTACK 6개 소스 저장소와 Cloud 3개 Branch 포함
+> 개정: 2026-08-03 - OpenAI Responses·Embeddings 런타임과 모델 라우팅 포함
 
 ## 1. 목적
 
@@ -11,8 +11,8 @@
 ## 2. 시작 조건
 
 1. local `main`과 `upstream/main`이 일치한다.
-2. [ADR-0008](../adr/0008-techflow-rag-poc-architecture.md)과 [구조화 계약](../decisions/techflow-rag-poc-contract.json)이 승인됐다.
-3. Provider·DB·GitHub Credential은 런타임 주입 경로에만 존재한다.
+2. [ADR-0008](../adr/0008-techflow-rag-poc-architecture.md), [ADR-0009](../adr/0009-openai-runtime-integration.md)과 [구조화 계약](../decisions/techflow-rag-poc-contract.json)이 승인됐다.
+3. OpenAI API Project·Model 접근·Data Control 상태가 비밀정보 없이 확인됐고 Provider·DB·GitHub Credential은 런타임 주입 경로에만 존재한다.
 4. `ablestack-docs`와 6개 소스 저장소의 지정 Branch가 Source Allowlist에 있다.
 5. 대상 Commit과 Diff Summary를 Source 승인자가 확인했다.
 6. Fetcher에 Hook·Build·Test·Shell 실행 권한이 없다.
@@ -21,10 +21,10 @@
 
 | 순서 | Issue | 종료 입력 |
 |---:|---|---|
-| 1 | #41 API·DB | Source Profile, Compatibility Set, Symbol·Relation Schema, Role Migration |
+| 1 | #41 API·DB | Source·Compatibility·Provider Profile, Symbol·Relation·Provider Call Schema, Role Migration |
 | 2 | #42 Fetch·Registry·검역 | 9개 Profile 최신 Head 후보·고정 Commit 승인·원자 활성화 |
-| 3 | #43 Parse·Index·Retrieval·삭제 | AST/Fallback, FTS·Identifier·Vector, Lineage |
-| 4 | #44 답변·보류 | Branch-aware Citation, Test-only·Conflict Abstention |
+| 3 | #43 Parse·Index·Retrieval·삭제 | AST/Fallback, OpenAI Embeddings, FTS·Identifier·Vector, Lineage |
+| 4 | #44 답변·보류 | OpenAI Responses, Terra·Sol Routing, Structured Output, Citation 검증 |
 | 5 | #45 Activepieces | Docs·Code 수집·재색인·평가 Flow |
 | 6 | #46 품질·보안·E2E | 50개 Golden Set과 운영 증적 |
 
@@ -79,6 +79,7 @@ Branch Head가 바뀌면 새 Commit을 후보로만 등록한다. 운영자 승�
 - Extension: `vector`, `pg_trgm`
 - Activepieces DB Role과 공유 금지
 - Compatibility Set·Symbol·Relation Table에 Source Profile·Branch·Commit Filter Index 생성
+- Provider Profile과 `rag_provider_call`에는 Model·Request/Response ID·Token·Latency·상태만 저장하고 Prompt·응답 원문은 저장하지 않음
 - Credential은 Compose Source, `.env.example`, Log, PR, Issue에 기록 금지
 
 Migration 후 빈 DB에서 적용·Rollback·재적용을 검증한다.
@@ -121,6 +122,21 @@ Migration 후 빈 DB에서 적용·Rollback·재적용을 검증한다.
 - Test-only, Branch 미지정, Cross-Branch, 미승인 Cross-Repository, 근거 부족은 `ABSTAINED`다.
 - AI Tool·Shell·API·Flow·ABLESTACK·Source Code 실행 경로가 없다.
 - Prompt·응답 원문이 DB·Redis·Log·Metric에 남지 않는다.
+- Responses 요청에 `store=false`, `background=false`, Tool 0개와 Structured Output이 적용된다.
+- Gateway가 반환 Citation을 현재 Context와 Source Version에 대해 다시 검증한다.
+- 기본 `gpt-5.6-terra/medium`과 사전 규칙 기반 `gpt-5.6-sol/high` 승격만 허용한다.
+- 낮은 자신감이나 Provider 오류 때문에 자동 두 번째 Model 호출이 발생하지 않는다.
+- 개인 사용자는 단방향 가명화한 안정적인 `safety_identifier`를 사용한다.
+
+## 10.1 OpenAI Adapter 검증
+
+1. 공식 Python SDK의 Responses API와 Embeddings API Adapter만 활성화한다.
+2. 원본 Repository·OpenAI File·Vector Store·ChatGPT Project 업로드 경로가 없음을 확인한다.
+3. Query Context는 최종 최대 10개 D0 Chunk와 Citation Metadata만 포함한다.
+4. 최초 대량 색인·전체 재색인·평가만 Batch API 후보이며 증분 색인은 동기 Embeddings API를 사용한다.
+5. Connect 3초·전체 12초, 429·5xx·Network Timeout 최대 3회와 Circuit Breaker를 검증한다.
+6. `rag_provider_call`에 Raw Prompt·Raw Response·Credential이 없음을 확인한다.
+7. OpenAI Organization·Project의 ZDR·MAM·Data Residency 상태를 배포 증적에 기록한다. `store=false`만으로 ZDR이라고 판정하지 않는다.
 
 ## 11. Golden Set
 
@@ -160,10 +176,11 @@ Flow에는 코드 원문·Provider Key·GitHub Token을 저장하지 않는다. 
 3. Gateway·Fetcher Image Digest와 Parser Dependency 잠금
 4. 내부 Network에만 배포
 5. `/healthz`, Mock Provider, Parser Health 확인
-6. 문서와 8개 코드 Source Profile의 소형 Canary 순차 검증
-7. 전체 승인 Commit 색인
-8. 50개 Golden Set·Branch Isolation·Compatibility Set Gate·삭제 Drill 통과
-9. Activepieces Flow Publish
+6. OpenAI API Project의 Model 접근·ZDR/MAM·Data Residency 상태 확인
+7. 문서와 8개 코드 Source Profile의 소형 Canary 순차 검증
+8. 전체 승인 Commit 색인
+9. 50개 Golden Set·Branch Isolation·Compatibility Set·Model Routing·삭제 Drill 통과
+10. Activepieces Flow Publish
 
 ## 15. 롤백
 
@@ -182,5 +199,7 @@ Flow에는 코드 원문·Provider Key·GitHub Token을 저장하지 않는다. 
 - Profile별 Chunk·Symbol·Relation·Embedding 건수
 - Branch Isolation과 Code Line Citation 결과
 - Golden Set·P95·Provider 오류·보류 결과
+- Model Profile별 Token·Latency·비용·Structured Output·Citation 사후 검증 결과
+- OpenAI API Project Data Control 상태와 Tool·File·Vector Store 호출 0건 증적
 - 삭제·복구 Drill
 - Markdown 보고서, PDF 보고서, PPTX/PDF 발표자료, Artifact Manifest

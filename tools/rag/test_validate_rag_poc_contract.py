@@ -64,6 +64,24 @@ class RagPocContractTests(unittest.TestCase):
     def test_ai_tool_execution_is_rejected(self):
         self.assert_invalid(lambda data: data["answer"].update(toolsEnabled=True))
 
+    def test_provider_hosted_tool_is_rejected(self):
+        self.assert_invalid(lambda data: data["provider"].update(hostedToolsEnabled=True))
+
+    def test_responses_store_is_rejected(self):
+        self.assert_invalid(lambda data: data["provider"]["request"].update(store=True))
+
+    def test_whole_repository_upload_is_rejected(self):
+        self.assert_invalid(lambda data: data["provider"]["request"].update(wholeRepositoryUploadAllowed=True))
+
+    def test_unapproved_default_model_is_rejected(self):
+        self.assert_invalid(lambda data: data["provider"]["profiles"]["default"].update(model="chat-latest"))
+
+    def test_model_self_routing_is_rejected(self):
+        self.assert_invalid(lambda data: data["provider"]["routing"].update(modelSelfRoutingAllowed=True))
+
+    def test_d1_provider_classification_is_rejected(self):
+        self.assert_invalid(lambda data: data["provider"]["dataControls"].update(allowedClassifications=["D0", "D1"]))
+
     def test_answer_without_citation_contract_is_rejected(self):
         self.assert_invalid(lambda data: data["answer"].update(citationRequiredForAnswered=False))
 
@@ -81,6 +99,9 @@ class RagPocContractTests(unittest.TestCase):
 
     def test_low_code_citation_rate_is_rejected(self):
         self.assert_invalid(lambda data: data["qualityGates"].update(codeCitationResolvableRate=0.99))
+
+    def test_provider_tool_call_is_rejected(self):
+        self.assert_invalid(lambda data: data["qualityGates"].update(maximumProviderToolCalls=1))
 
     def test_unknown_dependency_is_rejected(self):
         self.assert_invalid(lambda data: data["workItems"][5].update(dependsOn=[99]))

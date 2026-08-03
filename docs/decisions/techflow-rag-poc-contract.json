@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.2",
+  "schemaVersion": "1.3",
   "issue": 20,
   "parentEpic": 4,
   "title": "ABLESTACK 문서·소스코드 지식 수집 및 RAG PoC 계약",
@@ -222,7 +222,8 @@
     {"name": "rag_deletion_ledger", "purpose": "withdrawal and derived-store deletion evidence"},
     {"name": "rag_evaluation_case", "purpose": "approved D0 documentation and code golden questions"},
     {"name": "rag_evaluation_run", "purpose": "profile and commit bound evaluation run"},
-    {"name": "rag_evaluation_result", "purpose": "sanitized scores status and citation ids"}
+    {"name": "rag_evaluation_result", "purpose": "sanitized scores status and citation ids"},
+    {"name": "rag_provider_call", "purpose": "sanitized provider request response ids model profile token latency status and error metadata without raw content"}
   ],
   "api": [
     {"method": "GET", "path": "/healthz", "purpose": "process database parser and vector health", "idempotencyRequired": false},
@@ -284,12 +285,61 @@
     "toolsEnabled": false
   },
   "provider": {
-    "adapter": "openai-compatible",
+    "vendor": "openai",
+    "adapter": "openai-official-python-sdk",
+    "runtimeSurface": "responses-api",
+    "embeddingSurface": "embeddings-api",
+    "batchSurface": "conditional-offline-index-and-evaluation",
+    "chatgptWorkRole": "optional-human-reviewed-operations-and-artifact-authoring",
+    "codexRole": "optional-development-code-review-and-offline-evaluation-authoring",
+    "agentsSdkEnabled": false,
+    "hostedToolsEnabled": false,
     "oneActiveEmbeddingProfile": true,
     "credentialStorage": "protected-runtime-injection",
-    "profileFields": ["endpoint", "chatModel", "embeddingModel", "embeddingDimension", "profileVersion"],
-    "retry": {"classes": ["timeout", "http-429", "http-5xx"], "maximumAttempts": 3},
-    "retentionAndTrainingMustBeDisabled": true
+    "profileFields": ["endpoint", "runtimeSurface", "chatModel", "reasoningEffort", "embeddingModel", "embeddingDimension", "profileVersion", "requestedModelId", "returnedModelId"],
+    "profiles": {
+      "default": {"id": "OPENAI_RAG_DEFAULT_V1", "model": "gpt-5.6-terra", "reasoningEffort": "medium", "use": "routine-grounded-technical-support"},
+      "escalation": {"id": "OPENAI_RAG_ESCALATION_V1", "model": "gpt-5.6-sol", "reasoningEffort": "high", "use": "deterministic-pre-call-complexity-or-source-conflict"},
+      "embedding": {"id": "OPENAI_EMBEDDING_V1", "model": "text-embedding-3-large", "dimension": 3072, "benchmarkAlternatives": ["text-embedding-3-large-1536", "text-embedding-3-large-1024", "text-embedding-3-small"]}
+    },
+    "routing": {
+      "decisionOwner": "techflow-ai-gateway",
+      "decisionTime": "before-provider-call",
+      "deterministicSignals": ["source-conflict", "source-version-count", "compatibility-set-component-count"],
+      "modelSelfRoutingAllowed": false,
+      "automaticSecondCallOnLowConfidenceAllowed": false
+    },
+    "request": {
+      "store": false,
+      "background": false,
+      "stream": false,
+      "structuredOutputRequired": true,
+      "tools": [],
+      "maximumContextChunks": 10,
+      "wholeRepositoryUploadAllowed": false,
+      "openaiFilesAllowed": false,
+      "openaiVectorStoresAllowed": false,
+      "safetyIdentifier": "stable-privacy-preserving-user-hash"
+    },
+    "dataControls": {
+      "allowedClassifications": ["D0"],
+      "trainingOptInAllowed": false,
+      "storeFalseRequired": true,
+      "storeFalseDoesNotEqualZeroAbuseMonitoringRetention": true,
+      "organizationProjectControlStatusMustBeRecorded": true,
+      "zeroDataRetentionOrModifiedAbuseMonitoringRequiredForD1Plus": true,
+      "dataResidencyDecisionRequiredBeforeProduction": true
+    },
+    "retry": {
+      "classes": ["network-timeout", "http-429", "http-5xx"],
+      "maximumAttempts": 3,
+      "connectTimeoutSeconds": 3,
+      "totalTimeoutSeconds": 12,
+      "backoff": "exponential-jitter"
+    },
+    "circuitBreaker": {"windowMinutes": 5, "minimumCalls": 10, "failureRateToOpen": 0.5, "openSeconds": 60, "halfOpenCalls": 1},
+    "promptCacheExplicitlyEnabled": false,
+    "modelChangeRequiresNewProfileAndGoldenSet": true
   },
   "deletion": {
     "immediateSearchExclusion": true,
@@ -313,7 +363,11 @@
     "maximumRestrictedIndexedDocuments": 0,
     "maximumDerivedRowsAfterDeletion": 0,
     "maximumPersistedRawPrompts": 0,
-    "maximumPersistedRawResponses": 0
+    "maximumPersistedRawResponses": 0,
+    "structuredOutputValidityRate": 1.0,
+    "postGenerationCitationValidationRate": 1.0,
+    "maximumProviderToolCalls": 0,
+    "maximumUnapprovedModelProfileChanges": 0
   },
   "observability": {
     "correlationFields": ["correlationId", "jobId", "queryId", "evaluationRunId"],
@@ -322,14 +376,14 @@
     "eventFields": ["correlationId", "jobId", "errorCode", "failureClass", "attempt", "occurredAt"]
   },
   "workItems": [
-    {"issue": 41, "title": "AI Gateway API DB source profile and compatibility set schema", "dependsOn": []},
+    {"issue": 41, "title": "AI Gateway API DB source compatibility provider profile and provider call schema", "dependsOn": []},
     {"issue": 42, "title": "Seven repository nine profile registry latest head quarantine approval", "dependsOn": [41]},
-    {"issue": 43, "title": "Document and code chunking symbols embeddings hybrid retrieval lineage deletion", "dependsOn": [42]},
-    {"issue": 44, "title": "Branch aware grounded answer provider abstention", "dependsOn": [43]},
+    {"issue": 43, "title": "Document and code chunking symbols OpenAI embeddings hybrid retrieval lineage deletion", "dependsOn": [42]},
+    {"issue": 44, "title": "OpenAI Responses deterministic model routing branch aware grounded answer citation validation and abstention", "dependsOn": [43]},
     {"issue": 45, "title": "Activepieces documentation and code ingestion reindex evaluation flows", "dependsOn": [42, 43, 44]},
     {"issue": 46, "title": "Documentation code golden set security quality E2E assets", "dependsOn": [44, 45]}
   ],
-  "implementationInputsRequired": ["approved-provider-endpoint", "chat-model-name", "embedding-model-name", "embedding-dimension", "provider-credential", "rag-database-app-credential", "rag-database-migration-credential", "github-api-authentication-decision", "evaluation-reviewer"],
+  "implementationInputsRequired": ["openai-api-project", "openai-api-key", "openai-data-control-status", "approved-model-snapshot-or-alias", "rag-database-app-credential", "rag-database-migration-credential", "github-api-authentication-decision", "evaluation-reviewer"],
   "references": [
     "https://github.com/ablecloud-team/ablestack-docs",
     "https://github.com/ablecloud-team/ablestack-cloud",
@@ -341,6 +395,13 @@
     "https://github.com/pgvector/pgvector",
     "https://fastapi.tiangolo.com/deployment/docker/",
     "https://docs.github.com/en/rest/git/trees",
-    "https://docs.github.com/en/rest/using-the-rest-api/best-practices-for-using-the-rest-api"
+    "https://docs.github.com/en/rest/using-the-rest-api/best-practices-for-using-the-rest-api",
+    "https://developers.openai.com/api/docs/guides/latest-model",
+    "https://developers.openai.com/api/docs/guides/structured-outputs",
+    "https://developers.openai.com/api/docs/guides/embeddings",
+    "https://developers.openai.com/api/docs/models/text-embedding-3-large",
+    "https://developers.openai.com/api/docs/guides/batch",
+    "https://platform.openai.com/docs/models/default-usage-policies-by-endpoint",
+    "https://chatgpt.com/work/"
   ]
 }
