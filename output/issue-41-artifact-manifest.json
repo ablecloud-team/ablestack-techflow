@@ -1,0 +1,100 @@
+{
+  "schemaVersion": "1.0",
+  "issue": 41,
+  "title": "AI Gateway API·DB·Mock Provider 기반 구현",
+  "status": "implemented-and-validated",
+  "generatedAt": "2026-08-04T12:00:00+09:00",
+  "hashPolicy": "binary raw bytes; UTF-8 text normalized to LF",
+  "files": [
+    {
+      "path": "README.md",
+      "size": 17861,
+      "sha256": "D3D638F12024862CDAAEE7EB863A92795B697EAB35AF6B1360E17F35EB8C8533",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "docs/plans/techflow-product-roadmap.md",
+      "size": 33411,
+      "sha256": "204586B5A456866B61B9636CD77F64A1008CFD41306999EC2AAE26BC0449E91B",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "docs/decisions/techflow-ai-gateway-foundation.json",
+      "size": 2037,
+      "sha256": "ACFC0776BD33866496D8EF90E4E150E4BF2F9B39D5FFCC0BDE2211A551197DCC",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "docs/runbooks/ai-gateway-foundation.md",
+      "size": 6248,
+      "sha256": "5457AD6032C5AC7EFE0431EC265F4146AAB6076743FDEE3C9CFAB1E847A60EAD",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "docs/reports/issue-41-ai-gateway-foundation-validation.md",
+      "size": 7627,
+      "sha256": "34B7E804D862ED349C86D44DF6EEBDC455AA5EDAC7E58D05AA9FCF9D4C98FC15",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "services/ai-gateway/README.md",
+      "size": 2989,
+      "sha256": "E70775213FB430865AC9696C4F7F4A7167FD80886591972EC3B19587EBBCC529",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "services/ai-gateway/openapi/techflow-ai-gateway-v1.json",
+      "size": 23315,
+      "sha256": "486A50A2016DD449467F5B3A009C7ADB5E881DF6571B1373D31A38479751FC88",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "deploy/compose/ai-gateway/compose.yml",
+      "size": 3775,
+      "sha256": "A92D3D38AF2374E2B9399C5A6A55DD59B1DA707E887DB1D35891B2C39E95A259",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "tools/ai_gateway/validate_issue_41.py",
+      "size": 4595,
+      "sha256": "80509C85A9580DDFAD5B8A6E3418E11C743201952A48E6E849CE4E7F138A12C3",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "tools/ai_gateway/test_validate_issue_41.py",
+      "size": 534,
+      "sha256": "106488A1D1563BADF70ABB1B4484F48064DCC4D10EC1B091C7C4131DE5EBE8DD",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "tools/artifacts/issue-41/build_manifest.py",
+      "size": 2341,
+      "sha256": "4FFDE24742C231008ABB06E75A20AAF16A593002ED757A5345049CC7DDC8C437",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "tools/artifacts/issue-41/validate_artifacts.py",
+      "size": 4077,
+      "sha256": "C825B2FB5B37EE63E41B841FDF6D7114337FA5C34D553F15E62BC577D7CFEE96",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "output/pdf/techflow-ai-gateway-foundation-report.pdf",
+      "size": 109091,
+      "sha256": "FFC09A8920CE2978E9148840862D8A1A551021F63E6E6D12F07A355C1D975526",
+      "contentMode": "binary-raw"
+    },
+    {
+      "path": "output/pdf/techflow-ai-gateway-foundation-presentation.pdf",
+      "size": 551341,
+      "sha256": "61D363453FB61BBF1D3DDCE0E7FF54FC32A888015A83B7578A4857589977953A",
+      "contentMode": "binary-raw"
+    },
+    {
+      "path": "output/presentation/techflow-ai-gateway-foundation.pptx",
+      "size": 47627,
+      "sha256": "2098FFEFF22B2D763FACED7C29188A1F411A78D69B416921B8E1685217B03D1B",
+      "contentMode": "binary-raw"
+    }
+  ]
+}

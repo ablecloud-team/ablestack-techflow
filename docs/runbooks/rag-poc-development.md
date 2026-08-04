@@ -21,7 +21,7 @@
 
 | 순서 | Issue | 종료 입력 |
 |---:|---|---|
-| 1 | #41 API·DB | Source·Compatibility·Provider Profile, Symbol·Relation·Provider Call Schema, Role Migration |
+| 1 | #41 API·DB | **완료(2026-08-04)** — 11 API, 15 Table, 3 Provider Profile, Mock Adapter, Role Migration·Compose Canary |
 | 2 | #42 Fetch·Registry·검역 | 9개 Profile 최신 Head 후보·고정 Commit 승인·원자 활성화 |
 | 3 | #43 Parse·Index·Retrieval·삭제 | AST/Fallback, OpenAI Embeddings, FTS·Identifier·Vector, Lineage |
 | 4 | #44 답변·보류 | OpenAI Responses, Terra·Sol Routing, Structured Output, Citation 검증 |

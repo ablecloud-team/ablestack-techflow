@@ -4,7 +4,7 @@ ABLESTACK TechFlow는 **ABLESTACK 기술지원과 인프라 운영을 연결하�
 
 Activepieces를 워크플로우 실행 엔진으로 사용하고, ABLESTACK 전용 연동, 기술지원 지식, AI 정책, 승인·권한·감사 및 안전한 운영 자동화를 제품 기능으로 개발합니다.
 
-> 현재 상태: 제품 기반, 사내 실증 실행 환경, 외부 HTTPS·서명 Webhook Ingress, 상태 백업·격리 복구, 관측성·이미지 잠금, GitHub Push·PR Merge Chat 자동화 구축 완료
+> 현재 상태: 제품 기반, 사내 실증 실행 환경, 외부 HTTPS·서명 Webhook Ingress, 상태 백업·격리 복구, 관측성·이미지 잠금, GitHub Chat 자동화와 AI Gateway API·DB 기반 구축 완료
 
 ## 프로젝트 목표
 
@@ -120,7 +120,7 @@ Activepieces Compose 기준선은 테스트 서버에 배포되어 Health, Worke
 
 P0 보안 기준은 인터넷 이벤트, Activepieces 실행면, 상태 저장소, AI/RAG와 향후 ABLESTACK 작업 경계를 위협 모델로 관리합니다. 데이터는 D0 Public부터 D3 Restricted까지 분류하고, 원문 Webhook·인증 Header와 Secret은 영속 저장하지 않으며, P1 RAG는 D0만 기본 허용합니다. Source 철회 시 Chunk·Embedding·Cache 삭제 SLO는 최대 7일입니다.
 
-Issue #20에서는 사내 Assist 실증의 첫 AI 기반으로 문서·소스코드 RAG PoC를 상세 설계했습니다. Source는 `ablestack-docs`와 `ablestack-cloud`, `ablestack-wall`, `ablestack-cockpit-plugin`, `ablestack-genie`, `ablestack-kickstart`, `ablestack-qemu-exec-tools`를 포함합니다. Cloud는 최신 `main`·`ablestack-diplo`·`ablestack-europa` Head를 각각 후보로 추적하고 승인 Commit을 독립 색인합니다. 총 9개 Source Profile을 분리하며, 서로 다른 저장소의 근거는 승인된 Compatibility Set에서만 결합합니다. 코드 답변에는 Repository·Branch·Commit·Path·Line·Symbol Citation을 요구합니다. Activepieces는 변경 감지·승인·재색인·평가를 오케스트레이션하고 TechFlow AI Gateway가 Registry, 코드 검역·구문 분석, 검색, 답변·보류와 삭제 정책을 소유합니다. AI Gateway는 OpenAI Responses API를 제품 답변 런타임으로, Embeddings API를 Vector 생성에 사용합니다. 기본 답변은 `gpt-5.6-terra/medium`, 복잡도 규칙을 통과한 질의만 `gpt-5.6-sol/high`로 승격하며, 원본 저장소를 OpenAI File·Vector Store에 업로드하지 않습니다. ChatGPT Work와 Codex는 운영·개발 보조 도구일 뿐 제품 런타임 의존성이 아닙니다. 구현은 하위 이슈 #41~#46으로 분해했으며 OpenAI 런타임 개정 설계 승인 후 #41부터 진행합니다.
+Issue #20에서는 사내 Assist 실증의 첫 AI 기반으로 문서·소스코드 RAG PoC를 상세 설계했습니다. Source는 `ablestack-docs`와 `ablestack-cloud`, `ablestack-wall`, `ablestack-cockpit-plugin`, `ablestack-genie`, `ablestack-kickstart`, `ablestack-qemu-exec-tools`를 포함합니다. Cloud는 최신 `main`·`ablestack-diplo`·`ablestack-europa` Head를 각각 후보로 추적하고 승인 Commit을 독립 색인합니다. 총 9개 Source Profile을 분리하며, 서로 다른 저장소의 근거는 승인된 Compatibility Set에서만 결합합니다. 코드 답변에는 Repository·Branch·Commit·Path·Line·Symbol Citation을 요구합니다. Activepieces는 변경 감지·승인·재색인·평가를 오케스트레이션하고 TechFlow AI Gateway가 Registry, 코드 검역·구문 분석, 검색, 답변·보류와 삭제 정책을 소유합니다. AI Gateway는 OpenAI Responses API를 제품 답변 런타임으로, Embeddings API를 Vector 생성에 사용합니다. 기본 답변은 `gpt-5.6-terra/medium`, 복잡도 규칙을 통과한 질의만 `gpt-5.6-sol/high`로 승격하며, 원본 저장소를 OpenAI File·Vector Store에 업로드하지 않습니다. ChatGPT Work와 Codex는 운영·개발 보조 도구일 뿐 제품 런타임 의존성이 아닙니다. Issue #41에서 11개 API, 15개 RAG 테이블, 세 개 Provider Profile, 결정론적 Mock Adapter와 최소권한 Compose 배포를 구현·검증했습니다. 실제 Source 승인·수집은 #42, Retrieval·OpenAI 연동은 #43·#44에서 단계적으로 진행합니다.
 
 ## 문서
 
@@ -141,6 +141,12 @@ Issue #20에서는 사내 Assist 실증의 첫 AI 기반으로 문서·소스코
 - [RAG PoC 설계 보고서 PDF](output/pdf/techflow-rag-poc-design-report.pdf)
 - [RAG PoC 설계 프레젠테이션 PDF](output/pdf/techflow-rag-poc-design-presentation.pdf)
 - [RAG PoC 설계 프레젠테이션 PPTX](output/presentation/techflow-rag-poc-design.pptx)
+- [Issue #41 AI Gateway API·DB 기반 완료 보고서](docs/reports/issue-41-ai-gateway-foundation-validation.md)
+- [AI Gateway 기반 구조화 결정](docs/decisions/techflow-ai-gateway-foundation.json)
+- [AI Gateway 배포·검증·롤백 Runbook](docs/runbooks/ai-gateway-foundation.md)
+- [AI Gateway 기반 완료 보고서 PDF](output/pdf/techflow-ai-gateway-foundation-report.pdf)
+- [AI Gateway 기반 발표자료 PDF](output/pdf/techflow-ai-gateway-foundation-presentation.pdf)
+- [AI Gateway 기반 발표자료 PPTX](output/presentation/techflow-ai-gateway-foundation.pptx)
 - [ADR-0001: TechFlow와 Activepieces 책임 경계](docs/adr/0001-techflow-activepieces-responsibility-boundary.md)
 - [책임 경계 ADR 보고서 PDF](output/pdf/techflow-responsibility-boundary-report.pdf)
 - [책임 경계 ADR 프레젠테이션 PDF](output/pdf/techflow-responsibility-boundary-presentation.pdf)

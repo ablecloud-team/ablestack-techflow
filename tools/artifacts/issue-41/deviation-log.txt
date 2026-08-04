@@ -1,0 +1,5 @@
+Slides 1-10 preserve their source slide mapping, master/layout hierarchy, geometry, colors, and typography.
+Visible text is rewritten to report Issue #41 implementation and verification evidence.
+Slide 4 reuses the inherited native 9x4 table and rewrites its cells for the 15-table schema groups.
+No new shape, image, chart, connector, overlay, or layout is added.
+Speaker notes are replaced with Issue #41 repository and official implementation sources.

@@ -1,0 +1,117 @@
+name: techflow-ai-gateway
+
+services:
+  database:
+    image: pgvector/pgvector:pg14@sha256:57a17a3a78a68d161035fd8a875f5cf7c41fc88f8d7193d9a15a3282f593bda7
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${TECHFLOW_RAG_DATABASE_NAME:-techflow_rag}
+      POSTGRES_USER: techflow_bootstrap
+      POSTGRES_PASSWORD_FILE: /run/secrets/bootstrap_password
+    secrets:
+      - bootstrap_password
+      - app_password
+      - migration_password
+      - fetcher_password
+    volumes:
+      - techflow_rag_database:/var/lib/postgresql/data
+      - ../../../services/ai-gateway/migrations/0000_extensions_roles_up.sql:/docker-entrypoint-initdb.d/000_extensions_roles.sql:ro
+      - ./scripts/bootstrap-login-roles.sh:/docker-entrypoint-initdb.d/001_bootstrap_login_roles.sh:ro
+    networks:
+      - rag_internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U techflow_bootstrap -d ${TECHFLOW_RAG_DATABASE_NAME:-techflow_rag}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+    security_opt:
+      - no-new-privileges:true
+
+  migrate:
+    image: techflow/ai-gateway:${TECHFLOW_RAG_RELEASE:-issue-41}
+    build:
+      context: ../../../services/ai-gateway
+    restart: "no"
+    environment:
+      TECHFLOW_RAG_STORE: postgres
+      TECHFLOW_RAG_PROVIDER_MODE: mock
+      TECHFLOW_RAG_DATABASE_HOST: database
+      TECHFLOW_RAG_DATABASE_PORT: "5432"
+      TECHFLOW_RAG_DATABASE_NAME: ${TECHFLOW_RAG_DATABASE_NAME:-techflow_rag}
+      TECHFLOW_RAG_DATABASE_USER: techflow_rag_migration_login
+      TECHFLOW_RAG_DATABASE_PASSWORD_FILE: /run/secrets/migration_password
+    command: ["python", "scripts/migrate.py", "up"]
+    secrets:
+      - migration_password
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - rag_internal
+    read_only: true
+    tmpfs:
+      - /tmp:size=32m,mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+  gateway:
+    image: techflow/ai-gateway:${TECHFLOW_RAG_RELEASE:-issue-41}
+    build:
+      context: ../../../services/ai-gateway
+    restart: unless-stopped
+    environment:
+      TECHFLOW_RAG_ENVIRONMENT: test-server
+      TECHFLOW_RAG_STORE: postgres
+      TECHFLOW_RAG_PROVIDER_MODE: mock
+      TECHFLOW_RAG_CLASSIFICATION: D0
+      TECHFLOW_RAG_DATABASE_HOST: database
+      TECHFLOW_RAG_DATABASE_PORT: "5432"
+      TECHFLOW_RAG_DATABASE_NAME: ${TECHFLOW_RAG_DATABASE_NAME:-techflow_rag}
+      TECHFLOW_RAG_DATABASE_USER: techflow_rag_app_login
+      TECHFLOW_RAG_DATABASE_PASSWORD_FILE: /run/secrets/app_password
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8090", "--no-access-log"]
+    secrets:
+      - app_password
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    ports:
+      - "${TECHFLOW_RAG_BIND_ADDRESS:-127.0.0.1}:18090:8090"
+    networks:
+      - rag_internal
+      - rag_edge
+    read_only: true
+    tmpfs:
+      - /tmp:size=32m,mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8090/healthz', timeout=3).read()"]
+      interval: 10s
+      timeout: 4s
+      retries: 6
+      start_period: 10s
+
+networks:
+  rag_internal:
+    internal: true
+  rag_edge:
+    driver: bridge
+
+volumes:
+  techflow_rag_database:
+
+secrets:
+  bootstrap_password:
+    file: ${TECHFLOW_RAG_BOOTSTRAP_PASSWORD_FILE:?set bootstrap password file}
+  app_password:
+    file: ${TECHFLOW_RAG_APP_PASSWORD_FILE:?set app password file}
+  migration_password:
+    file: ${TECHFLOW_RAG_MIGRATION_PASSWORD_FILE:?set migration password file}
+  fetcher_password:
+    file: ${TECHFLOW_RAG_FETCHER_PASSWORD_FILE:?set fetcher password file}

@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "techflow-ai-gateway"
+version = "0.1.0"
+description = "TechFlow AI Gateway API, DB, and provider contract foundation"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "fastapi==0.139.2",
+  "psycopg[binary,pool]==3.3.4",
+  "uvicorn==0.52.1",
+]
+
+[project.optional-dependencies]
+test = ["httpx==0.28.1"]
+
+[tool.setuptools]
+packages = ["app"]

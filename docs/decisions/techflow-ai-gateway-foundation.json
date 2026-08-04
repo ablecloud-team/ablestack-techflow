@@ -1,0 +1,73 @@
+{
+  "schemaVersion": "1.0",
+  "decisionId": "TECHFLOW-AI-GATEWAY-FOUNDATION-ISSUE-41",
+  "status": "implemented",
+  "implementedAt": "2026-08-04T00:00:00+09:00",
+  "scope": {
+    "issue": 41,
+    "serviceVersion": "0.1.0",
+    "providerMode": "mock",
+    "dataClassification": ["D0"],
+    "realOpenAICalls": false
+  },
+  "api": {
+    "contract": "services/ai-gateway/openapi/techflow-ai-gateway-v1.json",
+    "operationCount": 11,
+    "correlationHeader": "X-Correlation-Id",
+    "idempotencyHeader": "Idempotency-Key",
+    "queryState": "ABSTAINED",
+    "providerCalled": false
+  },
+  "providerProfiles": [
+    {
+      "id": "OPENAI_RAG_DEFAULT_V1",
+      "model": "gpt-5.6-terra",
+      "reasoningEffort": "medium",
+      "implementation": "deterministic-mock"
+    },
+    {
+      "id": "OPENAI_RAG_ESCALATION_V1",
+      "model": "gpt-5.6-sol",
+      "reasoningEffort": "high",
+      "implementation": "deterministic-mock"
+    },
+    {
+      "id": "OPENAI_EMBEDDING_V1",
+      "model": "text-embedding-3-large",
+      "dimension": 3072,
+      "implementation": "deterministic-mock"
+    }
+  ],
+  "database": {
+    "engine": "PostgreSQL 14",
+    "extensions": ["vector", "pg_trgm"],
+    "logicalTableCount": 15,
+    "roles": [
+      "techflow_rag_migrator",
+      "techflow_rag_app",
+      "techflow_rag_source_fetcher"
+    ],
+    "activepiecesDatabaseShared": false
+  },
+  "container": {
+    "runtimeUser": "10001:10001",
+    "readOnlyRootFilesystem": true,
+    "capabilitiesDropped": ["ALL"],
+    "hostBinding": "127.0.0.1:18090",
+    "imageId": "sha256:99ef2675b928a8d391eac6de918915da39f82e6b683c169f424ef39cb2fe3bfb",
+    "baseImagesPinnedByDigest": true
+  },
+  "deploymentEvidence": {
+    "verifiedAt": "2026-08-04",
+    "server": "techflow test server",
+    "composeProject": "techflow-ai-gateway",
+    "gatewayHealthy": true,
+    "databaseHealthy": true,
+    "apiCanary": "valid",
+    "schemaVerification": "valid",
+    "tableCount": 15,
+    "extensionCount": 2,
+    "leastPrivilegeVerification": "valid"
+  },
+  "nextIssue": 42
+}
