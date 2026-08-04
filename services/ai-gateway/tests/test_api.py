@@ -1,0 +1,192 @@
+from __future__ import annotations
+
+import unittest
+from uuid import uuid4
+
+from fastapi.testclient import TestClient
+
+from app.config import Settings
+from app.main import create_app
+from app.store import MemoryStore
+
+
+CORRELATION = "test-correlation-0001"
+HEADERS = {"X-Correlation-Id": CORRELATION, "Idempotency-Key": "test-idempotency-0001"}
+
+
+class ApiContractTest(unittest.TestCase):
+    def setUp(self) -> None:
+        self.client = TestClient(create_app(Settings(), MemoryStore()))
+
+    @staticmethod
+    def source_body(profile: str = "CLOUD_MAIN") -> dict[str, object]:
+        return {
+            "sourceProfileId": profile,
+            "repository": "ablecloud-team/ablestack-cloud",
+            "branch": "main",
+            "commit": "a" * 40,
+            "sourceKind": "SOURCE_CODE",
+            "classification": "D0",
+            "licenseSpdx": "Apache-2.0",
+        }
+
+    def create_source(self, key: str = "test-create-source-0001") -> dict[str, object]:
+        response = self.client.post(
+            "/v1/sources",
+            json=self.source_body(),
+            headers={"X-Correlation-Id": CORRELATION, "Idempotency-Key": key},
+        )
+        self.assertEqual(201, response.status_code, response.text)
+        return response.json()["data"]
+
+    def approve_source(self, source_id: str) -> dict[str, object]:
+        response = self.client.post(
+            f"/v1/sources/{source_id}/approve",
+            json={"approvedBy": "security-reviewer"},
+            headers={"X-Correlation-Id": CORRELATION, "Idempotency-Key": "test-approve-source-0001"},
+        )
+        self.assertEqual(200, response.status_code, response.text)
+        return response.json()["data"]
+
+    def test_health_exposes_mock_profiles_without_secrets(self) -> None:
+        response = self.client.get("/healthz")
+        self.assertEqual(200, response.status_code)
+        body = response.json()
+        self.assertEqual(3, len(body["data"]["providerProfiles"]))
+        self.assertNotIn("credential", response.text.lower())
+
+    def test_missing_correlation_is_rejected(self) -> None:
+        response = self.client.get(f"/v1/sources/{uuid4()}")
+        self.assertEqual(400, response.status_code)
+        self.assertEqual("INVALID_CORRELATION_ID", response.json()["error"]["code"])
+
+    def test_missing_idempotency_is_rejected(self) -> None:
+        response = self.client.post("/v1/sources", json=self.source_body(), headers={"X-Correlation-Id": CORRELATION})
+        self.assertEqual(400, response.status_code)
+        self.assertEqual("INVALID_BOUNDARY", response.json()["error"]["code"])
+
+    def test_create_get_and_approve_source(self) -> None:
+        source = self.create_source()
+        get_response = self.client.get(
+            f"/v1/sources/{source['sourceId']}", headers={"X-Correlation-Id": CORRELATION}
+        )
+        self.assertEqual("QUARANTINED", get_response.json()["data"]["state"])
+        approved = self.approve_source(source["sourceId"])
+        self.assertEqual("ACTIVE", approved["state"])
+
+    def test_create_source_is_idempotent(self) -> None:
+        first = self.create_source("test-create-source-repeat")
+        second = self.create_source("test-create-source-repeat")
+        self.assertEqual(first["sourceId"], second["sourceId"])
+
+    def test_ingestion_job_contract(self) -> None:
+        source = self.create_source("test-create-source-ingest")
+        self.approve_source(source["sourceId"])
+        response = self.client.post(
+            f"/v1/sources/{source['sourceId']}/ingestions",
+            json={"requestedBy": "activepieces"},
+            headers={"X-Correlation-Id": CORRELATION, "Idempotency-Key": "test-ingestion-job-0001"},
+        )
+        self.assertEqual(202, response.status_code, response.text)
+        job = response.json()["data"]
+        status_response = self.client.get(
+            f"/v1/jobs/{job['jobId']}", headers={"X-Correlation-Id": CORRELATION}
+        )
+        self.assertEqual("PENDING", status_response.json()["data"]["state"])
+
+    def test_compatibility_set_accepts_only_approved_version(self) -> None:
+        source = self.create_source("test-create-source-compat")
+        approved = self.approve_source(source["sourceId"])
+        response = self.client.post(
+            "/v1/compatibility-sets",
+            json={
+                "name": "ABLESTACK Main Baseline",
+                "product": "ABLESTACK",
+                "productVersion": "main",
+                "members": [{"sourceVersionId": approved["sourceVersionId"], "required": True}],
+            },
+            headers={"X-Correlation-Id": CORRELATION, "Idempotency-Key": "test-compatibility-set"},
+        )
+        self.assertEqual(201, response.status_code, response.text)
+        self.assertEqual("APPROVED", response.json()["data"]["state"])
+
+    def test_query_abstains_without_provider_call(self) -> None:
+        response = self.client.post(
+            "/v1/rag/query",
+            json={
+                "queryId": str(uuid4()),
+                "question": "ABLESTACK 상태를 설명해줘",
+                "sourceProfileIds": ["CLOUD_MAIN"],
+                "classification": "D0",
+            },
+            headers={"X-Correlation-Id": CORRELATION},
+        )
+        self.assertEqual(200, response.status_code, response.text)
+        data = response.json()["data"]
+        self.assertEqual("ABSTAINED", data["state"])
+        self.assertFalse(data["providerCalled"])
+
+    def test_query_requires_exactly_one_scope(self) -> None:
+        response = self.client.post(
+            "/v1/rag/query",
+            json={"queryId": str(uuid4()), "question": "question"},
+            headers={"X-Correlation-Id": CORRELATION},
+        )
+        self.assertEqual(422, response.status_code)
+
+    def test_validation_response_does_not_echo_question(self) -> None:
+        sensitive = "do-not-echo-this-question"
+        response = self.client.post(
+            "/v1/rag/query",
+            json={"queryId": "invalid", "question": sensitive, "sourceProfileIds": ["CLOUD_MAIN"]},
+            headers={"X-Correlation-Id": CORRELATION},
+        )
+        self.assertEqual(422, response.status_code)
+        self.assertNotIn(sensitive, response.text)
+
+    def test_withdrawal_creates_deletion_job(self) -> None:
+        source = self.create_source("test-create-source-delete")
+        response = self.client.delete(
+            f"/v1/sources/{source['sourceId']}",
+            headers={"X-Correlation-Id": CORRELATION, "Idempotency-Key": "test-delete-source-0001"},
+        )
+        self.assertEqual(202, response.status_code)
+        self.assertEqual("DELETION", response.json()["data"]["jobType"])
+
+    def test_evaluation_run_contract(self) -> None:
+        response = self.client.post(
+            "/v1/evaluations/runs",
+            json={
+                "name": "Issue 41 Contract",
+                "sourceProfileIds": ["CLOUD_MAIN"],
+                "providerProfileId": "OPENAI_RAG_DEFAULT_V1",
+                "requestedBy": "evaluator",
+            },
+            headers={"X-Correlation-Id": CORRELATION, "Idempotency-Key": "test-evaluation-run"},
+        )
+        self.assertEqual(202, response.status_code, response.text)
+        run_id = response.json()["data"]["runId"]
+        get_response = self.client.get(
+            f"/v1/evaluations/runs/{run_id}", headers={"X-Correlation-Id": CORRELATION}
+        )
+        self.assertEqual("PENDING", get_response.json()["data"]["state"])
+
+    def test_openapi_contains_eleven_operations(self) -> None:
+        schema = self.client.get("/openapi.json").json()
+        operations = [
+            operation
+            for path in schema["paths"].values()
+            for method, operation in path.items()
+            if method.lower() in {"get", "post", "delete", "put", "patch"}
+        ]
+        self.assertEqual(11, len(operations))
+        self.assertEqual(11, len({operation["operationId"] for operation in operations}))
+
+    def test_all_responses_disable_cache_and_echo_correlation(self) -> None:
+        response = self.client.get("/v1/jobs/00000000-0000-0000-0000-000000000000", headers={"X-Correlation-Id": CORRELATION})
+        self.assertEqual("no-store", response.headers["cache-control"])
+        self.assertEqual(CORRELATION, response.headers["x-correlation-id"])
+
+
+if __name__ == "__main__":
+    unittest.main()

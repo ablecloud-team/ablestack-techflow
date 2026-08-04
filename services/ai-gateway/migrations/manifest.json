@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "1.0",
+  "issue": 41,
+  "files": [
+    {
+      "path": "0000_extensions_roles_down.sql",
+      "sha256": "f8ba200027bf87f300ed3bea27bcca67e98683bb46fbca32cef9e883c91d92ef",
+      "bytes": 403
+    },
+    {
+      "path": "0000_extensions_roles_up.sql",
+      "sha256": "b39c3a8d59ac861278b3e34a0282cfb565ba9a700a4a8cd68d20a9932c0609ab",
+      "bytes": 971
+    },
+    {
+      "path": "0001_schema_down.sql",
+      "sha256": "0e443c830b3ca607875b750f93b5a26006b948f8a131ef7f449356aece1644d4",
+      "bytes": 723
+    },
+    {
+      "path": "0001_schema_up.sql",
+      "sha256": "a0ccdf2752d515e4a5bb2db7f4f1134022f4f01246b6c257dd0fdcd57b970004",
+      "bytes": 13088
+    }
+  ]
+}

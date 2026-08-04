@@ -1,0 +1,7 @@
+Source deck: output/presentation/techflow-rag-poc-design.pptx, 10 slides, 1280x720.
+Communication job: by the end, TechFlow reviewers should understand that Issue #41 has an implemented, deployed, and rollback-ready AI Gateway foundation and that real source ingestion and OpenAI calls remain gated to later issues.
+Brand: white canvas, Malgun Gothic, black/gray text, blue rule, pastel green/blue/red/yellow surfaces.
+Reusable patterns: title, two-card summary, three-column responsibility, native table, six-gate grid, linear architecture, three-column controls, three-column assets, four-step timeline, closing result.
+Structure: one master and one title layout; 10 slide-local editable compositions; no raster media or charts; one native table on slide 4.
+Insertion contract: duplicate each source slide 1:1, preserve master/layout/geometry/typography, rewrite only mapped inherited text and table cells, replace notes with Issue #41 source blocks, add no shapes or overlays.
+Placeholder audit: source inspection and rendered slides show no unfilled structural placeholders. Final OOXML placeholder scan remains mandatory.
