@@ -1,198 +1,205 @@
-# TechFlow RAG PoC 개발·검증 Runbook
+# TechFlow 문서·소스코드 RAG PoC 개발·검증 Runbook
 
 > 대상: Issue #20, 하위 Issue #41~#46
 >
-> 설계 계약: [techflow-rag-poc-contract.json](../decisions/techflow-rag-poc-contract.json)
+> 개정: 2026-08-03 - OpenAI Responses·Embeddings 런타임과 모델 라우팅 포함
 
 ## 1. 목적
 
-Issue #20의 하위 구현이 동일한 Source, 데이터 등급, API, 검색, 답변, 실패, 삭제와 평가 계약을 유지하도록 개발 시작·검토·통합·배포 순서를 정의한다. 이 Runbook은 실제 운영 절차가 아니라 P1 PoC 구현과 검증 절차다.
+문서와 6개 소스 저장소를 9개 Source Profile로 안전하게 수집·색인하고, Cloud Branch와 미승인 저장소 조합이 섞이지 않는 근거 답변을 구현·검증하는 표준 절차다. 실제 운영 배포 전 PoC 개발 기준으로 사용한다.
 
-## 2. 작업 시작 전 공통 확인
+## 2. 시작 조건
 
-1. 로컬 `main`과 `upstream/main`을 동기화한다.
-2. 해당 하위 Issue 전용 Branch를 최신 로컬 `main`에서 만든다.
-3. 선행 Issue가 병합·종료됐는지 확인한다.
-4. 구조화 계약 Validator와 기존 회귀 테스트를 실행한다.
-5. Secret·Provider·Database Credential은 런타임으로만 전달한다.
-6. Source Commit과 허용 경로가 설계 계약과 일치하는지 확인한다.
-
-```bash
-python3 tools/rag/validate_rag_poc_contract.py \
-  docs/decisions/techflow-rag-poc-contract.json
-
-python3 -m unittest -v tools.rag.test_validate_rag_poc_contract
-```
+1. local `main`과 `upstream/main`이 일치한다.
+2. [ADR-0008](../adr/0008-techflow-rag-poc-architecture.md), [ADR-0009](../adr/0009-openai-runtime-integration.md)과 [구조화 계약](../decisions/techflow-rag-poc-contract.json)이 승인됐다.
+3. OpenAI API Project·Model 접근·Data Control 상태가 비밀정보 없이 확인됐고 Provider·DB·GitHub Credential은 런타임 주입 경로에만 존재한다.
+4. `ablestack-docs`와 6개 소스 저장소의 지정 Branch가 Source Allowlist에 있다.
+5. 대상 Commit과 Diff Summary를 Source 승인자가 확인했다.
+6. Fetcher에 Hook·Build·Test·Shell 실행 권한이 없다.
 
 ## 3. 구현 순서
 
-| 순서 | Issue | 시작 조건 | 종료 Gate |
-|---:|---|---|---|
-| 1 | #41 Gateway·API·DB | Issue #20 설계 승인 | OpenAPI·Migration·격리 Role |
-| 2 | #42 Registry·Quarantine | #41 병합 | D0 Allowlist·승인·거부 |
-| 3 | #43 Chunk·Embedding·Retrieval·삭제 | #42 병합 | Hybrid 검색·Lineage·삭제 |
-| 4 | #44 답변·Provider·보류 | #43 병합 | Citation·보류·Tool 차단 |
-| 5 | #45 Activepieces Flow | #42~#44 병합 | 멱등성·Correlation·실패 분류 |
-| 6 | #46 품질·보안·E2E | #44·#45 병합 | Golden Set·운영 증적 |
+| 순서 | Issue | 종료 입력 |
+|---:|---|---|
+| 1 | #41 API·DB | Source·Compatibility·Provider Profile, Symbol·Relation·Provider Call Schema, Role Migration |
+| 2 | #42 Fetch·Registry·검역 | 9개 Profile 최신 Head 후보·고정 Commit 승인·원자 활성화 |
+| 3 | #43 Parse·Index·Retrieval·삭제 | AST/Fallback, OpenAI Embeddings, FTS·Identifier·Vector, Lineage |
+| 4 | #44 답변·보류 | OpenAI Responses, Terra·Sol Routing, Structured Output, Citation 검증 |
+| 5 | #45 Activepieces | Docs·Code 수집·재색인·평가 Flow |
+| 6 | #46 품질·보안·E2E | 50개 Golden Set과 운영 증적 |
 
-## 4. Issue #41 시작 입력
-
-다음 값은 저장소에 기록하지 않고 보호 저장소 또는 대화형 입력으로만 제공한다.
-
-- Provider Endpoint
-- Chat Model 이름
-- Embedding Model 이름과 Dimension
-- Provider Credential
-- RAG Database App·Migration Credential
-- GitHub API 인증 사용 여부와 Credential
-- 평가 Reviewer
-
-값이 준비되지 않아도 Provider·GitHub Mock 기반 구현은 진행할 수 있다. 실제 Provider E2E는 Runtime 입력이 준비된 뒤 수행한다.
-
-## 5. Source 검증
-
-P1 허용 Source는 다음과 같다.
+## 4. Source 기준선 확인
 
 ```text
-repository = ablecloud-team/ablestack-docs
-branch = master
-path = docs/**/*.md
-classification = D0
+SHARED_DOCS  ablecloud-team/ablestack-docs       master             50d50ad6c8c548dc58db866ca28b4cbb43cc74d0
+CLOUD_MAIN   ablecloud-team/ablestack-cloud      main               a873fb1ff436990fd523e2fe56682ff7aa31d1ec
+CLOUD_DIPLO  ablecloud-team/ablestack-cloud      ablestack-diplo    87beae809aa78af395c295eead50b0b8db220672
+CLOUD_EUROPA ablecloud-team/ablestack-cloud      ablestack-europa   4787b6918bfa48a3d3665814f29ff23f9007fe1f
+WALL_MAIN    ablecloud-team/ablestack-wall       main               f27b3f1b0b35489e05c64924b5cff7dc64dd2f6d
+COCKPIT_DIPLO ablecloud-team/ablestack-cockpit-plugin ablestack-diplo 2018453077064a8a7fa92bcb4d8f531d8d1f8bb7
+GENIE_MASTER ablecloud-team/ablestack-genie      master             3e3c5c364f5c7261b07d49fcbcd4f3605b91f3b1
+KICKSTART_MASTER ablecloud-team/ablestack-kickstart master          ffe24390544dd58e3441ac7362fe46b93472d0e1
+QEMU_EXEC_TOOLS_MAIN ablecloud-team/ablestack-qemu-exec-tools main  a4b9bd60bb93800612d96aaad84e73ddfd768b68
 ```
 
-수집 시 Branch 최신 상태를 바로 색인하지 않는다. 현재 Commit을 후보 Version으로 등록하고 검역·운영자 승인 후에만 활성화한다.
+Branch Head가 바뀌면 새 Commit을 후보로만 등록한다. 운영자 승인과 전체 검역·색인 성공 전에는 기존 `ACTIVE` Version을 유지한다.
 
-검증 항목:
+## 5. 파일 허용·검역
 
-- Repository·Branch·Path Allowlist
-- Commit SHA, Blob SHA, Content Hash
-- Markdown MIME·Encoding·Size
-- Secret·개인정보·악성 지시·Unsafe Link
-- 승인자·승인 시각·승인 Version
+### 허용
 
-검사 실패 원문은 로그·Issue에 남기지 않는다. Source ID, 검출 규칙 ID, 파일 경로 Hash와 상태만 기록한다.
+- Docs: `docs/**/*.md`
+- Backend·Script: `java`, `py`, `js`, `jsx`, `ts`, `tsx`, `vue`, `go`, `rb`, `groovy`, `cs`, `sh`, `bash`, `c`, `cc`, `cpp`, `h`, `hpp`, `rs`, `ps1`, `cmd`, `bat`
+- UI: `html`, `htm`, `css`, `scss`, `sass`, `less`, `hbs`
+- Build·Schema·Provisioning: `xml`, `sql`, `yaml`, `yml`, `properties`, `json`, `toml`, `ini`, `conf`, `cfg`, `service`, `spec`, `ks`, `repo`, `j2`, `tmpl`, `in`
+- 저장소 문서: `md`, `mdx`, `adoc`, `rst`
 
-## 6. Database Bootstrap
+### 차단
 
-1. PostgreSQL·Redis 상태 백업을 수행한다.
-2. 보호된 PostgreSQL 관리자 Credential로 `techflow_rag` Database를 생성한다.
-3. `techflow_rag_migrator`와 `techflow_rag_app` Role을 분리한다.
-4. `vector` Extension을 RAG Database에 활성화한다.
-5. Migration Role로 Schema를 적용한다.
-6. App Role이 DDL·다른 Database·Activepieces Table에 접근하지 못하는지 검사한다.
-7. Migration 재실행과 역방향 호환성을 검증한다.
+- `target`, `build`, `dist`, `node_modules`, `vendor`, `third_party`, `generated`, `gen`
+- Minified, Binary, NUL, 비정상 Encoding, 1 MiB 초과
+- Secret·개인정보·Credential URL 검출
+- 승인되지 않은 Repository·Branch·Commit·Redirect
 
-Database Credential은 `.env.example`, Compose Source, Log, PR, Issue와 보고서에 기록하지 않는다.
+검역 실패 원문은 로그·Issue에 기록하지 않는다. Source ID, Path Hash, Rule ID, 상태만 남긴다.
 
-## 7. Provider Profile 등록
+## 6. 안전한 Source Fetch
 
-Provider Profile에는 Endpoint, Chat Model, Embedding Model, Dimension과 Version만 기록한다. Credential 값은 보호 저장소 참조를 통해 런타임 주입한다.
+1. Fetch 요청의 Repository·Branch·Commit이 Registry와 정확히 일치하는지 확인한다.
+2. 임시 빈 Directory에서 Hook을 비활성화하고 고정 Commit Tree·Blob만 읽는다.
+3. Checkout Script, Git LFS Smudge, Submodule, Build와 Test를 실행하지 않는다.
+4. Blob SHA·Size·Path·Encoding을 검사한 후 허용 Text만 Parser에 전달한다.
+5. Job 종료 후 임시 원문을 삭제하고 File Count·Hash·Duration만 기록한다.
+6. 같은 Commit 재실행은 동일 Idempotency Key와 Content Hash로 중복을 만들지 않는다.
 
-확인 항목:
+## 7. DB Bootstrap
 
-- 입력 보존·학습 비활성화
-- D0만 전송
-- Timeout·429·5xx 처리
-- Token·비용 상한
-- 요청·응답 원문 로그 비활성화
-- Tool·Function Calling 비활성화
+- Database: `techflow_rag`
+- Role: `techflow_rag_migrator`, `techflow_rag_app`, `techflow_rag_source_fetcher`
+- Extension: `vector`, `pg_trgm`
+- Activepieces DB Role과 공유 금지
+- Compatibility Set·Symbol·Relation Table에 Source Profile·Branch·Commit Filter Index 생성
+- Provider Profile과 `rag_provider_call`에는 Model·Request/Response ID·Token·Latency·상태만 저장하고 Prompt·응답 원문은 저장하지 않음
+- Credential은 Compose Source, `.env.example`, Log, PR, Issue에 기록 금지
 
-Embedding Profile 변경은 새 Vector 세대를 만들고 Golden Set 비교 후 전환한다. 기존 Vector를 제자리에서 덮어쓰지 않는다.
+Migration 후 빈 DB에서 적용·Rollback·재적용을 검증한다.
 
-## 8. Activepieces Flow 검토
+## 8. Parser·Chunk 검증
 
-Flow가 전달할 수 있는 필드:
+### 문서
 
-```text
-correlationId, sourceId, sourceVersion, jobId
-operation, status, errorCode, failureClass
-evaluationRunId
-```
+- Heading·Table·List·Code Block 보존
+- 700 Token·Overlap 100
 
-전달 금지 필드:
+### Production Code
 
-```text
-documentBody, prompt, answer, providerCredential
-databaseCredential, authorizationHeader, secret
-```
+- Tree-sitter Symbol 단위, 1,200 Token·Overlap 120
+- Package·Import·Annotation·Signature·Doc Comment·Line Range 보존
+- Parser 실패 시 160 Line·Overlap 20 Fallback과 상태 기록
 
-Flow의 성공은 HTTP 2xx만으로 판단하지 않는다. AI Gateway의 상태와 결과 계약을 확인한다. 불명확한 결과는 `UNKNOWN` 또는 `MANUAL_REVIEW`로 처리하고 자동 재전송하지 않는다.
+### Test·Schema
 
-## 9. Golden Set 실행
+- Test는 `TEST_CODE`, Weight 0.6, 단독 답변 금지
+- XML·SQL·YAML·Properties는 Logical Block으로 분할
+- Chunk ID가 Repository·Branch·Commit·Path·Symbol·Line·Hash·Profile Version에 대해 결정적인지 확인
 
-1. Golden Case Version과 Provider·Embedding·Chunk Profile Version을 고정한다.
-2. Index Commit과 활성 Source 수·Chunk 수를 기록한다.
-3. 30개 이상의 Case를 실행한다.
-4. Citation, Expected Source Recall, 금지 주장, 결과 상태, 지연·Token을 수집한다.
-5. Reviewer가 정확성·유용성을 평가한다.
-6. 기준 미달 Case를 Category별로 분석한다.
-7. 변경 후 전체 Golden Set을 다시 실행한다.
+## 9. 검색 검증
 
-완료 기준:
+1. Query에 `sourceProfileIds` 또는 승인된 `compatibilitySetId`를 지정한다.
+2. SQL 후보 생성 전에 D0·ACTIVE·Source Profile·Compatibility Set·Branch·Commit Filter를 적용한다.
+3. FTS 20, Identifier 20, exact cosine 30 후보를 생성한다.
+4. RRF `k=60`과 Test Weight를 적용한다.
+5. 최종 10개, Source Version당 4개 제한을 확인한다.
+6. 다른 Cloud Branch 또는 미승인 저장소 조합의 Chunk가 1개라도 섞이면 실패 처리한다.
 
-- Citation 100%
-- 수용 가능 답변 80% 이상
-- 올바른 보류 90% 이상
-- 정상 Provider P95 10초 이하
-- Restricted Data·Secret·파생 데이터 잔존 0건
+활성 Chunk가 50,000개 이상이면 exact와 HNSW를 같은 Golden Set으로 비교한다. Recall 손실 2%p 이하와 P95 개선을 충족할 때만 Profile별 HNSW 변경 제안을 만든다.
 
-## 10. Source 철회·삭제 검증
+## 10. 답변 검증
 
-1. 활성 Source Version을 철회한다.
-2. 같은 Transaction 또는 상태 전환 직후 검색 후보에서 제외됐는지 확인한다.
-3. Source ID로 Chunk·Embedding·Cache·평가 연결을 조회한다.
-4. 삭제 Job을 실행한다.
-5. 테스트 환경에서는 15분 이내 파생 행 0건을 확인한다.
-6. 삭제 건수·시각·상태를 Ledger에 기록한다.
-7. 백업 복구 Drill 후 Ledger를 재적용해 재등장하지 않는지 확인한다.
+- 답변이 Source Profile·Compatibility Set·Branch·Commit을 명시한다.
+- 코드 Citation의 Path·Start Line·End Line·Symbol이 고정 Commit에서 해석된다.
+- 문서·코드가 충돌하면 충돌을 표시하거나 보류한다.
+- Test-only, Branch 미지정, Cross-Branch, 미승인 Cross-Repository, 근거 부족은 `ABSTAINED`다.
+- AI Tool·Shell·API·Flow·ABLESTACK·Source Code 실행 경로가 없다.
+- Prompt·응답 원문이 DB·Redis·Log·Metric에 남지 않는다.
+- Responses 요청에 `store=false`, `background=false`, Tool 0개와 Structured Output이 적용된다.
+- Gateway가 반환 Citation을 현재 Context와 Source Version에 대해 다시 검증한다.
+- 기본 `gpt-5.6-terra/medium`과 사전 규칙 기반 `gpt-5.6-sol/high` 승격만 허용한다.
+- 낮은 자신감이나 Provider 오류 때문에 자동 두 번째 Model 호출이 발생하지 않는다.
+- 개인 사용자는 단방향 가명화한 안정적인 `safety_identifier`를 사용한다.
 
-운영 상한은 7일이며 SLO 위반은 `MANUAL_REVIEW`와 경보 대상이다.
+## 10.1 OpenAI Adapter 검증
 
-## 11. 실패와 재처리
+1. 공식 Python SDK의 Responses API와 Embeddings API Adapter만 활성화한다.
+2. 원본 Repository·OpenAI File·Vector Store·ChatGPT Project 업로드 경로가 없음을 확인한다.
+3. Query Context는 최종 최대 10개 D0 Chunk와 Citation Metadata만 포함한다.
+4. 최초 대량 색인·전체 재색인·평가만 Batch API 후보이며 증분 색인은 동기 Embeddings API를 사용한다.
+5. Connect 3초·전체 12초, 429·5xx·Network Timeout 최대 3회와 Circuit Breaker를 검증한다.
+6. `rag_provider_call`에 Raw Prompt·Raw Response·Credential이 없음을 확인한다.
+7. OpenAI Organization·Project의 ZDR·MAM·Data Residency 상태를 배포 증적에 기록한다. `store=false`만으로 ZDR이라고 판정하지 않는다.
 
-| 실패 분류 | 재시도 | 예 |
+## 11. Golden Set
+
+- 총 50개 이상
+- Code 질문 20개 이상
+- Cloud main·Diplo·Europa 차이 5개 이상
+- Component Repository 질문을 저장소별 최소 1개 포함
+- 문서·코드 교차 검증 5개 이상
+- 근거 없음·Test-only·충돌 보류 5개 이상
+
+각 Case는 Source Profile, Compatibility Set, Commit, Expected Source Kind, Repository·Path·Symbol·Line Range, 필수 개념, 금지 주장과 기대 상태를 가진다.
+
+## 12. 삭제 Drill
+
+1. 대상 Profile의 활성 Source Version을 `WITHDRAWN`으로 전환한다.
+2. 즉시 Retrieval 후보가 0건인지 확인한다.
+3. Chunk·Embedding·Symbol·Relation·Cache·Evaluation Link를 Lineage로 조회한다.
+4. 테스트 환경 15분 내 잔여 0건을 확인한다.
+5. Deletion Ledger에는 시각·대상 건수·결과만 남긴다.
+6. 격리 복구 후 Ledger를 재적용하고 다시 0건을 확인한다.
+
+## 13. Activepieces Flow
+
+| Flow | 입력 | 출력 |
 |---|---|---|
-| `RETRYABLE` | 최대 3회, 지수 Backoff | 429, 5xx, Timeout |
-| `TERMINAL` | 없음 | 등급·Allowlist·Schema·Secret 위반 |
-| `MANUAL_REVIEW` | 담당자 승인 후 | 출처 충돌, 악성 지시 의심, 삭제 불완전 |
+| Discovery | Source ID·Branch | 후보 Commit·Diff Summary |
+| Approval | 후보 Version·검역 요약 | 승인·거부 ID |
+| Ingestion | 승인 Version·Idempotency Key | Job ID |
+| Evaluation | Source Profile·Compatibility Set·Commit·Provider Profile | Evaluation Run ID |
 
-재시도는 같은 Idempotency Key를 사용한다. 새로운 Key로 같은 작업을 반복해 중복 Source·Chunk·Provider 비용을 만들지 않는다.
+Flow에는 코드 원문·Provider Key·GitHub Token을 저장하지 않는다. AI Gateway의 `SUCCEEDED`와 품질 Gate 통과를 분리한다.
 
-## 12. 배포 전 검증
+## 14. 배포
 
-- 모든 단위·계약·통합·보안 테스트 통과
-- 구조화 계약 Validator 통과
-- Image·의존성 Version·Digest 잠금
-- Secret Scan 0건
-- 외부 AI Gateway Route 없음
-- Egress 목적지 Allowlist 확인
-- DB Role 격리 확인
-- Backup·Rollback Point 기록
-- Test Source Canary와 Golden Set 통과
-- Source 철회·삭제 검증 통과
+1. Runtime·DB·Secret Store 백업
+2. Migration과 Extension 검증
+3. Gateway·Fetcher Image Digest와 Parser Dependency 잠금
+4. 내부 Network에만 배포
+5. `/healthz`, Mock Provider, Parser Health 확인
+6. OpenAI API Project의 Model 접근·ZDR/MAM·Data Residency 상태 확인
+7. 문서와 8개 코드 Source Profile의 소형 Canary 순차 검증
+8. 전체 승인 Commit 색인
+9. 50개 Golden Set·Branch Isolation·Compatibility Set·Model Routing·삭제 Drill 통과
+10. Activepieces Flow Publish
 
-## 13. 롤백
+## 15. 롤백
 
-1. RAG Activepieces Flow를 비활성화한다.
-2. AI Gateway 호출 경로를 비활성화한다.
-3. 신규 Source Version을 검색에서 제외한다.
-4. 직전 활성 Version 또는 빈 Index로 전환한다.
-5. Runtime Image Lock을 직전 Version으로 복원한다.
-6. RAG Database는 조사와 증적을 위해 보존한다.
-7. 삭제 요청이 있으면 복구 전후에 Ledger를 재적용한다.
+1. RAG Flow 비활성화
+2. 실패한 Source Profile만 검색 제외
+3. 직전 승인 Commit 또는 빈 Index로 전환
+4. Gateway·Fetcher 직전 Digest 복귀
+5. 삭제 Ledger 재적용
+6. Chunk·Embedding·Symbol·Relation 잔여와 기존 Active Profile 정상성을 확인
 
-Activepieces, PostgreSQL·Redis Volume 또는 기존 GitHub Chat Flow를 삭제하지 않는다.
+## 16. 완료 증적
 
-## 14. Issue 완료 증적
-
-각 하위 Issue는 다음을 남긴다.
-
-- 구현 PR과 Merge Commit
-- 자동 테스트·보안 테스트 결과
-- 배포 또는 Mock E2E 결과
-- 변경된 API·Schema·Flow Version
-- Rollback 기준과 실제 확인
-- Secret Scan 결과
-- Runbook·완료 보고서 갱신
-
-Issue #46은 전체 Markdown 보고서, PDF 보고서, PPTX/PDF 발표자료와 Artifact Manifest를 생성한다.
+- 승인 Source·Branch·Commit·File Count
+- 검역 Rule별 통과·차단 건수
+- Parser 성공·Fallback·실패 건수
+- Profile별 Chunk·Symbol·Relation·Embedding 건수
+- Branch Isolation과 Code Line Citation 결과
+- Golden Set·P95·Provider 오류·보류 결과
+- Model Profile별 Token·Latency·비용·Structured Output·Citation 사후 검증 결과
+- OpenAI API Project Data Control 상태와 Tool·File·Vector Store 호출 0건 증적
+- 삭제·복구 Drill
+- Markdown 보고서, PDF 보고서, PPTX/PDF 발표자료, Artifact Manifest

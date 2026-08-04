@@ -13,6 +13,7 @@ FILES = [
     ROOT / "README.md",
     ROOT / "docs/plans/techflow-product-roadmap.md",
     ROOT / "docs/adr/0008-techflow-rag-poc-architecture.md",
+    ROOT / "docs/adr/0009-openai-runtime-integration.md",
     ROOT / "docs/plans/issue-20-rag-poc-design.md",
     ROOT / "docs/decisions/techflow-rag-poc-contract.json",
     ROOT / "docs/runbooks/rag-poc-development.md",

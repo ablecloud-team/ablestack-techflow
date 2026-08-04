@@ -120,7 +120,7 @@ Activepieces Compose 기준선은 테스트 서버에 배포되어 Health, Worke
 
 P0 보안 기준은 인터넷 이벤트, Activepieces 실행면, 상태 저장소, AI/RAG와 향후 ABLESTACK 작업 경계를 위협 모델로 관리합니다. 데이터는 D0 Public부터 D3 Restricted까지 분류하고, 원문 Webhook·인증 Header와 Secret은 영속 저장하지 않으며, P1 RAG는 D0만 기본 허용합니다. Source 철회 시 Chunk·Embedding·Cache 삭제 SLO는 최대 7일입니다.
 
-Issue #20에서는 사내 Assist 실증의 첫 AI 기반으로 RAG PoC를 상세 설계했습니다. 최초 Source는 `ablecloud-team/ablestack-docs`의 공개 Markdown 276개로 제한하고, Activepieces는 수집·승인·재색인·평가를 오케스트레이션하며 TechFlow AI Gateway가 Source Registry, 검역, 검색, 답변·보류와 삭제 정책을 소유합니다. 구현은 하위 이슈 #41~#46으로 분해했으며 설계 승인 후 #41부터 진행합니다.
+Issue #20에서는 사내 Assist 실증의 첫 AI 기반으로 문서·소스코드 RAG PoC를 상세 설계했습니다. Source는 `ablestack-docs`와 `ablestack-cloud`, `ablestack-wall`, `ablestack-cockpit-plugin`, `ablestack-genie`, `ablestack-kickstart`, `ablestack-qemu-exec-tools`를 포함합니다. Cloud는 최신 `main`·`ablestack-diplo`·`ablestack-europa` Head를 각각 후보로 추적하고 승인 Commit을 독립 색인합니다. 총 9개 Source Profile을 분리하며, 서로 다른 저장소의 근거는 승인된 Compatibility Set에서만 결합합니다. 코드 답변에는 Repository·Branch·Commit·Path·Line·Symbol Citation을 요구합니다. Activepieces는 변경 감지·승인·재색인·평가를 오케스트레이션하고 TechFlow AI Gateway가 Registry, 코드 검역·구문 분석, 검색, 답변·보류와 삭제 정책을 소유합니다. AI Gateway는 OpenAI Responses API를 제품 답변 런타임으로, Embeddings API를 Vector 생성에 사용합니다. 기본 답변은 `gpt-5.6-terra/medium`, 복잡도 규칙을 통과한 질의만 `gpt-5.6-sol/high`로 승격하며, 원본 저장소를 OpenAI File·Vector Store에 업로드하지 않습니다. ChatGPT Work와 Codex는 운영·개발 보조 도구일 뿐 제품 런타임 의존성이 아닙니다. 구현은 하위 이슈 #41~#46으로 분해했으며 OpenAI 런타임 개정 설계 승인 후 #41부터 진행합니다.
 
 ## 문서
 
@@ -133,6 +133,7 @@ Issue #20에서는 사내 Assist 실증의 첫 AI 기반으로 RAG PoC를 상세
 - [보안·데이터 정책 프레젠테이션 PDF](output/pdf/techflow-security-data-policy-presentation.pdf)
 - [보안·데이터 정책 프레젠테이션 PPTX](output/presentation/techflow-security-data-policy.pptx)
 - [ADR-0008: TechFlow RAG PoC 아키텍처](docs/adr/0008-techflow-rag-poc-architecture.md)
+- [ADR-0009: OpenAI 런타임 통합 및 모델 라우팅](docs/adr/0009-openai-runtime-integration.md)
 - [Issue #20 RAG PoC 상세 설계](docs/plans/issue-20-rag-poc-design.md)
 - [RAG PoC 구조화 계약](docs/decisions/techflow-rag-poc-contract.json)
 - [RAG PoC 개발·검증 Runbook](docs/runbooks/rag-poc-development.md)
