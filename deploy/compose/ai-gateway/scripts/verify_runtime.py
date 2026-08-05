@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Issue #41 runtime canary using only the published local HTTP API."""
+"""Issue #42 runtime canary without approving or activating a real source."""
 
 from __future__ import annotations
 
@@ -10,7 +10,14 @@ import urllib.request
 from uuid import uuid4
 
 
-def call(base_url: str, method: str, path: str, correlation: str, body: dict | None = None, key: str | None = None) -> tuple[int, dict]:
+def call(
+    base_url: str,
+    method: str,
+    path: str,
+    correlation: str,
+    body: dict | None = None,
+    key: str | None = None,
+) -> tuple[int, dict]:
     headers = {"X-Correlation-Id": correlation}
     if key:
         headers["Idempotency-Key"] = key
@@ -20,10 +27,10 @@ def call(base_url: str, method: str, path: str, correlation: str, body: dict | N
         headers["Content-Type"] = "application/json"
     request = urllib.request.Request(base_url.rstrip("/") + path, data=data, method=method, headers=headers)
     try:
-        with urllib.request.urlopen(request, timeout=8) as response:
+        with urllib.request.urlopen(request, timeout=300) as response:
             return response.status, json.loads(response.read())
     except urllib.error.HTTPError as exc:
-        raise RuntimeError(f"canary request failed method={method} path={path} status={exc.code}") from exc
+        return exc.code, json.loads(exc.read())
 
 
 def expect(actual: int, expected: int, operation: str) -> None:
@@ -35,110 +42,85 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--base-url", default="http://127.0.0.1:18090")
     args = parser.parse_args()
-    run = uuid4().hex[:8].upper()
-    correlation = f"issue41-canary-{run.lower()}"
-    profile = f"ISSUE41_CANARY_{run}"
+    run = uuid4().hex[:8].lower()
+    correlation = f"issue42-canary-{run}"
 
-    code, source_response = call(
+    code, registry_response = call(args.base_url, "GET", "/v1/source-profiles", correlation)
+    expect(code, 200, "list-source-profiles")
+    profiles = registry_response["data"]
+    if len(profiles) != 9 or {item["initialReviewer"] for item in profiles} != {"dhslove"}:
+        raise RuntimeError("source registry must contain nine profiles assigned to dhslove")
+
+    code, mirror_response = call(args.base_url, "GET", "/v1/source-mirrors", correlation)
+    expect(code, 200, "list-source-mirrors")
+    if len(mirror_response["data"]) != 7:
+        raise RuntimeError("source mirror registry must contain seven repositories")
+
+    code, candidate_response = call(
         args.base_url,
         "POST",
-        "/v1/sources",
+        "/v1/source-profiles/GENIE_MASTER/discoveries",
         correlation,
-        {
-            "sourceProfileId": profile,
-            "repository": "ablecloud-team/ablestack-cloud",
-            "branch": "main",
-            "commit": "c" * 40,
-            "sourceKind": "SOURCE_CODE",
-            "classification": "D0",
-            "licenseSpdx": "Apache-2.0",
-        },
-        f"issue41-create-{run.lower()}",
+        {"detectedBy": "runtime-canary"},
+        f"issue42-discover-genie-{run}",
     )
-    expect(code, 201, "create-source")
-    source = source_response["data"]
+    expect(code, 201, "discover-genie")
+    source = candidate_response["data"]
+    if source["state"] == "REGISTERED":
+        code, scan_response = call(
+            args.base_url,
+            "POST",
+            f"/v1/source-versions/{source['sourceVersionId']}/scan",
+            correlation,
+            {"scannedBy": "source-fetcher"},
+            f"issue42-scan-genie-{run}",
+        )
+        expect(code, 200, "scan-genie")
+        source = scan_response["data"]
+    if source["state"] != "QUARANTINED" or source["blockingViolationCount"] != 0:
+        raise RuntimeError("GENIE canary must remain clean and quarantined pending reviewer approval")
 
-    code, approved_response = call(
-        args.base_url,
-        "POST",
-        f"/v1/sources/{source['sourceId']}/approve",
-        correlation,
-        {"approvedBy": "issue41-canary"},
-        f"issue41-approve-{run.lower()}",
+    code, mirror_response = call(args.base_url, "GET", "/v1/source-mirrors", correlation)
+    expect(code, 200, "list-source-mirrors-after-sync")
+    genie_mirror = next(item for item in mirror_response["data"] if item["repository"].endswith("ablestack-genie"))
+    if genie_mirror["state"] != "HEALTHY" or genie_mirror["lastHeadCommit"] != source["commit"]:
+        raise RuntimeError("GENIE persistent mirror state must be healthy at the scanned commit")
+
+    code, files_response = call(
+        args.base_url, "GET", f"/v1/source-versions/{source['sourceVersionId']}/files", correlation
     )
-    expect(code, 200, "approve-source")
-    approved = approved_response["data"]
+    expect(code, 200, "list-source-files")
+    files = files_response["data"]
+    if len(files) != source["candidateFileCount"] or any("content" in item for item in files):
+        raise RuntimeError("file inventory count or raw content boundary is invalid")
 
-    code, job_response = call(
+    code, denied_response = call(
         args.base_url,
         "POST",
         f"/v1/sources/{source['sourceId']}/ingestions",
         correlation,
-        {"requestedBy": "issue41-canary"},
-        f"issue41-ingest-{run.lower()}",
+        {"requestedBy": "activepieces"},
+        f"issue42-denied-ingest-{run}",
     )
-    expect(code, 202, "create-ingestion")
-
-    code, compatibility_response = call(
-        args.base_url,
-        "POST",
-        "/v1/compatibility-sets",
-        correlation,
-        {
-            "name": f"Issue 41 Canary {run}",
-            "product": "ABLESTACK",
-            "productVersion": run,
-            "members": [{"sourceVersionId": approved["sourceVersionId"], "required": True}],
-        },
-        f"issue41-compat-{run.lower()}",
-    )
-    expect(code, 201, "create-compatibility-set")
+    expect(code, 409, "unapproved-ingestion")
+    if denied_response.get("error", {}).get("code") != "INVALID_STATE":
+        raise RuntimeError("unapproved source must fail closed")
 
     code, query_response = call(
         args.base_url,
         "POST",
         "/v1/rag/query",
         correlation,
-        {
-            "queryId": str(uuid4()),
-            "question": "Issue 41 contract canary",
-            "compatibilitySetId": compatibility_response["data"]["compatibilitySetId"],
-            "classification": "D0",
-        },
+        {"queryId": str(uuid4()), "question": "Issue 42 source boundary canary", "sourceProfileIds": ["GENIE_MASTER"]},
     )
     expect(code, 200, "query")
     if query_response["data"]["state"] != "ABSTAINED" or query_response["data"]["providerCalled"]:
-        raise RuntimeError("Issue #41 query boundary must abstain without provider call")
-
-    code, evaluation_response = call(
-        args.base_url,
-        "POST",
-        "/v1/evaluations/runs",
-        correlation,
-        {
-            "name": f"Issue 41 Canary {run}",
-            "compatibilitySetId": compatibility_response["data"]["compatibilitySetId"],
-            "providerProfileId": "OPENAI_RAG_DEFAULT_V1",
-            "requestedBy": "issue41-canary",
-        },
-        f"issue41-eval-{run.lower()}",
-    )
-    expect(code, 202, "create-evaluation")
-
-    code, deletion_response = call(
-        args.base_url,
-        "DELETE",
-        f"/v1/sources/{source['sourceId']}",
-        correlation,
-        key=f"issue41-delete-{run.lower()}",
-    )
-    expect(code, 202, "withdraw-source")
+        raise RuntimeError("Issue #42 query boundary must abstain without provider call")
 
     print(
-        "runtime_canary=valid "
-        f"profile={profile} sourceState=WITHDRAWN queryState=ABSTAINED "
-        f"providerCalled=false ingestionJob={job_response['data']['jobId']} "
-        f"evaluationRun={evaluation_response['data']['runId']} deletionJob={deletion_response['data']['jobId']}"
+        "runtime_canary=valid profiles=9 mirrors=7 reviewer=dhslove "
+        f"sourceProfile=GENIE_MASTER sourceState={source['state']} files={len(files)} "
+        "unapprovedIngestion=denied queryState=ABSTAINED providerCalled=false"
     )
     return 0
 

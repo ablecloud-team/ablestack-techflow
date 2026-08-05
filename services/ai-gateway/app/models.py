@@ -18,12 +18,18 @@ RepositoryName = Annotated[str, StringConstraints(pattern=r"^[A-Za-z0-9_.-]+/[A-
 class SourceKind(StrEnum):
     DOCUMENTATION = "DOCUMENTATION"
     SOURCE_CODE = "SOURCE_CODE"
+    TEST_CODE = "TEST_CODE"
+    BUILD_SCHEMA = "BUILD_SCHEMA"
 
 
 class SourceState(StrEnum):
+    REGISTERED = "REGISTERED"
     QUARANTINED = "QUARANTINED"
+    APPROVED = "APPROVED"
+    INDEXING = "INDEXING"
     ACTIVE = "ACTIVE"
     WITHDRAWN = "WITHDRAWN"
+    REJECTED = "REJECTED"
 
 
 class JobState(StrEnum):
@@ -66,7 +72,37 @@ class SourceCreateRequest(StrictModel):
 
 class SourceApprovalRequest(StrictModel):
     approved_by: Annotated[str, StringConstraints(pattern=r"^[A-Za-z0-9_.:@-]{3,128}$")] = Field(alias="approvedBy")
+    expected_commit: CommitSha | None = Field(default=None, alias="expectedCommit")
     decision_note: Annotated[str, StringConstraints(max_length=500)] | None = Field(default=None, alias="decisionNote")
+    accept_quarantine_exclusions: bool = Field(default=False, alias="acceptQuarantineExclusions")
+
+    @model_validator(mode="after")
+    def exclusion_acceptance_requires_note(self) -> "SourceApprovalRequest":
+        if self.accept_quarantine_exclusions and (not self.decision_note or len(self.decision_note.strip()) < 10):
+            raise ValueError("acceptQuarantineExclusions requires a decisionNote of at least 10 characters")
+        return self
+
+
+class SourceDiscoveryRequest(StrictModel):
+    detected_by: Annotated[str, StringConstraints(pattern=r"^[A-Za-z0-9_.:@-]{3,128}$")] = Field(alias="detectedBy")
+
+
+class SourceScanRequest(StrictModel):
+    scanned_by: Annotated[str, StringConstraints(pattern=r"^[A-Za-z0-9_.:@-]{3,128}$")] = Field(alias="scannedBy")
+
+
+class JobCompletionRequest(StrictModel):
+    succeeded: bool
+    indexed_file_count: int = Field(ge=0, alias="indexedFileCount")
+    error_code: Annotated[str, StringConstraints(pattern=r"^[A-Z][A-Z0-9_]{2,63}$")] | None = Field(default=None, alias="errorCode")
+
+    @model_validator(mode="after")
+    def completion_contract(self) -> "JobCompletionRequest":
+        if self.succeeded and self.error_code is not None:
+            raise ValueError("successful completion cannot include errorCode")
+        if not self.succeeded and self.error_code is None:
+            raise ValueError("failed completion requires errorCode")
+        return self
 
 
 class CompatibilityMember(StrictModel):

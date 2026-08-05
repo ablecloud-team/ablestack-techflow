@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Apply or roll back the Issue #41 schema without printing credentials."""
+"""Apply or roll back the TechFlow AI Gateway schema without printing credentials."""
 
 from __future__ import annotations
 
@@ -17,6 +17,8 @@ EXPECTED_TABLES = {
     "rag_ingestion_job", "rag_chunk", "rag_embedding_profile", "rag_chunk_embedding",
     "rag_code_symbol", "rag_code_relation", "rag_deletion_ledger", "rag_evaluation_case",
     "rag_evaluation_run", "rag_evaluation_result", "rag_provider_call",
+    "rag_source_blob", "rag_source_file", "rag_source_scan_finding",
+    "rag_source_mirror",
 }
 
 
@@ -44,25 +46,36 @@ def table_names(connection: psycopg.Connection) -> set[str]:
 def verify(connection: psycopg.Connection) -> None:
     actual = table_names(connection)
     if actual != EXPECTED_TABLES:
-        raise SystemExit(f"schema mismatch expected=15 actual={len(actual)}")
+        raise SystemExit(f"schema mismatch expected={len(EXPECTED_TABLES)} actual={len(actual)}")
     extensions = {row[0] for row in connection.execute(
         "SELECT extname FROM pg_extension WHERE extname IN ('vector', 'pg_trgm')"
     ).fetchall()}
     if extensions != {"vector", "pg_trgm"}:
         raise SystemExit("required extensions are missing")
-    print("schema=valid tables=15 extensions=2")
+    profile_count = connection.execute(
+        "SELECT count(*) FROM rag_source WHERE source_profile_id IN "
+        "('SHARED_DOCS','CLOUD_MAIN','CLOUD_DIPLO','CLOUD_EUROPA','WALL_MAIN','COCKPIT_DIPLO','GENIE_MASTER','KICKSTART_MASTER','QEMU_EXEC_TOOLS_MAIN')"
+    ).fetchone()[0]
+    if profile_count != 9:
+        raise SystemExit(f"source profile registry mismatch expected=9 actual={profile_count}")
+    print(f"schema=valid tables={len(EXPECTED_TABLES)} extensions=2 sourceProfiles=9")
 
 
 def main() -> int:
     args = parse_args()
     with psycopg.connect(dsn(), autocommit=False) as connection:
-        connection.execute("SELECT pg_advisory_xact_lock(82410041)")
+        connection.execute("SELECT pg_advisory_xact_lock(82410042)")
         if args.direction == "verify":
             verify(connection)
             return 0
         if args.direction == "down":
             if not args.allow_destructive_rollback:
                 raise SystemExit("--allow-destructive-rollback is required")
+            if "rag_source_mirror" in table_names(connection):
+                connection.execute((MIGRATIONS / "0004_source_mirror_policy_down.sql").read_text(encoding="utf-8"))
+                connection.execute((MIGRATIONS / "0003_source_mirror_down.sql").read_text(encoding="utf-8"))
+            if "rag_source_blob" in table_names(connection):
+                connection.execute((MIGRATIONS / "0002_source_registry_down.sql").read_text(encoding="utf-8"))
             connection.execute((MIGRATIONS / "0001_schema_down.sql").read_text(encoding="utf-8"))
             print("schema=rolled-back")
             return 0
@@ -70,6 +83,11 @@ def main() -> int:
         actual = table_names(connection)
         if not actual:
             connection.execute((MIGRATIONS / "0001_schema_up.sql").read_text(encoding="utf-8"))
+        if "rag_source_blob" not in table_names(connection):
+            connection.execute((MIGRATIONS / "0002_source_registry_up.sql").read_text(encoding="utf-8"))
+        if "rag_source_mirror" not in table_names(connection):
+            connection.execute((MIGRATIONS / "0003_source_mirror_up.sql").read_text(encoding="utf-8"))
+        connection.execute((MIGRATIONS / "0004_source_mirror_policy_up.sql").read_text(encoding="utf-8"))
         verify(connection)
     return 0
 

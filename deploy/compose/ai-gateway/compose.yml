@@ -29,7 +29,7 @@ services:
       - no-new-privileges:true
 
   migrate:
-    image: techflow/ai-gateway:${TECHFLOW_RAG_RELEASE:-issue-41}
+    image: techflow/ai-gateway:${TECHFLOW_RAG_RELEASE:-issue-42}
     build:
       context: ../../../services/ai-gateway
     restart: "no"
@@ -57,8 +57,27 @@ services:
     security_opt:
       - no-new-privileges:true
 
+  source-mirror-init:
+    image: techflow/ai-gateway:${TECHFLOW_RAG_RELEASE:-issue-42}
+    build:
+      context: ../../../services/ai-gateway
+    user: "0:0"
+    command: ["sh", "-c", "chown 10001:10001 /var/lib/techflow-source-mirrors && chmod 0700 /var/lib/techflow-source-mirrors"]
+    volumes:
+      - techflow_source_mirrors:/var/lib/techflow-source-mirrors
+    read_only: true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - FOWNER
+    security_opt:
+      - no-new-privileges:true
+    restart: "no"
+    network_mode: none
+
   gateway:
-    image: techflow/ai-gateway:${TECHFLOW_RAG_RELEASE:-issue-41}
+    image: techflow/ai-gateway:${TECHFLOW_RAG_RELEASE:-issue-42}
     build:
       context: ../../../services/ai-gateway
     restart: unless-stopped
@@ -72,17 +91,23 @@ services:
       TECHFLOW_RAG_DATABASE_NAME: ${TECHFLOW_RAG_DATABASE_NAME:-techflow_rag}
       TECHFLOW_RAG_DATABASE_USER: techflow_rag_app_login
       TECHFLOW_RAG_DATABASE_PASSWORD_FILE: /run/secrets/app_password
+      TECHFLOW_SOURCE_MIRROR_ROOT: /var/lib/techflow-source-mirrors
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8090", "--no-access-log"]
     secrets:
       - app_password
     depends_on:
       migrate:
         condition: service_completed_successfully
+      source-mirror-init:
+        condition: service_completed_successfully
     ports:
       - "${TECHFLOW_RAG_BIND_ADDRESS:-127.0.0.1}:18090:8090"
     networks:
       - rag_internal
       - rag_edge
+      - ap_automation
+    volumes:
+      - techflow_source_mirrors:/var/lib/techflow-source-mirrors
     read_only: true
     tmpfs:
       - /tmp:size=32m,mode=1777
@@ -97,14 +122,38 @@ services:
       retries: 6
       start_period: 10s
 
+  source-reconciler:
+    image: techflow/ai-gateway:${TECHFLOW_RAG_RELEASE:-issue-42}
+    restart: unless-stopped
+    environment:
+      TECHFLOW_GATEWAY_URL: http://gateway:8090
+      TECHFLOW_SOURCE_RECONCILE_INTERVAL_SECONDS: "21600"
+    command: ["python", "scripts/reconcile_sources.py"]
+    depends_on:
+      gateway:
+        condition: service_healthy
+    networks:
+      - rag_edge
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
 networks:
   rag_internal:
     internal: true
   rag_edge:
     driver: bridge
+  ap_automation:
+    external: true
+    name: techflow-activepieces_automation_egress
 
 volumes:
   techflow_rag_database:
+  techflow_source_mirrors:
 
 secrets:
   bootstrap_password:

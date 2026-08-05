@@ -43,8 +43,8 @@ def validate() -> list[str]:
         for method in methods
         if method.lower() in {"get", "post", "delete", "put", "patch"}
     }
-    if operations != EXPECTED_OPERATIONS:
-        errors.append(f"OpenAPI operations mismatch: {sorted(operations ^ EXPECTED_OPERATIONS)}")
+    if not EXPECTED_OPERATIONS.issubset(operations):
+        errors.append(f"Issue #41 OpenAPI operations missing: {sorted(EXPECTED_OPERATIONS - operations)}")
 
     up = (SERVICE / "migrations" / "0001_schema_up.sql").read_text(encoding="utf-8")
     tables = set(re.findall(r"(?im)^CREATE TABLE\s+(rag_[a-z_]+)", up))
@@ -101,7 +101,7 @@ def main() -> int:
         for error in errors:
             print(f"ERROR: {error}", file=sys.stderr)
         return 1
-    print("issue41=valid api=11 tables=15 profiles=3 providerCalls=mock secrets=0")
+    print("issue41=valid apiFoundation=11 tables=15 profiles=3 providerCalls=mock secrets=0")
     return 0
 
 

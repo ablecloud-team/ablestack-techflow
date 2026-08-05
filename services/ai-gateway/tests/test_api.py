@@ -7,6 +7,7 @@ from fastapi.testclient import TestClient
 
 from app.config import Settings
 from app.main import create_app
+from app.source_policy import TreeEntry
 from app.store import MemoryStore
 
 
@@ -14,9 +15,36 @@ CORRELATION = "test-correlation-0001"
 HEADERS = {"X-Correlation-Id": CORRELATION, "Idempotency-Key": "test-idempotency-0001"}
 
 
+class FakeSnapshot:
+    commit = "a" * 40
+    tree_sha = "c" * 40
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        return None
+
+    def entries(self):
+        return [TreeEntry("src/main.py", "b" * 40, "blob", "100644", 12)]
+
+    def read_blob(self, object_id: str) -> bytes:
+        self.last_object_id = object_id
+        return b"print('ok')\n"
+
+
+class FakeFetcher:
+    def resolve_head(self, profile):
+        return "a" * 40
+
+    def open_snapshot(self, profile, commit):
+        assert commit == "a" * 40
+        return FakeSnapshot()
+
+
 class ApiContractTest(unittest.TestCase):
     def setUp(self) -> None:
-        self.client = TestClient(create_app(Settings(), MemoryStore()))
+        self.client = TestClient(create_app(Settings(), MemoryStore(), FakeFetcher()))
 
     @staticmethod
     def source_body(profile: str = "CLOUD_MAIN") -> dict[str, object]:
@@ -39,11 +67,20 @@ class ApiContractTest(unittest.TestCase):
         self.assertEqual(201, response.status_code, response.text)
         return response.json()["data"]
 
-    def approve_source(self, source_id: str) -> dict[str, object]:
+    def scan_source(self, source: dict[str, object]) -> dict[str, object]:
         response = self.client.post(
-            f"/v1/sources/{source_id}/approve",
-            json={"approvedBy": "security-reviewer"},
-            headers={"X-Correlation-Id": CORRELATION, "Idempotency-Key": "test-approve-source-0001"},
+            f"/v1/source-versions/{source['sourceVersionId']}/scan",
+            json={"scannedBy": "source-fetcher"},
+            headers={"X-Correlation-Id": CORRELATION, "Idempotency-Key": f"test-scan-{source['sourceVersionId']}"},
+        )
+        self.assertEqual(200, response.status_code, response.text)
+        return response.json()["data"]
+
+    def approve_source(self, source: dict[str, object]) -> dict[str, object]:
+        response = self.client.post(
+            f"/v1/source-versions/{source['sourceVersionId']}/approve",
+            json={"approvedBy": "dhslove", "expectedCommit": source["commit"]},
+            headers={"X-Correlation-Id": CORRELATION, "Idempotency-Key": f"test-approve-{source['sourceVersionId']}"},
         )
         self.assertEqual(200, response.status_code, response.text)
         return response.json()["data"]
@@ -70,9 +107,10 @@ class ApiContractTest(unittest.TestCase):
         get_response = self.client.get(
             f"/v1/sources/{source['sourceId']}", headers={"X-Correlation-Id": CORRELATION}
         )
-        self.assertEqual("QUARANTINED", get_response.json()["data"]["state"])
-        approved = self.approve_source(source["sourceId"])
-        self.assertEqual("ACTIVE", approved["state"])
+        self.assertEqual("REGISTERED", get_response.json()["data"]["state"])
+        self.assertEqual("QUARANTINED", self.scan_source(source)["state"])
+        approved = self.approve_source(source)
+        self.assertEqual("APPROVED", approved["state"])
 
     def test_create_source_is_idempotent(self) -> None:
         first = self.create_source("test-create-source-repeat")
@@ -81,7 +119,8 @@ class ApiContractTest(unittest.TestCase):
 
     def test_ingestion_job_contract(self) -> None:
         source = self.create_source("test-create-source-ingest")
-        self.approve_source(source["sourceId"])
+        self.scan_source(source)
+        self.approve_source(source)
         response = self.client.post(
             f"/v1/sources/{source['sourceId']}/ingestions",
             json={"requestedBy": "activepieces"},
@@ -93,10 +132,29 @@ class ApiContractTest(unittest.TestCase):
             f"/v1/jobs/{job['jobId']}", headers={"X-Correlation-Id": CORRELATION}
         )
         self.assertEqual("PENDING", status_response.json()["data"]["state"])
+        complete = self.client.post(
+            f"/v1/jobs/{job['jobId']}/complete",
+            json={"succeeded": True, "indexedFileCount": 1},
+            headers={"X-Correlation-Id": CORRELATION, "Idempotency-Key": "test-complete-job-0001"},
+        )
+        self.assertEqual(200, complete.status_code, complete.text)
+        self.assertEqual("ACTIVE", self.client.get(
+            f"/v1/source-versions/{source['sourceVersionId']}", headers={"X-Correlation-Id": CORRELATION}
+        ).json()["data"]["state"])
 
     def test_compatibility_set_accepts_only_approved_version(self) -> None:
         source = self.create_source("test-create-source-compat")
-        approved = self.approve_source(source["sourceId"])
+        self.scan_source(source)
+        approved = self.approve_source(source)
+        job = self.client.post(
+            f"/v1/sources/{source['sourceId']}/ingestions",
+            json={"requestedBy": "indexer"},
+            headers={"X-Correlation-Id": CORRELATION, "Idempotency-Key": "test-ingest-compat"},
+        ).json()["data"]
+        self.client.post(
+            f"/v1/jobs/{job['jobId']}/complete", json={"succeeded": True, "indexedFileCount": 1},
+            headers={"X-Correlation-Id": CORRELATION, "Idempotency-Key": "test-complete-compat"},
+        )
         response = self.client.post(
             "/v1/compatibility-sets",
             json={
@@ -171,7 +229,24 @@ class ApiContractTest(unittest.TestCase):
         )
         self.assertEqual("PENDING", get_response.json()["data"]["state"])
 
-    def test_openapi_contains_eleven_operations(self) -> None:
+    def test_registry_contains_nine_profiles_and_discovery_is_registered(self) -> None:
+        profiles = self.client.get("/v1/source-profiles", headers={"X-Correlation-Id": CORRELATION})
+        self.assertEqual(9, len(profiles.json()["data"]))
+        discovered = self.client.post(
+            "/v1/source-profiles/CLOUD_EUROPA/discoveries",
+            json={"detectedBy": "activepieces"},
+            headers={"X-Correlation-Id": CORRELATION, "Idempotency-Key": "test-discover-europa"},
+        )
+        self.assertEqual(201, discovered.status_code, discovered.text)
+        self.assertEqual("ablestack-europa", discovered.json()["data"]["branch"])
+        self.assertEqual("REGISTERED", discovered.json()["data"]["state"])
+        mirrors = self.client.get("/v1/source-mirrors", headers={"X-Correlation-Id": CORRELATION})
+        self.assertEqual(7, len(mirrors.json()["data"]))
+        cloud = next(item for item in mirrors.json()["data"] if item["repository"].endswith("ablestack-cloud"))
+        self.assertEqual("HEALTHY", cloud["state"])
+        self.assertEqual("a" * 40, cloud["lastHeadCommit"])
+
+    def test_openapi_contains_nineteen_operations(self) -> None:
         schema = self.client.get("/openapi.json").json()
         operations = [
             operation
@@ -179,8 +254,8 @@ class ApiContractTest(unittest.TestCase):
             for method, operation in path.items()
             if method.lower() in {"get", "post", "delete", "put", "patch"}
         ]
-        self.assertEqual(11, len(operations))
-        self.assertEqual(11, len({operation["operationId"] for operation in operations}))
+        self.assertEqual(19, len(operations))
+        self.assertEqual(19, len({operation["operationId"] for operation in operations}))
 
     def test_all_responses_disable_cache_and_echo_correlation(self) -> None:
         response = self.client.get("/v1/jobs/00000000-0000-0000-0000-000000000000", headers={"X-Correlation-Id": CORRELATION})

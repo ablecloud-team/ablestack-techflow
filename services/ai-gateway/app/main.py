@@ -22,12 +22,18 @@ from .models import (
     Envelope,
     EvaluationRunCreateRequest,
     IngestionCreateRequest,
+    JobCompletionRequest,
     QueryRequest,
     SourceApprovalRequest,
     SourceCreateRequest,
+    SourceDiscoveryRequest,
+    SourceScanRequest,
 )
 from .postgres_store import PostgresStore
 from .provider import profile_payloads
+from .source_fetcher import FetchError, GitSnapshotFetcher, SnapshotFetcher
+from .source_pipeline import SourcePipeline
+from .source_registry import get_profile
 from .store import InvalidBoundaryError, MemoryStore, Store, StoreError
 
 
@@ -75,10 +81,15 @@ def _build_store(settings: Settings) -> Store:
     return MemoryStore()
 
 
-def create_app(settings: Settings | None = None, store: Store | None = None) -> FastAPI:
+def create_app(
+    settings: Settings | None = None,
+    store: Store | None = None,
+    source_fetcher: SnapshotFetcher | None = None,
+) -> FastAPI:
     runtime_settings = settings or Settings.from_env()
     runtime_settings.validate()
     runtime_store = store or _build_store(runtime_settings)
+    source_pipeline = SourcePipeline(source_fetcher or GitSnapshotFetcher())
 
     @asynccontextmanager
     async def lifespan(_: FastAPI):
@@ -88,7 +99,7 @@ def create_app(settings: Settings | None = None, store: Store | None = None) -> 
     application = FastAPI(
         title="TechFlow AI Gateway",
         version=__version__,
-        description="Issue #41 API, database, provider profile, and mock adapter foundation.",
+        description="TechFlow AI Gateway with Issue #42 allowlisted source registry and quarantine pipeline.",
         docs_url=None,
         redoc_url=None,
         lifespan=lifespan,
@@ -160,6 +171,86 @@ def create_app(settings: Settings | None = None, store: Store | None = None) -> 
     ) -> Envelope:
         return _envelope(runtime_store.create_source(_model_data(request), idempotency_key), correlation_id)
 
+    @application.get("/v1/source-profiles", response_model=Envelope, operation_id="listSourceProfiles")
+    def list_source_profiles(correlation_id: Annotated[str, Depends(_correlation_id)]) -> Envelope:
+        return _envelope(runtime_store.list_source_profiles(), correlation_id)
+
+    @application.get("/v1/source-mirrors", response_model=Envelope, operation_id="listSourceMirrors")
+    def list_source_mirrors(correlation_id: Annotated[str, Depends(_correlation_id)]) -> Envelope:
+        return _envelope(runtime_store.list_source_mirrors(), correlation_id)
+
+    @application.post(
+        "/v1/source-profiles/{sourceProfileId}/discoveries",
+        response_model=Envelope,
+        status_code=status.HTTP_201_CREATED,
+        operation_id="discoverSourceCandidate",
+    )
+    def discover_source_candidate(
+        sourceProfileId: str,
+        request: SourceDiscoveryRequest,
+        correlation_id: Annotated[str, Depends(_correlation_id)],
+        idempotency_key: Annotated[str, Depends(_idempotency_key)],
+    ) -> Envelope:
+        profile = get_profile(sourceProfileId)
+        started = time.perf_counter()
+        try:
+            commit = source_pipeline.discover(profile)
+        except FetchError as exc:
+            runtime_store.record_mirror_sync(
+                profile.repository, None, False, exc.code, round((time.perf_counter() - started) * 1000)
+            )
+            raise
+        runtime_store.record_mirror_sync(
+            profile.repository, commit, True, None, round((time.perf_counter() - started) * 1000)
+        )
+        data = runtime_store.register_candidate(profile.profile_id, commit, request.detected_by, idempotency_key)
+        return _envelope(data, correlation_id)
+
+    @application.get("/v1/source-versions/{sourceVersionId}", response_model=Envelope, operation_id="getSourceVersion")
+    def get_source_version(
+        sourceVersionId: UUID, correlation_id: Annotated[str, Depends(_correlation_id)]
+    ) -> Envelope:
+        return _envelope(runtime_store.get_source_version(sourceVersionId), correlation_id)
+
+    @application.post(
+        "/v1/source-versions/{sourceVersionId}/scan",
+        response_model=Envelope,
+        operation_id="scanSourceVersion",
+    )
+    def scan_source_version(
+        sourceVersionId: UUID,
+        request: SourceScanRequest,
+        correlation_id: Annotated[str, Depends(_correlation_id)],
+        idempotency_key: Annotated[str, Depends(_idempotency_key)],
+    ) -> Envelope:
+        version = runtime_store.get_source_version(sourceVersionId)
+        profile = get_profile(version["sourceProfileId"])
+        report = source_pipeline.scan(profile, version["commit"])
+        return _envelope(
+            runtime_store.record_scan(sourceVersionId, report, request.scanned_by, idempotency_key), correlation_id
+        )
+
+    @application.get(
+        "/v1/source-versions/{sourceVersionId}/files", response_model=Envelope, operation_id="listSourceVersionFiles"
+    )
+    def list_source_version_files(
+        sourceVersionId: UUID, correlation_id: Annotated[str, Depends(_correlation_id)]
+    ) -> Envelope:
+        return _envelope(runtime_store.list_source_files(sourceVersionId), correlation_id)
+
+    @application.post(
+        "/v1/source-versions/{sourceVersionId}/approve", response_model=Envelope, operation_id="approveSourceVersion"
+    )
+    def approve_source_version(
+        sourceVersionId: UUID,
+        request: SourceApprovalRequest,
+        correlation_id: Annotated[str, Depends(_correlation_id)],
+        idempotency_key: Annotated[str, Depends(_idempotency_key)],
+    ) -> Envelope:
+        return _envelope(
+            runtime_store.approve_version(sourceVersionId, _model_data(request), idempotency_key), correlation_id
+        )
+
     @application.get("/v1/sources/{sourceId}", response_model=Envelope, operation_id="getSource")
     def get_source(sourceId: UUID, correlation_id: Annotated[str, Depends(_correlation_id)]) -> Envelope:
         return _envelope(runtime_store.get_source(sourceId), correlation_id)
@@ -201,6 +292,15 @@ def create_app(settings: Settings | None = None, store: Store | None = None) -> 
     @application.get("/v1/jobs/{jobId}", response_model=Envelope, operation_id="getJob")
     def get_job(jobId: UUID, correlation_id: Annotated[str, Depends(_correlation_id)]) -> Envelope:
         return _envelope(runtime_store.get_job(jobId), correlation_id)
+
+    @application.post("/v1/jobs/{jobId}/complete", response_model=Envelope, operation_id="completeIngestionJob")
+    def complete_ingestion_job(
+        jobId: UUID,
+        request: JobCompletionRequest,
+        correlation_id: Annotated[str, Depends(_correlation_id)],
+        idempotency_key: Annotated[str, Depends(_idempotency_key)],
+    ) -> Envelope:
+        return _envelope(runtime_store.complete_job(jobId, _model_data(request), idempotency_key), correlation_id)
 
     @application.post("/v1/rag/query", response_model=Envelope, operation_id="queryRag")
     def query_rag(request: QueryRequest, correlation_id: Annotated[str, Depends(_correlation_id)]) -> Envelope:

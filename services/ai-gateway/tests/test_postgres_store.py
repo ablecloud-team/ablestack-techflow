@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from pathlib import Path
 import unittest
 from uuid import uuid4
 
@@ -47,6 +48,10 @@ class PostgresPayloadTest(unittest.TestCase):
             }
         )
         self.assertEqual(job_id, payload["jobId"])
+
+    def test_registry_query_excludes_legacy_canary_profiles(self) -> None:
+        implementation = (Path(__file__).resolve().parents[1] / "app" / "postgres_store.py").read_text(encoding="utf-8")
+        self.assertIn("WHERE source_profile_id = ANY(%s)", implementation)
 
 
 if __name__ == "__main__":

@@ -1,26 +1,56 @@
 {
-  "schemaVersion": "1.0",
-  "issue": 41,
+  "schemaVersion": "2.0",
+  "issue": 42,
   "files": [
     {
       "path": "0000_extensions_roles_down.sql",
-      "sha256": "f8ba200027bf87f300ed3bea27bcca67e98683bb46fbca32cef9e883c91d92ef",
-      "bytes": 403
+      "sha256": "6b65556ebe7db0413c72bc072d2737106aa71464796c3685c5769de1fbfb7671",
+      "bytes": 410
     },
     {
       "path": "0000_extensions_roles_up.sql",
-      "sha256": "b39c3a8d59ac861278b3e34a0282cfb565ba9a700a4a8cd68d20a9932c0609ab",
-      "bytes": 971
+      "sha256": "f1d3d9c2db1b3cf4865ffa9566e31571ef7334c3054136db2de9f91df68defc5",
+      "bytes": 992
     },
     {
       "path": "0001_schema_down.sql",
-      "sha256": "0e443c830b3ca607875b750f93b5a26006b948f8a131ef7f449356aece1644d4",
-      "bytes": 723
+      "sha256": "0aa446187dadc5654755485cc70d40986392c23859e55fd4d2318b553bd89f61",
+      "bytes": 739
     },
     {
       "path": "0001_schema_up.sql",
-      "sha256": "a0ccdf2752d515e4a5bb2db7f4f1134022f4f01246b6c257dd0fdcd57b970004",
-      "bytes": 13088
+      "sha256": "f904eda67d90531b6372c3591ae2ddc870022ef7e99702c188120ac7d47d3fe1",
+      "bytes": 13343
+    },
+    {
+      "path": "0002_source_registry_down.sql",
+      "sha256": "a070e4f49a608cc9ab6e2e28e7e2e10e807b2d497cb14897067fe091a92ccfdc",
+      "bytes": 1919
+    },
+    {
+      "path": "0002_source_registry_up.sql",
+      "sha256": "b11280a4704baaa17249f8bf184652f621f79629443d56357720bc1b8d4e22a9",
+      "bytes": 8233
+    },
+    {
+      "path": "0003_source_mirror_down.sql",
+      "sha256": "e0f01a49fe54803e6e9be20e60cfcb90c20f55659a6d2f9a44b8af1377a30c77",
+      "bytes": 55
+    },
+    {
+      "path": "0003_source_mirror_up.sql",
+      "sha256": "235b74efac34ed5eb9ddafafb550d960774dfddb295eab01d60ecfbe3d7af808",
+      "bytes": 1567
+    },
+    {
+      "path": "0004_source_mirror_policy_down.sql",
+      "sha256": "34863e2d575dcfa593af9355a43fc127eb8e132c99ac22f998f26e9e726e0037",
+      "bytes": 254
+    },
+    {
+      "path": "0004_source_mirror_policy_up.sql",
+      "sha256": "5bfc5a505e4e11d504529d4e66530c500e7a5fbd3ac66275f2b80727d6665e9f",
+      "bytes": 253
     }
   ]
 }

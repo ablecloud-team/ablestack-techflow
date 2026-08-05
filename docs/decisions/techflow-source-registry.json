@@ -1,0 +1,147 @@
+{
+  "schemaVersion": "1.0",
+  "decisionId": "TECHFLOW-SOURCE-REGISTRY-ISSUE-42",
+  "effectiveDate": "2026-08-05",
+  "product": "ABLESTACK TechFlow",
+  "classification": "D0",
+  "retentionPolicy": "ACTIVE_PLUS_7D_DELETION_SLA",
+  "initialReviewer": "dhslove",
+  "stateMachine": [
+    "REGISTERED",
+    "QUARANTINED",
+    "APPROVED",
+    "INDEXING",
+    "ACTIVE",
+    "WITHDRAWN",
+    "REJECTED"
+  ],
+  "approvalPolicy": {
+    "humanApprovalRequired": true,
+    "expectedCommitRequiredForOperatorProcedure": true,
+    "reviewerMustMatchProfileReviewer": true,
+    "blockingExclusionsRequireExplicitAcceptanceAndDecisionNote": true,
+    "candidateHeadChangeCreatesNewVersion": true,
+    "activationRequiresFullEligibleFileCount": true,
+    "failedIndexingReturnsTo": "APPROVED",
+    "previousActiveVersionIsWithdrawnOnlyAfterAtomicActivation": true
+  },
+  "fetchPolicy": {
+    "networkUse": "DISCOVERY_ONLY",
+    "persistentBareMirror": true,
+    "mirrorRepositoryCount": 7,
+    "candidateRefsProtected": true,
+    "localOnlySnapshotScan": true,
+    "checkout": false,
+    "hooks": false,
+    "submodules": false,
+    "lfsSmudge": false,
+    "buildOrTestExecution": false,
+    "maxFileBytes": 1048576,
+    "allowedClassification": "D0",
+    "rawQuarantineContentPersisted": false
+  },
+  "mirrorPolicy": {
+    "storage": "DOCKER_NAMED_VOLUME",
+    "volumeName": "techflow_source_mirrors",
+    "mountPath": "/var/lib/techflow-source-mirrors",
+    "synchronization": "SCHEDULE_6H_RECONCILIATION",
+    "intervalSeconds": 21600,
+    "staleAfterSeconds": 86400,
+    "pushFastPathImplemented": false,
+    "pushFastPathTargetIssue": 45,
+    "githubOutageBehavior": "KEEP_LOCAL_MIRROR_AND_ACTIVE_INDEX",
+    "fetchFailureState": "DEGRADED",
+    "garbageCollection": "GIT_GC_AUTO",
+    "withdrawnRefDeletionTargetIssue": 43
+  },
+  "profiles": [
+    {
+      "sourceProfileId": "SHARED_DOCS",
+      "repository": "ablecloud-team/ablestack-docs",
+      "branch": "master",
+      "sourceKind": "DOCUMENTATION",
+      "licenseSpdx": "NOASSERTION",
+      "docsRoot": "docs/",
+      "observedHead": "50d50ad6c8c548dc58db866ca28b4cbb43cc74d0"
+    },
+    {
+      "sourceProfileId": "CLOUD_MAIN",
+      "repository": "ablecloud-team/ablestack-cloud",
+      "branch": "main",
+      "sourceKind": "SOURCE_CODE",
+      "licenseSpdx": "Apache-2.0",
+      "observedHead": "a873fb1ff436990fd523e2fe56682ff7aa31d1ec"
+    },
+    {
+      "sourceProfileId": "CLOUD_DIPLO",
+      "repository": "ablecloud-team/ablestack-cloud",
+      "branch": "ablestack-diplo",
+      "sourceKind": "SOURCE_CODE",
+      "licenseSpdx": "Apache-2.0",
+      "observedHead": "19550c70d8d8a878eef40e1e1062b2fe0d40f71e"
+    },
+    {
+      "sourceProfileId": "CLOUD_EUROPA",
+      "repository": "ablecloud-team/ablestack-cloud",
+      "branch": "ablestack-europa",
+      "sourceKind": "SOURCE_CODE",
+      "licenseSpdx": "Apache-2.0",
+      "observedHead": "9bded7bccd43b335221367520276d641730290dd"
+    },
+    {
+      "sourceProfileId": "WALL_MAIN",
+      "repository": "ablecloud-team/ablestack-wall",
+      "branch": "main",
+      "sourceKind": "SOURCE_CODE",
+      "licenseSpdx": "AGPL-3.0",
+      "observedHead": "f27b3f1b0b35489e05c64924b5cff7dc64dd2f6d"
+    },
+    {
+      "sourceProfileId": "COCKPIT_DIPLO",
+      "repository": "ablecloud-team/ablestack-cockpit-plugin",
+      "branch": "ablestack-diplo",
+      "sourceKind": "SOURCE_CODE",
+      "licenseSpdx": "NOASSERTION",
+      "observedHead": "c8b37dd6a4c35a8ba18169189a553595b24e54ab"
+    },
+    {
+      "sourceProfileId": "GENIE_MASTER",
+      "repository": "ablecloud-team/ablestack-genie",
+      "branch": "master",
+      "sourceKind": "SOURCE_CODE",
+      "licenseSpdx": "NOASSERTION",
+      "observedHead": "3e3c5c364f5c7261b07d49fcbcd4f3605b91f3b1"
+    },
+    {
+      "sourceProfileId": "KICKSTART_MASTER",
+      "repository": "ablecloud-team/ablestack-kickstart",
+      "branch": "master",
+      "sourceKind": "SOURCE_CODE",
+      "licenseSpdx": "NOASSERTION",
+      "observedHead": "ffe24390544dd58e3441ac7362fe46b93472d0e1"
+    },
+    {
+      "sourceProfileId": "QEMU_EXEC_TOOLS_MAIN",
+      "repository": "ablecloud-team/ablestack-qemu-exec-tools",
+      "branch": "main",
+      "sourceKind": "SOURCE_CODE",
+      "licenseSpdx": "NOASSERTION",
+      "observedHead": "a4b9bd60bb93800612d96aaad84e73ddfd768b68"
+    }
+  ],
+  "implementationBaseline": {
+    "gatewayVersion": "0.2.1",
+    "openApiOperations": 19,
+    "databaseTables": 19,
+    "sourceProfiles": 9,
+    "persistentMirrors": 7,
+    "mirrorState": "7_HEALTHY",
+    "mirrorSizeMiBObserved": 906,
+    "offlineScanValidated": true,
+    "rootFilesystemGiB": 1005,
+    "rootAvailableGiB": 950,
+    "providerMode": "mock",
+    "activepiecesTemplatesPublished": false,
+    "nextIssue": 43
+  }
+}

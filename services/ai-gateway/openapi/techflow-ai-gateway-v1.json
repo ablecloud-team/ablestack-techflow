@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "TechFlow AI Gateway",
-    "description": "Issue #41 API, database, provider profile, and mock adapter foundation.",
-    "version": "0.1.0"
+    "description": "TechFlow AI Gateway with Issue #42 allowlisted source registry and quarantine pipeline.",
+    "version": "0.2.1"
   },
   "paths": {
     "/healthz": {
@@ -58,6 +58,319 @@
         },
         "responses": {
           "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/source-profiles": {
+      "get": {
+        "summary": "List Source Profiles",
+        "operationId": "listSourceProfiles",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/source-mirrors": {
+      "get": {
+        "summary": "List Source Mirrors",
+        "operationId": "listSourceMirrors",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/source-profiles/{sourceProfileId}/discoveries": {
+      "post": {
+        "summary": "Discover Source Candidate",
+        "operationId": "discoverSourceCandidate",
+        "parameters": [
+          {
+            "name": "sourceProfileId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Sourceprofileid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SourceDiscoveryRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/source-versions/{sourceVersionId}": {
+      "get": {
+        "summary": "Get Source Version",
+        "operationId": "getSourceVersion",
+        "parameters": [
+          {
+            "name": "sourceVersionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Sourceversionid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/source-versions/{sourceVersionId}/scan": {
+      "post": {
+        "summary": "Scan Source Version",
+        "operationId": "scanSourceVersion",
+        "parameters": [
+          {
+            "name": "sourceVersionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Sourceversionid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SourceScanRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/source-versions/{sourceVersionId}/files": {
+      "get": {
+        "summary": "List Source Version Files",
+        "operationId": "listSourceVersionFiles",
+        "parameters": [
+          {
+            "name": "sourceVersionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Sourceversionid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/source-versions/{sourceVersionId}/approve": {
+      "post": {
+        "summary": "Approve Source Version",
+        "operationId": "approveSourceVersion",
+        "parameters": [
+          {
+            "name": "sourceVersionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Sourceversionid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SourceApprovalRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
@@ -378,6 +691,72 @@
             }
           }
         ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/jobs/{jobId}/complete": {
+      "post": {
+        "summary": "Complete Ingestion Job",
+        "operationId": "completeIngestionJob",
+        "parameters": [
+          {
+            "name": "jobId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Jobid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JobCompletionRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -727,6 +1106,38 @@
         ],
         "title": "IngestionCreateRequest"
       },
+      "JobCompletionRequest": {
+        "properties": {
+          "succeeded": {
+            "type": "boolean",
+            "title": "Succeeded"
+          },
+          "indexedFileCount": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Indexedfilecount"
+          },
+          "errorCode": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[A-Z][A-Z0-9_]{2,63}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Errorcode"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "succeeded",
+          "indexedFileCount"
+        ],
+        "title": "JobCompletionRequest"
+      },
       "QueryRequest": {
         "properties": {
           "queryId": {
@@ -800,6 +1211,18 @@
             "pattern": "^[A-Za-z0-9_.:@-]{3,128}$",
             "title": "Approvedby"
           },
+          "expectedCommit": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9a-f]{40}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expectedcommit"
+          },
           "decisionNote": {
             "anyOf": [
               {
@@ -811,6 +1234,11 @@
               }
             ],
             "title": "Decisionnote"
+          },
+          "acceptQuarantineExclusions": {
+            "type": "boolean",
+            "title": "Acceptquarantineexclusions",
+            "default": false
           }
         },
         "additionalProperties": false,
@@ -877,13 +1305,45 @@
         ],
         "title": "SourceCreateRequest"
       },
+      "SourceDiscoveryRequest": {
+        "properties": {
+          "detectedBy": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_.:@-]{3,128}$",
+            "title": "Detectedby"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "detectedBy"
+        ],
+        "title": "SourceDiscoveryRequest"
+      },
       "SourceKind": {
         "type": "string",
         "enum": [
           "DOCUMENTATION",
-          "SOURCE_CODE"
+          "SOURCE_CODE",
+          "TEST_CODE",
+          "BUILD_SCHEMA"
         ],
         "title": "SourceKind"
+      },
+      "SourceScanRequest": {
+        "properties": {
+          "scannedBy": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_.:@-]{3,128}$",
+            "title": "Scannedby"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "scannedBy"
+        ],
+        "title": "SourceScanRequest"
       },
       "ValidationError": {
         "properties": {

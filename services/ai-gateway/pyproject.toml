@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "techflow-ai-gateway"
-version = "0.1.0"
-description = "TechFlow AI Gateway API, DB, and provider contract foundation"
+version = "0.2.1"
+description = "TechFlow AI Gateway with allowlisted source registry and quarantine pipeline"
 requires-python = ">=3.12,<3.13"
 dependencies = [
   "fastapi==0.139.2",

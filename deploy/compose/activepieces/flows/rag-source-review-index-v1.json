@@ -1,0 +1,60 @@
+{
+  "schemaVersion": "1.0",
+  "logicalId": "rag-source-review-index-v1",
+  "displayName": "TechFlow - Source Review and Index Handoff v1",
+  "issue": 42,
+  "status": "template-ready",
+  "trigger": {
+    "type": "internal-event",
+    "producer": "TechFlow authenticated review UI",
+    "event": "source-version.reviewed"
+  },
+  "requiredInput": [
+    "sourceId",
+    "sourceVersionId",
+    "expectedCommit",
+    "reviewer",
+    "decisionNote",
+    "acceptQuarantineExclusions"
+  ],
+  "steps": [
+    {
+      "name": "approve_pinned_version",
+      "method": "POST",
+      "url": "http://techflow-ai-gateway:8090/v1/source-versions/{{trigger.sourceVersionId}}/approve",
+      "headers": {
+        "X-Correlation-Id": "ap-source-review-{{run.id}}",
+        "Idempotency-Key": "source-review-{{trigger.sourceVersionId}}-{{trigger.expectedCommit}}"
+      },
+      "body": {
+        "approvedBy": "{{trigger.reviewer}}",
+        "expectedCommit": "{{trigger.expectedCommit}}",
+        "decisionNote": "{{trigger.decisionNote}}",
+        "acceptQuarantineExclusions": "{{trigger.acceptQuarantineExclusions}}"
+      }
+    },
+    {
+      "name": "request_indexing",
+      "method": "POST",
+      "url": "http://techflow-ai-gateway:8090/v1/sources/{{trigger.sourceId}}/ingestions",
+      "headers": {
+        "X-Correlation-Id": "ap-source-review-{{run.id}}",
+        "Idempotency-Key": "source-index-{{trigger.sourceVersionId}}-{{trigger.expectedCommit}}"
+      },
+      "body": {
+        "requestedBy": "activepieces"
+      }
+    }
+  ],
+  "security": {
+    "initialReviewer": "dhslove",
+    "commitPinRequired": true,
+    "partialActivation": false,
+    "quarantinedContentForwarded": false,
+    "sourceExecution": false
+  },
+  "runtime": {
+    "published": false,
+    "publishGate": "Authenticated TechFlow review UI and Issue #43 index worker"
+  }
+}
