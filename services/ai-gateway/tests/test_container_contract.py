@@ -18,6 +18,11 @@ class ContainerContractTest(unittest.TestCase):
     def test_runtime_is_non_root(self) -> None:
         self.assertIn("USER 10001:10001", DOCKERFILE)
 
+    def test_git_object_reader_is_installed_without_checkout_workspace(self) -> None:
+        self.assertIn("ca-certificates git", DOCKERFILE)
+        self.assertIn("TECHFLOW_SOURCE_TMPDIR: /var/lib/techflow-source", COMPOSE)
+        self.assertIn("noexec,nosuid,nodev", COMPOSE)
+
     def test_gateway_is_read_only_and_drops_capabilities(self) -> None:
         gateway = COMPOSE.split("  gateway:", 1)[1].split("\nnetworks:", 1)[0]
         self.assertIn("read_only: true", gateway)

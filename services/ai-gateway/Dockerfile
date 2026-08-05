@@ -7,7 +7,10 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /opt/techflow-ai-gateway
 
 COPY requirements.lock ./requirements.lock
-RUN pip install --no-cache-dir --requirement requirements.lock \
+RUN apt-get update \
+    && apt-get install --yes --no-install-recommends ca-certificates git \
+    && rm -rf /var/lib/apt/lists/* \
+    && pip install --no-cache-dir --requirement requirements.lock \
     && addgroup --system --gid 10001 techflow \
     && adduser --system --uid 10001 --gid 10001 --home /nonexistent --no-create-home techflow
 
@@ -15,7 +18,8 @@ COPY --chown=10001:10001 app ./app
 COPY --chown=10001:10001 migrations ./migrations
 COPY --chown=10001:10001 scripts ./scripts
 RUN chmod 0555 /opt/techflow-ai-gateway/scripts/container-entrypoint.sh \
-    /opt/techflow-ai-gateway/scripts/migrate.py
+    /opt/techflow-ai-gateway/scripts/migrate.py \
+    && git --version
 
 USER 10001:10001
 EXPOSE 8090

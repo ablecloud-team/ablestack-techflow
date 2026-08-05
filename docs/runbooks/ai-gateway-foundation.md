@@ -1,14 +1,14 @@
 # TechFlow AI Gateway 기반 배포·검증·롤백 Runbook
 
-> 대상: Issue #41
+> 대상: Issue #41 기반, Issue #42 확장 기준선
 >
-> 적용 버전: `techflow-ai-gateway 0.1.0`
+> 적용 버전: `techflow-ai-gateway 0.2.0`
 >
 > Provider Mode: `mock`
 
 ## 1. 목적과 경계
 
-이 Runbook은 AI Gateway API·PostgreSQL·Provider 계약 기반을 단일 Ubuntu Docker Compose 서버에 배포하고 검증하는 절차다. 실제 Source Fetch, OpenAI Embeddings와 Responses 호출은 수행하지 않는다.
+이 Runbook은 AI Gateway API·PostgreSQL·Provider 계약 기반을 단일 Ubuntu Docker Compose 서버에 배포하고 검증하는 절차다. Issue #42에서 실제 Source 후보 Fetch·검역은 허용하지만, OpenAI Embeddings와 Responses 호출은 수행하지 않는다. Source 상세 절차는 [Source Registry·검역·승인 운영 Runbook](source-registry-quarantine.md)을 따른다.
 
 ```mermaid
 flowchart LR
@@ -64,7 +64,7 @@ scripts/deploy.sh
 1. Compose Rendering 검증
 2. Digest 고정 Base Image로 Gateway Build
 3. PostgreSQL·Extension·Group/Login Role 초기화
-4. 15개 Table Up Migration과 검증
+4. 18개 Table Up Migration과 9개 Source Profile 검증
 5. Gateway 기동
 6. Container 상태 출력
 
@@ -82,7 +82,7 @@ docker compose --env-file .env ps
 
 - Gateway·Database `healthy`
 - Host Bind `127.0.0.1:18090->8090`
-- Schema 15개, Extension 2개
+- Schema 18개, Source Profile 9개, Extension 2개
 - App Group Role Schema Create `false`
 - App Group Role Provider Audit Select `true`
 - Fetcher Group Role Provider Audit Select `false`
@@ -131,7 +131,7 @@ curl -fsS http://127.0.0.1:18090/healthz
 
 ## 8. Schema 롤백
 
-`0001_schema_down.sql`은 15개 Table을 삭제한다. 다음 조건을 모두 충족한 경우에만 수행한다.
+Issue #42만 되돌릴 때는 `0002_source_registry_down.sql`을 사용한다. `0001_schema_down.sql`은 기반 15개 Table까지 삭제하므로 전체 AI Gateway 폐기 시에만 사용한다. 다음 조건을 모두 충족한 경우에만 수행한다.
 
 1. Activepieces·Gateway 쓰기 중지
 2. Database Volume·Logical Backup 완료
@@ -156,7 +156,7 @@ docker compose --env-file .env run --rm migrate \
 - 내부 Health: `http://127.0.0.1:18090/healthz`
 - Gateway Image ID: `sha256:99ef2675b928a8d391eac6de918915da39f82e6b683c169f424ef39cb2fe3bfb`
 - Runtime: `10001:10001`, Read-only Root FS, `cap_drop: ALL`
-- Database: 15개 Table, `vector`·`pg_trgm`, 최소권한 검증 통과
+- Database: 18개 Table, 9개 Source Profile, `vector`·`pg_trgm`, 최소권한 검증 통과
 - API Canary: Source 생성부터 철회까지 통과, Query `ABSTAINED`, `providerCalled=false`
 - Provider: Mock only
 - 실제 OpenAI Credential: 없음

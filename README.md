@@ -120,7 +120,9 @@ Activepieces Compose 기준선은 테스트 서버에 배포되어 Health, Worke
 
 P0 보안 기준은 인터넷 이벤트, Activepieces 실행면, 상태 저장소, AI/RAG와 향후 ABLESTACK 작업 경계를 위협 모델로 관리합니다. 데이터는 D0 Public부터 D3 Restricted까지 분류하고, 원문 Webhook·인증 Header와 Secret은 영속 저장하지 않으며, P1 RAG는 D0만 기본 허용합니다. Source 철회 시 Chunk·Embedding·Cache 삭제 SLO는 최대 7일입니다.
 
-Issue #20에서는 사내 Assist 실증의 첫 AI 기반으로 문서·소스코드 RAG PoC를 상세 설계했습니다. Source는 `ablestack-docs`와 `ablestack-cloud`, `ablestack-wall`, `ablestack-cockpit-plugin`, `ablestack-genie`, `ablestack-kickstart`, `ablestack-qemu-exec-tools`를 포함합니다. Cloud는 최신 `main`·`ablestack-diplo`·`ablestack-europa` Head를 각각 후보로 추적하고 승인 Commit을 독립 색인합니다. 총 9개 Source Profile을 분리하며, 서로 다른 저장소의 근거는 승인된 Compatibility Set에서만 결합합니다. 코드 답변에는 Repository·Branch·Commit·Path·Line·Symbol Citation을 요구합니다. Activepieces는 변경 감지·승인·재색인·평가를 오케스트레이션하고 TechFlow AI Gateway가 Registry, 코드 검역·구문 분석, 검색, 답변·보류와 삭제 정책을 소유합니다. AI Gateway는 OpenAI Responses API를 제품 답변 런타임으로, Embeddings API를 Vector 생성에 사용합니다. 기본 답변은 `gpt-5.6-terra/medium`, 복잡도 규칙을 통과한 질의만 `gpt-5.6-sol/high`로 승격하며, 원본 저장소를 OpenAI File·Vector Store에 업로드하지 않습니다. ChatGPT Work와 Codex는 운영·개발 보조 도구일 뿐 제품 런타임 의존성이 아닙니다. Issue #41에서 11개 API, 15개 RAG 테이블, 세 개 Provider Profile, 결정론적 Mock Adapter와 최소권한 Compose 배포를 구현·검증했습니다. 실제 Source 승인·수집은 #42, Retrieval·OpenAI 연동은 #43·#44에서 단계적으로 진행합니다.
+Issue #20에서는 사내 Assist 실증의 첫 AI 기반으로 문서·소스코드 RAG PoC를 상세 설계했습니다. Source는 `ablestack-docs`와 `ablestack-cloud`, `ablestack-wall`, `ablestack-cockpit-plugin`, `ablestack-genie`, `ablestack-kickstart`, `ablestack-qemu-exec-tools`를 포함합니다. Cloud는 최신 `main`·`ablestack-diplo`·`ablestack-europa` Head를 각각 후보로 추적하고 승인 Commit을 독립 색인합니다. 총 9개 Source Profile을 분리하며, 서로 다른 저장소의 근거는 승인된 Compatibility Set에서만 결합합니다. 코드 답변에는 Repository·Branch·Commit·Path·Line·Symbol Citation을 요구합니다. Activepieces는 변경 감지·승인·재색인·평가를 오케스트레이션하고 TechFlow AI Gateway가 Registry, 코드 검역·구문 분석, 검색, 답변·보류와 삭제 정책을 소유합니다. AI Gateway는 OpenAI Responses API를 제품 답변 런타임으로, Embeddings API를 Vector 생성에 사용합니다. 기본 답변은 `gpt-5.6-terra/medium`, 복잡도 규칙을 통과한 질의만 `gpt-5.6-sol/high`로 승격하며, 원본 저장소를 OpenAI File·Vector Store에 업로드하지 않습니다. ChatGPT Work와 Codex는 운영·개발 보조 도구일 뿐 제품 런타임 의존성이 아닙니다.
+
+Issue #42에서 AI Gateway를 18개 API·18개 RAG Table로 확장하고 7개 저장소·9개 Source Profile의 최신 Head 발견, 고정 Commit Fetch, D0 검역, `dhslove` 사람 승인 Gate와 원자 활성화 계약을 구현·시험 서버에 배포했습니다. 9개 후보는 등록만 했고 `GENIE_MASTER` 34개 파일 Canary만 검역했으며 실제 Source 승인·활성화·OpenAI 호출은 수행하지 않았습니다. 다음 단계 #43에서 Parser·Chunk·Embeddings·Hybrid Retrieval·삭제 전파를 구현한 뒤 최초 Source 승인 Commit을 결정합니다.
 
 ## 문서
 
@@ -147,6 +149,12 @@ Issue #20에서는 사내 Assist 실증의 첫 AI 기반으로 문서·소스코
 - [AI Gateway 기반 완료 보고서 PDF](output/pdf/techflow-ai-gateway-foundation-report.pdf)
 - [AI Gateway 기반 발표자료 PDF](output/pdf/techflow-ai-gateway-foundation-presentation.pdf)
 - [AI Gateway 기반 발표자료 PPTX](output/presentation/techflow-ai-gateway-foundation.pptx)
+- [Issue #42 Source Registry·검역·승인 완료 보고서](docs/reports/issue-42-source-registry-validation.md)
+- [Source Registry 구조화 결정](docs/decisions/techflow-source-registry.json)
+- [Source Registry·검역·승인 운영 Runbook](docs/runbooks/source-registry-quarantine.md)
+- [Source Registry 완료 보고서 PDF](output/pdf/techflow-source-registry-report.pdf)
+- [Source Registry 발표자료 PDF](output/pdf/techflow-source-registry-presentation.pdf)
+- [Source Registry 발표자료 PPTX](output/presentation/techflow-source-registry.pptx)
 - [ADR-0001: TechFlow와 Activepieces 책임 경계](docs/adr/0001-techflow-activepieces-responsibility-boundary.md)
 - [책임 경계 ADR 보고서 PDF](output/pdf/techflow-responsibility-boundary-report.pdf)
 - [책임 경계 ADR 프레젠테이션 PDF](output/pdf/techflow-responsibility-boundary-presentation.pdf)

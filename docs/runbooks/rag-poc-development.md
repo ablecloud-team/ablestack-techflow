@@ -2,7 +2,7 @@
 
 > 대상: Issue #20, 하위 Issue #41~#46
 >
-> 개정: 2026-08-03 - OpenAI Responses·Embeddings 런타임과 모델 라우팅 포함
+> 개정: 2026-08-05 - Issue #42 Source Registry·검역·승인 파이프라인 완료
 
 ## 1. 목적
 
@@ -22,7 +22,7 @@
 | 순서 | Issue | 종료 입력 |
 |---:|---|---|
 | 1 | #41 API·DB | **완료(2026-08-04)** — 11 API, 15 Table, 3 Provider Profile, Mock Adapter, Role Migration·Compose Canary |
-| 2 | #42 Fetch·Registry·검역 | 9개 Profile 최신 Head 후보·고정 Commit 승인·원자 활성화 |
+| 2 | #42 Fetch·Registry·검역 | **완료(2026-08-05)** — 9개 Profile, 고정 Commit Fetch·검역, `dhslove` 승인 Gate, 원자 활성화 계약·서버 Canary |
 | 3 | #43 Parse·Index·Retrieval·삭제 | AST/Fallback, OpenAI Embeddings, FTS·Identifier·Vector, Lineage |
 | 4 | #44 답변·보류 | OpenAI Responses, Terra·Sol Routing, Structured Output, Citation 검증 |
 | 5 | #45 Activepieces | Docs·Code 수집·재색인·평가 Flow |
@@ -33,16 +33,18 @@
 ```text
 SHARED_DOCS  ablecloud-team/ablestack-docs       master             50d50ad6c8c548dc58db866ca28b4cbb43cc74d0
 CLOUD_MAIN   ablecloud-team/ablestack-cloud      main               a873fb1ff436990fd523e2fe56682ff7aa31d1ec
-CLOUD_DIPLO  ablecloud-team/ablestack-cloud      ablestack-diplo    87beae809aa78af395c295eead50b0b8db220672
+CLOUD_DIPLO  ablecloud-team/ablestack-cloud      ablestack-diplo    19550c70d8d8a878eef40e1e1062b2fe0d40f71e
 CLOUD_EUROPA ablecloud-team/ablestack-cloud      ablestack-europa   4787b6918bfa48a3d3665814f29ff23f9007fe1f
 WALL_MAIN    ablecloud-team/ablestack-wall       main               f27b3f1b0b35489e05c64924b5cff7dc64dd2f6d
-COCKPIT_DIPLO ablecloud-team/ablestack-cockpit-plugin ablestack-diplo 2018453077064a8a7fa92bcb4d8f531d8d1f8bb7
+COCKPIT_DIPLO ablecloud-team/ablestack-cockpit-plugin ablestack-diplo c8b37dd6a4c35a8ba18169189a553595b24e54ab
 GENIE_MASTER ablecloud-team/ablestack-genie      master             3e3c5c364f5c7261b07d49fcbcd4f3605b91f3b1
 KICKSTART_MASTER ablecloud-team/ablestack-kickstart master          ffe24390544dd58e3441ac7362fe46b93472d0e1
 QEMU_EXEC_TOOLS_MAIN ablecloud-team/ablestack-qemu-exec-tools main  a4b9bd60bb93800612d96aaad84e73ddfd768b68
 ```
 
 Branch Head가 바뀌면 새 Commit을 후보로만 등록한다. 운영자 승인과 전체 검역·색인 성공 전에는 기존 `ACTIVE` Version을 유지한다.
+
+Issue #42의 실제 배포·승인·롤백 절차는 [Source Registry·검역·승인 운영 Runbook](source-registry-quarantine.md)을 따른다. 2026-08-05 기준 시험 서버에는 9개 후보만 등록했고, `GENIE_MASTER`만 검역했으며 실제 승인·활성화는 0건이다.
 
 ## 5. 파일 허용·검역
 

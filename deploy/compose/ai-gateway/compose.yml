@@ -29,7 +29,7 @@ services:
       - no-new-privileges:true
 
   migrate:
-    image: techflow/ai-gateway:${TECHFLOW_RAG_RELEASE:-issue-41}
+    image: techflow/ai-gateway:${TECHFLOW_RAG_RELEASE:-issue-42}
     build:
       context: ../../../services/ai-gateway
     restart: "no"
@@ -58,7 +58,7 @@ services:
       - no-new-privileges:true
 
   gateway:
-    image: techflow/ai-gateway:${TECHFLOW_RAG_RELEASE:-issue-41}
+    image: techflow/ai-gateway:${TECHFLOW_RAG_RELEASE:-issue-42}
     build:
       context: ../../../services/ai-gateway
     restart: unless-stopped
@@ -72,6 +72,7 @@ services:
       TECHFLOW_RAG_DATABASE_NAME: ${TECHFLOW_RAG_DATABASE_NAME:-techflow_rag}
       TECHFLOW_RAG_DATABASE_USER: techflow_rag_app_login
       TECHFLOW_RAG_DATABASE_PASSWORD_FILE: /run/secrets/app_password
+      TECHFLOW_SOURCE_TMPDIR: /var/lib/techflow-source
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8090", "--no-access-log"]
     secrets:
       - app_password
@@ -83,9 +84,11 @@ services:
     networks:
       - rag_internal
       - rag_edge
+      - ap_automation
     read_only: true
     tmpfs:
       - /tmp:size=32m,mode=1777
+      - /var/lib/techflow-source:size=2g,mode=0700,uid=10001,gid=10001,noexec,nosuid,nodev
     cap_drop:
       - ALL
     security_opt:
@@ -102,6 +105,9 @@ networks:
     internal: true
   rag_edge:
     driver: bridge
+  ap_automation:
+    external: true
+    name: techflow-activepieces_automation_egress
 
 volumes:
   techflow_rag_database:

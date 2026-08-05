@@ -1,0 +1,57 @@
+{
+  "schemaVersion": "1.0",
+  "logicalId": "rag-source-discovery-v1",
+  "displayName": "TechFlow - ABLESTACK Source Discovery v1",
+  "issue": 42,
+  "status": "template-ready",
+  "trigger": {
+    "piece": "@activepieces/piece-schedule",
+    "triggerName": "every_6_hours",
+    "timezone": "Asia/Seoul"
+  },
+  "profiles": [
+    "SHARED_DOCS",
+    "CLOUD_MAIN",
+    "CLOUD_DIPLO",
+    "CLOUD_EUROPA",
+    "WALL_MAIN",
+    "COCKPIT_DIPLO",
+    "GENIE_MASTER",
+    "KICKSTART_MASTER",
+    "QEMU_EXEC_TOOLS_MAIN"
+  ],
+  "steps": [
+    {
+      "name": "for_each_profile",
+      "type": "loop",
+      "items": "{{flow.profiles}}"
+    },
+    {
+      "name": "register_latest_candidate",
+      "piece": "@activepieces/piece-http",
+      "actionName": "send_request",
+      "method": "POST",
+      "url": "http://techflow-ai-gateway:8090/v1/source-profiles/{{loop.item}}/discoveries",
+      "headers": {
+        "X-Correlation-Id": "ap-source-discovery-{{run.id}}",
+        "Idempotency-Key": "source-discovery-{{loop.item}}-{{trigger.scheduledTime}}"
+      },
+      "body": {
+        "detectedBy": "activepieces"
+      },
+      "timeoutSeconds": 30,
+      "automaticRetry": false
+    }
+  ],
+  "security": {
+    "arbitraryRepositoryInput": false,
+    "credentialStorage": "none-public-repositories",
+    "gatewayResolvesHead": true,
+    "candidateAutoApproval": false,
+    "sourceExecution": false
+  },
+  "runtime": {
+    "published": false,
+    "publishGate": "Issue #42 deployment canary and operator review"
+  }
+}
