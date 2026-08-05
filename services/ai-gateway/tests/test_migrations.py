@@ -8,20 +8,24 @@ import unittest
 ROOT = Path(__file__).resolve().parents[1]
 UP_0001 = (ROOT / "migrations" / "0001_schema_up.sql").read_text(encoding="utf-8")
 UP_0002 = (ROOT / "migrations" / "0002_source_registry_up.sql").read_text(encoding="utf-8")
+UP_0003 = (ROOT / "migrations" / "0003_source_mirror_up.sql").read_text(encoding="utf-8")
+UP_0004 = (ROOT / "migrations" / "0004_source_mirror_policy_up.sql").read_text(encoding="utf-8")
 DOWN_0001 = (ROOT / "migrations" / "0001_schema_down.sql").read_text(encoding="utf-8")
 DOWN_0002 = (ROOT / "migrations" / "0002_source_registry_down.sql").read_text(encoding="utf-8")
-UP = UP_0001 + "\n" + UP_0002
-DOWN = DOWN_0002 + "\n" + DOWN_0001
+DOWN_0003 = (ROOT / "migrations" / "0003_source_mirror_down.sql").read_text(encoding="utf-8")
+DOWN_0004 = (ROOT / "migrations" / "0004_source_mirror_policy_down.sql").read_text(encoding="utf-8")
+UP = UP_0001 + "\n" + UP_0002 + "\n" + UP_0003 + "\n" + UP_0004
+DOWN = DOWN_0004 + "\n" + DOWN_0003 + "\n" + DOWN_0002 + "\n" + DOWN_0001
 BOOTSTRAP = (ROOT / "migrations" / "0000_extensions_roles_up.sql").read_text(encoding="utf-8")
 
 
 class MigrationContractTest(unittest.TestCase):
-    def test_exactly_eighteen_tables(self) -> None:
+    def test_exactly_nineteen_tables(self) -> None:
         tables = re.findall(r"(?im)^CREATE TABLE\s+(rag_[a-z_]+)", UP)
-        self.assertEqual(18, len(tables))
-        self.assertEqual(18, len(set(tables)))
+        self.assertEqual(19, len(tables))
+        self.assertEqual(19, len(set(tables)))
 
-    def test_down_drops_all_eighteen_tables(self) -> None:
+    def test_down_drops_all_nineteen_tables(self) -> None:
         created = set(re.findall(r"(?im)^CREATE TABLE\s+(rag_[a-z_]+)", UP))
         dropped = set(re.findall(r"(?im)^DROP TABLE IF EXISTS\s+(rag_[a-z_]+)", DOWN))
         self.assertEqual(created, dropped)
@@ -66,6 +70,11 @@ class MigrationContractTest(unittest.TestCase):
 
     def test_activepieces_role_is_absent(self) -> None:
         self.assertNotIn("activepieces", (UP + BOOTSTRAP).lower())
+
+    def test_source_mirror_registry_has_seven_repositories_and_stale_policy(self) -> None:
+        self.assertEqual(7, UP_0003.count("'ablecloud-team/"))
+        self.assertIn("SCHEDULE_6H_RECONCILIATION", UP_0003)
+        self.assertIn("DEFAULT 86400", UP_0003)
 
     def test_public_table_privileges_are_revoked(self) -> None:
         self.assertIn("REVOKE ALL ON ALL TABLES IN SCHEMA public FROM PUBLIC", UP)

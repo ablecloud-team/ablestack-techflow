@@ -51,6 +51,11 @@ def main() -> int:
     if len(profiles) != 9 or {item["initialReviewer"] for item in profiles} != {"dhslove"}:
         raise RuntimeError("source registry must contain nine profiles assigned to dhslove")
 
+    code, mirror_response = call(args.base_url, "GET", "/v1/source-mirrors", correlation)
+    expect(code, 200, "list-source-mirrors")
+    if len(mirror_response["data"]) != 7:
+        raise RuntimeError("source mirror registry must contain seven repositories")
+
     code, candidate_response = call(
         args.base_url,
         "POST",
@@ -74,6 +79,12 @@ def main() -> int:
         source = scan_response["data"]
     if source["state"] != "QUARANTINED" or source["blockingViolationCount"] != 0:
         raise RuntimeError("GENIE canary must remain clean and quarantined pending reviewer approval")
+
+    code, mirror_response = call(args.base_url, "GET", "/v1/source-mirrors", correlation)
+    expect(code, 200, "list-source-mirrors-after-sync")
+    genie_mirror = next(item for item in mirror_response["data"] if item["repository"].endswith("ablestack-genie"))
+    if genie_mirror["state"] != "HEALTHY" or genie_mirror["lastHeadCommit"] != source["commit"]:
+        raise RuntimeError("GENIE persistent mirror state must be healthy at the scanned commit")
 
     code, files_response = call(
         args.base_url, "GET", f"/v1/source-versions/{source['sourceVersionId']}/files", correlation
@@ -107,7 +118,7 @@ def main() -> int:
         raise RuntimeError("Issue #42 query boundary must abstain without provider call")
 
     print(
-        "runtime_canary=valid profiles=9 reviewer=dhslove "
+        "runtime_canary=valid profiles=9 mirrors=7 reviewer=dhslove "
         f"sourceProfile=GENIE_MASTER sourceState={source['state']} files={len(files)} "
         "unapprovedIngestion=denied queryState=ABSTAINED providerCalled=false"
     )

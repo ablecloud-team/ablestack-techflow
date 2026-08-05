@@ -122,7 +122,7 @@ P0 보안 기준은 인터넷 이벤트, Activepieces 실행면, 상태 저장�
 
 Issue #20에서는 사내 Assist 실증의 첫 AI 기반으로 문서·소스코드 RAG PoC를 상세 설계했습니다. Source는 `ablestack-docs`와 `ablestack-cloud`, `ablestack-wall`, `ablestack-cockpit-plugin`, `ablestack-genie`, `ablestack-kickstart`, `ablestack-qemu-exec-tools`를 포함합니다. Cloud는 최신 `main`·`ablestack-diplo`·`ablestack-europa` Head를 각각 후보로 추적하고 승인 Commit을 독립 색인합니다. 총 9개 Source Profile을 분리하며, 서로 다른 저장소의 근거는 승인된 Compatibility Set에서만 결합합니다. 코드 답변에는 Repository·Branch·Commit·Path·Line·Symbol Citation을 요구합니다. Activepieces는 변경 감지·승인·재색인·평가를 오케스트레이션하고 TechFlow AI Gateway가 Registry, 코드 검역·구문 분석, 검색, 답변·보류와 삭제 정책을 소유합니다. AI Gateway는 OpenAI Responses API를 제품 답변 런타임으로, Embeddings API를 Vector 생성에 사용합니다. 기본 답변은 `gpt-5.6-terra/medium`, 복잡도 규칙을 통과한 질의만 `gpt-5.6-sol/high`로 승격하며, 원본 저장소를 OpenAI File·Vector Store에 업로드하지 않습니다. ChatGPT Work와 Codex는 운영·개발 보조 도구일 뿐 제품 런타임 의존성이 아닙니다.
 
-Issue #42에서 AI Gateway를 18개 API·18개 RAG Table로 확장하고 7개 저장소·9개 Source Profile의 최신 Head 발견, 고정 Commit Fetch, D0 검역, `dhslove` 사람 승인 Gate와 원자 활성화 계약을 구현·시험 서버에 배포했습니다. 9개 후보는 등록만 했고 `GENIE_MASTER` 34개 파일 Canary만 검역했으며 실제 Source 승인·활성화·OpenAI 호출은 수행하지 않았습니다. 다음 단계 #43에서 Parser·Chunk·Embeddings·Hybrid Retrieval·삭제 전파를 구현한 뒤 최초 Source 승인 Commit을 결정합니다.
+Issue #42에서 AI Gateway를 19개 API·19개 RAG Table로 확장하고 7개 저장소·9개 Source Profile의 최신 Head를 시험 서버의 7개 영속 Bare Mirror에 동기화했습니다. 실제 갱신은 6시간 Reconciler가 수행하고, 검역은 GitHub에 접속하지 않고 보호된 로컬 Commit을 읽습니다. 1TB로 확장된 시험 서버 Root는 ext4 1,005 GiB·가용 950 GiB이며, 7개 Mirror는 Gateway 재시작과 네트워크 없는 `GENIE_MASTER` 34개 파일 스캔을 통과했습니다. 실제 Source 승인·활성화·OpenAI 호출은 수행하지 않았습니다. Push 즉시 갱신은 #45, Parser·Chunk·Embeddings·Hybrid Retrieval·삭제 전파는 #43에서 구현합니다.
 
 ## 문서
 

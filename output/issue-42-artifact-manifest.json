@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0",
   "issue": 42,
-  "title": "Source Registry·검역·승인 파이프라인 구현",
+  "title": "Source Registry·영속 미러·검역·승인 보완 구현",
   "status": "implemented-deployed-and-validated",
   "initialSourceReviewer": "dhslove",
   "generatedAt": "2026-08-05T12:00:00+09:00",
@@ -9,56 +9,62 @@
   "files": [
     {
       "path": "README.md",
-      "size": 18733,
-      "sha256": "0CCF0B667B87AF33CCE24A42357E6D2F4CBD1BC2BA1B67B8E6DC09F1A6BAE014",
+      "size": 18866,
+      "sha256": "E2131B58EE77DC698D6230D36258962480B5F3BFB824CA56FCDD40E29F2B6C01",
       "contentMode": "text-lf-normalized"
     },
     {
       "path": "docs/plans/techflow-product-roadmap.md",
-      "size": 33524,
-      "sha256": "051AB0DD35FC12F32A8678A3B60869B57C2C37234A413FE1EE7730DA0EC691E1",
+      "size": 33620,
+      "sha256": "209D3C42D5153080064C9C38C4CB95690BB0157A6CAB7B9C9A6AF182925F7D59",
       "contentMode": "text-lf-normalized"
     },
     {
       "path": "docs/decisions/techflow-source-registry.json",
-      "size": 3871,
-      "sha256": "8CDCA3DAF559B301E245615BC7F4EAB636E0022A7B8839FA5AF5FC1959224CA1",
+      "size": 4766,
+      "sha256": "16DF51C441CFE6A686DA334CFBA68D2719AF26D5C753A2C0A852213CB0DAFCCC",
       "contentMode": "text-lf-normalized"
     },
     {
       "path": "docs/runbooks/rag-poc-development.md",
-      "size": 11374,
-      "sha256": "F8F3AA08A87D4BA76ECC5AE719EA5B2F780D3DF3746CFEB4A8821E512C1AF914",
+      "size": 11557,
+      "sha256": "74CC785A7BBFA47E1DCA39ED909605FD545347F2913EC5E8E735F5EF96F34B35",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "docs/runbooks/ai-gateway-foundation.md",
+      "size": 6853,
+      "sha256": "A7E6A2747F9ECDB602AB3822BD4A36110B8E1EA9C19A6358C9CACA54CF9657A2",
       "contentMode": "text-lf-normalized"
     },
     {
       "path": "docs/runbooks/source-registry-quarantine.md",
-      "size": 8431,
-      "sha256": "C7BD264277B5E5C428099D4BCD33499D67228C93F74C7539FCDFDA70A5D16638",
+      "size": 10429,
+      "sha256": "2E7C744E90807234CFD28B4611A1256E15558CDE348993443222C9A8523C46DF",
       "contentMode": "text-lf-normalized"
     },
     {
       "path": "docs/reports/issue-42-source-registry-validation.md",
-      "size": 8791,
-      "sha256": "24731CA7A5716636281400FF367A788AD303C04EE15DB72A1E2665DE5517A65A",
+      "size": 9126,
+      "sha256": "F18F5CF431BB7E3D87B81D30190B0934A7240F4F37B3EFFCB500463974A59B8B",
       "contentMode": "text-lf-normalized"
     },
     {
       "path": "services/ai-gateway/README.md",
-      "size": 3547,
-      "sha256": "CD4CC9F35A4BE6CDDC237F8EDE862BC2AB648588A17426D9A0622EA4CCFD75EA",
+      "size": 2926,
+      "sha256": "E96594B8627717E4352C180EDA26D264DF5BF5CFE49258A9B8596FB1935746F4",
       "contentMode": "text-lf-normalized"
     },
     {
       "path": "services/ai-gateway/app/source_registry.py",
-      "size": 4328,
-      "sha256": "5543135DBF58D9BE5B6D25E4B23A0C980C8A4715758A7A8B85FE327F74F68EAD",
+      "size": 4825,
+      "sha256": "EC20C871875FE83B54C270AA987D4E9253CECBD2924D5E588DC66A8E8F5805A5",
       "contentMode": "text-lf-normalized"
     },
     {
       "path": "services/ai-gateway/app/source_fetcher.py",
-      "size": 5819,
-      "sha256": "43CFD037E48F5CA0574E9DCF840CB2F620FD8D850B5B411D99EA280B4A59AA82",
+      "size": 8940,
+      "sha256": "0F0ADEE97B1AAE01F2C01B5ECD3E2D4D6EBA8058F6ABCFDBE7165AF95369264B",
       "contentMode": "text-lf-normalized"
     },
     {
@@ -74,6 +80,24 @@
       "contentMode": "text-lf-normalized"
     },
     {
+      "path": "services/ai-gateway/app/main.py",
+      "size": 15189,
+      "sha256": "FAF373962122EA54052F4B9F58EF93EC3F4058820370E3417AAE8144AD25CAA3",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "services/ai-gateway/app/store.py",
+      "size": 20878,
+      "sha256": "E5AAA94DB9BB44ECE2F2C1242C6F6556987B01DBBCA07D22502134534B8229D8",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "services/ai-gateway/app/postgres_store.py",
+      "size": 34777,
+      "sha256": "80A774DBC45F41BECB91A6D1D5714799483CF8224D98F9A598057B468A9D40DA",
+      "contentMode": "text-lf-normalized"
+    },
+    {
       "path": "services/ai-gateway/migrations/0002_source_registry_up.sql",
       "size": 8128,
       "sha256": "A9AA3E01E294E0EDD6D5BF6E10CBCA51E01EC7E6BCC943FD30611F79CD35508B",
@@ -86,15 +110,111 @@
       "contentMode": "text-lf-normalized"
     },
     {
+      "path": "services/ai-gateway/migrations/0003_source_mirror_up.sql",
+      "size": 1567,
+      "sha256": "235B74EFAC34ED5EB9DDAFAFB550D960774DFDDB295EAB01D60ECFBE3D7AF808",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "services/ai-gateway/migrations/0003_source_mirror_down.sql",
+      "size": 55,
+      "sha256": "E0F01A49FE54803E6E9BE20E60CFCB90C20F55659A6D2F9A44B8AF1377A30C77",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "services/ai-gateway/migrations/0004_source_mirror_policy_up.sql",
+      "size": 253,
+      "sha256": "5BFC5A505E4E11D504529D4E66530C500E7A5FBD3AC66275F2B80727D6665E9F",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "services/ai-gateway/migrations/0004_source_mirror_policy_down.sql",
+      "size": 254,
+      "sha256": "34863E2D575DCFA593AF9355A43FC127EB8E132C99AC22F998F26E9E726E0037",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "services/ai-gateway/migrations/manifest.json",
+      "size": 1675,
+      "sha256": "098D4DDCD1B4663B8D06E16935E58CF131CEF57B9BE4BDB9902DF00347D90EE6",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "services/ai-gateway/scripts/migrate.py",
+      "size": 4324,
+      "sha256": "7473C1A03608D066E186FCFAC5FAA0384B05F3CE2B84566C92C472FDADA134B9",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "services/ai-gateway/scripts/reconcile_sources.py",
+      "size": 2602,
+      "sha256": "E90244EB3DDB170C8DB7920E6A0186166A7DE2DE9C586ECBBB938861B43C6A93",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "services/ai-gateway/tests/test_api.py",
+      "size": 11763,
+      "sha256": "9598ECEB33E051CD628D1490244DB0B92170EA4DDFCB6AD9B9AA4087AE45CD21",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "services/ai-gateway/tests/test_container_contract.py",
+      "size": 2595,
+      "sha256": "CBF295D1304E4F6B73E9D78785B196675991D8DB4FE378EFE55F189BDE5E1B93",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "services/ai-gateway/tests/test_migrations.py",
+      "size": 4408,
+      "sha256": "8AC7C3E77A155C0E1280AD592B9C03747FEEF39212FDE0337E8DE0E83EDFC84C",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "services/ai-gateway/tests/test_source_fetcher.py",
+      "size": 2033,
+      "sha256": "102AF3F748950D11FB672CB75CC969488A8F2D9BE485744D7FA1F3A129867BC1",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "services/ai-gateway/Dockerfile",
+      "size": 1146,
+      "sha256": "BE800E3F0185DC119763D114C0EA75CB892CB9D9E423ABCE96C98141EF92DEBD",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "services/ai-gateway/pyproject.toml",
+      "size": 460,
+      "sha256": "79E009EEE145411261DCB7D52F89DFD16A5C159247C92415909E710576E8AFFE",
+      "contentMode": "text-lf-normalized"
+    },
+    {
       "path": "services/ai-gateway/openapi/techflow-ai-gateway-v1.json",
-      "size": 34770,
-      "sha256": "4FB5D06E6C23BCCD38AF8B2650989CF290608BC88B6B8BA1FCFDD89A37609F13",
+      "size": 35223,
+      "sha256": "EFEF0C03390CDBD1D8F617DF3A5EB3C49BB7B3324B7982BE8DD8581F350CCB63",
       "contentMode": "text-lf-normalized"
     },
     {
       "path": "deploy/compose/ai-gateway/compose.yml",
-      "size": 4029,
-      "sha256": "2B9722506CD80488E3D9D17845880130E5CDBB0A8DB477B6CC6526139458F5CE",
+      "size": 5203,
+      "sha256": "8852EB68A1B1D4F2A2457CD005A12F46974005312EAF2D0104DDC3A9B4FC3E9C",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "deploy/compose/ai-gateway/scripts/deploy.sh",
+      "size": 567,
+      "sha256": "67EC957D788CD3AE9D4901CC17DF4248702B9474E7EC1196CE3149033E6F1F1B",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "deploy/compose/ai-gateway/scripts/verify_database.sh",
+      "size": 1464,
+      "sha256": "6529189F1521FCF45955DF628B31A265715F6A4732E2284A3BE12CD27552ECAF",
+      "contentMode": "text-lf-normalized"
+    },
+    {
+      "path": "deploy/compose/ai-gateway/scripts/verify_runtime.py",
+      "size": 4992,
+      "sha256": "8B54660CD7E57C84077380FE3A055C2796576A5620ACDE6B481B9F94331DD8CB",
       "contentMode": "text-lf-normalized"
     },
     {
@@ -111,8 +231,8 @@
     },
     {
       "path": "tools/ai_gateway/validate_issue_42.py",
-      "size": 4280,
-      "sha256": "41291099948383A852EA50A93C80073C52A421F78F3761B1C5D86064AA86BFB6",
+      "size": 4634,
+      "sha256": "F5E76043DE7ED01C874AD093C7F4809E1FBC069A1C63A21998CFAE1A234A7A5F",
       "contentMode": "text-lf-normalized"
     },
     {
@@ -123,38 +243,38 @@
     },
     {
       "path": "tools/artifacts/issue-42/build_presentation.mjs",
-      "size": 9635,
-      "sha256": "CBE1BD4C2B27CC015FF163A5AF9AAD01525336693B4B157A3ECF89C9262D64F3",
+      "size": 11326,
+      "sha256": "970BD07907594FBA0B53DEE9DCEA6E7063DA060EC37CD75D7A0503D375801500",
       "contentMode": "text-lf-normalized"
     },
     {
       "path": "tools/artifacts/issue-42/build_report.py",
-      "size": 12038,
-      "sha256": "2D114EB8EBB1E051FB18D7DE56B4BDAF3678339E55AE81147E1D5B1AB69EFA60",
+      "size": 13842,
+      "sha256": "2BE4F9FA769832293456FF2F641B747C31D06B71B4B72D6AB7CEA601E3D7501C",
       "contentMode": "text-lf-normalized"
     },
     {
       "path": "tools/artifacts/issue-42/validate_artifacts.py",
       "size": 3509,
-      "sha256": "4B8CA68A8F54DB28578786115ED59C4D6A2E6992C73811B04BC1BB2C46CC7C5B",
+      "sha256": "50B1BB8BA98ED3CF9DE55E900CEA84943E6232E10495DC2713660F787DE8C734",
       "contentMode": "text-lf-normalized"
     },
     {
       "path": "output/pdf/techflow-source-registry-report.pdf",
-      "size": 110414,
-      "sha256": "509CA6FCC6BC5B77E7A900DA5245C9E904712A46BCBDB357F1BA3C68E75D25C4",
+      "size": 123625,
+      "sha256": "2EA5C023B8FF1C79DABD2E0027499B7704B7C67FAF49C14A336907260B45B14A",
       "contentMode": "binary-raw"
     },
     {
       "path": "output/pdf/techflow-source-registry-presentation.pdf",
-      "size": 361915,
-      "sha256": "2B1A76D354A844C9C1190CF889F59EC37F5E4363B6C7F58C6FCBA6620750DF67",
+      "size": 451588,
+      "sha256": "5E2CD6CF67284E7C3133E1D8471764AFE67A9CB9EA5975C07CA936F20BA8189C",
       "contentMode": "binary-raw"
     },
     {
       "path": "output/presentation/techflow-source-registry.pptx",
-      "size": 36756,
-      "sha256": "0F14BD1F44F7C44C524C2B6DB0111F396FE132A9392812EE0859B1BD7B198C9F",
+      "size": 44099,
+      "sha256": "D75F4CFBCEAEFEED3248E384DD734434353DB31DCF2EE9E01A822822ADAAD3FE",
       "contentMode": "binary-raw"
     }
   ]

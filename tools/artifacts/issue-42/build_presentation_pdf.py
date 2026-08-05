@@ -19,8 +19,8 @@ def natural(path):
 
 
 images = sorted(SLIDES.glob("*.png"), key=natural)
-if len(images) != 8:
-    raise RuntimeError(f"expected 8 rendered slides, found {len(images)}")
+if len(images) != 10:
+    raise RuntimeError(f"expected 10 rendered slides, found {len(images)}")
 with Image.open(images[0]) as first:
     width, height = first.size
 OUTPUT.parent.mkdir(parents=True, exist_ok=True)

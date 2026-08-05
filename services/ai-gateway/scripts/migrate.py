@@ -18,6 +18,7 @@ EXPECTED_TABLES = {
     "rag_code_symbol", "rag_code_relation", "rag_deletion_ledger", "rag_evaluation_case",
     "rag_evaluation_run", "rag_evaluation_result", "rag_provider_call",
     "rag_source_blob", "rag_source_file", "rag_source_scan_finding",
+    "rag_source_mirror",
 }
 
 
@@ -70,6 +71,9 @@ def main() -> int:
         if args.direction == "down":
             if not args.allow_destructive_rollback:
                 raise SystemExit("--allow-destructive-rollback is required")
+            if "rag_source_mirror" in table_names(connection):
+                connection.execute((MIGRATIONS / "0004_source_mirror_policy_down.sql").read_text(encoding="utf-8"))
+                connection.execute((MIGRATIONS / "0003_source_mirror_down.sql").read_text(encoding="utf-8"))
             if "rag_source_blob" in table_names(connection):
                 connection.execute((MIGRATIONS / "0002_source_registry_down.sql").read_text(encoding="utf-8"))
             connection.execute((MIGRATIONS / "0001_schema_down.sql").read_text(encoding="utf-8"))
@@ -81,6 +85,9 @@ def main() -> int:
             connection.execute((MIGRATIONS / "0001_schema_up.sql").read_text(encoding="utf-8"))
         if "rag_source_blob" not in table_names(connection):
             connection.execute((MIGRATIONS / "0002_source_registry_up.sql").read_text(encoding="utf-8"))
+        if "rag_source_mirror" not in table_names(connection):
+            connection.execute((MIGRATIONS / "0003_source_mirror_up.sql").read_text(encoding="utf-8"))
+        connection.execute((MIGRATIONS / "0004_source_mirror_policy_up.sql").read_text(encoding="utf-8"))
         verify(connection)
     return 0
 

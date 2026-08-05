@@ -41,7 +41,7 @@ manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
 assert manifest["issue"] == 42
 assert manifest["status"] == "implemented-deployed-and-validated"
 assert manifest["initialSourceReviewer"] == "dhslove"
-assert len(manifest["files"]) == 25
+assert len(manifest["files"]) == 45
 for item in manifest["files"]:
     path = ROOT / item["path"]
     assert path.is_file(), item["path"]
@@ -72,13 +72,13 @@ assert not hits, "; ".join(hits)
 
 report_pages = len(PdfReader(str(ROOT / "output/pdf/techflow-source-registry-report.pdf")).pages)
 deck_pages = len(PdfReader(str(ROOT / "output/pdf/techflow-source-registry-presentation.pdf")).pages)
-assert report_pages == 8, report_pages
-assert deck_pages == 8, deck_pages
+assert report_pages == 10, report_pages
+assert deck_pages == 10, deck_pages
 with zipfile.ZipFile(ROOT / "output/presentation/techflow-source-registry.pptx") as archive:
     slides = [name for name in archive.namelist() if re.fullmatch(r"ppt/slides/slide\d+\.xml", name)]
-    assert len(slides) == 8
+    assert len(slides) == 10
     deck_text = "\n".join(archive.read(name).decode("utf-8", errors="ignore") for name in slides)
-    for expected in ("ISSUE #42", "18 API", "Reviewer dhslove", "SOURCE PROFILES", "ISSUE #43"):
+    for expected in ("ISSUE #42", "19 API", "PERSISTENT MIRRORS", "1,005 GiB", "ISSUE #43"):
         assert expected in deck_text, f"deck missing {expected}"
 
-print(f"artifacts=valid files=25 links={checked_links} secrets=0 report_pages={report_pages} deck_pages={deck_pages} slides=8")
+print(f"artifacts=valid files=45 links={checked_links} secrets=0 report_pages={report_pages} deck_pages={deck_pages} slides=10")

@@ -1,18 +1,17 @@
-"""Pinned, no-checkout Git object reader used by the Issue #42 scanner."""
+"""Persistent, pinned, no-checkout Git object reader for Issue #42."""
 
 from __future__ import annotations
 
-from contextlib import AbstractContextManager
+from contextlib import AbstractContextManager, contextmanager
 from dataclasses import dataclass
 import os
 from pathlib import Path
 import re
 import subprocess
-import tempfile
-from typing import Protocol
+from typing import BinaryIO, Iterator, Protocol
 
 from .source_policy import TreeEntry
-from .source_registry import SourceProfile
+from .source_registry import SourceProfile, mirror_key
 from .store import InvalidBoundaryError, StoreError
 
 
@@ -25,6 +24,8 @@ class FetchError(StoreError):
 
 
 class HeadMovedError(StoreError):
+    """Kept for API compatibility with earlier Issue #42 clients."""
+
     code = "SOURCE_HEAD_MOVED"
     http_status = 409
 
@@ -72,15 +73,55 @@ def _run(args: list[str], cwd: Path | None = None, binary: bool = False) -> byte
     return completed.stdout if binary else completed.stdout.decode("utf-8", errors="strict")
 
 
+def _lock_file(handle: BinaryIO) -> None:
+    handle.seek(0)
+    if os.name == "nt":
+        import msvcrt
+
+        msvcrt.locking(handle.fileno(), msvcrt.LK_LOCK, 1)
+    else:
+        import fcntl
+
+        fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+
+
+def _unlock_file(handle: BinaryIO) -> None:
+    handle.seek(0)
+    if os.name == "nt":
+        import msvcrt
+
+        msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
+    else:
+        import fcntl
+
+        fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+
+
+@contextmanager
+def _mirror_lock(path: Path) -> Iterator[BinaryIO]:
+    path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+    handle = path.open("a+b")
+    if path.stat().st_size == 0:
+        handle.write(b"0")
+        handle.flush()
+    _lock_file(handle)
+    try:
+        yield handle
+    finally:
+        _unlock_file(handle)
+        handle.close()
+
+
 @dataclass
 class GitSnapshot(AbstractContextManager["GitSnapshot"]):
     root: Path
     commit: str
     tree_sha: str
-    _temporary: tempfile.TemporaryDirectory[str]
+    _lock_handle: BinaryIO
 
     def __exit__(self, exc_type, exc, tb) -> None:
-        self._temporary.cleanup()
+        _unlock_file(self._lock_handle)
+        self._lock_handle.close()
 
     def entries(self) -> list[TreeEntry]:
         output = _run(["git", "ls-tree", "-r", "-l", "-z", self.commit], cwd=self.root, binary=True)
@@ -105,55 +146,99 @@ class GitSnapshot(AbstractContextManager["GitSnapshot"]):
 
 
 class GitSnapshotFetcher:
-    """Fetch only an allowlisted branch into a temporary bare repository.
+    """Maintain one persistent bare mirror per allowlisted repository.
 
-    No checkout, hook, smudge filter, submodule update, build, test, or source
-    execution is performed. The discovered commit must still be the branch head
-    when the pinned snapshot is opened.
+    Network access is limited to ``resolve_head``. ``open_snapshot`` is a
+    local-only read from a protected candidate ref, so scans continue when
+    GitHub is temporarily unavailable. No checkout, hook, smudge filter,
+    submodule update, build, test, or source execution is performed.
     """
+
+    def __init__(self, mirror_root: str | Path | None = None) -> None:
+        configured = mirror_root or os.getenv("TECHFLOW_SOURCE_MIRROR_ROOT") or "/var/lib/techflow-source-mirrors"
+        self.mirror_root = Path(configured)
 
     @staticmethod
     def _url(profile: SourceProfile) -> str:
         return f"https://github.com/{profile.repository}.git"
 
-    def resolve_head(self, profile: SourceProfile) -> str:
-        output = _run(["git", "ls-remote", "--heads", "--exit-code", self._url(profile), f"refs/heads/{profile.branch}"])
-        assert isinstance(output, str)
-        rows = [line.split() for line in output.splitlines() if line.strip()]
-        if len(rows) != 1 or not SHA_PATTERN.fullmatch(rows[0][0]):
-            raise FetchError("allowlisted branch head was not resolved uniquely")
-        return rows[0][0]
+    def _mirror_path(self, profile: SourceProfile) -> Path:
+        return self.mirror_root / mirror_key(profile.repository)
 
-    def open_snapshot(self, profile: SourceProfile, commit: str) -> GitSnapshot:
-        if not SHA_PATTERN.fullmatch(commit):
-            raise InvalidBoundaryError("invalid pinned commit")
-        temporary = tempfile.TemporaryDirectory(
-            prefix="techflow-source-", dir=os.getenv("TECHFLOW_SOURCE_TMPDIR") or None
-        )
-        root = Path(temporary.name) / "objects.git"
-        root.mkdir(mode=0o700)
-        empty_hooks = Path(temporary.name) / "hooks-disabled"
-        empty_hooks.mkdir(mode=0o500)
-        safe_options = [
-            "-c", f"core.hooksPath={empty_hooks}",
+    def _lock_path(self, profile: SourceProfile) -> Path:
+        return self.mirror_root / ".locks" / f"{mirror_key(profile.repository)}.lock"
+
+    @staticmethod
+    def _head_ref(profile: SourceProfile) -> str:
+        return f"refs/techflow/heads/{profile.profile_id.lower()}"
+
+    @staticmethod
+    def _candidate_ref(profile: SourceProfile, commit: str) -> str:
+        return f"refs/techflow/candidates/{profile.profile_id.lower()}/{commit}"
+
+    def _safe_options(self) -> list[str]:
+        hooks = self.mirror_root / ".hooks-disabled"
+        hooks.mkdir(parents=True, exist_ok=True, mode=0o500)
+        return [
+            "-c", f"core.hooksPath={hooks}",
             "-c", "protocol.file.allow=never",
             "-c", "protocol.ext.allow=never",
             "-c", "fetch.fsckObjects=true",
         ]
-        try:
-            _run(["git", *safe_options, "init", "--bare", str(root)])
-            _run(["git", *safe_options, "remote", "add", "origin", self._url(profile)], cwd=root)
+
+    def resolve_head(self, profile: SourceProfile) -> str:
+        self.mirror_root.mkdir(parents=True, exist_ok=True, mode=0o700)
+        root = self._mirror_path(profile)
+        with _mirror_lock(self._lock_path(profile)):
+            safe_options = self._safe_options()
+            if not root.exists():
+                _run(["git", *safe_options, "init", "--bare", str(root)])
+                _run(["git", *safe_options, "remote", "add", "origin", self._url(profile)], cwd=root)
+            else:
+                bare = str(_run(["git", "rev-parse", "--is-bare-repository"], cwd=root)).strip()
+                remote = str(_run(["git", "config", "--get", "remote.origin.url"], cwd=root)).strip()
+                if bare != "true" or remote != self._url(profile):
+                    raise FetchError("persistent mirror identity validation failed")
+
+            head_ref = self._head_ref(profile)
             _run(
-                ["git", *safe_options, "fetch", "--depth=1", "--no-tags", "origin", f"refs/heads/{profile.branch}"],
+                [
+                    "git", *safe_options, "fetch", "--depth=1", "--no-tags", "--prune",
+                    "origin", f"+refs/heads/{profile.branch}:{head_ref}",
+                ],
                 cwd=root,
             )
-            fetched = str(_run(["git", "rev-parse", "FETCH_HEAD"], cwd=root)).strip()
-            if fetched != commit:
-                raise HeadMovedError("branch head changed after candidate registration")
+            commit = str(_run(["git", "rev-parse", f"{head_ref}^{{commit}}"], cwd=root)).strip()
+            if not SHA_PATTERN.fullmatch(commit):
+                raise FetchError("allowlisted branch head was not resolved uniquely")
+            _run(["git", "update-ref", self._candidate_ref(profile, commit), commit], cwd=root)
+            _run(["git", "fsck", "--connectivity-only", "--no-dangling", commit], cwd=root)
+            _run(["git", "gc", "--auto", "--quiet"], cwd=root)
+            return commit
+
+    def open_snapshot(self, profile: SourceProfile, commit: str) -> GitSnapshot:
+        if not SHA_PATTERN.fullmatch(commit):
+            raise InvalidBoundaryError("invalid pinned commit")
+        root = self._mirror_path(profile)
+        lock_path = self._lock_path(profile)
+        lock_path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+        handle = lock_path.open("a+b")
+        if lock_path.stat().st_size == 0:
+            handle.write(b"0")
+            handle.flush()
+        _lock_file(handle)
+        try:
+            if not root.is_dir():
+                raise FetchError("persistent mirror has not been synchronized")
+            candidate = str(_run(["git", "rev-parse", self._candidate_ref(profile, commit)], cwd=root)).strip()
+            if candidate != commit:
+                raise FetchError("pinned candidate ref is missing from persistent mirror")
+            _run(["git", "cat-file", "-e", f"{commit}^{{commit}}"], cwd=root)
             tree_sha = str(_run(["git", "rev-parse", f"{commit}^{{tree}}"], cwd=root)).strip()
             if not SHA_PATTERN.fullmatch(tree_sha):
                 raise FetchError("invalid root tree object id")
-            return GitSnapshot(root, commit, tree_sha, temporary)
+            return GitSnapshot(root, commit, tree_sha, handle)
         except Exception:
-            temporary.cleanup()
+            _unlock_file(handle)
+            handle.close()
             raise

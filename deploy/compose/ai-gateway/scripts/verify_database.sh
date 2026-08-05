@@ -17,12 +17,13 @@ result="$(docker compose --env-file .env exec -T database psql \
     (SELECT count(*) FROM pg_extension WHERE extname IN ('vector', 'pg_trgm')),
     (SELECT count(*) FROM rag_source WHERE source_profile_id IN
       ('SHARED_DOCS','CLOUD_MAIN','CLOUD_DIPLO','CLOUD_EUROPA','WALL_MAIN','COCKPIT_DIPLO','GENIE_MASTER','KICKSTART_MASTER','QEMU_EXEC_TOOLS_MAIN')),
+    (SELECT count(*) FROM rag_source_mirror),
     has_table_privilege('techflow_rag_source_fetcher', 'public.rag_source_blob', 'INSERT');" \
   | tr -d '[:space:]')"
 
-test "$result" = "18|f|t|f|2|9|t" || {
+test "$result" = "19|f|t|f|2|9|7|t" || {
   echo "database_contract=invalid result=$result" >&2
   exit 1
 }
 
-echo "database_contract=valid tables=18 sourceProfiles=9 app_schema_create=false app_provider_audit_select=true fetcher_provider_audit_select=false fetcher_blob_insert=true extensions=2"
+echo "database_contract=valid tables=19 sourceProfiles=9 sourceMirrors=7 app_schema_create=false app_provider_audit_select=true fetcher_provider_audit_select=false fetcher_blob_insert=true extensions=2"

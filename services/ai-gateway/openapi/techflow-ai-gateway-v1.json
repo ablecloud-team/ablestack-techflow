@@ -3,7 +3,7 @@
   "info": {
     "title": "TechFlow AI Gateway",
     "description": "TechFlow AI Gateway with Issue #42 allowlisted source registry and quarantine pipeline.",
-    "version": "0.1.0"
+    "version": "0.2.1"
   },
   "paths": {
     "/healthz": {
@@ -84,6 +84,24 @@
       "get": {
         "summary": "List Source Profiles",
         "operationId": "listSourceProfiles",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/source-mirrors": {
+      "get": {
+        "summary": "List Source Mirrors",
+        "operationId": "listSourceMirrors",
         "responses": {
           "200": {
             "description": "Successful Response",

@@ -26,6 +26,11 @@
     "previousActiveVersionIsWithdrawnOnlyAfterAtomicActivation": true
   },
   "fetchPolicy": {
+    "networkUse": "DISCOVERY_ONLY",
+    "persistentBareMirror": true,
+    "mirrorRepositoryCount": 7,
+    "candidateRefsProtected": true,
+    "localOnlySnapshotScan": true,
     "checkout": false,
     "hooks": false,
     "submodules": false,
@@ -34,6 +39,20 @@
     "maxFileBytes": 1048576,
     "allowedClassification": "D0",
     "rawQuarantineContentPersisted": false
+  },
+  "mirrorPolicy": {
+    "storage": "DOCKER_NAMED_VOLUME",
+    "volumeName": "techflow_source_mirrors",
+    "mountPath": "/var/lib/techflow-source-mirrors",
+    "synchronization": "SCHEDULE_6H_RECONCILIATION",
+    "intervalSeconds": 21600,
+    "staleAfterSeconds": 86400,
+    "pushFastPathImplemented": false,
+    "pushFastPathTargetIssue": 45,
+    "githubOutageBehavior": "KEEP_LOCAL_MIRROR_AND_ACTIVE_INDEX",
+    "fetchFailureState": "DEGRADED",
+    "garbageCollection": "GIT_GC_AUTO",
+    "withdrawnRefDeletionTargetIssue": 43
   },
   "profiles": [
     {
@@ -67,7 +86,7 @@
       "branch": "ablestack-europa",
       "sourceKind": "SOURCE_CODE",
       "licenseSpdx": "Apache-2.0",
-      "observedHead": "4787b6918bfa48a3d3665814f29ff23f9007fe1f"
+      "observedHead": "9bded7bccd43b335221367520276d641730290dd"
     },
     {
       "sourceProfileId": "WALL_MAIN",
@@ -111,10 +130,16 @@
     }
   ],
   "implementationBaseline": {
-    "gatewayVersion": "0.2.0",
-    "openApiOperations": 18,
-    "databaseTables": 18,
+    "gatewayVersion": "0.2.1",
+    "openApiOperations": 19,
+    "databaseTables": 19,
     "sourceProfiles": 9,
+    "persistentMirrors": 7,
+    "mirrorState": "7_HEALTHY",
+    "mirrorSizeMiBObserved": 906,
+    "offlineScanValidated": true,
+    "rootFilesystemGiB": 1005,
+    "rootAvailableGiB": 950,
     "providerMode": "mock",
     "activepiecesTemplatesPublished": false,
     "nextIssue": 43

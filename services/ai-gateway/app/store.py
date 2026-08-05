@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from threading import RLock
 from typing import Any, Protocol
 from uuid import UUID, uuid4
@@ -38,6 +38,10 @@ class Store(Protocol):
     def health(self) -> dict[str, str]: ...
     def close(self) -> None: ...
     def list_source_profiles(self) -> list[dict[str, Any]]: ...
+    def list_source_mirrors(self) -> list[dict[str, Any]]: ...
+    def record_mirror_sync(
+        self, repository: str, commit: str | None, success: bool, error_code: str | None, duration_ms: int
+    ) -> dict[str, Any]: ...
     def register_candidate(self, profile_id: str, commit: str, detected_by: str, idempotency_key: str) -> dict[str, Any]: ...
     def get_source_version(self, version_id: UUID) -> dict[str, Any]: ...
     def record_scan(self, version_id: UUID, report: dict[str, Any], scanned_by: str, idempotency_key: str) -> dict[str, Any]: ...
@@ -74,6 +78,24 @@ class MemoryStore:
         self._jobs: dict[UUID, dict[str, Any]] = {}
         self._evaluation_runs: dict[UUID, dict[str, Any]] = {}
         self._idempotency: dict[tuple[str, str], dict[str, Any]] = {}
+        from .source_registry import list_repositories, mirror_key
+
+        self._source_mirrors = {
+            repository: {
+                "repository": repository,
+                "mirrorKey": mirror_key(repository),
+                "state": "UNINITIALIZED",
+                "syncPolicy": "SCHEDULE_6H_RECONCILIATION",
+                "staleAfterSeconds": 86400,
+                "lastAttemptAt": None,
+                "lastSuccessAt": None,
+                "lastHeadCommit": None,
+                "lastErrorCode": None,
+                "consecutiveFailures": 0,
+                "lastDurationMs": None,
+            }
+            for repository in list_repositories()
+        }
 
     def _repeat(self, operation: str, key: str) -> dict[str, Any] | None:
         value = self._idempotency.get((operation, key))
@@ -93,6 +115,40 @@ class MemoryStore:
         from .source_registry import list_profiles
 
         return list_profiles()
+
+    def list_source_mirrors(self) -> list[dict[str, Any]]:
+        with self._lock:
+            now = utc_now()
+            result: list[dict[str, Any]] = []
+            for repository in sorted(self._source_mirrors):
+                item = deepcopy(self._source_mirrors[repository])
+                last_success = item["lastSuccessAt"]
+                if last_success and now - last_success > timedelta(seconds=item["staleAfterSeconds"]):
+                    item["state"] = "STALE"
+                result.append(item)
+            return result
+
+    def record_mirror_sync(
+        self, repository: str, commit: str | None, success: bool, error_code: str | None, duration_ms: int
+    ) -> dict[str, Any]:
+        with self._lock:
+            item = self._source_mirrors.get(repository)
+            if item is None:
+                raise InvalidBoundaryError("repository is not registered for mirroring")
+            now = utc_now()
+            item["lastAttemptAt"] = now
+            item["lastDurationMs"] = max(0, duration_ms)
+            if success:
+                item.update(
+                    state="HEALTHY", lastSuccessAt=now, lastHeadCommit=commit,
+                    lastErrorCode=None, consecutiveFailures=0,
+                )
+            else:
+                item.update(
+                    state="DEGRADED", lastErrorCode=error_code or "SOURCE_FETCH_FAILED",
+                    consecutiveFailures=item["consecutiveFailures"] + 1,
+                )
+            return deepcopy(item)
 
     def _version_payload(self, version: dict[str, Any]) -> dict[str, Any]:
         return deepcopy(version)

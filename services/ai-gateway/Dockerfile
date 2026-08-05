@@ -19,6 +19,7 @@ COPY --chown=10001:10001 migrations ./migrations
 COPY --chown=10001:10001 scripts ./scripts
 RUN chmod 0555 /opt/techflow-ai-gateway/scripts/container-entrypoint.sh \
     /opt/techflow-ai-gateway/scripts/migrate.py \
+    /opt/techflow-ai-gateway/scripts/reconcile_sources.py \
     && git --version
 
 USER 10001:10001

@@ -44,7 +44,7 @@ QEMU_EXEC_TOOLS_MAIN ablecloud-team/ablestack-qemu-exec-tools main  a4b9bd60bb93
 
 Branch Head가 바뀌면 새 Commit을 후보로만 등록한다. 운영자 승인과 전체 검역·색인 성공 전에는 기존 `ACTIVE` Version을 유지한다.
 
-Issue #42의 실제 배포·승인·롤백 절차는 [Source Registry·검역·승인 운영 Runbook](source-registry-quarantine.md)을 따른다. 2026-08-05 기준 시험 서버에는 9개 후보만 등록했고, `GENIE_MASTER`만 검역했으며 실제 승인·활성화는 0건이다.
+Issue #42의 실제 배포·Mirror·승인·롤백 절차는 [Source Registry·영속 미러·검역·승인 운영 Runbook](source-registry-quarantine.md)을 따른다. 2026-08-05 기준 7개 Repository는 서버의 영속 Bare Mirror로 동기화되고 6시간마다 갱신된다. `GENIE_MASTER`만 검역했으며 실제 승인·활성화는 0건이다. 질의 경로는 GitHub를 실시간 참조하지 않고 #43에서 구축할 로컬 승인 Index를 사용한다.
 
 ## 5. 파일 허용·검역
 

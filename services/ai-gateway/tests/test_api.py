@@ -240,8 +240,13 @@ class ApiContractTest(unittest.TestCase):
         self.assertEqual(201, discovered.status_code, discovered.text)
         self.assertEqual("ablestack-europa", discovered.json()["data"]["branch"])
         self.assertEqual("REGISTERED", discovered.json()["data"]["state"])
+        mirrors = self.client.get("/v1/source-mirrors", headers={"X-Correlation-Id": CORRELATION})
+        self.assertEqual(7, len(mirrors.json()["data"]))
+        cloud = next(item for item in mirrors.json()["data"] if item["repository"].endswith("ablestack-cloud"))
+        self.assertEqual("HEALTHY", cloud["state"])
+        self.assertEqual("a" * 40, cloud["lastHeadCommit"])
 
-    def test_openapi_contains_eighteen_operations(self) -> None:
+    def test_openapi_contains_nineteen_operations(self) -> None:
         schema = self.client.get("/openapi.json").json()
         operations = [
             operation
@@ -249,8 +254,8 @@ class ApiContractTest(unittest.TestCase):
             for method, operation in path.items()
             if method.lower() in {"get", "post", "delete", "put", "patch"}
         ]
-        self.assertEqual(18, len(operations))
-        self.assertEqual(18, len({operation["operationId"] for operation in operations}))
+        self.assertEqual(19, len(operations))
+        self.assertEqual(19, len({operation["operationId"] for operation in operations}))
 
     def test_all_responses_disable_cache_and_echo_correlation(self) -> None:
         response = self.client.get("/v1/jobs/00000000-0000-0000-0000-000000000000", headers={"X-Correlation-Id": CORRELATION})

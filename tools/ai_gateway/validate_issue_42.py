@@ -17,6 +17,7 @@ EXPECTED_PROFILES = {
 }
 EXPECTED_NEW_OPERATIONS = {
     ("get", "/v1/source-profiles"),
+    ("get", "/v1/source-mirrors"),
     ("post", "/v1/source-profiles/{sourceProfileId}/discoveries"),
     ("get", "/v1/source-versions/{sourceVersionId}"),
     ("post", "/v1/source-versions/{sourceVersionId}/scan"),
@@ -46,7 +47,7 @@ def validate() -> list[str]:
         for method in methods
         if method.lower() in {"get", "post", "delete", "put", "patch"}
     }
-    if len(operations) != 18 or not EXPECTED_NEW_OPERATIONS.issubset(operations):
+    if len(operations) != 19 or not EXPECTED_NEW_OPERATIONS.issubset(operations):
         errors.append("Issue #42 OpenAPI operation set is incomplete")
 
     migration = (SERVICE / "migrations" / "0002_source_registry_up.sql").read_text(encoding="utf-8")
@@ -58,6 +59,9 @@ def validate() -> list[str]:
             errors.append(f"state missing: {state}")
     if migration.count("'ACTIVE_PLUS_7D_DELETION_SLA'") != 9:
         errors.append("nine registry seeds are required")
+    mirror_migration = (SERVICE / "migrations" / "0003_source_mirror_up.sql").read_text(encoding="utf-8")
+    if "CREATE TABLE rag_source_mirror" not in mirror_migration or mirror_migration.count("'ablecloud-team/") != 7:
+        errors.append("seven persistent mirror registry seeds are required")
 
     fetcher = (SERVICE / "app" / "source_fetcher.py").read_text(encoding="utf-8")
     prohibited = ('"checkout"', '"submodule"', "shell=True", '"GIT_LFS_SKIP_SMUDGE": "0"')
@@ -90,7 +94,7 @@ def main() -> int:
         for error in errors:
             print(f"ERROR: {error}", file=sys.stderr)
         return 1
-    print("issue42=valid profiles=9 repositories=7 api=18 tables=18 reviewer=dhslove sourceExecution=0")
+    print("issue42=valid profiles=9 repositories=7 api=19 tables=19 reviewer=dhslove persistentMirrors=7 sourceExecution=0")
     return 0
 
 

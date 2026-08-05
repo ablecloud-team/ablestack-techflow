@@ -1,0 +1,3 @@
+BEGIN;
+DROP TABLE IF EXISTS rag_source_mirror;
+COMMIT;

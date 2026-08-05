@@ -2,13 +2,13 @@
 
 > 대상: Issue #41 기반, Issue #42 확장 기준선
 >
-> 적용 버전: `techflow-ai-gateway 0.2.0`
+> 적용 버전: `techflow-ai-gateway 0.2.1`
 >
 > Provider Mode: `mock`
 
 ## 1. 목적과 경계
 
-이 Runbook은 AI Gateway API·PostgreSQL·Provider 계약 기반을 단일 Ubuntu Docker Compose 서버에 배포하고 검증하는 절차다. Issue #42에서 실제 Source 후보 Fetch·검역은 허용하지만, OpenAI Embeddings와 Responses 호출은 수행하지 않는다. Source 상세 절차는 [Source Registry·검역·승인 운영 Runbook](source-registry-quarantine.md)을 따른다.
+이 Runbook은 AI Gateway API·PostgreSQL·Provider 계약 기반을 단일 Ubuntu Docker Compose 서버에 배포하고 검증하는 절차다. Issue #42에서 7개 영속 Bare Mirror와 6시간 Reconciler를 운영하지만 OpenAI Embeddings와 Responses 호출은 수행하지 않는다. Source·Mirror·1TB Root 확장 상세 절차는 [Source Registry·영속 미러·검역·승인 운영 Runbook](source-registry-quarantine.md)을 따른다.
 
 ```mermaid
 flowchart LR
@@ -131,7 +131,7 @@ curl -fsS http://127.0.0.1:18090/healthz
 
 ## 8. Schema 롤백
 
-Issue #42만 되돌릴 때는 `0002_source_registry_down.sql`을 사용한다. `0001_schema_down.sql`은 기반 15개 Table까지 삭제하므로 전체 AI Gateway 폐기 시에만 사용한다. 다음 조건을 모두 충족한 경우에만 수행한다.
+Issue #42 Schema는 `0002_source_registry_down.sql`부터 `0004_source_mirror_policy_down.sql`까지 연관된다. 개별 SQL 직접 적용은 Source Blob·Mirror 상태 손실 위험이 있으므로 전체 AI Gateway 폐기 또는 명시적 복구 승인 시에만 수행한다. `0001_schema_down.sql`은 기반 15개 Table까지 삭제한다. 다음 조건을 모두 충족한 경우에만 수행한다.
 
 1. Activepieces·Gateway 쓰기 중지
 2. Database Volume·Logical Backup 완료

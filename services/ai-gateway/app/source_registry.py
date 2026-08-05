@@ -109,3 +109,17 @@ def validate_candidate_contract(request: dict[str, object]) -> SourceProfile:
 
 def list_profiles() -> list[dict[str, object]]:
     return [SOURCE_PROFILES[key].payload() for key in SOURCE_PROFILES]
+
+
+def list_repositories() -> list[str]:
+    """Return the seven unique repositories in deterministic order."""
+
+    return sorted({profile.repository for profile in SOURCE_PROFILES.values()})
+
+
+def mirror_key(repository: str) -> str:
+    """Map an allowlisted repository to a filesystem-safe bare mirror name."""
+
+    if repository not in set(list_repositories()):
+        raise InvalidBoundaryError("repository is not allowlisted for mirroring")
+    return repository.replace("/", "__") + ".git"

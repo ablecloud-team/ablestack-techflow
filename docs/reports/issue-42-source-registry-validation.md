@@ -1,150 +1,155 @@
-# Issue #42 Source Registry·검역·승인 파이프라인 구현 완료 보고서
+# Issue #42 Source Registry·영속 미러·검역·승인 구현 완료 보고서
 
 > 검증일: 2026-08-05
 >
-> 대상: `techflow-ai-gateway 0.2.0`
+> 대상: `techflow-ai-gateway 0.2.1`
 >
 > 초기 Source Reviewer: `dhslove`
 >
-> 판정: **구현·배포·검증 완료 — 실제 Source 승인 없이 #43 Parser·Index 구현 착수 가능**
+> 판정: **보완 구현·1TB 확장·배포·검증 완료 — 실제 Source 승인 없이 #43 착수 가능**
 
-## 1. 완료 범위
+## 1. 결론
 
-Issue #42에서 7개 ABLESTACK 저장소를 9개 불변 Source Profile로 등록하고, 최신 Branch Head 발견, 고정 Commit Fetch, D0 검역, 사람 승인 Gate, 색인 Job의 원자 활성화 계약을 구현했다. AI Gateway는 18개 API Operation과 18개 RAG Table로 확장됐고, 실제 시험 서버에 Migration·Gateway를 배포했다.
+Repository 자료를 질의 때 온라인 참조하는 구조가 아니라, 시험 서버의 영속 로컬 Bare Mirror로 가져와 검역·색인하는 구조로 보완했다. 7개 Repository Mirror와 Cloud 3개 Branch를 포함한 9개 Source Profile이 모두 실제 동기화됐으며, GitHub 네트워크가 없는 Container에서도 고정 `GENIE_MASTER` Commit의 34개 파일을 검역했다.
 
-실제 승인 권한은 `dhslove`로 고정했지만 이번 검증에서는 후보를 승인하지 않았다. 9개 후보를 등록하고 소규모 `GENIE_MASTER`만 검역해 안전 경로를 입증했으며, 미승인 Ingestion과 Provider 호출은 차단했다.
+실제 갱신은 전용 `source-reconciler`가 6시간마다 수행한다. Push Webhook 즉시 갱신은 #45에서 Activepieces 인증 Flow와 연결하며, 현재의 운영 사실로 주장하지 않는다. GitHub 장애 중에는 신규 Head 발견만 지연되고 기존 Mirror·PostgreSQL Blob·향후 승인 Index는 유지된다.
 
 ## 2. 구현 구조
 
 ```mermaid
 flowchart LR
-    AP["Activepieces\n변경 감지·승인 요청"] --> API["AI Gateway 0.2.0\n18 Operations"]
-    API --> REG["9-Profile Registry\nCommit·Reviewer·Retention"]
-    API --> FETCH["Safe Git Fetcher\nBare·no hooks·no checkout"]
-    FETCH --> Q["D0 Quarantine\nPath·Binary·Secret·PII"]
-    Q --> DB["PostgreSQL\n18 Tables·Blob/File/Finding"]
-    DB -->|"dhslove 승인"| JOB["Index Job Gate"]
-    JOB -. "#43" .-> IDX["Parser·Chunk·Embedding"]
-    IDX -. "전 파일 성공" .-> ACTIVE["Atomic ACTIVE"]
+    GH["GitHub\n7 Repositories"] -->|"6h 증분 Fetch"| MIRROR["Persistent Bare Mirrors\n7 Repositories · 9 Profiles"]
+    REC["Source Reconciler\n21,600 sec"] --> API["AI Gateway 0.2.1\n19 Operations"]
+    API --> MIRROR
+    MIRROR -->|"Local-only Tree·Blob"| Q["D0 Quarantine"]
+    Q --> DB["PostgreSQL\n19 Tables"]
+    DB -->|"dhslove 승인"| JOB["Atomic Index Gate"]
+    JOB -. "#43" .-> IDX["Chunk·Embedding·Hybrid Index"]
 ```
 
 | 구성요소 | 구현 책임 |
 |---|---|
-| Source Registry | Repository·Branch·분류·License Metadata·보존·검토자 Allowlist |
-| Safe Fetcher | Remote Head 발견, Commit Pin, Tree·Blob Read, 실행 금지 |
-| Quarantine Policy | 경로·확장자·크기·Encoding·Binary·Secret·PII·Prompt Injection 판정 |
-| AI Gateway API | 발견·검역·파일 판정·승인·Job 완료·멱등성·오류 계약 |
-| PostgreSQL | Version·Blob·File·Finding·Approval·Job·상태·권한 감사 |
-| Activepieces Template | Discovery, Review/Index 오케스트레이션 정의; 현재 미게시 |
+| Source Registry | 7개 Repository·9개 Branch Profile·보존·Reviewer Allowlist |
+| Persistent Fetcher | 저장소당 Bare Mirror, 보호 Ref, File Lock, 증분 Fetch, `fsck`, `gc --auto` |
+| Local Scanner | 보호 Commit의 `ls-tree`·`cat-file`, 네트워크·Checkout·실행 없음 |
+| Mirror State API | 7개 상태, 최근 성공·Head·실패 수·지연·24시간 Stale 판정 |
+| Source Reconciler | 시작 시 및 6시간마다 9개 Profile 발견, Window Idempotency |
+| PostgreSQL | Version·Blob·File·Finding·Approval·Job·Mirror 상태 |
 
-## 3. Source 기준선
+## 3. 데이터 위치와 갱신 정책
 
-| Profile | Branch | 2026-08-05 관찰 Head | 시험 서버 상태 |
+| 단계 | 저장 위치 | 네트워크 의존성 |
+|---|---|---|
+| Branch 발견 | GitHub HTTPS → Bare Mirror | 발견 시에만 필요 |
+| Commit 보존 | Docker Volume `techflow_source_mirrors` | 없음 |
+| 검역 스캔 | 로컬 Bare Mirror | 없음 |
+| 적격 원문 | PostgreSQL `rag_source_blob` | 없음 |
+| 승인 검색 Index | #43 PostgreSQL Chunk·Embedding·FTS | 질의 시 GitHub 불필요 |
+
+현재 정책은 `SCHEDULE_6H_RECONCILIATION`, Stale 기준은 86,400초다. 실패 시 Mirror 상태는 `DEGRADED`, 24시간 초과 시 `STALE`이며 기존 데이터는 삭제하지 않는다. Cloud 세 Branch는 한 개 Repository Mirror 안에서 Profile별 Head·Candidate Ref로 분리한다.
+
+## 4. Source 기준선
+
+| Profile | Branch | 관찰 Head | 상태 |
 |---|---|---|---|
-| `SHARED_DOCS` | `master` | `50d50ad6c8c548dc58db866ca28b4cbb43cc74d0` | `REGISTERED` |
-| `CLOUD_MAIN` | `main` | `a873fb1ff436990fd523e2fe56682ff7aa31d1ec` | `REGISTERED` |
-| `CLOUD_DIPLO` | `ablestack-diplo` | `19550c70d8d8a878eef40e1e1062b2fe0d40f71e` | `REGISTERED` |
-| `CLOUD_EUROPA` | `ablestack-europa` | `4787b6918bfa48a3d3665814f29ff23f9007fe1f` | `REGISTERED` |
-| `WALL_MAIN` | `main` | `f27b3f1b0b35489e05c64924b5cff7dc64dd2f6d` | `REGISTERED` |
-| `COCKPIT_DIPLO` | `ablestack-diplo` | `c8b37dd6a4c35a8ba18169189a553595b24e54ab` | `REGISTERED` |
+| `SHARED_DOCS` | `master` | `50d50ad6c8c548dc58db866ca28b4cbb43cc74d0` | Mirror Healthy |
+| `CLOUD_MAIN` | `main` | `a873fb1ff436990fd523e2fe56682ff7aa31d1ec` | Mirror Healthy |
+| `CLOUD_DIPLO` | `ablestack-diplo` | `19550c70d8d8a878eef40e1e1062b2fe0d40f71e` | Mirror Healthy |
+| `CLOUD_EUROPA` | `ablestack-europa` | `9bded7bccd43b335221367520276d641730290dd` | Mirror Healthy |
+| `WALL_MAIN` | `main` | `f27b3f1b0b35489e05c64924b5cff7dc64dd2f6d` | Mirror Healthy |
+| `COCKPIT_DIPLO` | `ablestack-diplo` | `c8b37dd6a4c35a8ba18169189a553595b24e54ab` | Mirror Healthy |
 | `GENIE_MASTER` | `master` | `3e3c5c364f5c7261b07d49fcbcd4f3605b91f3b1` | `QUARANTINED` |
-| `KICKSTART_MASTER` | `master` | `ffe24390544dd58e3441ac7362fe46b93472d0e1` | `REGISTERED` |
-| `QEMU_EXEC_TOOLS_MAIN` | `main` | `a4b9bd60bb93800612d96aaad84e73ddfd768b68` | `REGISTERED` |
+| `KICKSTART_MASTER` | `master` | `ffe24390544dd58e3441ac7362fe46b93472d0e1` | Mirror Healthy |
+| `QEMU_EXEC_TOOLS_MAIN` | `main` | `a4b9bd60bb93800612d96aaad84e73ddfd768b68` | Mirror Healthy |
 
-Branch Head는 시점 정보이며 승인 Commit이 아니다. 다음 발견에서 Head가 바뀌면 새 Version을 만들고 기존 검역·승인을 재사용하지 않는다.
+Branch Head는 시점 정보이며 승인 Commit이 아니다. Head 변경은 새 Source Version을 만들고 이전 승인을 승계하지 않는다.
 
-## 4. 승인·멱등성·실패 정책
+## 5. 안전·승인 정책
 
-- 승인 대상은 `QUARANTINED` Version뿐이며 `approvedBy=dhslove`와 `expectedCommit` 일치를 요구한다.
-- Blocking 제외가 있으면 명시적 수용과 10자 이상 Decision Note 없이는 승인할 수 없다.
-- 발견·검역·승인·Job 완료는 Operation별 `Idempotency-Key`를 적용한다.
-- `APPROVED`만 색인을 시작할 수 있고, 성공 File 수가 Eligible 수와 다르면 활성화하지 않는다.
-- 색인 실패는 `APPROVED`로 복귀한다. 기존 `ACTIVE`는 새 Version 전체 성공 후에만 철회한다.
-- `WITHDRAWN` Source는 최대 7일 내 삭제 전파 대상이며 원문 Provider 전송을 허용하지 않는다.
+- Repository·Branch·Remote URL·40자 Commit·Candidate Ref를 검증한다.
+- Checkout, Hook, Submodule, LFS Smudge, File/Ext Protocol, Build, Test, Source 실행을 금지한다.
+- Binary, NUL, 비 UTF-8, 1 MiB 초과, 생성물, Secret, PII, Prompt Injection을 제외·차단한다.
+- 제외·차단 원문은 저장하지 않고 API에도 반환하지 않는다.
+- 승인자는 `dhslove`, `expectedCommit` 일치가 필수다.
+- `APPROVED`만 색인을 시작하며 Eligible 전 파일 성공 전에는 `ACTIVE`가 될 수 없다.
+- 실제 승인·활성화·OpenAI Provider 호출은 이번 작업에서 0건이다.
 
-## 5. 자동 검증 결과
+## 6. 자동 검증 결과
 
 | 검증 | 결과 |
 |---|---:|
-| AI Gateway Unit·Contract·Store Test | 70/70 통과 |
-| Issue #42 Validator Test | 4/4 통과 |
-| OpenAPI Operation | 18개 일치 |
-| PostgreSQL 논리 Table | 18개 일치 |
-| Source Profile | 9개 일치 |
-| 고정 Reviewer | `dhslove` 일치 |
+| AI Gateway Unit·Contract·Store Test | 73/73 통과 |
+| Issue #41·#42 Validator | 모두 통과 |
+| OpenAPI Operation | 19개 |
+| PostgreSQL 논리 Table | 19개 |
+| Source Profile / Mirror | 9 / 7 |
+| Reconciler 최초 주기 | 9/9 성공 |
+| Mirror 상태 | 7/7 `HEALTHY` |
 | 정적 Secret 검출 | 0건 |
-| 실제 Source 승인·활성화 | 0건 |
+| 실제 Source 승인·활성화 | 0 / 0 |
 | OpenAI Provider Call | 0건 |
 
-Regression 과정에서 기존 DB의 수동 Source 행까지 Profile 조회 결과에 섞이는 문제를 발견했다. PostgreSQL 조회를 9개 Registry ID Allowlist로 제한하고 회귀 Test를 추가했다.
+## 7. 오프라인 지속성 실증
 
-## 6. 실제 Git·검역 Canary
+Gateway 재시작 후 Named Volume의 7개 Mirror와 906 MiB 데이터가 유지됐다. 이어 `--network none` Container에서 `GENIE_MASTER`의 보호 Commit을 스캔해 Candidate 34, Eligible 34, Excluded 0, Blocking 0을 재현했다. 이 경로는 `open_snapshot`에 Remote 호출이 없음을 실제로 입증한다.
 
-`GENIE_MASTER`의 Public Git Repository를 대상으로 다음 결과를 확인했다.
+GitHub 장애 시 현재 가능한 동작은 기존 후보 재검역과 로컬 자료 이용이다. 신규 Head 발견은 다음 성공 동기화까지 보류되며, 운영자는 `/v1/source-mirrors`의 `DEGRADED`·`STALE`을 확인한다.
 
-| 항목 | 결과 |
-|---|---|
-| Commit | `3e3c5c364f5c7261b07d49fcbcd4f3605b91f3b1` |
-| Tree | `05ff8e42226d7ae26773852c3ac55ce348de418a` |
-| Candidate | 34 |
-| Eligible | 34 |
-| Excluded | 0 |
-| Blocking | 0 |
-| Snapshot Hash | `ccc6a907c596459175d04959f70212a703f232e71215dcfe06adf97e4e1f2d8f` |
+## 8. 시험 서버 1TB Root 확장
 
-파일 목록 API의 34개 항목에는 원문 Content Field가 없었다. Blob은 허용 Text만 Repository+Blob SHA 기준으로 중복 저장하며, 검역 제외 원문은 저장하지 않는다.
+확장 전 `/dev/sda`는 1,024 GiB였으나 `/dev/sda3`·PV·Root LV는 46.9 GiB였고 뒤쪽 974 GiB가 미할당이었다. Partition Table과 VG Metadata를 백업하고 `growpart` → `pvresize` → `lvextend -r` 순으로 온라인 확장했다.
 
-## 7. 시험 서버 배포 증적
+| 항목 | 확장 전 | 확장 후 |
+|---|---:|---:|
+| `/dev/sda` | 1,024 GiB | 1,024 GiB |
+| `/dev/sda3` | 46.9 GiB | 1,020.9 GiB |
+| `ubuntu-lv` | 46.9 GiB | 1,020.9 GiB |
+| Root ext4 표시 용량 | 45.9 GiB | 1,005 GiB |
+| Root 가용 용량 | 약 30 GiB | 950 GiB |
+| Root 사용률 | 30% | 2% |
+
+`sgdisk -v`는 GPT 오류 없음과 약 1 MiB 정렬 여유만 보고했다. 확장 중 Gateway·Activepieces 데이터 손실은 없었다.
+
+## 9. 배포 증적
 
 | 항목 | 검증 결과 |
 |---|---|
 | OS | Ubuntu 24.04 |
 | 배포 경로 | `/home/ablecloud/techflow-ai-gateway` |
-| Compose Project | `techflow-ai-gateway` |
-| Gateway | Version `0.2.0`, Healthy |
-| Image ID | `sha256:b0c3fd97962e185b8648bf889981cae407ca89cb25cf290cb141d8468757dd4b` |
-| Database | 18 Table, 9 Profile, Extension 2 |
+| Gateway | `0.2.1`, Healthy |
+| Image ID | `sha256:36ee3cbf77c59b6313d44682b017aad5565465033153c705bf9b1c4bcd0b1b1c` |
+| Database | 19 Table, 9 Profile, 7 Mirror State, Extension 2 |
+| Mirror Volume | 7 Bare Repository, 906 MiB |
+| Reconciler | Running, 21,600초, 최초 9/9 성공 |
 | Runtime | UID/GID `10001:10001`, Read-only, `cap_drop: ALL` |
-| Network | `rag_internal`, `rag_edge`, 기존 Automation Egress |
-| Host Bind | `127.0.0.1:18090->8090` |
-| Source 상태 | 8 `REGISTERED`, 1 `QUARANTINED`, 0 `APPROVED`·`ACTIVE` |
-| 미승인 Ingestion | HTTP 409 `INVALID_STATE` |
-| RAG Query | `ABSTAINED`, `providerCalled=false` |
+| Host Bind | `127.0.0.1:18090 → 8090` |
 | 기존 Activepieces | 6개 Container 모두 Healthy |
+| Root Volume | ext4 1,005 GiB, 가용 950 GiB |
 
-배포 전 DB Custom Dump와 Code·Compose·Image ID를 `/home/ablecloud/techflow-ai-gateway-backups/issue42-20260805T1105KST`에 보관했다. 비밀정보는 Backup Archive와 Repository 산출물에서 제외했다.
+배포 전 DB Dump·Code·Image ID는 `/home/ablecloud/techflow-ai-gateway-backups/issue42-mirror-20260805T0327KST`, Root Partition·VG Metadata는 `/home/ablecloud/techflow-ai-gateway-backups/root-volume-expand-20260805T0332KST`에 보관했다. 비밀정보는 저장하지 않았다.
 
-## 8. Activepieces 자산 상태
+## 10. 운영 제한과 후속 범위
 
-`rag-source-discovery-v1.json`과 `rag-source-review-index-v1.json` 두 Flow Template을 추가했다. 두 Template 모두 `published:false`이며, AI Gateway API 호출 순서와 실패 처리의 논리 계약만 자산화했다. #43 Parser·Indexer와 #45 인증된 승인 UI가 준비되기 전에 실행 Flow로 게시하지 않는다.
+Activepieces의 Discovery·Review/Index Template은 `published:false`를 유지한다. 현재 6시간 갱신은 AI Gateway Compose의 Reconciler가 실제 수행한다. Push 즉시 갱신과 승인 UI는 #45, Parser·Chunk·Embedding·Hybrid Retrieval·삭제 전파는 #43에서 구현한다.
 
-## 9. 롤백 판정
+Mirror Volume은 재구축 가능한 Cache지만 GitHub 장애 시 로컬 지속성 자산이므로 임의 삭제하지 않는다. Withdrawn Commit Ref 정리와 7일 삭제 SLA는 #43 삭제 전파에서 구현한다.
 
-Gateway 오류는 직전 Image로 Application만 롤백하고 DB Volume과 기존 Activepieces Stack을 보존한다. Schema 오류는 Flow 중지, Backup 확인, 제품 책임자 승인 후 `0002_source_registry_down.sql`을 적용한다. 복구 뒤에는 Migration Verify, DB 권한, Runtime Canary, Activepieces Health 순으로 재검증한다.
+## 11. 검토·승인 대상
 
-## 10. 검토·승인 대상
+1. Repository 자료는 서버 로컬 Mirror에 유지하고 질의 시 GitHub에 의존하지 않는다는 운영 원칙
+2. 실제 갱신 주기 6시간과 Stale 기준 24시간
+3. 7개 Mirror·9개 Profile 및 `dhslove` 승인 경계
+4. 시험 서버 Root 1,005 GiB·가용 950 GiB 기준선
+5. #43에서 최초 Parser·Indexer Dry-run을 적용할 Profile과 Commit
 
-초기 Source Reviewer `dhslove`가 다음을 검토하면 된다.
-
-1. 9개 Profile의 Repository·Branch·초기 Reviewer가 의도와 일치하는지
-2. `GENIE_MASTER` Canary의 34개 Eligible 판정과 제외 0건이 적절한지
-3. 승인 시 `expectedCommit`, Exclusion 수용, Decision Note 계약이 충분한지
-4. #43에서 최초로 Parser·Chunk·Embedding을 적용할 Profile과 Commit
-
-Issue #42 PR 병합은 구현 승인이지 Source Version 승인과 동일하지 않다. 최초 실제 Source 승인은 #43 Indexer 준비 후 `dhslove`가 별도로 수행한다.
-
-## 11. 다음 단계
-
-다음 실행 단위는 Issue #43이다. 승인된 Source의 문서·코드를 Parser·Chunk로 변환하고, OpenAI Embeddings, PostgreSQL FTS·Identifier·pgvector exact cosine, RRF 결합, Lineage와 삭제 전파를 구현한다. 최초 Source를 승인하기 전 Indexer의 Dry-run·부분 실패·원자 활성화 회귀 Test를 먼저 통과시킨다.
+Issue #42 PR 병합은 구현 승인이지 Source Version 승인과 동일하지 않다. 최초 실제 Source 승인은 #43 Indexer 준비 후 별도로 수행한다.
 
 ## 12. 자산 목록
 
 - [Source Registry 구조화 결정](../decisions/techflow-source-registry.json)
-- [Source Registry·검역·승인 Runbook](../runbooks/source-registry-quarantine.md)
+- [Source Registry·영속 미러·검역 운영 Runbook](../runbooks/source-registry-quarantine.md)
 - [AI Gateway Service](../../services/ai-gateway/README.md)
 - [OpenAPI 계약](../../services/ai-gateway/openapi/techflow-ai-gateway-v1.json)
-- [Activepieces Discovery Flow](../../deploy/compose/activepieces/flows/rag-source-discovery-v1.json)
-- [Activepieces Review/Index Flow](../../deploy/compose/activepieces/flows/rag-source-review-index-v1.json)
 - [완료 보고서 PDF](../../output/pdf/techflow-source-registry-report.pdf)
 - [발표자료 PDF](../../output/pdf/techflow-source-registry-presentation.pdf)
 - [발표자료 PPTX](../../output/presentation/techflow-source-registry.pptx)

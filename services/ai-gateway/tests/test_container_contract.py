@@ -20,8 +20,14 @@ class ContainerContractTest(unittest.TestCase):
 
     def test_git_object_reader_is_installed_without_checkout_workspace(self) -> None:
         self.assertIn("ca-certificates git", DOCKERFILE)
-        self.assertIn("TECHFLOW_SOURCE_TMPDIR: /var/lib/techflow-source", COMPOSE)
-        self.assertIn("noexec,nosuid,nodev", COMPOSE)
+        self.assertIn("TECHFLOW_SOURCE_MIRROR_ROOT: /var/lib/techflow-source-mirrors", COMPOSE)
+        self.assertIn("techflow_source_mirrors:/var/lib/techflow-source-mirrors", COMPOSE)
+        self.assertNotIn("TECHFLOW_SOURCE_TMPDIR", COMPOSE)
+
+    def test_reconciler_runs_every_six_hours(self) -> None:
+        self.assertIn("source-reconciler:", COMPOSE)
+        self.assertIn('TECHFLOW_SOURCE_RECONCILE_INTERVAL_SECONDS: "21600"', COMPOSE)
+        self.assertIn('["python", "scripts/reconcile_sources.py"]', COMPOSE)
 
     def test_gateway_is_read_only_and_drops_capabilities(self) -> None:
         gateway = COMPOSE.split("  gateway:", 1)[1].split("\nnetworks:", 1)[0]

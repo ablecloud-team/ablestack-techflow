@@ -24,13 +24,33 @@
     },
     {
       "path": "0002_source_registry_down.sql",
-      "sha256": "11632761cf3662e1b56ebb9a9bb4aebe74941a93ada6392273e178bfdafb9f96",
-      "bytes": 1886
+      "sha256": "a070e4f49a608cc9ab6e2e28e7e2e10e807b2d497cb14897067fe091a92ccfdc",
+      "bytes": 1919
     },
     {
       "path": "0002_source_registry_up.sql",
-      "sha256": "a9aa3e01e294e0edd6d5bf6e10cbca51e01ec7e6bcc943fd30611f79cd35508b",
-      "bytes": 8128
+      "sha256": "b11280a4704baaa17249f8bf184652f621f79629443d56357720bc1b8d4e22a9",
+      "bytes": 8233
+    },
+    {
+      "path": "0003_source_mirror_down.sql",
+      "sha256": "e0f01a49fe54803e6e9be20e60cfcb90c20f55659a6d2f9a44b8af1377a30c77",
+      "bytes": 55
+    },
+    {
+      "path": "0003_source_mirror_up.sql",
+      "sha256": "235b74efac34ed5eb9ddafafb550d960774dfddb295eab01d60ecfbe3d7af808",
+      "bytes": 1567
+    },
+    {
+      "path": "0004_source_mirror_policy_down.sql",
+      "sha256": "34863e2d575dcfa593af9355a43fc127eb8e132c99ac22f998f26e9e726e0037",
+      "bytes": 254
+    },
+    {
+      "path": "0004_source_mirror_policy_up.sql",
+      "sha256": "5bfc5a505e4e11d504529d4e66530c500e7a5fbd3ac66275f2b80727d6665e9f",
+      "bytes": 253
     }
   ]
 }

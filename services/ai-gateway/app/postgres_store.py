@@ -138,6 +138,77 @@ class PostgresStore:
             for row in rows
         ]
 
+    @staticmethod
+    def _mirror_payload(row: dict[str, Any]) -> dict[str, Any]:
+        return {
+            "repository": row["repository"],
+            "mirrorKey": row["mirror_key"],
+            "state": row["effective_state"],
+            "syncPolicy": row["sync_policy"],
+            "staleAfterSeconds": row["stale_after_seconds"],
+            "lastAttemptAt": row["last_attempt_at"],
+            "lastSuccessAt": row["last_success_at"],
+            "lastHeadCommit": row["last_head_commit"],
+            "lastErrorCode": row["last_error_code"],
+            "consecutiveFailures": row["consecutive_failures"],
+            "lastDurationMs": row["last_duration_ms"],
+        }
+
+    def list_source_mirrors(self) -> list[dict[str, Any]]:
+        with self._pool.connection() as connection:
+            rows = connection.execute(
+                """
+                SELECT repository, mirror_key,
+                       CASE
+                           WHEN last_success_at IS NOT NULL
+                            AND now() - last_success_at > make_interval(secs => stale_after_seconds)
+                           THEN 'STALE'
+                           ELSE state
+                       END AS effective_state,
+                       sync_policy, stale_after_seconds, last_attempt_at, last_success_at,
+                       last_head_commit, last_error_code, consecutive_failures, last_duration_ms
+                FROM rag_source_mirror ORDER BY repository
+                """
+            ).fetchall()
+        if len(rows) != 7:
+            raise InvalidBoundaryError("database source mirror registry is incomplete")
+        return [self._mirror_payload(row) for row in rows]
+
+    def record_mirror_sync(
+        self, repository: str, commit: str | None, success: bool, error_code: str | None, duration_ms: int
+    ) -> dict[str, Any]:
+        with self._pool.connection() as connection:
+            if success:
+                row = connection.execute(
+                    """
+                    UPDATE rag_source_mirror SET
+                        state='HEALTHY', last_attempt_at=now(), last_success_at=now(),
+                        last_head_commit=%s, last_error_code=NULL, consecutive_failures=0,
+                        last_duration_ms=%s, updated_at=now()
+                    WHERE repository=%s
+                    RETURNING repository, mirror_key, state AS effective_state, sync_policy,
+                              stale_after_seconds, last_attempt_at, last_success_at, last_head_commit,
+                              last_error_code, consecutive_failures, last_duration_ms
+                    """,
+                    (commit, max(0, duration_ms), repository),
+                ).fetchone()
+            else:
+                row = connection.execute(
+                    """
+                    UPDATE rag_source_mirror SET
+                        state='DEGRADED', last_attempt_at=now(), last_error_code=%s,
+                        consecutive_failures=consecutive_failures+1, last_duration_ms=%s, updated_at=now()
+                    WHERE repository=%s
+                    RETURNING repository, mirror_key, state AS effective_state, sync_policy,
+                              stale_after_seconds, last_attempt_at, last_success_at, last_head_commit,
+                              last_error_code, consecutive_failures, last_duration_ms
+                    """,
+                    (error_code or "SOURCE_FETCH_FAILED", max(0, duration_ms), repository),
+                ).fetchone()
+        if not row:
+            raise InvalidBoundaryError("repository is not registered for mirroring")
+        return self._mirror_payload(row)
+
     def register_candidate(
         self, profile_id: str, commit: str, detected_by: str, idempotency_key: str
     ) -> dict[str, Any]:

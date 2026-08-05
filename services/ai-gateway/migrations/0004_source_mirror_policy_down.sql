@@ -1,0 +1,7 @@
+BEGIN;
+ALTER TABLE rag_source_mirror
+    ALTER COLUMN sync_policy SET DEFAULT 'PUSH_PLUS_6H_RECONCILIATION';
+UPDATE rag_source_mirror
+SET sync_policy='PUSH_PLUS_6H_RECONCILIATION', updated_at=now()
+WHERE sync_policy='SCHEDULE_6H_RECONCILIATION';
+COMMIT;

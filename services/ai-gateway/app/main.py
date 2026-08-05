@@ -31,7 +31,7 @@ from .models import (
 )
 from .postgres_store import PostgresStore
 from .provider import profile_payloads
-from .source_fetcher import GitSnapshotFetcher, SnapshotFetcher
+from .source_fetcher import FetchError, GitSnapshotFetcher, SnapshotFetcher
 from .source_pipeline import SourcePipeline
 from .source_registry import get_profile
 from .store import InvalidBoundaryError, MemoryStore, Store, StoreError
@@ -175,6 +175,10 @@ def create_app(
     def list_source_profiles(correlation_id: Annotated[str, Depends(_correlation_id)]) -> Envelope:
         return _envelope(runtime_store.list_source_profiles(), correlation_id)
 
+    @application.get("/v1/source-mirrors", response_model=Envelope, operation_id="listSourceMirrors")
+    def list_source_mirrors(correlation_id: Annotated[str, Depends(_correlation_id)]) -> Envelope:
+        return _envelope(runtime_store.list_source_mirrors(), correlation_id)
+
     @application.post(
         "/v1/source-profiles/{sourceProfileId}/discoveries",
         response_model=Envelope,
@@ -188,7 +192,17 @@ def create_app(
         idempotency_key: Annotated[str, Depends(_idempotency_key)],
     ) -> Envelope:
         profile = get_profile(sourceProfileId)
-        commit = source_pipeline.discover(profile)
+        started = time.perf_counter()
+        try:
+            commit = source_pipeline.discover(profile)
+        except FetchError as exc:
+            runtime_store.record_mirror_sync(
+                profile.repository, None, False, exc.code, round((time.perf_counter() - started) * 1000)
+            )
+            raise
+        runtime_store.record_mirror_sync(
+            profile.repository, commit, True, None, round((time.perf_counter() - started) * 1000)
+        )
         data = runtime_store.register_candidate(profile.profile_id, commit, request.detected_by, idempotency_key)
         return _envelope(data, correlation_id)
 
