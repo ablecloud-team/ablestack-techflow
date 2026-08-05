@@ -1,0 +1,165 @@
+{
+  "schemaVersion": "1.0",
+  "issue": 43,
+  "status": "implemented-deployed-and-validated",
+  "initialSourceReviewer": "dhslove",
+  "sourceProfileId": "GENIE_MASTER",
+  "sourceCommit": "3e3c5c364f5c7261b07d49fcbcd4f3605b91f3b1",
+  "files": [
+    {
+      "path": "README.md",
+      "size": 20037,
+      "sha256": "A07E9292D702D5D2807E82466D347743D5465FE61F29436C058C6DCCAED8EF81"
+    },
+    {
+      "path": "docs/decisions/techflow-parser-embedding-retrieval.json",
+      "size": 1573,
+      "sha256": "A36B528D36D33CE7FCAC2B31D9699CF4F693CD227ED886DF57E001CF46C69A52"
+    },
+    {
+      "path": "docs/runbooks/parser-embedding-retrieval.md",
+      "size": 5288,
+      "sha256": "FCA00C11088DE4CE6606368A38E7F4D2DFE914F9694A2FB40E0708049C6E7917"
+    },
+    {
+      "path": "docs/reports/issue-43-parser-embedding-validation.md",
+      "size": 5193,
+      "sha256": "E84F6D39C7417F470D3DDD0456BB0B9895432FEC53FDA0B95596B8E94B971201"
+    },
+    {
+      "path": "services/ai-gateway/README.md",
+      "size": 2872,
+      "sha256": "3611DB1559FCBF51CB816B5FE4D97585D6EE686E0FE355B4D025ABB8F795A9B5"
+    },
+    {
+      "path": "services/ai-gateway/Dockerfile",
+      "size": 1468,
+      "sha256": "CFA191E2C71A427F42404D751C418B994E29A9F9E0F8392EEEC7CBCB0989AE57"
+    },
+    {
+      "path": "services/ai-gateway/app/chunking.py",
+      "size": 11856,
+      "sha256": "BFFBD9341A328B3E3649E9E651720E0D7942CC84F2818FB8494CD781CF00A3D5"
+    },
+    {
+      "path": "services/ai-gateway/app/embedding.py",
+      "size": 5456,
+      "sha256": "1922BEBADC303E653F53D96B6D8D846A3BC8A1CF31A515AA8A176DC273B70408"
+    },
+    {
+      "path": "services/ai-gateway/app/indexing.py",
+      "size": 4200,
+      "sha256": "3D8B04F18C9AD016A630687BD9DFF55217D4A7D6077640B97943B0D4DB3D70B3"
+    },
+    {
+      "path": "services/ai-gateway/app/main.py",
+      "size": 16894,
+      "sha256": "F490B6D6AC22079A43A62222BCA318FB4A5AA14ECE5334D602A5CA351C560D91"
+    },
+    {
+      "path": "services/ai-gateway/app/models.py",
+      "size": 6631,
+      "sha256": "6F01BCDFEED948B69549C0A31383A90A2738BEB8F969C8CD553CF3190C773508"
+    },
+    {
+      "path": "services/ai-gateway/app/postgres_store.py",
+      "size": 50992,
+      "sha256": "BBC5D3656EFA922320EA4DA11D39CE45E37EFC6E6E1360CC5982C869894B3AC6"
+    },
+    {
+      "path": "services/ai-gateway/app/store.py",
+      "size": 28357,
+      "sha256": "24BF0510EF2203F4E0DC287A99C814A558E6C039F24A928B499768E255BB74C0"
+    },
+    {
+      "path": "services/ai-gateway/migrations/0005_parser_embedding_retrieval_up.sql",
+      "size": 2082,
+      "sha256": "D18C84A214148ADF11CE10B00048CAC0FCDDF00301B1BDA49252661A3BA3DCCC"
+    },
+    {
+      "path": "services/ai-gateway/migrations/0005_parser_embedding_retrieval_down.sql",
+      "size": 1043,
+      "sha256": "83841149508CCCB1073FCA776BE29BC4AF206DDFFD78A6AA8724CA025CF7300F"
+    },
+    {
+      "path": "services/ai-gateway/migrations/manifest.json",
+      "size": 2023,
+      "sha256": "0E3B5E1C218D7D6C8494AE35DFDDD37E94B912D752DA1EAC8486380394F10F07"
+    },
+    {
+      "path": "services/ai-gateway/openapi/techflow-ai-gateway-v1.json",
+      "size": 38431,
+      "sha256": "EB74D8E73F3574E37BFF910ECE8ACD5880ADB0B39610B44A8DC9F4FF1B0C4B48"
+    },
+    {
+      "path": "services/ai-gateway/scripts/issue43_canary.py",
+      "size": 2505,
+      "sha256": "02DBD9E834E2073B0AFB71AA11614A50EC6535198E28DAD1F88D9CF817A6942D"
+    },
+    {
+      "path": "services/ai-gateway/scripts/prefetch_parsers.py",
+      "size": 751,
+      "sha256": "4827054A00A18C6A061B2324765713657FBFB9C12BCDE16DD98D8A64C0C76D20"
+    },
+    {
+      "path": "tools/ai_gateway/validate_issue_43.py",
+      "size": 2466,
+      "sha256": "11BD013BBBD0D4154F377C08B67356CFDFCE0927942304482E56B7AA73649FA1"
+    },
+    {
+      "path": "tools/artifacts/issue-43/README.md",
+      "size": 1531,
+      "sha256": "7308583A88FDA2DDDFA560E65959991A236542EFE76EACE2966FB35127FA9680"
+    },
+    {
+      "path": "tools/artifacts/issue-43/build_presentation.mjs",
+      "size": 8950,
+      "sha256": "8CBE44EB17EDFC56664823C12B28B9A9A836F8988FCC8E26B02273E917950184"
+    },
+    {
+      "path": "tools/artifacts/issue-43/build_presentation_pdf.py",
+      "size": 1113,
+      "sha256": "9418006607B7323B7F33E53E0384128DFA48E37D1D723001250C36B7D5AE7408"
+    },
+    {
+      "path": "tools/artifacts/issue-43/build_report.py",
+      "size": 14430,
+      "sha256": "C4E2B18FE178471E23ED7F7CD4EB8E54A47C1903080581E9AA4728325ECE5D85"
+    },
+    {
+      "path": "tools/artifacts/issue-43/deviation-log.txt",
+      "size": 365,
+      "sha256": "E5F3BA2568AB4072EBC2C2E1C4A0B1B00602BE7F9BBD6BC5A0B9537C50A8A29D"
+    },
+    {
+      "path": "tools/artifacts/issue-43/template-audit.txt",
+      "size": 1065,
+      "sha256": "217BB5EC365521FCF536ECF85F7ED20315CB9E6CB453CD59BA5DEDBE4C7DF056"
+    },
+    {
+      "path": "tools/artifacts/issue-43/template-frame-map.json",
+      "size": 3219,
+      "sha256": "702A77DD4BE9AB9100C00DD2E9C9C7A4EA1EA0E8F637FB512D2A783E2D138ACC"
+    },
+    {
+      "path": "tools/artifacts/issue-43/validate_artifacts.py",
+      "size": 2684,
+      "sha256": "D4241BD8430058C2F516F77410976B768DD4CC90168C23D826FCFC2EEE6AEA27"
+    },
+    {
+      "path": "output/pdf/techflow-parser-embedding-report.pdf",
+      "size": 123759,
+      "sha256": "C939E722D468E23B61938CFD45FD1A13DDED5A88E88D3C74C53DD0F10C66C25E"
+    },
+    {
+      "path": "output/pdf/techflow-parser-embedding-presentation.pdf",
+      "size": 790882,
+      "sha256": "770C7AAF0136C1D9ADDBE73B68941022989EE6B2118F859ECB64808264C45CA7"
+    },
+    {
+      "path": "output/presentation/techflow-parser-embedding.pptx",
+      "size": 44786,
+      "sha256": "31C8370E653C5FB286875A0E3A5A221CE0EB3350A8473A311134309F187F52CD"
+    }
+  ]
+}

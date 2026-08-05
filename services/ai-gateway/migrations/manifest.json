@@ -1,6 +1,6 @@
 {
   "schemaVersion": "2.0",
-  "issue": 42,
+  "issue": 43,
   "files": [
     {
       "path": "0000_extensions_roles_down.sql",
@@ -34,23 +34,33 @@
     },
     {
       "path": "0003_source_mirror_down.sql",
-      "sha256": "e0f01a49fe54803e6e9be20e60cfcb90c20f55659a6d2f9a44b8af1377a30c77",
-      "bytes": 55
+      "sha256": "90e6d229649fc94d2e112dfc2001a941d345c2e0e557046214f91f0a27b57b85",
+      "bytes": 58
     },
     {
       "path": "0003_source_mirror_up.sql",
-      "sha256": "235b74efac34ed5eb9ddafafb550d960774dfddb295eab01d60ecfbe3d7af808",
-      "bytes": 1567
+      "sha256": "78089f1dd7d898b77575027de6aa13522858e3be24f0aa194ffe7a12db0b49ef",
+      "bytes": 1598
     },
     {
       "path": "0004_source_mirror_policy_down.sql",
-      "sha256": "34863e2d575dcfa593af9355a43fc127eb8e132c99ac22f998f26e9e726e0037",
-      "bytes": 254
+      "sha256": "394f280bf39ba8fd5d7a141fb7a74e1b28db3601b1d64c2cf4b298175c21cea4",
+      "bytes": 261
     },
     {
       "path": "0004_source_mirror_policy_up.sql",
-      "sha256": "5bfc5a505e4e11d504529d4e66530c500e7a5fbd3ac66275f2b80727d6665e9f",
-      "bytes": 253
+      "sha256": "b2bc234a8a65277b5688e0bb3df3ee9c759ce3d11ed52a8e463e936b86d9bfdc",
+      "bytes": 260
+    },
+    {
+      "path": "0005_parser_embedding_retrieval_down.sql",
+      "sha256": "83841149508cccb1073fca776be29bc4af206ddffd78a6aa8724ca025cf7300f",
+      "bytes": 1043
+    },
+    {
+      "path": "0005_parser_embedding_retrieval_up.sql",
+      "sha256": "d18c84a214148adf11ce10b00048cac0fcddf00301b1bda49252661a3ba3dccc",
+      "bytes": 2082
     }
   ]
 }

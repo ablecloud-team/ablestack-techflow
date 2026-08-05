@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "TechFlow AI Gateway",
-    "description": "TechFlow AI Gateway with Issue #42 allowlisted source registry and quarantine pipeline.",
-    "version": "0.2.1"
+    "description": "TechFlow AI Gateway with Issue #43 deterministic parsing, embedding, and hybrid retrieval.",
+    "version": "0.3.0"
   },
   "paths": {
     "/healthz": {
@@ -715,6 +715,72 @@
         }
       }
     },
+    "/v1/jobs/{jobId}/run": {
+      "post": {
+        "summary": "Run Job",
+        "operationId": "runIndexingJob",
+        "parameters": [
+          {
+            "name": "jobId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Jobid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JobRunRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/jobs/{jobId}/complete": {
       "post": {
         "summary": "Complete Ingestion Job",
@@ -756,6 +822,44 @@
               }
             }
           }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/rag/retrieve": {
+      "post": {
+        "summary": "Retrieve Rag",
+        "operationId": "retrieveRagContext",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QueryRequest"
+              }
+            }
+          },
+          "required": true
         },
         "responses": {
           "200": {
@@ -1137,6 +1241,27 @@
           "indexedFileCount"
         ],
         "title": "JobCompletionRequest"
+      },
+      "JobRunRequest": {
+        "properties": {
+          "requestedBy": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_.:@-]{3,128}$",
+            "title": "Requestedby"
+          },
+          "providerProfileId": {
+            "type": "string",
+            "const": "OPENAI_EMBEDDING_V1",
+            "title": "Providerprofileid",
+            "default": "OPENAI_EMBEDDING_V1"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "requestedBy"
+        ],
+        "title": "JobRunRequest"
       },
       "QueryRequest": {
         "properties": {
