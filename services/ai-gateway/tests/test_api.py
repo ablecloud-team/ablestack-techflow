@@ -169,6 +169,18 @@ class ApiContractTest(unittest.TestCase):
         self.assertEqual("APPROVED", response.json()["data"]["state"])
 
     def test_query_abstains_without_provider_call(self) -> None:
+        source = self.create_source("test-create-source-query")
+        self.scan_source(source)
+        self.approve_source(source)
+        job = self.client.post(
+            f"/v1/sources/{source['sourceId']}/ingestions", json={"requestedBy": "indexer"},
+            headers={"X-Correlation-Id": CORRELATION, "Idempotency-Key": "test-ingest-query"},
+        ).json()["data"]
+        run = self.client.post(
+            f"/v1/jobs/{job['jobId']}/run", json={"requestedBy": "indexer"},
+            headers={"X-Correlation-Id": CORRELATION, "Idempotency-Key": "test-run-query-index"},
+        )
+        self.assertEqual(200, run.status_code, run.text)
         response = self.client.post(
             "/v1/rag/query",
             json={
@@ -183,6 +195,31 @@ class ApiContractTest(unittest.TestCase):
         data = response.json()["data"]
         self.assertEqual("ABSTAINED", data["state"])
         self.assertFalse(data["providerCalled"])
+        self.assertFalse(data["generationProviderCalled"])
+        self.assertEqual("GENERATION_NOT_IMPLEMENTED_UNTIL_ISSUE_44", data["abstainReason"])
+        self.assertGreaterEqual(len(data["citations"]), 1)
+
+    def test_retrieve_returns_commit_pinned_citation(self) -> None:
+        source = self.create_source("test-create-source-retrieve")
+        self.scan_source(source)
+        self.approve_source(source)
+        job = self.client.post(
+            f"/v1/sources/{source['sourceId']}/ingestions", json={"requestedBy": "indexer"},
+            headers={"X-Correlation-Id": CORRELATION, "Idempotency-Key": "test-ingest-retrieve"},
+        ).json()["data"]
+        self.client.post(
+            f"/v1/jobs/{job['jobId']}/run", json={"requestedBy": "indexer"},
+            headers={"X-Correlation-Id": CORRELATION, "Idempotency-Key": "test-run-retrieve"},
+        )
+        response = self.client.post(
+            "/v1/rag/retrieve",
+            json={"queryId": str(uuid4()), "question": "print ok", "sourceProfileIds": ["CLOUD_MAIN"]},
+            headers={"X-Correlation-Id": CORRELATION},
+        )
+        self.assertEqual(200, response.status_code, response.text)
+        result = response.json()["data"]["results"][0]
+        self.assertEqual("a" * 40, result["commit"])
+        self.assertEqual("src/main.py", result["path"])
 
     def test_query_requires_exactly_one_scope(self) -> None:
         response = self.client.post(
@@ -246,7 +283,7 @@ class ApiContractTest(unittest.TestCase):
         self.assertEqual("HEALTHY", cloud["state"])
         self.assertEqual("a" * 40, cloud["lastHeadCommit"])
 
-    def test_openapi_contains_nineteen_operations(self) -> None:
+    def test_openapi_contains_twenty_one_operations(self) -> None:
         schema = self.client.get("/openapi.json").json()
         operations = [
             operation
@@ -254,8 +291,8 @@ class ApiContractTest(unittest.TestCase):
             for method, operation in path.items()
             if method.lower() in {"get", "post", "delete", "put", "patch"}
         ]
-        self.assertEqual(19, len(operations))
-        self.assertEqual(19, len({operation["operationId"] for operation in operations}))
+        self.assertEqual(21, len(operations))
+        self.assertEqual(21, len({operation["operationId"] for operation in operations}))
 
     def test_all_responses_disable_cache_and_echo_correlation(self) -> None:
         response = self.client.get("/v1/jobs/00000000-0000-0000-0000-000000000000", headers={"X-Correlation-Id": CORRELATION})

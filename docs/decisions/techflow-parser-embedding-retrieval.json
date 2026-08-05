@@ -1,0 +1,51 @@
+{
+  "schemaVersion": "1.0",
+  "decisionId": "TECHFLOW-PARSER-EMBEDDING-RETRIEVAL-ISSUE-43",
+  "effectiveDate": "2026-08-05",
+  "classification": "D0",
+  "initialCanary": {
+    "sourceProfileId": "GENIE_MASTER",
+    "repository": "ablecloud-team/ablestack-genie",
+    "branch": "master",
+    "commit": "3e3c5c364f5c7261b07d49fcbcd4f3605b91f3b1",
+    "sourceVersionId": "059ae7d0-7d6c-4fb3-a0ed-fa3eab1f6cae",
+    "eligibleFileCount": 34
+  },
+  "parser": {
+    "profileId": "TREE_SITTER_V1",
+    "sourceExecution": false,
+    "fallbackMaxLines": 160,
+    "fallbackOverlapLines": 20,
+    "maxEmbeddingInputBytes": 24576,
+    "stableIds": true
+  },
+  "embedding": {
+    "providerProfileId": "OPENAI_EMBEDDING_V1",
+    "model": "text-embedding-3-large",
+    "dimension": 3072,
+    "officialSdk": "openai-python",
+    "credentialBoundary": "RUNTIME_SECRET_FILE_ONLY",
+    "canaryProviderMode": "mock",
+    "realProviderCanaryRequiresOperatorKey": true
+  },
+  "retrieval": {
+    "scopeFilterBeforeCandidateGeneration": true,
+    "channels": {"fts": 20, "identifier": 20, "vector": 30},
+    "fusion": "RRF",
+    "rrfK": 60,
+    "testEvidenceWeight": 0.6,
+    "maximumResults": 10,
+    "vectorSearch": "EXACT_COSINE",
+    "hnswGate": "REVIEW_AT_50000_ACTIVE_CHUNKS"
+  },
+  "activation": {
+    "requiresAllEligibleFiles": true,
+    "previousActiveWithdrawnAtomically": true,
+    "failedIndexingReturnsTo": "APPROVED"
+  },
+  "deletion": {
+    "withdrawalExcludesImmediately": true,
+    "derivatives": ["chunks", "embeddings", "symbols", "relations"],
+    "ledgerRequired": true
+  }
+}

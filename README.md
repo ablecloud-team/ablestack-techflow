@@ -1,5 +1,16 @@
 # ABLESTACK TechFlow
 
+## Issue #43 Parser·Embedding·검색 구현
+
+TechFlow AI Gateway 0.3.0은 승인된 소스의 Parser·Chunk·Embedding·Hybrid Retrieval과 파생 데이터 삭제를 구현했습니다. 최초 실증 대상인 `GENIE_MASTER`의 34개 파일을 `master@3e3c5c364f5c7261b07d49fcbcd4f3605b91f3b1`에서 인덱싱해 64개 Chunk와 Embedding을 활성화했고, 검색 결과는 Repository·Branch·Commit·Path·Line·Symbol 근거를 반환합니다. 이번 실증은 Mock Embedding으로 외부 OpenAI 호출 없이 수행했으며, 운영 API Key를 주입하면 동일 Adapter 경로에서 실 Embedding Canary를 수행할 수 있습니다.
+
+- [Issue #43 구현·검증 완료 보고서](docs/reports/issue-43-parser-embedding-validation.md)
+- [Parser·Embedding·검색 배포·운영 Runbook](docs/runbooks/parser-embedding-retrieval.md)
+- [Parser·Embedding·검색 구현 결정](docs/decisions/techflow-parser-embedding-retrieval.json)
+- [완료 보고서 PDF](output/pdf/techflow-parser-embedding-report.pdf)
+- [발표자료 PDF](output/pdf/techflow-parser-embedding-presentation.pdf)
+- [발표자료 PPTX](output/presentation/techflow-parser-embedding.pptx)
+
 ABLESTACK TechFlow는 **ABLESTACK 기술지원과 인프라 운영을 연결하는 AI 기반 시각적 자동화 플랫폼**입니다.
 
 Activepieces를 워크플로우 실행 엔진으로 사용하고, ABLESTACK 전용 연동, 기술지원 지식, AI 정책, 승인·권한·감사 및 안전한 운영 자동화를 제품 기능으로 개발합니다.

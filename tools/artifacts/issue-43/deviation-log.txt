@@ -1,0 +1,3 @@
+No visual deviations. Every output slide duplicates the corresponding Issue #42 source slide and rewrites inherited text boxes only.
+Slide 4 reuses source slide 8's verification ledger because the source table pattern could not hold the contract copy without overlap.
+Slide 9 retains the capacity layout but replaces disk-growth metrics with live indexing metrics.

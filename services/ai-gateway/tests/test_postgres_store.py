@@ -53,6 +53,11 @@ class PostgresPayloadTest(unittest.TestCase):
         implementation = (Path(__file__).resolve().parents[1] / "app" / "postgres_store.py").read_text(encoding="utf-8")
         self.assertIn("WHERE source_profile_id = ANY(%s)", implementation)
 
+    def test_indexing_query_maps_database_name_to_contract_alias(self) -> None:
+        implementation = (Path(__file__).resolve().parents[1] / "app" / "postgres_store.py").read_text(encoding="utf-8")
+        self.assertIn('f.source_kind AS "sourceKind"', implementation)
+        self.assertIn("Jsonb(metrics)", implementation)
+
 
 if __name__ == "__main__":
     unittest.main()

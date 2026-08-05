@@ -1,0 +1,8 @@
+Source: output/presentation/techflow-source-registry.pptx
+Slides: 10, 16:9, no media, no charts, no tables.
+Visual system: white canvas, black Malgun Gothic titles, blue issue accents, light-gray evidence blocks, minimal line diagrams, lower-right page number.
+Reusable patterns: title (1), three metrics (2), three-stage flow (3), evidence table (4), timeline (5-6), three policy columns (7), verification ledger (8), three metrics with capacity bar (9), next-action close (10).
+Typography: preserve inherited family, size, weight, insets, alignment, and vertical anchor. Shorten Korean copy where needed.
+Placeholders: none detected in source OOXML. All visible text boxes are explicit inherited elements.
+Insertion contract: duplicate slides 1-10 one-to-one, rewrite inherited text only, preserve inherited shapes and positions, add no new primitives.
+Communication job: by the end, TechFlow reviewers should approve Issue #43 completion because the parser, embedding, retrieval, activation, deletion, and deployment evidence are reproducible and source-pinned.

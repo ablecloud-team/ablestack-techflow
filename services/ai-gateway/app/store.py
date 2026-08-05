@@ -55,6 +55,11 @@ class Store(Protocol):
     def create_ingestion(self, source_id: UUID, request: dict[str, Any], idempotency_key: str) -> dict[str, Any]: ...
     def withdraw_source(self, source_id: UUID, idempotency_key: str) -> dict[str, Any]: ...
     def get_job(self, job_id: UUID) -> dict[str, Any]: ...
+    def run_job(
+        self, job_id: UUID, request: dict[str, Any], idempotency_key: str,
+        correlation_id: str, adapter: Any, batch_size: int,
+    ) -> dict[str, Any]: ...
+    def retrieve(self, request: dict[str, Any], embedding_result: Any, correlation_id: str) -> dict[str, Any]: ...
     def create_evaluation_run(self, request: dict[str, Any], idempotency_key: str) -> dict[str, Any]: ...
     def get_evaluation_run(self, run_id: UUID) -> dict[str, Any]: ...
 
@@ -77,6 +82,10 @@ class MemoryStore:
         self._compatibility_sets: dict[UUID, dict[str, Any]] = {}
         self._jobs: dict[UUID, dict[str, Any]] = {}
         self._evaluation_runs: dict[UUID, dict[str, Any]] = {}
+        self._chunks: dict[UUID, Any] = {}
+        self._embeddings: dict[UUID, tuple[float, ...]] = {}
+        self._symbols: dict[UUID, Any] = {}
+        self._relations: dict[UUID, Any] = {}
         self._idempotency: dict[tuple[str, str], dict[str, Any]] = {}
         from .source_registry import list_repositories, mirror_key
 
@@ -417,6 +426,110 @@ class MemoryStore:
             if job_id not in self._jobs:
                 raise NotFoundError("job not found")
             return deepcopy(self._jobs[job_id])
+
+    def run_job(
+        self, job_id: UUID, request: dict[str, Any], idempotency_key: str,
+        correlation_id: str, adapter: Any, batch_size: int,
+    ) -> dict[str, Any]:
+        from .indexing import build_index_bundle
+
+        with self._lock:
+            if repeated := self._repeat("run_job", idempotency_key):
+                return repeated
+            job = self._jobs.get(job_id)
+            if not job:
+                raise NotFoundError("job not found")
+            if job["state"] != "PENDING":
+                raise InvalidStateError("only pending jobs can run")
+            job.update(state="RUNNING", startedAt=utc_now(), updatedAt=utc_now(), attempt=1)
+            if job["jobType"] == "DELETION":
+                version_ids = {
+                    version_id for version_id, version in self._source_versions.items()
+                    if version["sourceId"] == job["sourceId"]
+                }
+                chunk_ids = {chunk_id for chunk_id, chunk in self._chunks.items() if chunk.source_version_id in version_ids}
+                counts = {
+                    "chunksDeleted": len(chunk_ids),
+                    "embeddingsDeleted": sum(chunk_id in self._embeddings for chunk_id in chunk_ids),
+                    "symbolsDeleted": sum(symbol.source_version_id in version_ids for symbol in self._symbols.values()),
+                    "relationsDeleted": sum(relation.source_version_id in version_ids for relation in self._relations.values()),
+                }
+                self._chunks = {key: value for key, value in self._chunks.items() if key not in chunk_ids}
+                self._embeddings = {key: value for key, value in self._embeddings.items() if key not in chunk_ids}
+                self._symbols = {key: value for key, value in self._symbols.items() if value.source_version_id not in version_ids}
+                self._relations = {key: value for key, value in self._relations.items() if value.source_version_id not in version_ids}
+                job.update(state="SUCCEEDED", metrics=counts, completedAt=utc_now(), updatedAt=utc_now())
+                return self._remember("run_job", idempotency_key, job)
+            version = self._source_versions[job["sourceVersionId"]]
+            files = []
+            for item in self._source_files[job["sourceVersionId"]].values():
+                if item["decision"] != "ELIGIBLE":
+                    continue
+                blob = self._blob_cache[(version["repository"], item["blobSha"])]
+                files.append({"path": item["path"], "sourceKind": item["sourceKind"], "content": blob["content"]})
+            try:
+                bundle = build_index_bundle(job["sourceVersionId"], files, adapter, batch_size)
+                if bundle.indexed_file_count != version["eligibleFileCount"]:
+                    raise ConflictError("partial indexing cannot activate a source version")
+            except Exception:
+                version["state"] = "APPROVED"
+                job.update(state="FAILED", failureClass="TERMINAL", errorCode="INDEXING_FAILED", updatedAt=utc_now())
+                raise
+            self._chunks.update({item.id: item for item in bundle.chunks})
+            self._embeddings.update(dict(bundle.embeddings))
+            self._symbols.update({item.id: item for item in bundle.symbols})
+            self._relations.update({item.id: item for item in bundle.relations})
+            for candidate in self._source_versions.values():
+                if candidate["sourceId"] == version["sourceId"] and candidate["state"] == "ACTIVE":
+                    candidate["state"] = "WITHDRAWN"
+            version.update(state="ACTIVE", indexedFileCount=bundle.indexed_file_count)
+            job.update(
+                state="SUCCEEDED", completedAt=utc_now(), updatedAt=utc_now(),
+                metrics={"indexedFiles": bundle.indexed_file_count, "chunks": len(bundle.chunks),
+                         "symbols": len(bundle.symbols), "relations": len(bundle.relations),
+                         "embeddingBatches": len(bundle.provider_audits), "parsedFiles": bundle.parsed_file_count,
+                         "fallbackFiles": bundle.fallback_file_count},
+            )
+            return self._remember("run_job", idempotency_key, job)
+
+    def retrieve(self, request: dict[str, Any], embedding_result: Any, correlation_id: str) -> dict[str, Any]:
+        from .indexing import cosine_similarity, reciprocal_rank_fusion
+
+        with self._lock:
+            version_ids: set[UUID]
+            if request.get("compatibilitySetId"):
+                compatibility = self._compatibility_sets.get(UUID(str(request["compatibilitySetId"])))
+                if not compatibility:
+                    raise NotFoundError("compatibility set not found")
+                version_ids = {UUID(str(item["sourceVersionId"])) for item in compatibility["members"]}
+            else:
+                profiles = set(request.get("sourceProfileIds") or ())
+                version_ids = {key for key, value in self._source_versions.items()
+                               if value["sourceProfileId"] in profiles and value["state"] == "ACTIVE"}
+            candidates = [chunk for chunk in self._chunks.values() if chunk.source_version_id in version_ids]
+            terms = {term.lower() for term in request["question"].split() if len(term) > 1}
+            fts = sorted(candidates, key=lambda c: (-sum(term in c.content.lower() for term in terms), str(c.id)))[:20]
+            identifier = sorted(candidates, key=lambda c: (-sum(term in (c.symbol or "").lower() for term in terms), str(c.id)))[:20]
+            query_vector = embedding_result.vectors[0]
+            vector = sorted(candidates, key=lambda c: (-cosine_similarity(query_vector, self._embeddings[c.id]), str(c.id)))[:30]
+            kinds = {chunk.id: chunk.source_kind for chunk in candidates}
+            ranked = reciprocal_rank_fusion(
+                {"fts": [c.id for c in fts], "identifier": [c.id for c in identifier], "vector": [c.id for c in vector]},
+                kinds,
+            )[:10]
+            lookup = {chunk.id: chunk for chunk in candidates}
+            results = []
+            for chunk_id, score, channels in ranked:
+                chunk = lookup[chunk_id]
+                version = self._source_versions[chunk.source_version_id]
+                results.append({
+                    "chunkId": chunk.id, "repository": version["repository"], "branch": version["branch"],
+                    "commit": version["commit"], "path": chunk.path, "startLine": chunk.start_line,
+                    "endLine": chunk.end_line, "symbol": chunk.symbol, "score": score, "channels": channels,
+                    "sourceKind": chunk.source_kind, "content": chunk.content,
+                })
+            return {"queryId": request["queryId"], "results": results, "resultCount": len(results),
+                    "provider": embedding_result.provider, "providerCalled": embedding_result.provider == "openai"}
 
     def create_evaluation_run(self, request: dict[str, Any], idempotency_key: str) -> dict[str, Any]:
         with self._lock:
