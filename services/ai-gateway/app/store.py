@@ -54,8 +54,12 @@ class Store(Protocol):
     def get_source(self, source_id: UUID) -> dict[str, Any]: ...
     def approve_source(self, source_id: UUID, request: dict[str, Any], idempotency_key: str) -> dict[str, Any]: ...
     def create_compatibility_set(self, request: dict[str, Any], idempotency_key: str) -> dict[str, Any]: ...
-    def create_ingestion(self, source_id: UUID, request: dict[str, Any], idempotency_key: str) -> dict[str, Any]: ...
-    def withdraw_source(self, source_id: UUID, idempotency_key: str) -> dict[str, Any]: ...
+    def create_ingestion(
+        self, source_id: UUID, request: dict[str, Any], idempotency_key: str, correlation_id: str = "legacy"
+    ) -> dict[str, Any]: ...
+    def withdraw_source(
+        self, source_id: UUID, idempotency_key: str, correlation_id: str = "legacy"
+    ) -> dict[str, Any]: ...
     def get_job(self, job_id: UUID) -> dict[str, Any]: ...
     def run_job(
         self, job_id: UUID, request: dict[str, Any], idempotency_key: str,
@@ -64,7 +68,9 @@ class Store(Protocol):
     def retrieve(self, request: dict[str, Any], embedding_result: Any, correlation_id: str) -> dict[str, Any]: ...
     def record_response_call(self, query_id: UUID, result: Any, correlation_id: str) -> None: ...
     def record_response_failure(self, query_id: UUID, error: Any, correlation_id: str) -> None: ...
-    def create_evaluation_run(self, request: dict[str, Any], idempotency_key: str) -> dict[str, Any]: ...
+    def create_evaluation_run(
+        self, request: dict[str, Any], idempotency_key: str, correlation_id: str = "legacy"
+    ) -> dict[str, Any]: ...
     def get_evaluation_run(self, run_id: UUID) -> dict[str, Any]: ...
 
 
@@ -244,6 +250,8 @@ class MemoryStore:
             version = self._source_versions.get(version_id)
             if not version:
                 raise NotFoundError("source version not found")
+            if version["state"] != "REGISTERED" and version.get("snapshotHash") == report["snapshotHash"]:
+                return self._remember("record_scan", idempotency_key, version)
             if version["state"] != "REGISTERED":
                 raise InvalidStateError("only registered candidates can be scanned")
             if report["commit"] != version["commit"]:
@@ -348,7 +356,9 @@ class MemoryStore:
             self._compatibility_sets[set_id] = value
             return self._remember("create_compatibility_set", idempotency_key, value)
 
-    def create_ingestion(self, source_id: UUID, request: dict[str, Any], idempotency_key: str) -> dict[str, Any]:
+    def create_ingestion(
+        self, source_id: UUID, request: dict[str, Any], idempotency_key: str, correlation_id: str = "legacy"
+    ) -> dict[str, Any]:
         with self._lock:
             if repeated := self._repeat("create_ingestion", idempotency_key):
                 return repeated
@@ -368,6 +378,7 @@ class MemoryStore:
                 "failureClass": None,
                 "errorCode": None,
                 "requestedBy": request["requestedBy"],
+                "correlationId": correlation_id,
                 "createdAt": utc_now(),
                 "updatedAt": utc_now(),
             }
@@ -401,7 +412,9 @@ class MemoryStore:
                 )
             return self._remember("complete_job", idempotency_key, job)
 
-    def withdraw_source(self, source_id: UUID, idempotency_key: str) -> dict[str, Any]:
+    def withdraw_source(
+        self, source_id: UUID, idempotency_key: str, correlation_id: str = "legacy"
+    ) -> dict[str, Any]:
         with self._lock:
             if repeated := self._repeat("withdraw_source", idempotency_key):
                 return repeated
@@ -420,6 +433,7 @@ class MemoryStore:
                 "failureClass": None,
                 "errorCode": None,
                 "requestedBy": "system",
+                "correlationId": correlation_id,
                 "createdAt": utc_now(),
                 "updatedAt": utc_now(),
             }
@@ -562,7 +576,9 @@ class MemoryStore:
                 "correlationId": correlation_id,
             })
 
-    def create_evaluation_run(self, request: dict[str, Any], idempotency_key: str) -> dict[str, Any]:
+    def create_evaluation_run(
+        self, request: dict[str, Any], idempotency_key: str, correlation_id: str = "legacy"
+    ) -> dict[str, Any]:
         with self._lock:
             if repeated := self._repeat("create_evaluation_run", idempotency_key):
                 return repeated
@@ -570,6 +586,7 @@ class MemoryStore:
             value = {
                 "runId": run_id,
                 **request,
+                "correlationId": correlation_id,
                 "state": "PENDING",
                 "totalCases": 0,
                 "passedCases": 0,

@@ -75,9 +75,9 @@ flowchart LR
 
 ## 7. 조사 결과와 운영 확인 항목
 
-OpenAI 공식 지침상 현재 모델 선택은 기본 `gpt-5.6-terra`, 고난도 작업은 `gpt-5.6-sol` 경로와 일치한다. Structured Output은 Responses API의 strict `text.format` JSON Schema를 사용했다. `store=false`만으로 ZDR이 성립하지 않으며, ZDR·Modified Abuse Monitoring은 Organization Dashboard에서 별도 승인·적용 상태를 확인해야 한다.
+OpenAI 공식 지침상 현재 모델 선택은 기본 `gpt-5.6-terra`, 고난도 작업은 `gpt-5.6-sol` 경로와 일치한다. Structured Output은 Responses API의 strict `text.format` JSON Schema를 사용했다. `store=false`는 애플리케이션 수준 데이터 최소화 통제로 유지한다.
 
-현재 API Key로 모델 접근과 실제 Responses·Embeddings 호출은 확인했지만 Project의 ZDR/MAM Dashboard 상태는 API로 확인할 수 없었다. 따라서 상태는 `UNVERIFIED_IN_DASHBOARD`로 기록한다. 이는 D0 PoC 구현 제한이 아니며 D1 이상 데이터 확장 전 운영 Gate다.
+제품 책임자의 2026-08-10 결정에 따라 Zero Data Retention은 사용하지 않으며 기존의 Dashboard 미확인 운영 Gate는 폐기한다. D0 PoC의 구현 경계는 유지하고 D1 이상 데이터 확대는 비식별화·최소화, 접근권한, 감사, 보존·삭제 및 사고 대응을 포함한 TechFlow 제품 보안심사로 결정한다.
 
 - [OpenAI 최신 모델 선택 지침](https://developers.openai.com/api/docs/guides/latest-model)
 - [OpenAI Structured Outputs](https://developers.openai.com/api/docs/guides/structured-outputs)
@@ -87,9 +87,6 @@ OpenAI 공식 지침상 현재 모델 선택은 기본 `gpt-5.6-terra`, 고난�
 
 Issue #44의 구현·실 Provider·보류·오류·감사·Secret·배포·롤백 조건을 모두 충족했다. PR 검토·병합 전까지 Issue는 열어 두며, 다음 구현 단위는 Issue #45의 Activepieces Push·승인·재색인 연동이다.
 
-운영자가 별도로 확인할 항목은 두 가지다.
-
-1. OpenAI Dashboard에서 Project의 ZDR 또는 MAM 적용 상태 확인
-2. 대화에 직접 입력된 현 API Key를 회전한 뒤 GitHub Secret과 서버 Runtime Secret을 함께 갱신
+OpenAI Dashboard의 데이터 보존 제어 상태는 더 이상 운영자 확인 항목이 아니다. 대화에 직접 입력된 현 API Key 교체는 제품 책임자의 기존 결정에 따라 명시적으로 요청될 때까지 보류한다.
 
 고객 공개 여부는 제품 책임자의 결정이며 본 구현 범위나 향후 자체 기능 구현을 제한하지 않는다.

@@ -59,7 +59,7 @@ Git Tree 전체 46,579개 Blob 중 39,836개가 확장자·경로·1 MiB 정책�
 
 원본 Repository는 OpenAI File·Vector Store·ChatGPT Project에 업로드하지 않는다. TechFlow가 고정 Commit 기준으로 로컬 Parse·Hybrid Retrieval을 수행하고, 최종 최대 10개 D0 Chunk와 Citation Metadata만 Responses API에 전달한다. 요청은 `store=false`, `background=false`, Tool 0개, Structured Output을 강제하고 반환 Citation을 Gateway가 다시 검증한다.
 
-`store=false`만으로 Abuse Monitoring 보존이 사라진다고 간주하지 않는다. 운영 전 OpenAI API Organization·Project의 ZDR·MAM·Data Residency 적용 상태를 확인·기록하며, P1은 D0만 전송한다.
+제품 책임자의 2026-08-10 결정에 따라 Zero Data Retention은 사용하지 않으며 적격성·승인·적용 상태를 구현·배포 Gate에서 제외한다. `store=false`는 애플리케이션 수준 데이터 최소화 통제로 유지하고 P1은 현재 구현 경계에 따라 D0만 전송한다. D1 이상 확대는 TechFlow 제품 보안심사로 결정한다.
 
 ## 4. 안전한 코드 수집
 
@@ -156,7 +156,7 @@ Source Profile 철회 시 Chunk, Embedding, Symbol, Relation, Cache와 Evaluatio
 11. `gpt-5.6-terra/medium` 기본과 규칙 기반 `gpt-5.6-sol/high` 승격
 12. `text-embedding-3-large/3072` PoC 기준선
 13. OpenAI File·Vector Store·Agent Tool을 P1에서 사용하지 않음
-14. 운영 전 OpenAI API Project의 ZDR·MAM·Data Residency 상태 확인
+14. Zero Data Retention 미사용과 향후 Gate 제외, 데이터 등급 확대 시 TechFlow 제품 보안심사 적용
 15. ChatGPT Work·Codex는 운영·개발 보조이며 제품 런타임이 아님
 
 ## 12. 다음 실행

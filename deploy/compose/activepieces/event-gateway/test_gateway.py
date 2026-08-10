@@ -123,6 +123,113 @@ class GithubContractTests(unittest.TestCase):
         self.assertNotIn("pusher", json.dumps(result))
         self.assertNotIn("email", json.dumps(result))
 
+    def test_nine_allowlisted_repository_branches_map_to_profiles(self) -> None:
+        expected = {
+            ("ablecloud-team/ablestack-docs", "master"): "SHARED_DOCS",
+            ("ablecloud-team/ablestack-cloud", "main"): "CLOUD_MAIN",
+            ("ablecloud-team/ablestack-cloud", "ablestack-diplo"): "CLOUD_DIPLO",
+            ("ablecloud-team/ablestack-cloud", "ablestack-europa"): "CLOUD_EUROPA",
+            ("ablecloud-team/ablestack-wall", "main"): "WALL_MAIN",
+            ("ablecloud-team/ablestack-cockpit-plugin", "ablestack-diplo"): "COCKPIT_DIPLO",
+            ("ablecloud-team/ablestack-genie", "master"): "GENIE_MASTER",
+            ("ablecloud-team/ablestack-kickstart", "master"): "KICKSTART_MASTER",
+            ("ablecloud-team/ablestack-qemu-exec-tools", "main"): "QEMU_EXEC_TOOLS_MAIN",
+        }
+        self.assertEqual(gateway.SOURCE_PROFILE_BY_REPOSITORY_BRANCH, expected)
+        for (repository, branch), profile_id in expected.items():
+            normalized = {
+                "eventId": f"event-{profile_id.lower()}",
+                "eventType": "github.push",
+                "repository": {"fullName": repository},
+                "data": {
+                    "ref": f"refs/heads/{branch}",
+                    "after": "a" * 40,
+                    "deleted": False,
+                },
+            }
+            result = gateway.normalize_source_discovery_event(normalized, "correlation-0001")
+            self.assertEqual(result["sourceProfileId"], profile_id)
+            self.assertNotIn("message", result)
+
+    def test_unmapped_or_deleted_push_does_not_request_discovery(self) -> None:
+        normalized = {
+            "eventId": "event-unmapped",
+            "eventType": "github.push",
+            "repository": {"fullName": "ablecloud-team/ablestack-techflow"},
+            "data": {"ref": "refs/heads/main", "after": "a" * 40, "deleted": False},
+        }
+        self.assertIsNone(
+            gateway.normalize_source_discovery_event(normalized, "correlation-0002")
+        )
+        normalized["repository"]["fullName"] = "ablecloud-team/ablestack-genie"
+        normalized["data"]["ref"] = "refs/heads/master"
+        normalized["data"]["deleted"] = True
+        self.assertIsNone(
+            gateway.normalize_source_discovery_event(normalized, "correlation-0003")
+        )
+
+
+class RagContractTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.organization = "ablecloud-team"
+        self.repository = {
+            "full_name": "ablecloud-team/ablestack-techflow",
+            "html_url": "https://github.com/ablecloud-team/ablestack-techflow",
+            "owner": {"login": "ablecloud-team"},
+        }
+        self.sender = {"login": "tester"}
+
+    def test_discovery_drops_untrusted_fields(self) -> None:
+        result = gateway.normalize_rag_event(
+            "/techflow/hooks/rag/discovery",
+            {"sourceProfileId": "GENIE_MASTER", "commit": "a" * 40,
+             "content": "must-not-enter-flow", "token": "secret"},
+            "event-1", "correlation-1",
+        )
+        self.assertEqual(
+            {"eventId": "event-1", "correlationId": "correlation-1",
+             "sourceProfileId": "GENIE_MASTER", "commit": "a" * 40}, result,
+        )
+
+    def test_review_requires_pinned_commit_and_authorized_reviewer(self) -> None:
+        payload = {
+            "sourceId": "11111111-1111-4111-8111-111111111111",
+            "sourceVersionId": "22222222-2222-4222-8222-222222222222",
+            "expectedCommit": "b" * 40, "reviewer": "dhslove",
+            "decisionNote": "승인된 고정 커밋을 색인합니다.",
+        }
+        result = gateway.normalize_rag_event(
+            "/techflow/hooks/rag/review", payload, "event-2", "correlation-2"
+        )
+        self.assertEqual("dhslove", result["reviewer"])
+        payload["reviewer"] = "activepieces"
+        with self.assertRaisesRegex(ValueError, "invalid_review_contract"):
+            gateway.normalize_rag_event(
+                "/techflow/hooks/rag/review", payload, "event-3", "correlation-3"
+            )
+
+    def test_compatibility_withdrawal_and_evaluation_contracts(self) -> None:
+        member = "33333333-3333-4333-8333-333333333333"
+        compatibility = gateway.normalize_rag_event(
+            "/techflow/hooks/rag/compatibility",
+            {"name": "ABLESTACK baseline", "productVersion": "main",
+             "reviewer": "dhslove", "members": [{"sourceVersionId": member}]},
+            "event-4", "correlation-4",
+        )
+        self.assertEqual(member, compatibility["members"][0]["sourceVersionId"])
+        withdrawal = gateway.normalize_rag_event(
+            "/techflow/hooks/rag/withdraw",
+            {"sourceId": member, "reviewer": "dhslove", "reason": "승인된 소스 철회 및 파생 삭제"},
+            "event-5", "correlation-5",
+        )
+        self.assertEqual("dhslove", withdrawal["reviewer"])
+        evaluation = gateway.normalize_rag_event(
+            "/techflow/hooks/rag/evaluation",
+            {"name": "GENIE regression", "sourceProfileId": "GENIE_MASTER", "question": "drop me"},
+            "event-6", "correlation-6",
+        )
+        self.assertNotIn("question", evaluation)
+
     def test_branch_delete_uses_repository_url(self) -> None:
         payload = {
             "repository": self.repository,

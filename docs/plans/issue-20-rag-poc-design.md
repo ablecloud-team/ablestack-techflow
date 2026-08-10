@@ -329,8 +329,9 @@ OpenAI 호출은 Connect Timeout 3초, 전체 Timeout 12초를 초기값으로 �
 - GitHub와 승인 Provider 외 Egress를 차단한다.
 - Provider Credential은 런타임 주입한다.
 - AI Tool과 Source Code 실행 기능은 존재하지 않는다.
-- OpenAI `store=false`는 기본 Abuse Monitoring 보존까지 제거한다는 뜻이 아니므로 Organization·Project의 ZDR·MAM·Data Residency 적용 상태를 운영 전 기록한다.
-- ZDR 또는 MAM이 승인되지 않은 P1 환경은 D0만 전송하며 Background Mode·Files·Vector Stores·Web Search·Code Interpreter·MCP를 금지한다.
+- 제품 책임자의 2026-08-10 결정에 따라 Zero Data Retention은 사용하지 않으며 적격성·승인·적용 상태를 구현 또는 배포 Gate로 사용하지 않는다.
+- `store=false`는 애플리케이션 수준 데이터 최소화 통제로 유지한다. P1은 현재 구현 경계에 따라 D0만 전송하며 Background Mode·Files·Vector Stores·Web Search·Code Interpreter·MCP를 금지한다.
+- D1 이상 확대는 Source 승인, 비식별화·최소화, 접근권한, 감사, 보존·삭제 및 사고 대응을 포함한 TechFlow 제품 보안심사로 결정한다.
 - 개인 사용자의 내부 ID는 단방향 가명화해 안정적인 `safety_identifier`로 전송한다.
 - Source 철회는 즉시 검색 제외 후 최대 7일 내 파생 삭제한다.
 
@@ -431,7 +432,7 @@ Golden Set은 최소 50개이며 코드 질문을 최소 20개 포함한다.
 ## 20. 구현 전 런타임 입력
 
 - OpenAI API Organization·Project와 API Key
-- API Project의 ZDR·MAM·Data Residency 적용 상태
+- 승인된 데이터 등급, 비식별화·보존·삭제 및 감사 정책
 - 승인 시점에 계정에서 사용 가능한 Model Snapshot 또는 Alias
 - RAG DB Credential
 - GitHub API 인증 방식

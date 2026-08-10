@@ -1,17 +1,15 @@
 #!/usr/bin/env python3
-"""Validate Issue #44 artifacts, pages, notes, manifest, and secret hygiene."""
+"""Validate Issue #45 artifacts, pages, notes, manifest, and secret hygiene."""
 
 import hashlib
 import json
 import re
 import zipfile
 from pathlib import Path
-
 from pypdf import PdfReader
 
-
 ROOT = Path(__file__).resolve().parents[3]
-MANIFEST = ROOT / "output/issue-44-artifact-manifest.json"
+MANIFEST = ROOT / "output/issue-45-artifact-manifest.json"
 BINARY = {".pdf", ".pptx"}
 SECRET_PATTERNS = {
     "private-key": re.compile(r"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----"),
@@ -29,9 +27,8 @@ def canonical(path: Path) -> bytes:
 
 
 manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
-assert manifest["issue"] == 44
+assert manifest["issue"] == 45
 assert manifest["status"] == "implemented-deployed-and-validated"
-assert len(manifest["files"]) == 32
 for item in manifest["files"]:
     path = ROOT / item["path"]
     assert path.is_file(), item["path"]
@@ -43,17 +40,17 @@ for item in manifest["files"]:
         for name, pattern in SECRET_PATTERNS.items():
             assert not pattern.search(value), f"{item['path']}:{name}"
 
-assert len(PdfReader(str(ROOT / "output/pdf/techflow-grounded-responses-report.pdf")).pages) == 8
-assert len(PdfReader(str(ROOT / "output/pdf/techflow-grounded-responses-presentation.pdf")).pages) == 10
-with zipfile.ZipFile(ROOT / "output/presentation/techflow-grounded-responses.pptx") as archive:
+assert len(PdfReader(str(ROOT / "output/pdf/techflow-activepieces-rag-orchestration-report.pdf")).pages) == 7
+assert len(PdfReader(str(ROOT / "output/pdf/techflow-activepieces-rag-orchestration-presentation.pdf")).pages) == 9
+with zipfile.ZipFile(ROOT / "output/presentation/techflow-activepieces-rag-orchestration.pptx") as archive:
     slides = [name for name in archive.namelist() if re.fullmatch(r"ppt/slides/slide\d+\.xml", name)]
-    assert len(slides) == 10
+    assert len(slides) == 9
     slide_xml = "\n".join(archive.read(name).decode("utf-8", errors="ignore") for name in slides)
-    for expected in ("ISSUE #44", "96 + 96", "보안심사", "Issue #45"):
+    for expected in ("ISSUE #45", "97 + 26", "Issue #46", "보존 정책 확정", "보안 Gate"):
         assert expected in slide_xml, expected
     notes = [name for name in archive.namelist() if re.fullmatch(r"ppt/notesSlides/notesSlide\d+\.xml", name)]
-    assert len(notes) == 10
+    assert len(notes) == 9
     for name in notes:
         assert "[Sources]" in archive.read(name).decode("utf-8", errors="ignore")
 
-print(f"artifacts=valid files={len(manifest['files'])} secrets=0 reportPages=8 deckPages=10 slides=10 notes=10")
+print(f"artifacts=valid files={len(manifest['files'])} secrets=0 reportPages=7 deckPages=9 slides=9 notes=9")

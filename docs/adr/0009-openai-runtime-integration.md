@@ -94,8 +94,9 @@ Structured Output은 `state`, `answer`, `citationsUsed`, `abstainReason`을 강�
 
 - API Key는 Secret Store에서 런타임 주입하고 저장소·Activepieces·Prompt·로그에 남기지 않는다.
 - 모든 Responses 요청은 `store=false`를 명시한다.
-- `store=false`는 OpenAI의 기본 Abuse Monitoring 보존까지 제거한다는 의미가 아니다. 운영 전 OpenAI API Organization·Project의 Zero Data Retention 또는 Modified Abuse Monitoring 적격성과 적용 상태를 별도 확인한다.
-- ZDR이 승인되지 않은 상태에서 D1~D3는 전송하지 않는다. P1은 D0만 허용한다.
+- 제품 책임자의 2026-08-10 결정에 따라 Zero Data Retention은 사용하지 않으며, 적격성·승인·적용 상태를 현재 또는 향후 구현 Gate로 사용하지 않는다.
+- `store=false`는 애플리케이션 수준 데이터 최소화 통제로 계속 사용한다. P1의 D0 전송 제한은 Zero Data Retention과 무관한 현재 구현 경계다.
+- D1 이상 확대는 Source 승인, 비식별화·최소화, 접근권한, 감사, 보존·삭제 및 사고 대응을 포함한 TechFlow 제품 보안심사로 결정한다.
 - Background mode, OpenAI File Search·Vector Store, Code Interpreter, Web Search, MCP와 외부 Tool은 P1에서 금지한다.
 - 개인 사용자를 대신하는 요청은 내부 사용자 ID를 단방향 가명화한 안정적인 `safety_identifier`를 전달한다.
 - Gateway는 Raw Prompt·Raw Response를 저장하지 않는다. `rag_provider_call`에는 Query·Evaluation ID, Provider Request·Response ID, Model Profile Version, Token Usage, Latency, Status, Error Code만 남긴다.
@@ -126,7 +127,7 @@ Structured Output은 `state`, `answer`, `citationsUsed`, `abstainReason`을 강�
 2. 기본 `gpt-5.6-terra/medium`, 규칙 기반 `gpt-5.6-sol/high` 승격 승인
 3. `text-embedding-3-large/3072`를 PoC 기준선으로 승인
 4. OpenAI File Search·Vector Store와 Agent Tool을 P1에서 사용하지 않는 경계 승인
-5. 운영 전 API Project의 ZDR·MAM·Data Residency 적격성 확인을 필수 Gate로 승인
+5. Zero Data Retention을 사용하지 않고 향후 Gate에서도 제외하며, 데이터 등급 확대는 TechFlow 제품 보안심사로 결정
 6. ChatGPT Work와 Codex는 운영·개발 보조 도구이며 제품 런타임이 아니라는 역할 구분 승인
 
 ## 9. 참고 자료

@@ -1,0 +1,61 @@
+{
+  "contractVersion": "1.0",
+  "issue": 45,
+  "activepiecesVersion": "0.86.3",
+  "schemaVersion": 22,
+  "gatewayBaseUrl": "http://techflow-ai-gateway:8090",
+  "flows": [
+    {
+      "logicalId": "rag-source-discovery-v1",
+      "displayName": "TechFlow - Source Discovery and Scan v1",
+      "route": "discovery",
+      "operations": [
+        {"name": "discover_candidate", "method": "POST", "url": "/v1/source-profiles/{{trigger['output']['body']['sourceProfileId']}}/discoveries", "body": {"detectedBy": "activepieces-github"}},
+        {"name": "scan_candidate", "method": "POST", "url": "/v1/source-versions/{{discover_candidate['output']['body']['data']['sourceVersionId']}}/scan", "body": {"scannedBy": "activepieces"}}
+      ]
+    },
+    {
+      "logicalId": "rag-source-review-index-v1",
+      "displayName": "TechFlow - Source Review and Index v1",
+      "route": "review",
+      "operations": [
+        {"name": "approve_pinned_version", "method": "POST", "url": "/v1/source-versions/{{trigger['output']['body']['sourceVersionId']}}/approve", "body": {"approvedBy": "{{trigger['output']['body']['reviewer']}}", "expectedCommit": "{{trigger['output']['body']['expectedCommit']}}", "decisionNote": "{{trigger['output']['body']['decisionNote']}}", "acceptQuarantineExclusions": "{{trigger['output']['body']['acceptQuarantineExclusions']}}"}},
+        {"name": "create_ingestion", "method": "POST", "url": "/v1/sources/{{trigger['output']['body']['sourceId']}}/ingestions", "body": {"requestedBy": "activepieces"}},
+        {"name": "run_ingestion", "method": "POST", "url": "/v1/jobs/{{create_ingestion['output']['body']['data']['jobId']}}/run", "body": {"requestedBy": "activepieces"}}
+      ]
+    },
+    {
+      "logicalId": "rag-compatibility-approval-v1",
+      "displayName": "TechFlow - Compatibility Approval v1",
+      "route": "compatibility",
+      "operations": [
+        {"name": "create_compatibility_set", "method": "POST", "url": "/v1/compatibility-sets", "body": {"name": "{{trigger['output']['body']['name']}}", "product": "ABLESTACK", "productVersion": "{{trigger['output']['body']['productVersion']}}", "members": "{{trigger['output']['body']['members']}}"}}
+      ]
+    },
+    {
+      "logicalId": "rag-source-withdrawal-v1",
+      "displayName": "TechFlow - Source Withdrawal and Delete v1",
+      "route": "withdraw",
+      "operations": [
+        {"name": "withdraw_source", "method": "DELETE", "url": "/v1/sources/{{trigger['output']['body']['sourceId']}}"},
+        {"name": "run_deletion", "method": "POST", "url": "/v1/jobs/{{withdraw_source['output']['body']['data']['jobId']}}/run", "body": {"requestedBy": "activepieces"}}
+      ]
+    },
+    {
+      "logicalId": "rag-golden-evaluation-v1",
+      "displayName": "TechFlow - Golden Set Evaluation v1",
+      "route": "evaluation",
+      "operations": [
+        {"name": "create_evaluation", "method": "POST", "url": "/v1/evaluations/runs", "body": {"name": "{{trigger['output']['body']['name']}}", "sourceProfileIds": ["{{trigger['output']['body']['sourceProfileId']}}"], "providerProfileId": "OPENAI_RAG_DEFAULT_V1", "requestedBy": "activepieces"}},
+        {"name": "read_evaluation_status", "method": "GET", "url": "/v1/evaluations/runs/{{create_evaluation['output']['body']['data']['runId']}}"}
+      ]
+    }
+  ],
+  "security": {
+    "policyOwner": "techflow-ai-gateway",
+    "reviewer": "dhslove",
+    "automaticApproval": false,
+    "rawSourceInFlowRun": false,
+    "credentialsInBundle": false
+  }
+}

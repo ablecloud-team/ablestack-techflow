@@ -1,5 +1,16 @@
 # ABLESTACK TechFlow
 
+## Issue #45 Activepieces 수집·재색인·평가 연동
+
+TechFlow AI Gateway 0.5.0과 Event Gateway 0.3.0을 Activepieces의 5개 시각적 Flow에 연결했습니다. GitHub Push로 9개 Source Profile의 후보 Commit을 감지하고, `dhslove` Reviewer 승인, 고정 Commit 수집·색인, Compatibility 승인, 철회·삭제, Golden Set 평가를 Correlation ID로 추적합니다. Activepieces는 Orchestration만 담당하고 승인·등급·Compatibility·삭제·평가 정책은 TechFlow AI Gateway가 판정합니다.
+
+- [Issue #45 구현·검증 완료 보고서](docs/reports/issue-45-activepieces-rag-orchestration-validation.md)
+- [Activepieces RAG Orchestration 배포·운영 Runbook](docs/runbooks/activepieces-rag-orchestration.md)
+- [Activepieces RAG Orchestration 결정 기록](docs/decisions/techflow-activepieces-rag-orchestration.json)
+- [완료 보고서 PDF](output/pdf/techflow-activepieces-rag-orchestration-report.pdf)
+- [발표자료 PDF](output/pdf/techflow-activepieces-rag-orchestration-presentation.pdf)
+- [발표자료 PPTX](output/presentation/techflow-activepieces-rag-orchestration.pptx)
+
 ## Issue #44 OpenAI Responses·근거 답변 구현
 
 TechFlow AI Gateway 0.4.0은 로컬 Hybrid Retrieval 결과를 OpenAI Responses API와 결합해 근거 답변·보류·실패 상태를 구현했습니다. 단일 Repository·Commit은 `gpt-5.6-terra/medium`, 승인된 복수 구성요소는 `gpt-5.6-sol/high`로 결정론적으로 라우팅하며, strict JSON Schema와 Citation 사후 검증을 적용합니다. 시험 서버의 실 호출은 Citation 5개의 `ANSWERED`, 근거 없는 범위는 Provider 생성 호출 없는 `ABSTAINED`를 반환했고 v0.3.0 롤백과 v0.4.0 복귀까지 통과했습니다.

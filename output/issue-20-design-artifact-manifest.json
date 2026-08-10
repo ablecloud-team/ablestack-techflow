@@ -8,14 +8,14 @@
   "files": [
     {
       "path": "README.md",
-      "size": 17109,
-      "sha256": "8D6ABF980FEF09700C3515EA853779DB8327A5F7086DD0E050D56FD54912F4EC",
+      "size": 22233,
+      "sha256": "8467171C7F2BF2B62672A9C9B7A4CFC71100333BEF96B9CBC9AD5C2C68AA46AA",
       "contentMode": "text-lf-normalized"
     },
     {
       "path": "docs/plans/techflow-product-roadmap.md",
-      "size": 33258,
-      "sha256": "4987FE965FD5F5E18A74E227DA2B8ED3B59284629F9245DC7FC1CA867F8DD205",
+      "size": 33785,
+      "sha256": "5FCF541F452998B09BA1B713B18E7735371A847D8F0ED01B722C77DFC4370237",
       "contentMode": "text-lf-normalized"
     },
     {
@@ -26,14 +26,14 @@
     },
     {
       "path": "docs/adr/0009-openai-runtime-integration.md",
-      "size": 9746,
-      "sha256": "89899663A4250AF51E78B07F75CAAFFF2AF4DAFCBFD1A99EA46CF52E05D288D9",
+      "size": 10131,
+      "sha256": "936FB4F24A4EAFAED4500F9E57232C11D0E5901712B4F02A8954DA6E6E07AD5F",
       "contentMode": "text-lf-normalized"
     },
     {
       "path": "docs/plans/issue-20-rag-poc-design.md",
-      "size": 23839,
-      "sha256": "EBBAC4CCFF1404BAD63BB1D0110C1F6577DFA387A4AC0081863D02479B77F7D0",
+      "size": 24103,
+      "sha256": "92A113FEAC423ECE2F611823D25066FD20596C3FFF0DCAC2D5EF52F0D10267AD",
       "contentMode": "text-lf-normalized"
     },
     {
@@ -44,14 +44,14 @@
     },
     {
       "path": "docs/runbooks/rag-poc-development.md",
-      "size": 11012,
-      "sha256": "4EBD555481C990E27B8E2120FA49242C1978F1A42A388BD14F5B898827BC8AE5",
+      "size": 11627,
+      "sha256": "866F3E589B56796AF0F4E2F0898B828B90656624270D6C5D40608C92756EB40D",
       "contentMode": "text-lf-normalized"
     },
     {
       "path": "docs/reports/issue-20-rag-poc-design-review.md",
-      "size": 11459,
-      "sha256": "F502BC94161327CB3E0737180E43005E3DEA411743DE1D661B672512208A6183",
+      "size": 11656,
+      "sha256": "8AE06BED5F54B6AB9A5967C5FCB607F698F9C47E432925DEB657857C7A9ACA47",
       "contentMode": "text-lf-normalized"
     },
     {
@@ -80,8 +80,8 @@
     },
     {
       "path": "output/pdf/techflow-rag-poc-design-report.pdf",
-      "size": 134711,
-      "sha256": "FE785BB4DEAB7B26119709FA72A1807B46950A1727B42B11261BC5684D389C80",
+      "size": 134815,
+      "sha256": "78079EDB8F09276872615BC32A8FA2BB624466775C61146D9E22B0E64034A11E",
       "contentMode": "binary-raw"
     },
     {

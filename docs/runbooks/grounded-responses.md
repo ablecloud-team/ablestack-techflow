@@ -136,9 +136,9 @@ docker compose --env-file .env \
 
 Health에서 `0.3.0`을 확인한 뒤 문제 해결 후 `issue-44`로 다시 전개한다. 최초 실증은 `0.4.0 → 0.3.0 → 0.4.0`과 기존 34 File·64 Chunk·64 Embedding 보존을 확인했다.
 
-## 9. OpenAI Data Controls 운영 확인
+## 9. OpenAI 데이터 최소화 운영 정책
 
-`store=false`는 API 요청의 애플리케이션 저장을 끄지만 그 자체가 Zero Data Retention을 보장하지 않는다. Organization Dashboard의 Data Controls에서 해당 Project의 ZDR 또는 Modified Abuse Monitoring 적용 상태를 운영자가 확인해야 한다. 이 확인은 D0 PoC 구현을 막지 않지만 D1 이상 확장 전 필수 Gate다.
+제품 책임자의 2026-08-10 결정에 따라 Zero Data Retention은 사용하지 않으며 Dashboard 적격성·승인·적용 상태를 구현·배포·데이터 등급 확대 Gate로 확인하지 않는다. `store=false`는 애플리케이션 수준 데이터 최소화 통제로 계속 유지한다. D1 이상 확대는 Source 승인, 비식별화·최소화, 접근권한, 감사, 보존·삭제 및 사고 대응을 포함한 TechFlow 제품 보안심사로 결정한다.
 
 - [OpenAI API 데이터 제어](https://developers.openai.com/api/docs/guides/your-data)
 - [Structured Outputs](https://developers.openai.com/api/docs/guides/structured-outputs)

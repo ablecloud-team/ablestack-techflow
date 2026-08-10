@@ -128,6 +128,7 @@ class ApiContractTest(unittest.TestCase):
         )
         self.assertEqual(202, response.status_code, response.text)
         job = response.json()["data"]
+        self.assertEqual(CORRELATION, job["correlationId"])
         status_response = self.client.get(
             f"/v1/jobs/{job['jobId']}", headers={"X-Correlation-Id": CORRELATION}
         )
@@ -141,6 +142,14 @@ class ApiContractTest(unittest.TestCase):
         self.assertEqual("ACTIVE", self.client.get(
             f"/v1/source-versions/{source['sourceVersionId']}", headers={"X-Correlation-Id": CORRELATION}
         ).json()["data"]["state"])
+        repeated_scan = self.client.post(
+            f"/v1/source-versions/{source['sourceVersionId']}/scan",
+            json={"scannedBy": "activepieces"},
+            headers={"X-Correlation-Id": CORRELATION,
+                     "Idempotency-Key": f"test-repeat-scan-{source['sourceVersionId']}"},
+        )
+        self.assertEqual(200, repeated_scan.status_code, repeated_scan.text)
+        self.assertEqual("ACTIVE", repeated_scan.json()["data"]["state"])
 
     def test_compatibility_set_accepts_only_approved_version(self) -> None:
         source = self.create_source("test-create-source-compat")
@@ -267,6 +276,7 @@ class ApiContractTest(unittest.TestCase):
         )
         self.assertEqual(202, response.status_code, response.text)
         run_id = response.json()["data"]["runId"]
+        self.assertEqual(CORRELATION, response.json()["data"]["correlationId"])
         get_response = self.client.get(
             f"/v1/evaluations/runs/{run_id}", headers={"X-Correlation-Id": CORRELATION}
         )
