@@ -23,7 +23,7 @@ def main() -> int:
                 "bytes": path.stat().st_size,
             }
         )
-    data = {"schemaVersion": "2.0", "issue": 42, "files": files}
+    data = {"schemaVersion": "2.0", "issue": 43, "files": files}
     OUTPUT.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
     print(f"migration_manifest={OUTPUT} files={len(files)}")
     return 0

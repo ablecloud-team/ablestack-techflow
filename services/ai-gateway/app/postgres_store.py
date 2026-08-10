@@ -7,6 +7,7 @@ from typing import Any
 from uuid import UUID, uuid4
 
 from .config import Settings
+from .indexing import build_index_bundle, reciprocal_rank_fusion
 from .source_registry import SOURCE_PROFILES, get_profile, list_profiles, validate_candidate_contract
 from .store import ConflictError, InvalidBoundaryError, InvalidStateError, NotFoundError
 
@@ -28,6 +29,7 @@ class PostgresStore:
             timeout=5,
         )
         self._pool.open(wait=True, timeout=10)
+        self._provider_mode = settings.provider_mode
 
     def close(self) -> None:
         self._pool.close()
@@ -42,10 +44,10 @@ class PostgresStore:
                 "process": "ready",
                 "database": "ready",
                 "vector": "ready" if row and row["vector_ready"] else "missing",
-                "provider": "mock",
+                "provider": self._provider_mode,
             }
         except Exception:
-            return {"process": "ready", "database": "unavailable", "vector": "unknown", "provider": "mock"}
+            return {"process": "ready", "database": "unavailable", "vector": "unknown", "provider": self._provider_mode}
 
     @staticmethod
     def _source_payload(row: dict[str, Any]) -> dict[str, Any]:
@@ -92,6 +94,10 @@ class PostgresStore:
             "requestedBy": row["requested_by"],
             "createdAt": row["created_at"],
             "updatedAt": row["updated_at"],
+            "startedAt": row.get("started_at"),
+            "completedAt": row.get("completed_at"),
+            "attempt": row.get("attempt", 0),
+            "metrics": row.get("metrics", {}),
         }
 
     def _source_by_version(self, connection: Any, version_id: UUID) -> dict[str, Any]:
@@ -587,6 +593,18 @@ class PostgresStore:
                 raise NotFoundError("source not found")
             connection.execute("UPDATE rag_source SET state='WITHDRAWN', updated_at=now() WHERE id=%s", (source_id,))
             connection.execute("UPDATE rag_source_version SET state='WITHDRAWN' WHERE source_id=%s", (source_id,))
+            connection.execute(
+                "UPDATE rag_chunk SET active=false WHERE source_version_id IN (SELECT id FROM rag_source_version WHERE source_id=%s)",
+                (source_id,),
+            )
+            connection.execute(
+                "UPDATE rag_code_symbol SET active=false WHERE source_version_id IN (SELECT id FROM rag_source_version WHERE source_id=%s)",
+                (source_id,),
+            )
+            connection.execute(
+                "UPDATE rag_code_relation SET active=false WHERE source_version_id IN (SELECT id FROM rag_source_version WHERE source_id=%s)",
+                (source_id,),
+            )
             job_id = uuid4()
             row = connection.execute(
                 """
@@ -613,6 +631,216 @@ class PostgresStore:
             if not row:
                 raise NotFoundError("job not found")
             return self._job_payload(row)
+
+    @staticmethod
+    def _vector_literal(values: tuple[float, ...]) -> str:
+        return "[" + ",".join(format(value, ".10g") for value in values) + "]"
+
+    def _record_embedding_call(
+        self, connection: Any, result: Any, correlation_id: str,
+        *, query_id: UUID | None = None, ingestion_job_id: UUID | None = None,
+    ) -> None:
+        connection.execute(
+            """
+            INSERT INTO rag_provider_call
+                (id, query_id, ingestion_job_id, provider, surface, provider_profile_id, profile_version,
+                 requested_model_id, returned_model_id, embedding_dimension, provider_request_id,
+                 input_tokens, latency_ms, status, correlation_id)
+            VALUES (%s, %s, %s, %s, 'embeddings-api', 'OPENAI_EMBEDDING_V1', 1,
+                    %s, %s, 3072, %s, %s, %s, 'SUCCEEDED', %s)
+            """,
+            (uuid4(), query_id, ingestion_job_id, result.provider, result.requested_model,
+             result.returned_model, result.request_id, result.input_tokens, result.latency_ms, correlation_id),
+        )
+
+    def run_job(
+        self, job_id: UUID, request: dict[str, Any], idempotency_key: str,
+        correlation_id: str, adapter: Any, batch_size: int,
+    ) -> dict[str, Any]:
+        from psycopg.types.json import Jsonb
+
+        with self._pool.connection() as connection:
+            repeated = connection.execute(
+                "SELECT * FROM rag_ingestion_job WHERE execution_idempotency_key=%s", (idempotency_key,)
+            ).fetchone()
+            if repeated:
+                return self._job_payload(repeated)
+            job = connection.execute("SELECT * FROM rag_ingestion_job WHERE id=%s FOR UPDATE", (job_id,)).fetchone()
+            if not job:
+                raise NotFoundError("job not found")
+            if job["state"] != "PENDING":
+                raise InvalidStateError("only pending jobs can run")
+            job = connection.execute(
+                """UPDATE rag_ingestion_job SET state='RUNNING', attempt=attempt+1, started_at=now(),
+                   execution_idempotency_key=%s, updated_at=now() WHERE id=%s RETURNING *""",
+                (idempotency_key, job_id),
+            ).fetchone()
+
+        if job["job_type"] == "DELETION":
+            with self._pool.connection() as connection:
+                counts = connection.execute(
+                    """
+                    SELECT
+                      (SELECT count(*) FROM rag_code_relation WHERE source_version_id IN
+                        (SELECT id FROM rag_source_version WHERE source_id=%s)) AS relations,
+                      (SELECT count(*) FROM rag_code_symbol WHERE source_version_id IN
+                        (SELECT id FROM rag_source_version WHERE source_id=%s)) AS symbols,
+                      (SELECT count(*) FROM rag_chunk_embedding e JOIN rag_chunk c ON c.id=e.chunk_id
+                        WHERE c.source_version_id IN (SELECT id FROM rag_source_version WHERE source_id=%s)) AS embeddings,
+                      (SELECT count(*) FROM rag_chunk WHERE source_version_id IN
+                        (SELECT id FROM rag_source_version WHERE source_id=%s)) AS chunks
+                    """, (job["source_id"],) * 4,
+                ).fetchone()
+                connection.execute("DELETE FROM rag_code_relation WHERE source_version_id IN (SELECT id FROM rag_source_version WHERE source_id=%s)", (job["source_id"],))
+                connection.execute("DELETE FROM rag_code_symbol WHERE source_version_id IN (SELECT id FROM rag_source_version WHERE source_id=%s)", (job["source_id"],))
+                connection.execute("DELETE FROM rag_chunk WHERE source_version_id IN (SELECT id FROM rag_source_version WHERE source_id=%s)", (job["source_id"],))
+                metrics = {"relationsDeleted": counts["relations"], "symbolsDeleted": counts["symbols"],
+                           "embeddingsDeleted": counts["embeddings"], "chunksDeleted": counts["chunks"]}
+                connection.execute(
+                    """UPDATE rag_deletion_ledger SET state='SUCCEEDED', relations_deleted=%s, symbols_deleted=%s,
+                       embeddings_deleted=%s, chunks_deleted=%s, completed_at=now() WHERE job_id=%s""",
+                    (counts["relations"], counts["symbols"], counts["embeddings"], counts["chunks"], job_id),
+                )
+                updated = connection.execute(
+                    "UPDATE rag_ingestion_job SET state='SUCCEEDED', metrics=%s, completed_at=now(), updated_at=now() WHERE id=%s RETURNING *",
+                    (Jsonb(metrics), job_id),
+                ).fetchone()
+                return self._job_payload(updated)
+
+        try:
+            with self._pool.connection() as connection:
+                files = connection.execute(
+                    """SELECT f.path, f.source_kind AS "sourceKind", b.content FROM rag_source_file f
+                       JOIN rag_source_blob b ON b.id=f.source_blob_id
+                       WHERE f.source_version_id=%s AND f.decision='ELIGIBLE' ORDER BY f.path""",
+                    (job["source_version_id"],),
+                ).fetchall()
+            bundle = build_index_bundle(job["source_version_id"], files, adapter, batch_size)
+            with self._pool.connection() as connection:
+                version = connection.execute(
+                    "SELECT source_id, state, eligible_file_count FROM rag_source_version WHERE id=%s FOR UPDATE",
+                    (job["source_version_id"],),
+                ).fetchone()
+                if not version or version["state"] != "INDEXING":
+                    raise InvalidStateError("source version is not indexing")
+                if bundle.indexed_file_count != version["eligible_file_count"]:
+                    raise ConflictError("partial indexing cannot activate a source version")
+                connection.execute("DELETE FROM rag_code_relation WHERE source_version_id=%s", (job["source_version_id"],))
+                connection.execute("DELETE FROM rag_code_symbol WHERE source_version_id=%s", (job["source_version_id"],))
+                connection.execute("DELETE FROM rag_chunk WHERE source_version_id=%s", (job["source_version_id"],))
+                for chunk in bundle.chunks:
+                    connection.execute(
+                        """INSERT INTO rag_chunk
+                           (id, source_version_id, source_kind, path, path_hash, symbol, start_line, end_line,
+                            content, content_hash, parser_status, parser_profile_id, chunk_index, token_count)
+                           VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+                        (chunk.id, chunk.source_version_id, chunk.source_kind, chunk.path, chunk.path_hash, chunk.symbol,
+                         chunk.start_line, chunk.end_line, chunk.content, chunk.content_hash, chunk.parser_status,
+                         chunk.parser_profile_id, chunk.chunk_index, max(1, len(chunk.content) // 4)),
+                    )
+                for chunk_id, vector in bundle.embeddings:
+                    connection.execute(
+                        "INSERT INTO rag_chunk_embedding (chunk_id, embedding_profile_id, embedding) VALUES (%s, '00000000-0000-0000-0000-000000000001', %s::vector)",
+                        (chunk_id, self._vector_literal(vector)),
+                    )
+                for symbol in bundle.symbols:
+                    connection.execute(
+                        """INSERT INTO rag_code_symbol
+                           (id, source_version_id, chunk_id, language, package_name, qualified_name, signature, path, start_line, end_line)
+                           VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+                        (symbol.id, symbol.source_version_id, symbol.chunk_id, symbol.language, symbol.package_name,
+                         symbol.qualified_name, symbol.signature, symbol.path, symbol.start_line, symbol.end_line),
+                    )
+                symbol_names = {item.qualified_name: item.id for item in bundle.symbols}
+                for relation in bundle.relations:
+                    connection.execute(
+                        """INSERT INTO rag_code_relation
+                           (id, source_version_id, from_symbol_id, to_symbol_id, to_qualified_name, relation_type, confidence)
+                           VALUES (%s,%s,%s,%s,%s,%s,%s)""",
+                        (relation.id, relation.source_version_id, relation.from_symbol_id,
+                         symbol_names.get(relation.to_qualified_name), relation.to_qualified_name,
+                         relation.relation_type, relation.confidence),
+                    )
+                for audit in bundle.provider_audits:
+                    self._record_embedding_call(connection, audit, correlation_id, ingestion_job_id=job_id)
+                connection.execute("UPDATE rag_chunk SET active=false WHERE source_version_id IN (SELECT id FROM rag_source_version WHERE source_id=%s AND state='ACTIVE')", (version["source_id"],))
+                connection.execute("UPDATE rag_code_symbol SET active=false WHERE source_version_id IN (SELECT id FROM rag_source_version WHERE source_id=%s AND state='ACTIVE')", (version["source_id"],))
+                connection.execute("UPDATE rag_code_relation SET active=false WHERE source_version_id IN (SELECT id FROM rag_source_version WHERE source_id=%s AND state='ACTIVE')", (version["source_id"],))
+                connection.execute("UPDATE rag_source_version SET state='WITHDRAWN' WHERE source_id=%s AND state='ACTIVE'", (version["source_id"],))
+                connection.execute("UPDATE rag_source_version SET state='ACTIVE', indexed_file_count=%s WHERE id=%s", (bundle.indexed_file_count, job["source_version_id"]))
+                connection.execute("UPDATE rag_source SET state='ACTIVE', updated_at=now() WHERE id=%s", (version["source_id"],))
+                metrics = {"indexedFiles": bundle.indexed_file_count, "chunks": len(bundle.chunks),
+                           "symbols": len(bundle.symbols), "relations": len(bundle.relations),
+                           "embeddingBatches": len(bundle.provider_audits), "parsedFiles": bundle.parsed_file_count,
+                           "fallbackFiles": bundle.fallback_file_count}
+                updated = connection.execute(
+                    """UPDATE rag_ingestion_job SET state='SUCCEEDED', failure_class=NULL, error_code=NULL,
+                       metrics=%s, completed_at=now(), updated_at=now() WHERE id=%s RETURNING *""",
+                    (Jsonb(metrics), job_id),
+                ).fetchone()
+                return self._job_payload(updated)
+        except Exception:
+            with self._pool.connection() as connection:
+                connection.execute("UPDATE rag_source_version SET state='APPROVED' WHERE id=%s AND state='INDEXING'", (job["source_version_id"],))
+                connection.execute("UPDATE rag_source SET state='APPROVED', updated_at=now() WHERE id=%s", (job["source_id"],))
+                connection.execute("UPDATE rag_ingestion_job SET state='FAILED', failure_class='TERMINAL', error_code='INDEXING_FAILED', completed_at=now(), updated_at=now() WHERE id=%s", (job_id,))
+            raise
+
+    def retrieve(self, request: dict[str, Any], embedding_result: Any, correlation_id: str) -> dict[str, Any]:
+        query_id = UUID(str(request["queryId"]))
+        query_vector = self._vector_literal(embedding_result.vectors[0])
+        with self._pool.connection() as connection:
+            if request.get("compatibilitySetId"):
+                version_rows = connection.execute(
+                    "SELECT source_version_id AS id FROM rag_compatibility_set_source WHERE compatibility_set_id=%s",
+                    (request["compatibilitySetId"],),
+                ).fetchall()
+                if not version_rows:
+                    raise NotFoundError("compatibility set not found")
+                version_ids = [item["id"] for item in version_rows]
+            else:
+                version_rows = connection.execute(
+                    """SELECT v.id FROM rag_source_version v JOIN rag_source s ON s.id=v.source_id
+                       WHERE v.state='ACTIVE' AND s.source_profile_id=ANY(%s)""",
+                    (request.get("sourceProfileIds") or [],),
+                ).fetchall()
+                version_ids = [item["id"] for item in version_rows]
+            if not version_ids:
+                self._record_embedding_call(connection, embedding_result, correlation_id, query_id=query_id)
+                return {"queryId": query_id, "results": [], "resultCount": 0,
+                        "provider": embedding_result.provider, "providerCalled": embedding_result.provider == "openai"}
+            base = """SELECT c.id, c.source_kind, c.path, c.start_line, c.end_line, c.symbol, c.content,
+                     s.repository, s.branch, v.commit_sha
+                     FROM rag_chunk c JOIN rag_source_version v ON v.id=c.source_version_id
+                     JOIN rag_source s ON s.id=v.source_id"""
+            fts = connection.execute(
+                base + " WHERE c.active AND v.state='ACTIVE' AND c.source_version_id=ANY(%s) AND c.search_document @@ plainto_tsquery('simple', %s) ORDER BY ts_rank(c.search_document, plainto_tsquery('simple', %s)) DESC, c.id LIMIT 20",
+                (version_ids, request["question"], request["question"]),
+            ).fetchall()
+            identifier = connection.execute(
+                base + " WHERE c.active AND v.state='ACTIVE' AND c.source_version_id=ANY(%s) AND c.symbol IS NOT NULL ORDER BY similarity(c.symbol, %s) DESC, c.id LIMIT 20",
+                (version_ids, request["question"]),
+            ).fetchall()
+            vector = connection.execute(
+                base + " JOIN rag_chunk_embedding e ON e.chunk_id=c.id WHERE c.active AND v.state='ACTIVE' AND c.source_version_id=ANY(%s) ORDER BY e.embedding <=> %s::vector, c.id LIMIT 30",
+                (version_ids, query_vector),
+            ).fetchall()
+            lookup = {row["id"]: row for row in [*fts, *identifier, *vector]}
+            kinds = {key: row["source_kind"] for key, row in lookup.items()}
+            ranked = reciprocal_rank_fusion(
+                {"fts": [row["id"] for row in fts], "identifier": [row["id"] for row in identifier],
+                 "vector": [row["id"] for row in vector]}, kinds,
+            )[:10]
+            self._record_embedding_call(connection, embedding_result, correlation_id, query_id=query_id)
+        results = []
+        for chunk_id, score, channels in ranked:
+            row = lookup[chunk_id]
+            results.append({"chunkId": chunk_id, "repository": row["repository"], "branch": row["branch"],
+                            "commit": row["commit_sha"], "path": row["path"], "startLine": row["start_line"],
+                            "endLine": row["end_line"], "symbol": row["symbol"], "score": score,
+                            "channels": channels, "sourceKind": row["source_kind"], "content": row["content"]})
+        return {"queryId": query_id, "results": results, "resultCount": len(results),
+                "provider": embedding_result.provider, "providerCalled": embedding_result.provider == "openai"}
 
     def create_evaluation_run(self, request: dict[str, Any], idempotency_key: str) -> dict[str, Any]:
         with self._pool.connection() as connection:

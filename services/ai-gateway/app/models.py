@@ -105,6 +105,13 @@ class JobCompletionRequest(StrictModel):
         return self
 
 
+class JobRunRequest(StrictModel):
+    requested_by: Annotated[str, StringConstraints(pattern=r"^[A-Za-z0-9_.:@-]{3,128}$")] = Field(alias="requestedBy")
+    provider_profile_id: Literal["OPENAI_EMBEDDING_V1"] = Field(
+        default="OPENAI_EMBEDDING_V1", alias="providerProfileId"
+    )
+
+
 class CompatibilityMember(StrictModel):
     source_version_id: UUID = Field(alias="sourceVersionId")
     required: bool = True

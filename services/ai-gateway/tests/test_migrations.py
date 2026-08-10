@@ -10,11 +10,12 @@ UP_0001 = (ROOT / "migrations" / "0001_schema_up.sql").read_text(encoding="utf-8
 UP_0002 = (ROOT / "migrations" / "0002_source_registry_up.sql").read_text(encoding="utf-8")
 UP_0003 = (ROOT / "migrations" / "0003_source_mirror_up.sql").read_text(encoding="utf-8")
 UP_0004 = (ROOT / "migrations" / "0004_source_mirror_policy_up.sql").read_text(encoding="utf-8")
+UP_0005 = (ROOT / "migrations" / "0005_parser_embedding_retrieval_up.sql").read_text(encoding="utf-8")
 DOWN_0001 = (ROOT / "migrations" / "0001_schema_down.sql").read_text(encoding="utf-8")
 DOWN_0002 = (ROOT / "migrations" / "0002_source_registry_down.sql").read_text(encoding="utf-8")
 DOWN_0003 = (ROOT / "migrations" / "0003_source_mirror_down.sql").read_text(encoding="utf-8")
 DOWN_0004 = (ROOT / "migrations" / "0004_source_mirror_policy_down.sql").read_text(encoding="utf-8")
-UP = UP_0001 + "\n" + UP_0002 + "\n" + UP_0003 + "\n" + UP_0004
+UP = UP_0001 + "\n" + UP_0002 + "\n" + UP_0003 + "\n" + UP_0004 + "\n" + UP_0005
 DOWN = DOWN_0004 + "\n" + DOWN_0003 + "\n" + DOWN_0002 + "\n" + DOWN_0001
 BOOTSTRAP = (ROOT / "migrations" / "0000_extensions_roles_up.sql").read_text(encoding="utf-8")
 
@@ -78,6 +79,11 @@ class MigrationContractTest(unittest.TestCase):
 
     def test_public_table_privileges_are_revoked(self) -> None:
         self.assertIn("REVOKE ALL ON ALL TABLES IN SCHEMA public FROM PUBLIC", UP)
+
+    def test_issue43_execution_and_provider_subject_are_persisted(self) -> None:
+        self.assertIn("execution_idempotency_key", UP_0005)
+        self.assertIn("num_nonnulls(query_id, evaluation_run_id, ingestion_job_id) = 1", UP_0005)
+        self.assertIn("parser_profile_id", UP_0005)
 
 
 if __name__ == "__main__":

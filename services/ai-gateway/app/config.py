@@ -16,6 +16,8 @@ class Settings:
     store_backend: str = "memory"
     database_dsn: str | None = None
     provider_mode: str = "mock"
+    openai_api_key_file: str | None = None
+    embedding_batch_size: int = 64
     classification: str = "D0"
     log_level: str = "INFO"
     database_pool_min: int = 1
@@ -28,6 +30,8 @@ class Settings:
             store_backend=os.getenv("TECHFLOW_RAG_STORE", "memory").strip().lower(),
             database_dsn=os.getenv("TECHFLOW_RAG_DATABASE_DSN") or None,
             provider_mode=os.getenv("TECHFLOW_RAG_PROVIDER_MODE", "mock").strip().lower(),
+            openai_api_key_file=os.getenv("TECHFLOW_OPENAI_API_KEY_FILE") or None,
+            embedding_batch_size=int(os.getenv("TECHFLOW_EMBEDDING_BATCH_SIZE", "64")),
             classification=os.getenv("TECHFLOW_RAG_CLASSIFICATION", "D0").strip().upper(),
             log_level=os.getenv("TECHFLOW_RAG_LOG_LEVEL", "INFO").strip().upper(),
             database_pool_min=int(os.getenv("TECHFLOW_RAG_DATABASE_POOL_MIN", "1")),
@@ -41,8 +45,12 @@ class Settings:
             raise ConfigurationError("TECHFLOW_RAG_STORE must be memory or postgres")
         if self.store_backend == "postgres" and not self.database_dsn:
             raise ConfigurationError("TECHFLOW_RAG_DATABASE_DSN is required for postgres")
-        if self.provider_mode != "mock":
-            raise ConfigurationError("Issue #41 supports mock provider mode only")
+        if self.provider_mode not in {"mock", "openai"}:
+            raise ConfigurationError("TECHFLOW_RAG_PROVIDER_MODE must be mock or openai")
+        if self.provider_mode == "openai" and not self.openai_api_key_file:
+            raise ConfigurationError("TECHFLOW_OPENAI_API_KEY_FILE is required for openai mode")
+        if not 1 <= self.embedding_batch_size <= 128:
+            raise ConfigurationError("TECHFLOW_EMBEDDING_BATCH_SIZE must be between 1 and 128")
         if self.classification != "D0":
             raise ConfigurationError("Issue #41 permits D0 data only")
         if self.database_pool_min < 0 or self.database_pool_max < max(1, self.database_pool_min):
@@ -51,12 +59,14 @@ class Settings:
     def __repr__(self) -> str:
         return (
             "Settings(environment={!r}, store_backend={!r}, database_dsn=<redacted>, "
-            "provider_mode={!r}, classification={!r}, log_level={!r}, "
+            "provider_mode={!r}, openai_api_key_file=<redacted>, embedding_batch_size={!r}, "
+            "classification={!r}, log_level={!r}, "
             "database_pool_min={!r}, database_pool_max={!r})"
         ).format(
             self.environment,
             self.store_backend,
             self.provider_mode,
+            self.embedding_batch_size,
             self.classification,
             self.log_level,
             self.database_pool_min,

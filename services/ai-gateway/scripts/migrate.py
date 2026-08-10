@@ -58,7 +58,15 @@ def verify(connection: psycopg.Connection) -> None:
     ).fetchone()[0]
     if profile_count != 9:
         raise SystemExit(f"source profile registry mismatch expected=9 actual={profile_count}")
-    print(f"schema=valid tables={len(EXPECTED_TABLES)} extensions=2 sourceProfiles=9")
+    issue43_columns = connection.execute(
+        "SELECT count(*) FROM information_schema.columns WHERE table_schema='public' AND "
+        "((table_name='rag_chunk' AND column_name IN ('parser_profile_id','chunk_index','token_count')) OR "
+        "(table_name='rag_ingestion_job' AND column_name IN ('execution_idempotency_key','started_at','completed_at','metrics')) OR "
+        "(table_name='rag_provider_call' AND column_name='ingestion_job_id'))"
+    ).fetchone()[0]
+    if issue43_columns != 8:
+        raise SystemExit(f"Issue 43 schema mismatch expected=8 actual={issue43_columns}")
+    print(f"schema=valid tables={len(EXPECTED_TABLES)} extensions=2 sourceProfiles=9 issue43Columns=8")
 
 
 def main() -> int:
@@ -71,6 +79,11 @@ def main() -> int:
         if args.direction == "down":
             if not args.allow_destructive_rollback:
                 raise SystemExit("--allow-destructive-rollback is required")
+            issue43_present = connection.execute(
+                "SELECT 1 FROM information_schema.columns WHERE table_name='rag_ingestion_job' AND column_name='metrics'"
+            ).fetchone()
+            if issue43_present:
+                connection.execute((MIGRATIONS / "0005_parser_embedding_retrieval_down.sql").read_text(encoding="utf-8"))
             if "rag_source_mirror" in table_names(connection):
                 connection.execute((MIGRATIONS / "0004_source_mirror_policy_down.sql").read_text(encoding="utf-8"))
                 connection.execute((MIGRATIONS / "0003_source_mirror_down.sql").read_text(encoding="utf-8"))
@@ -88,6 +101,11 @@ def main() -> int:
         if "rag_source_mirror" not in table_names(connection):
             connection.execute((MIGRATIONS / "0003_source_mirror_up.sql").read_text(encoding="utf-8"))
         connection.execute((MIGRATIONS / "0004_source_mirror_policy_up.sql").read_text(encoding="utf-8"))
+        issue43_present = connection.execute(
+            "SELECT 1 FROM information_schema.columns WHERE table_name='rag_ingestion_job' AND column_name='metrics'"
+        ).fetchone()
+        if not issue43_present:
+            connection.execute((MIGRATIONS / "0005_parser_embedding_retrieval_up.sql").read_text(encoding="utf-8"))
         verify(connection)
     return 0
 

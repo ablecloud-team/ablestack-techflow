@@ -23,6 +23,7 @@ from .models import (
     EvaluationRunCreateRequest,
     IngestionCreateRequest,
     JobCompletionRequest,
+    JobRunRequest,
     QueryRequest,
     SourceApprovalRequest,
     SourceCreateRequest,
@@ -30,6 +31,7 @@ from .models import (
     SourceScanRequest,
 )
 from .postgres_store import PostgresStore
+from .embedding import EmbeddingsAdapter, build_embedding_adapter
 from .provider import profile_payloads
 from .source_fetcher import FetchError, GitSnapshotFetcher, SnapshotFetcher
 from .source_pipeline import SourcePipeline
@@ -85,10 +87,12 @@ def create_app(
     settings: Settings | None = None,
     store: Store | None = None,
     source_fetcher: SnapshotFetcher | None = None,
+    embeddings_adapter: EmbeddingsAdapter | None = None,
 ) -> FastAPI:
     runtime_settings = settings or Settings.from_env()
     runtime_settings.validate()
     runtime_store = store or _build_store(runtime_settings)
+    runtime_embeddings = embeddings_adapter or build_embedding_adapter(runtime_settings)
     source_pipeline = SourcePipeline(source_fetcher or GitSnapshotFetcher())
 
     @asynccontextmanager
@@ -99,7 +103,7 @@ def create_app(
     application = FastAPI(
         title="TechFlow AI Gateway",
         version=__version__,
-        description="TechFlow AI Gateway with Issue #42 allowlisted source registry and quarantine pipeline.",
+        description="TechFlow AI Gateway with Issue #43 deterministic parsing, embedding, and hybrid retrieval.",
         docs_url=None,
         redoc_url=None,
         lifespan=lifespan,
@@ -293,6 +297,19 @@ def create_app(
     def get_job(jobId: UUID, correlation_id: Annotated[str, Depends(_correlation_id)]) -> Envelope:
         return _envelope(runtime_store.get_job(jobId), correlation_id)
 
+    @application.post("/v1/jobs/{jobId}/run", response_model=Envelope, operation_id="runIndexingJob")
+    def run_job(
+        jobId: UUID,
+        request: JobRunRequest,
+        correlation_id: Annotated[str, Depends(_correlation_id)],
+        idempotency_key: Annotated[str, Depends(_idempotency_key)],
+    ) -> Envelope:
+        return _envelope(
+            runtime_store.run_job(jobId, _model_data(request), idempotency_key, correlation_id,
+                                  runtime_embeddings, runtime_settings.embedding_batch_size),
+            correlation_id,
+        )
+
     @application.post("/v1/jobs/{jobId}/complete", response_model=Envelope, operation_id="completeIngestionJob")
     def complete_ingestion_job(
         jobId: UUID,
@@ -302,21 +319,34 @@ def create_app(
     ) -> Envelope:
         return _envelope(runtime_store.complete_job(jobId, _model_data(request), idempotency_key), correlation_id)
 
+    def _retrieve(request: QueryRequest, correlation_id: str) -> dict[str, Any]:
+        result = runtime_embeddings.embed([request.question])
+        return runtime_store.retrieve(_model_data(request), result, correlation_id)
+
+    @application.post("/v1/rag/retrieve", response_model=Envelope, operation_id="retrieveRagContext")
+    def retrieve_rag(request: QueryRequest, correlation_id: Annotated[str, Depends(_correlation_id)]) -> Envelope:
+        return _envelope(_retrieve(request, correlation_id), correlation_id)
+
     @application.post("/v1/rag/query", response_model=Envelope, operation_id="queryRag")
     def query_rag(request: QueryRequest, correlation_id: Annotated[str, Depends(_correlation_id)]) -> Envelope:
         scope = {
             "sourceProfileIds": request.source_profile_ids,
             "compatibilitySetId": request.compatibility_set_id,
         }
+        retrieval = _retrieve(request, correlation_id)
+        citations = [{key: item[key] for key in ("chunkId", "repository", "branch", "commit", "path", "startLine", "endLine", "symbol")}
+                     for item in retrieval["results"]]
         return _envelope(
             {
                 "queryId": request.query_id,
                 "state": "ABSTAINED",
-                "abstainReason": "RETRIEVAL_NOT_IMPLEMENTED_UNTIL_ISSUE_43",
+                "abstainReason": "GENERATION_NOT_IMPLEMENTED_UNTIL_ISSUE_44",
                 "answer": None,
-                "citations": [],
+                "citations": citations,
+                "retrieval": retrieval,
                 "scope": scope,
-                "providerCalled": False,
+                "providerCalled": retrieval["providerCalled"],
+                "generationProviderCalled": False,
             },
             correlation_id,
         )

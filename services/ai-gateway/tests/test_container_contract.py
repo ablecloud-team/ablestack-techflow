@@ -56,6 +56,10 @@ class ContainerContractTest(unittest.TestCase):
     def test_healthcheck_exists(self) -> None:
         self.assertGreaterEqual(COMPOSE.count("healthcheck:"), 2)
 
+    def test_tree_sitter_parsers_are_prefetched_in_the_image(self) -> None:
+        self.assertIn("scripts/prefetch_parsers.py", DOCKERFILE)
+        self.assertIn("TECHFLOW_TREE_SITTER_CACHE", DOCKERFILE)
+
 
 if __name__ == "__main__":
     unittest.main()
