@@ -3,7 +3,7 @@
   "info": {
     "title": "TechFlow AI Gateway",
     "description": "TechFlow AI Gateway with grounded Responses generation and deterministic retrieval.",
-    "version": "0.5.0"
+    "version": "0.6.0"
   },
   "paths": {
     "/healthz": {
@@ -1018,6 +1018,96 @@
           }
         }
       }
+    },
+    "/v1/evaluations/runs/{runId}/execute": {
+      "post": {
+        "summary": "Execute Evaluation Run",
+        "operationId": "executeEvaluationRun",
+        "parameters": [
+          {
+            "name": "runId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Runid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvaluationExecuteRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/evaluations/runs/{runId}/results": {
+      "get": {
+        "summary": "List Evaluation Results",
+        "operationId": "listEvaluationResults",
+        "parameters": [
+          {
+            "name": "runId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Runid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1121,6 +1211,27 @@
           "meta"
         ],
         "title": "Envelope"
+      },
+      "EvaluationExecuteRequest": {
+        "properties": {
+          "caseSetId": {
+            "type": "string",
+            "const": "ABLESTACK_GOLDEN_V1",
+            "title": "Casesetid",
+            "default": "ABLESTACK_GOLDEN_V1"
+          },
+          "requestedBy": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_.:@-]{3,128}$",
+            "title": "Requestedby"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "requestedBy"
+        ],
+        "title": "EvaluationExecuteRequest"
       },
       "EvaluationRunCreateRequest": {
         "properties": {

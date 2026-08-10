@@ -3,7 +3,7 @@ from __future__ import annotations
 from types import SimpleNamespace
 import unittest
 
-from app.embedding import MockEmbeddingsAdapter, OpenAIEmbeddingsAdapter, validate_inputs
+from app.embedding import MAX_BATCH_BYTES, MAX_INPUT_BYTES, MockEmbeddingsAdapter, OpenAIEmbeddingsAdapter, validate_inputs
 from app.provider import ProviderContractError
 
 
@@ -30,7 +30,9 @@ class EmbeddingTest(unittest.TestCase):
         with self.assertRaises(ProviderContractError):
             validate_inputs([])
         with self.assertRaises(ProviderContractError):
-            validate_inputs(["x" * (24 * 1024 + 1)])
+            validate_inputs(["x" * (MAX_INPUT_BYTES + 1)])
+        with self.assertRaises(ProviderContractError):
+            validate_inputs(["x" * (MAX_BATCH_BYTES // 64 + 1)] * 64)
 
     def test_official_sdk_contract_sets_model_dimension_and_no_storage(self) -> None:
         fake = FakeEmbeddings()

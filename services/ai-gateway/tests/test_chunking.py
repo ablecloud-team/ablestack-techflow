@@ -4,7 +4,16 @@ import unittest
 from unittest.mock import patch
 from uuid import uuid4
 
-from app.chunking import FALLBACK_MAX_LINES, FALLBACK_OVERLAP_LINES, chunk_file
+from app.chunking import (
+    FALLBACK_MAX_LINES,
+    FALLBACK_OVERLAP_LINES,
+    MAX_EMBEDDING_INPUT_BYTES,
+    MAX_QUALIFIED_NAME_CHARS,
+    _bounded_qualified_name,
+    _chunk_record,
+    _dedupe_chunks,
+    chunk_file,
+)
 
 
 class ChunkingTest(unittest.TestCase):
@@ -29,6 +38,35 @@ class ChunkingTest(unittest.TestCase):
             parsed = chunk_file(uuid4(), "SOURCE_CODE", "main.py", "def ok():\n    return True\n")
         self.assertEqual("FALLBACK", parsed.parser_status)
         self.assertEqual(1, len(parsed.chunks))
+
+    def test_single_long_utf8_line_is_split_below_provider_limit(self) -> None:
+        source = "가" * 10000
+        parsed = chunk_file(uuid4(), "SOURCE_CODE", "payload.unknown", source)
+        self.assertGreater(len(parsed.chunks), 1)
+        self.assertTrue(all(len(item.content.encode("utf-8")) <= MAX_EMBEDDING_INPUT_BYTES for item in parsed.chunks))
+        self.assertEqual(source, "".join(item.content for item in parsed.chunks))
+
+    def test_blank_file_produces_no_embedding_chunk(self) -> None:
+        parsed = chunk_file(uuid4(), "SOURCE_CODE", "empty.js", " \n\t\n")
+        self.assertEqual((), parsed.chunks)
+        self.assertEqual("FALLBACK", parsed.parser_status)
+
+    def test_long_parser_name_is_bounded_with_stable_hash_suffix(self) -> None:
+        value = "dependency." + ("segment" * 300)
+        first = _bounded_qualified_name(value)
+        second = _bounded_qualified_name(value)
+        self.assertEqual(MAX_QUALIFIED_NAME_CHARS, len(first))
+        self.assertEqual(first, second)
+        self.assertRegex(first, r"…#[0-9a-f]{16}$")
+
+    def test_overlapping_parser_nodes_follow_database_chunk_uniqueness(self) -> None:
+        version_id = uuid4()
+        first = _chunk_record(version_id, "SOURCE_CODE", "Main.java", "Main", 1, 3, "class Main {}", "PARSED", 0)
+        duplicate = _chunk_record(
+            version_id, "SOURCE_CODE", "Main.java", "MainAlias", 1, 3, "class Main {}", "PARSED", 1
+        )
+        retained = _dedupe_chunks((first, duplicate))
+        self.assertEqual([first.id], [item.id for item in retained])
 
 
 if __name__ == "__main__":

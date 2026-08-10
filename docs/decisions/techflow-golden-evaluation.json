@@ -1,0 +1,87 @@
+{
+  "decisionId": "TECHFLOW-ISSUE-46-GOLDEN-EVALUATION",
+  "status": "IMPLEMENTED",
+  "decidedAt": "2026-08-10",
+  "goldenSet": {
+    "setId": "ABLESTACK_GOLDEN_V1",
+    "caseCount": 70,
+    "classification": "D0",
+    "minimumCodeCases": 20,
+    "sourceRepositories": 7,
+    "sourceProfiles": 9,
+    "cloudBranches": [
+      "main",
+      "ablestack-diplo",
+      "ablestack-europa"
+    ]
+  },
+  "resultContract": {
+    "repositoryEvidence": [
+      "question",
+      "expectedAnswer",
+      "actualAnswer",
+      "expectedState",
+      "actualState",
+      "citations",
+      "automatedJudgment",
+      "reviewJudgment",
+      "latencyMs"
+    ],
+    "databaseEvidence": [
+      "caseKey",
+      "state",
+      "passed",
+      "citationIds",
+      "latencyMs",
+      "errorCode"
+    ],
+    "databaseRawAnswer": false,
+    "activepiecesRawAnswer": false,
+    "reviewer": "Codex",
+    "sourceReviewer": "dhslove"
+  },
+  "qualityGates": {
+    "acceptableAnswerRateMinimum": 0.8,
+    "correctAbstentionRateMinimum": 0.9,
+    "answeredCitationRate": 1.0,
+    "codeLineResolvableRate": 1.0,
+    "isolationAnsweredViolations": 0,
+    "securityBoundaryAnsweredViolations": 0,
+    "providerP95MillisecondsMaximum": 12000
+  },
+  "indexingSafety": {
+    "maximumEmbeddingInputBytes": 7936,
+    "embeddingBatchItems": 128,
+    "embeddingBatchMaximumBytes": 262144,
+    "blankFileChunks": 0,
+    "maximumQualifiedNameCharacters": 1024,
+    "overlappingParserNodePolicy": "KEEP_FIRST_DATABASE_UNIQUE_CHUNK",
+    "activeReindexPolicy": "KEEP_ACTIVE_UNTIL_ATOMIC_REPLACEMENT_COMMIT",
+    "reindexForeignKeyIndexes": [
+      "rag_code_symbol(chunk_id)",
+      "rag_code_relation(to_symbol_id)"
+    ],
+    "failureLogFields": [
+      "jobId",
+      "exceptionType",
+      "errorCode"
+    ]
+  },
+  "securityGates": {
+    "classification": "D0_ONLY",
+    "responsesStore": false,
+    "providerTools": false,
+    "unapprovedModelChanges": false,
+    "secretOrD1ToD3Indexing": false,
+    "promptInjectionSourcePolicy": "QUARANTINE",
+    "zeroDataRetention": "NOT_USED_BY_PRODUCT_DECISION",
+    "zeroDataRetentionAsGate": false
+  },
+  "failurePolicy": {
+    "sourceScanViolation": "QUARANTINE_AND_REQUIRE_DHSLOVE_EXCLUSION_ACCEPTANCE",
+    "indexingFailure": "KEEP_SOURCE_APPROVED_AND_ACTIVE_INDEX_UNCHANGED",
+    "evaluationCaseFailure": "CONTINUE_RUN_AND_RECORD_REJECTED_CASE",
+    "evaluationEngineFailure": "MARK_RUN_FAILED_WITHOUT_RAW_PROMPT_OR_ANSWER",
+    "rollback": "DISABLE_EVALUATION_FLOW_AND_RESTORE_PREVIOUS_GATEWAY_IMAGE"
+  }
+}

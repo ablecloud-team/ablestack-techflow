@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import json
+import logging
 from typing import Any
-from uuid import UUID, uuid4
+from uuid import NAMESPACE_URL, UUID, uuid4, uuid5
 
 from .provider import PROVIDER_PROFILES
 
@@ -12,6 +14,9 @@ from .config import Settings
 from .indexing import build_index_bundle, reciprocal_rank_fusion
 from .source_registry import SOURCE_PROFILES, get_profile, list_profiles, validate_candidate_contract
 from .store import ConflictError, InvalidBoundaryError, InvalidStateError, NotFoundError
+
+
+LOGGER = logging.getLogger("techflow.ai_gateway.postgres_store")
 
 
 class PostgresStore:
@@ -514,22 +519,27 @@ class PostgresStore:
             if repeated:
                 return self._job_payload(repeated)
             version = connection.execute(
-                "SELECT id FROM rag_source_version WHERE source_id=%s AND state='APPROVED' ORDER BY created_at DESC LIMIT 1 FOR UPDATE",
+                """SELECT id, state FROM rag_source_version
+                   WHERE source_id=%s AND state IN ('APPROVED', 'ACTIVE')
+                   ORDER BY CASE state WHEN 'APPROVED' THEN 0 ELSE 1 END, created_at DESC
+                   LIMIT 1 FOR UPDATE""",
                 (source_id,),
             ).fetchone()
             if not version:
-                raise InvalidStateError("source must be approved before indexing")
-            connection.execute("UPDATE rag_source_version SET state='INDEXING' WHERE id=%s", (version["id"],))
-            connection.execute("UPDATE rag_source SET state='INDEXING', updated_at=now() WHERE id=%s", (source_id,))
+                raise InvalidStateError("source must be approved or active before indexing")
+            job_type = "REINDEX" if version["state"] == "ACTIVE" else "INGESTION"
+            if job_type == "INGESTION":
+                connection.execute("UPDATE rag_source_version SET state='INDEXING' WHERE id=%s", (version["id"],))
+                connection.execute("UPDATE rag_source SET state='INDEXING', updated_at=now() WHERE id=%s", (source_id,))
             row = connection.execute(
                 """
                 INSERT INTO rag_ingestion_job
                     (id, job_type, source_id, source_version_id, state, requested_by,
                      idempotency_key, correlation_id)
-                VALUES (%s, 'INGESTION', %s, %s, 'PENDING', %s, %s, %s)
+                VALUES (%s, %s, %s, %s, 'PENDING', %s, %s, %s)
                 RETURNING *
                 """,
-                (uuid4(), source_id, version["id"], request["requestedBy"], idempotency_key, correlation_id),
+                (uuid4(), job_type, source_id, version["id"], request["requestedBy"], idempotency_key, correlation_id),
             ).fetchone()
             return self._job_payload(row)
 
@@ -730,8 +740,9 @@ class PostgresStore:
                     "SELECT source_id, state, eligible_file_count FROM rag_source_version WHERE id=%s FOR UPDATE",
                     (job["source_version_id"],),
                 ).fetchone()
-                if not version or version["state"] != "INDEXING":
-                    raise InvalidStateError("source version is not indexing")
+                expected_state = "ACTIVE" if job["job_type"] == "REINDEX" else "INDEXING"
+                if not version or version["state"] != expected_state:
+                    raise InvalidStateError("source version is not in the required indexing state")
                 if bundle.indexed_file_count != version["eligible_file_count"]:
                     raise ConflictError("partial indexing cannot activate a source version")
                 connection.execute("DELETE FROM rag_code_relation WHERE source_version_id=%s", (job["source_version_id"],))
@@ -772,10 +783,11 @@ class PostgresStore:
                     )
                 for audit in bundle.provider_audits:
                     self._record_embedding_call(connection, audit, correlation_id, ingestion_job_id=job_id)
-                connection.execute("UPDATE rag_chunk SET active=false WHERE source_version_id IN (SELECT id FROM rag_source_version WHERE source_id=%s AND state='ACTIVE')", (version["source_id"],))
-                connection.execute("UPDATE rag_code_symbol SET active=false WHERE source_version_id IN (SELECT id FROM rag_source_version WHERE source_id=%s AND state='ACTIVE')", (version["source_id"],))
-                connection.execute("UPDATE rag_code_relation SET active=false WHERE source_version_id IN (SELECT id FROM rag_source_version WHERE source_id=%s AND state='ACTIVE')", (version["source_id"],))
-                connection.execute("UPDATE rag_source_version SET state='WITHDRAWN' WHERE source_id=%s AND state='ACTIVE'", (version["source_id"],))
+                if job["job_type"] != "REINDEX":
+                    connection.execute("UPDATE rag_chunk SET active=false WHERE source_version_id IN (SELECT id FROM rag_source_version WHERE source_id=%s AND state='ACTIVE')", (version["source_id"],))
+                    connection.execute("UPDATE rag_code_symbol SET active=false WHERE source_version_id IN (SELECT id FROM rag_source_version WHERE source_id=%s AND state='ACTIVE')", (version["source_id"],))
+                    connection.execute("UPDATE rag_code_relation SET active=false WHERE source_version_id IN (SELECT id FROM rag_source_version WHERE source_id=%s AND state='ACTIVE')", (version["source_id"],))
+                    connection.execute("UPDATE rag_source_version SET state='WITHDRAWN' WHERE source_id=%s AND state='ACTIVE'", (version["source_id"],))
                 connection.execute("UPDATE rag_source_version SET state='ACTIVE', indexed_file_count=%s WHERE id=%s", (bundle.indexed_file_count, job["source_version_id"]))
                 connection.execute("UPDATE rag_source SET state='ACTIVE', updated_at=now() WHERE id=%s", (version["source_id"],))
                 metrics = {"indexedFiles": bundle.indexed_file_count, "chunks": len(bundle.chunks),
@@ -788,10 +800,32 @@ class PostgresStore:
                     (Jsonb(metrics), job_id),
                 ).fetchone()
                 return self._job_payload(updated)
-        except Exception:
+        except Exception as exc:
+            safe_error_code = str(getattr(exc, "code", "INDEXING_FAILED"))[:64]
+            LOGGER.error(
+                "indexing job failed",
+                extra={
+                    "jobId": str(job_id),
+                    "exceptionType": type(exc).__name__,
+                    "errorCode": safe_error_code,
+                },
+            )
+            print(
+                json.dumps(
+                    {
+                        "event": "indexing_job_failed",
+                        "jobId": str(job_id),
+                        "exceptionType": type(exc).__name__,
+                        "errorCode": safe_error_code,
+                    },
+                    ensure_ascii=True,
+                ),
+                flush=True,
+            )
             with self._pool.connection() as connection:
-                connection.execute("UPDATE rag_source_version SET state='APPROVED' WHERE id=%s AND state='INDEXING'", (job["source_version_id"],))
-                connection.execute("UPDATE rag_source SET state='APPROVED', updated_at=now() WHERE id=%s", (job["source_id"],))
+                if job["job_type"] != "REINDEX":
+                    connection.execute("UPDATE rag_source_version SET state='APPROVED' WHERE id=%s AND state='INDEXING'", (job["source_version_id"],))
+                    connection.execute("UPDATE rag_source SET state='APPROVED', updated_at=now() WHERE id=%s", (job["source_id"],))
                 connection.execute("UPDATE rag_ingestion_job SET state='FAILED', failure_class='TERMINAL', error_code='INDEXING_FAILED', completed_at=now(), updated_at=now() WHERE id=%s", (job_id,))
             raise
 
@@ -933,3 +967,90 @@ class PostgresStore:
             if not row:
                 raise NotFoundError("evaluation run not found")
             return self._evaluation_payload(row)
+
+    def start_evaluation_run(self, run_id: UUID, total_cases: int) -> dict[str, Any]:
+        with self._pool.connection() as connection:
+            row = connection.execute(
+                """UPDATE rag_evaluation_run SET state='RUNNING', total_cases=%s, passed_cases=0,
+                   updated_at=now() WHERE id=%s AND state='PENDING' RETURNING *""",
+                (total_cases, run_id),
+            ).fetchone()
+            if row:
+                return self._evaluation_payload(row)
+            existing = connection.execute("SELECT state FROM rag_evaluation_run WHERE id=%s", (run_id,)).fetchone()
+            if not existing:
+                raise NotFoundError("evaluation run not found")
+            raise InvalidStateError("only pending evaluation runs can start")
+
+    def record_evaluation_result(
+        self, run_id: UUID, case: dict[str, Any], result: dict[str, Any], judgment: dict[str, Any], latency_ms: int
+    ) -> None:
+        case_id = uuid5(NAMESPACE_URL, f"techflow-evaluation:{case['caseKey']}")
+        citation_ids = []
+        for item in result.get("citations") or []:
+            try:
+                citation_ids.append(UUID(str(item["chunkId"])))
+            except (KeyError, TypeError, ValueError):
+                continue
+        with self._pool.connection() as connection:
+            run = connection.execute(
+                "SELECT state FROM rag_evaluation_run WHERE id=%s FOR UPDATE", (run_id,)
+            ).fetchone()
+            if not run:
+                raise NotFoundError("evaluation run not found")
+            if run["state"] != "RUNNING":
+                raise InvalidStateError("evaluation run is not running")
+            connection.execute(
+                """INSERT INTO rag_evaluation_case
+                       (id, case_key, question, locale, expected_state, expected_citation_ids,
+                        forbidden_claims, classification, active)
+                   VALUES (%s,%s,%s,%s,%s,'{}',%s,'D0',true)
+                   ON CONFLICT (case_key) DO UPDATE SET question=EXCLUDED.question, locale=EXCLUDED.locale,
+                     expected_state=EXCLUDED.expected_state, forbidden_claims=EXCLUDED.forbidden_claims,
+                     classification='D0', active=true""",
+                (case_id, case["caseKey"], case["question"], case["locale"], case["expectedState"],
+                 case.get("forbiddenClaims") or []),
+            )
+            connection.execute(
+                """INSERT INTO rag_evaluation_result
+                       (id, evaluation_run_id, evaluation_case_id, state, passed, citation_ids, latency_ms, error_code)
+                   VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
+                   ON CONFLICT (evaluation_run_id, evaluation_case_id) DO UPDATE SET
+                     state=EXCLUDED.state, passed=EXCLUDED.passed, citation_ids=EXCLUDED.citation_ids,
+                     latency_ms=EXCLUDED.latency_ms, error_code=EXCLUDED.error_code""",
+                (uuid4(), run_id, case_id, result.get("state", "FAILED"), judgment["passed"], citation_ids,
+                 latency_ms, result.get("errorCode")),
+            )
+
+    def finish_evaluation_run(self, run_id: UUID, failed: bool = False) -> dict[str, Any]:
+        with self._pool.connection() as connection:
+            row = connection.execute(
+                """UPDATE rag_evaluation_run r SET state=%s,
+                     passed_cases=(SELECT count(*) FROM rag_evaluation_result x WHERE x.evaluation_run_id=r.id AND x.passed),
+                     updated_at=now() WHERE r.id=%s AND r.state='RUNNING' RETURNING r.*""",
+                ("FAILED" if failed else "SUCCEEDED", run_id),
+            ).fetchone()
+            if not row:
+                existing = connection.execute("SELECT state FROM rag_evaluation_run WHERE id=%s", (run_id,)).fetchone()
+                if not existing:
+                    raise NotFoundError("evaluation run not found")
+                raise InvalidStateError("evaluation run is not running")
+            return self._evaluation_payload(row)
+
+    def list_evaluation_results(self, run_id: UUID) -> list[dict[str, Any]]:
+        with self._pool.connection() as connection:
+            exists = connection.execute("SELECT 1 FROM rag_evaluation_run WHERE id=%s", (run_id,)).fetchone()
+            if not exists:
+                raise NotFoundError("evaluation run not found")
+            rows = connection.execute(
+                """SELECT c.case_key, r.state, r.passed, cardinality(r.citation_ids) AS citation_count,
+                          r.latency_ms, r.error_code
+                   FROM rag_evaluation_result r JOIN rag_evaluation_case c ON c.id=r.evaluation_case_id
+                   WHERE r.evaluation_run_id=%s ORDER BY c.case_key""",
+                (run_id,),
+            ).fetchall()
+            return [{
+                "caseKey": row["case_key"], "state": row["state"], "passed": row["passed"],
+                "citationCount": row["citation_count"], "latencyMs": row["latency_ms"],
+                "errorCode": row["error_code"],
+            } for row in rows]

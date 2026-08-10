@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Idempotently publish the five Issue #45 Activepieces flows.
+"""Idempotently publish the five Issue #46 Activepieces flows.
 
 Authentication values are accepted only through process environment variables.
 The script never prints tokens, passwords, or authentication responses.
@@ -124,7 +124,7 @@ def publish(base: str, bundle: dict[str, Any]) -> list[dict[str, Any]]:
         else:
             created = api(base, "/api/v1/flows", "POST", {
                 "displayName": flow["displayName"], "projectId": project_id,
-                "metadata": {"techflowLogicalId": flow["logicalId"], "issue": 45},
+                "metadata": {"techflowLogicalId": flow["logicalId"], "issue": 46},
             }, token)
             flow_id = created["id"]
         imported = api(base, f"/api/v1/flows/{flow_id}", "POST", {
@@ -152,7 +152,7 @@ def main() -> int:
     args = parser.parse_args()
     bundle = json.loads(args.bundle.read_text(encoding="utf-8"))
     if len(bundle.get("flows", [])) != 5 or bundle.get("security", {}).get("automaticApproval") is not False:
-        raise RuntimeError("invalid Issue #45 flow bundle")
+        raise RuntimeError("invalid Issue #46 flow bundle")
     if args.validate_only:
         print(json.dumps({"valid": True, "flowCount": 5}, ensure_ascii=False))
         return 0

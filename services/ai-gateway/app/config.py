@@ -19,7 +19,7 @@ class Settings:
     openai_api_key_file: str | None = None
     openai_project_id_file: str | None = None
     safety_identifier_salt_file: str | None = None
-    embedding_batch_size: int = 64
+    embedding_batch_size: int = 128
     classification: str = "D0"
     log_level: str = "INFO"
     database_pool_min: int = 1
@@ -35,7 +35,7 @@ class Settings:
             openai_api_key_file=os.getenv("TECHFLOW_OPENAI_API_KEY_FILE") or None,
             openai_project_id_file=os.getenv("TECHFLOW_OPENAI_PROJECT_ID_FILE") or None,
             safety_identifier_salt_file=os.getenv("TECHFLOW_SAFETY_IDENTIFIER_SALT_FILE") or None,
-            embedding_batch_size=int(os.getenv("TECHFLOW_EMBEDDING_BATCH_SIZE", "64")),
+            embedding_batch_size=int(os.getenv("TECHFLOW_EMBEDDING_BATCH_SIZE", "128")),
             classification=os.getenv("TECHFLOW_RAG_CLASSIFICATION", "D0").strip().upper(),
             log_level=os.getenv("TECHFLOW_RAG_LOG_LEVEL", "INFO").strip().upper(),
             database_pool_min=int(os.getenv("TECHFLOW_RAG_DATABASE_POOL_MIN", "1")),

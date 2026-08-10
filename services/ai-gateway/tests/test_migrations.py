@@ -12,11 +12,12 @@ UP_0003 = (ROOT / "migrations" / "0003_source_mirror_up.sql").read_text(encoding
 UP_0004 = (ROOT / "migrations" / "0004_source_mirror_policy_up.sql").read_text(encoding="utf-8")
 UP_0005 = (ROOT / "migrations" / "0005_parser_embedding_retrieval_up.sql").read_text(encoding="utf-8")
 UP_0006 = (ROOT / "migrations" / "0006_orchestration_correlation_up.sql").read_text(encoding="utf-8")
+UP_0007 = (ROOT / "migrations" / "0007_reindex_fk_performance_up.sql").read_text(encoding="utf-8")
 DOWN_0001 = (ROOT / "migrations" / "0001_schema_down.sql").read_text(encoding="utf-8")
 DOWN_0002 = (ROOT / "migrations" / "0002_source_registry_down.sql").read_text(encoding="utf-8")
 DOWN_0003 = (ROOT / "migrations" / "0003_source_mirror_down.sql").read_text(encoding="utf-8")
 DOWN_0004 = (ROOT / "migrations" / "0004_source_mirror_policy_down.sql").read_text(encoding="utf-8")
-UP = UP_0001 + "\n" + UP_0002 + "\n" + UP_0003 + "\n" + UP_0004 + "\n" + UP_0005 + "\n" + UP_0006
+UP = UP_0001 + "\n" + UP_0002 + "\n" + UP_0003 + "\n" + UP_0004 + "\n" + UP_0005 + "\n" + UP_0006 + "\n" + UP_0007
 DOWN = DOWN_0004 + "\n" + DOWN_0003 + "\n" + DOWN_0002 + "\n" + DOWN_0001
 BOOTSTRAP = (ROOT / "migrations" / "0000_extensions_roles_up.sql").read_text(encoding="utf-8")
 
@@ -91,6 +92,12 @@ class MigrationContractTest(unittest.TestCase):
         self.assertEqual(2, UP_0006.count("ADD COLUMN IF NOT EXISTS correlation_id"))
         self.assertIn("rag_ingestion_job_correlation_idx", UP_0006)
         self.assertIn("rag_evaluation_run_correlation_idx", UP_0006)
+
+    def test_issue46_reindex_fk_is_indexed(self) -> None:
+        self.assertIn("rag_code_symbol_chunk_idx", UP_0007)
+        self.assertIn("ON rag_code_symbol (chunk_id)", UP_0007)
+        self.assertIn("rag_code_relation_to_symbol_idx", UP_0007)
+        self.assertIn("ON rag_code_relation (to_symbol_id)", UP_0007)
 
 
 if __name__ == "__main__":

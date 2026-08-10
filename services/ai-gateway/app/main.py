@@ -8,9 +8,9 @@ import logging
 import re
 import time
 from typing import Annotated, Any
-from uuid import UUID
+from uuid import UUID, uuid4
 
-from fastapi import Depends, FastAPI, Header, Request, status
+from fastapi import BackgroundTasks, Depends, FastAPI, Header, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
@@ -20,6 +20,7 @@ from .models import (
     ApiMeta,
     CompatibilitySetCreateRequest,
     Envelope,
+    EvaluationExecuteRequest,
     EvaluationRunCreateRequest,
     GroundedQueryRequest,
     IngestionCreateRequest,
@@ -31,6 +32,7 @@ from .models import (
     SourceDiscoveryRequest,
     SourceScanRequest,
 )
+from .evaluation import judge_case, load_golden_set
 from .postgres_store import PostgresStore
 from .embedding import EmbeddingsAdapter, build_embedding_adapter
 from .provider import ResponsesRequest, profile_payloads
@@ -180,7 +182,12 @@ def create_app(
         response = _error(getattr(request.state, "correlation_id", "missing"), 422, "VALIDATION_ERROR")
         payload = json.loads(response.body)
         payload["error"]["fields"] = safe_fields[:20]
-        return JSONResponse(status_code=422, content=payload, headers=dict(response.headers))
+        safe_headers = {
+            key: value
+            for key, value in response.headers.items()
+            if key.lower() not in {"content-length", "content-type"}
+        }
+        return JSONResponse(status_code=422, content=payload, headers=safe_headers)
 
     @application.get("/healthz", response_model=Envelope, operation_id="getHealth")
     def health() -> Envelope | JSONResponse:
@@ -354,8 +361,7 @@ def create_app(
     def retrieve_rag(request: QueryRequest, correlation_id: Annotated[str, Depends(_correlation_id)]) -> Envelope:
         return _envelope(_retrieve(request, correlation_id), correlation_id)
 
-    @application.post("/v1/rag/query", response_model=Envelope, operation_id="queryRag")
-    def query_rag(request: GroundedQueryRequest, correlation_id: Annotated[str, Depends(_correlation_id)]) -> Envelope:
+    def _query_grounded(request: GroundedQueryRequest, correlation_id: str) -> dict[str, Any]:
         scope = {
             "sourceProfileIds": request.source_profile_ids,
             "compatibilitySetId": request.compatibility_set_id,
@@ -377,12 +383,9 @@ def create_app(
             "retrievalProviderCalled": retrieval["providerCalled"],
         }
         if decision.state == "ABSTAINED":
-            return _envelope(
-                {**common, "state": "ABSTAINED", "abstainReason": decision.abstain_reason,
-                 "answer": None, "citations": [], "providerProfileId": None,
-                 "generationProviderCalled": False},
-                correlation_id,
-            )
+            return {**common, "state": "ABSTAINED", "abstainReason": decision.abstain_reason,
+                    "answer": None, "citations": [], "providerProfileId": None,
+                    "generationProviderCalled": False}
         context = context_from_results(retrieval["results"], request.classification)
         provider_request = ResponsesRequest(
             query_id=str(request.query_id),
@@ -396,22 +399,20 @@ def create_app(
             generated = runtime_responses.generate(provider_request)
             runtime_store.record_response_call(request.query_id, generated, correlation_id)
             state, answer, abstain_reason, cited = validate_grounded_result(generated, context)
-            return _envelope(
-                {**common, "state": state, "abstainReason": abstain_reason, "answer": answer,
-                 "citations": [citation_payload(item) for item in cited],
-                 "providerProfileId": generated.profile_id,
-                 "generationProviderCalled": generated.provider == "openai"},
-                correlation_id,
-            )
+            return {**common, "state": state, "abstainReason": abstain_reason, "answer": answer,
+                    "citations": [citation_payload(item) for item in cited],
+                    "providerProfileId": generated.profile_id,
+                    "generationProviderCalled": generated.provider == "openai"}
         except ResponsesProviderError as exc:
             runtime_store.record_response_failure(request.query_id, exc, correlation_id)
-            return _envelope(
-                {**common, "state": "FAILED", "abstainReason": None, "answer": None,
-                 "citations": [], "providerProfileId": exc.profile_id,
-                 "generationProviderCalled": exc.provider_called,
-                 "errorCode": exc.code, "failureClass": exc.failure_class},
-                correlation_id,
-            )
+            return {**common, "state": "FAILED", "abstainReason": None, "answer": None,
+                    "citations": [], "providerProfileId": exc.profile_id,
+                    "generationProviderCalled": exc.provider_called,
+                    "errorCode": exc.code, "failureClass": exc.failure_class}
+
+    @application.post("/v1/rag/query", response_model=Envelope, operation_id="queryRag")
+    def query_rag(request: GroundedQueryRequest, correlation_id: Annotated[str, Depends(_correlation_id)]) -> Envelope:
+        return _envelope(_query_grounded(request, correlation_id), correlation_id)
 
     @application.post("/v1/evaluations/runs", response_model=Envelope, status_code=status.HTTP_202_ACCEPTED, operation_id="createEvaluationRun")
     def create_evaluation_run(
@@ -427,6 +428,71 @@ def create_app(
     @application.get("/v1/evaluations/runs/{runId}", response_model=Envelope, operation_id="getEvaluationRun")
     def get_evaluation_run(runId: UUID, correlation_id: Annotated[str, Depends(_correlation_id)]) -> Envelope:
         return _envelope(runtime_store.get_evaluation_run(runId), correlation_id)
+
+    def _execute_golden_cases(run_id: UUID, cases: list[dict[str, Any]], actor_id: str) -> None:
+        try:
+            for index, case in enumerate(cases, 1):
+                case_correlation_id = f"eval-{str(run_id)[:12]}-{index:03d}"
+                started = time.perf_counter()
+                result = _query_grounded(
+                    GroundedQueryRequest(
+                        queryId=uuid4(),
+                        question=case["question"],
+                        actorId=actor_id,
+                        sourceProfileIds=case["sourceProfileIds"],
+                        classification="D0",
+                        locale=case["locale"],
+                    ),
+                    case_correlation_id,
+                )
+                latency_ms = round((time.perf_counter() - started) * 1000)
+                runtime_store.record_evaluation_result(
+                    run_id, case, result, judge_case(case, result).payload(), latency_ms
+                )
+            runtime_store.finish_evaluation_run(run_id)
+        except Exception as exc:
+            _json_log("evaluation_failed", runId=str(run_id), errorType=type(exc).__name__)
+            try:
+                runtime_store.finish_evaluation_run(run_id, failed=True)
+            except Exception:
+                _json_log("evaluation_failure_record_failed", runId=str(run_id))
+
+    @application.post(
+        "/v1/evaluations/runs/{runId}/execute",
+        response_model=Envelope,
+        status_code=status.HTTP_202_ACCEPTED,
+        operation_id="executeEvaluationRun",
+    )
+    def execute_evaluation_run(
+        runId: UUID,
+        request: EvaluationExecuteRequest,
+        background_tasks: BackgroundTasks,
+        correlation_id: Annotated[str, Depends(_correlation_id)],
+    ) -> Envelope:
+        run = runtime_store.get_evaluation_run(runId)
+        profiles = set(run.get("sourceProfileIds") or [])
+        if not profiles:
+            raise InvalidBoundaryError("Golden Set execution requires sourceProfileIds scope")
+        golden = load_golden_set()
+        cases = [case for case in golden["cases"] if set(case["sourceProfileIds"]).issubset(profiles)]
+        if not cases:
+            raise InvalidBoundaryError("evaluation scope selects no Golden Set cases")
+        runtime_store.start_evaluation_run(runId, len(cases))
+        background_tasks.add_task(_execute_golden_cases, runId, cases, request.requested_by)
+        return _envelope(
+            {"runId": runId, "caseSetId": request.case_set_id, "state": "RUNNING", "totalCases": len(cases)},
+            correlation_id,
+        )
+
+    @application.get(
+        "/v1/evaluations/runs/{runId}/results",
+        response_model=Envelope,
+        operation_id="listEvaluationResults",
+    )
+    def list_evaluation_results(
+        runId: UUID, correlation_id: Annotated[str, Depends(_correlation_id)]
+    ) -> Envelope:
+        return _envelope(runtime_store.list_evaluation_results(runId), correlation_id)
 
     return application
 

@@ -128,6 +128,12 @@ class MemoryStoreTest(unittest.TestCase):
         self.assertEqual("SUCCEEDED", completed["state"])
         self.assertEqual("ACTIVE", self.store.get_source_version(source["sourceVersionId"])["state"])
 
+        reindex = self.store.create_ingestion(
+            source["sourceId"], {"requestedBy": "indexer"}, "reindex-active-source"
+        )
+        self.assertEqual("REINDEX", reindex["jobType"])
+        self.assertEqual("ACTIVE", self.store.get_source_version(source["sourceVersionId"])["state"])
+
     def test_withdrawal_creates_deletion_job(self) -> None:
         source = self.store.create_source(SOURCE, "create-source-0006")
         job = self.store.withdraw_source(source["sourceId"], "delete-source-0006")

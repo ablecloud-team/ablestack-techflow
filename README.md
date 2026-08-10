@@ -1,8 +1,21 @@
 # ABLESTACK TechFlow
 
+## Issue #46 RAG Golden Set·보안·품질·E2E 자산화
+
+TechFlow AI Gateway 0.6.0과 Event Gateway 0.4.0으로 승인된 7개 저장소·9개 Source Profile을 고정 Commit에서 색인하고, 70개 Golden Question의 품질·격리·보류·삭제·Activepieces E2E를 검증합니다. Test-only·Prompt Injection·Secret·Allowlist 밖 Source도 명시적 보류 사례로 검증합니다. Activepieces는 Orchestration만 담당하고 승인·등급·Compatibility·삭제·평가 정책은 TechFlow AI Gateway가 판정합니다.
+
+Issue #46 평가 결과는 시험 질문·기대 답변·실제 답변·Citation·자동 판정·Codex 검토 판정을 함께 보존해 제품 책임자가 사례별로 확인할 수 있습니다. 운영 DB와 Activepieces에는 원문 질문·답변을 저장하지 않으며, 승인된 D0 평가 산출물에만 검토용 Q&A를 남깁니다.
+
+- [Issue #46 Golden Set·품질·보안·E2E 완료 보고서](docs/reports/issue-46-golden-set-quality-security-e2e-validation.md)
+- [Golden Set·품질·보안·E2E 배포·운영 Runbook](docs/runbooks/golden-set-quality-security-e2e.md)
+- [Golden Set 평가 결정 기록](docs/decisions/techflow-golden-evaluation.json)
+- [완료 보고서 PDF](output/pdf/techflow-golden-set-quality-security-e2e-report.pdf)
+- [발표자료 PDF](output/pdf/techflow-golden-set-quality-security-e2e-presentation.pdf)
+- [발표자료 PPTX](output/presentation/techflow-golden-set-quality-security-e2e.pptx)
+
 ## Issue #45 Activepieces 수집·재색인·평가 연동
 
-TechFlow AI Gateway 0.5.0과 Event Gateway 0.3.0을 Activepieces의 5개 시각적 Flow에 연결했습니다. GitHub Push로 9개 Source Profile의 후보 Commit을 감지하고, `dhslove` Reviewer 승인, 고정 Commit 수집·색인, Compatibility 승인, 철회·삭제, Golden Set 평가를 Correlation ID로 추적합니다. Activepieces는 Orchestration만 담당하고 승인·등급·Compatibility·삭제·평가 정책은 TechFlow AI Gateway가 판정합니다.
+TechFlow AI Gateway 0.5.0과 Event Gateway 0.3.0을 Activepieces의 5개 시각적 Flow에 연결했습니다. GitHub Push로 Source 후보를 감지하고, Reviewer 승인, 고정 Commit 수집·색인, Compatibility 승인, 철회·삭제, 평가를 Correlation ID로 추적합니다.
 
 - [Issue #45 구현·검증 완료 보고서](docs/reports/issue-45-activepieces-rag-orchestration-validation.md)
 - [Activepieces RAG Orchestration 배포·운영 Runbook](docs/runbooks/activepieces-rag-orchestration.md)

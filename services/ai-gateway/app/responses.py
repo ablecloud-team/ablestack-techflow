@@ -254,6 +254,7 @@ def citation_payload(chunk: ContextChunk) -> dict[str, Any]:
         "startLine": chunk.start_line,
         "endLine": chunk.end_line,
         "symbol": chunk.symbol,
+        "sourceKind": chunk.source_kind,
     }
 
 

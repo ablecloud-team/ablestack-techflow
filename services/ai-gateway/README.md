@@ -2,6 +2,15 @@
 
 TechFlow AI Gateway는 Activepieces와 AI Provider 사이에서 ABLESTACK 지식의 Source Registry, 검역·승인, Parser·Chunk·Embedding, 검색 범위와 인용, 삭제 정책을 소유하는 FastAPI 서비스입니다. 저장소 원문을 실행하지 않으며 Activepieces가 정책·상태·인프라 작업을 대신 소유하지 않습니다.
 
+## v0.6.0 구현 범위
+
+- 70개 D0 Golden Question과 7개 저장소·9개 Source Profile 고정 Commit 계약
+- 실제 질문·답변·Citation·자동 판정·Codex 검토 판정 산출물
+- 비동기 Evaluation 실행과 원문 없는 DB 결과 조회 API
+- OpenAI 8,192-token 경계보다 낮은 7,936-byte Embedding 입력 상한과 UTF-8 안전 분할
+- `compose.openai.override.yml` 기반 실 OpenAI 모드와 활성 인덱스를 유지하는 원자적 `REINDEX`
+- Branch Isolation·미승인 Cross-Repository·근거 부족 보류 검증
+
 ## v0.5.0 구현 범위
 
 - Activepieces 5개 Flow용 최소 Event·Correlation·Idempotency 계약
@@ -15,7 +24,7 @@ TechFlow AI Gateway는 Activepieces와 AI Provider 사이에서 ABLESTACK 지식
 - `REGISTERED → QUARANTINED → APPROVED → INDEXING → ACTIVE` 상태 계약
 - Markdown Heading Parser와 Tree-sitter Parser 13종
 - Parser 실패 시 160 Line·Overlap 20의 결정론적 Fallback
-- 최대 24 KiB Chunk, UUIDv5 기반 안정 ID, Source Version Lineage
+- 최대 7,936-byte Chunk, UUIDv5 기반 안정 ID, Source Version Lineage
 - `text-embedding-3-large`, 3072차원, 공식 OpenAI Python SDK Adapter
 - FTS 20·Identifier 20·exact cosine 30 후보와 RRF `k=60`
 - 최종 최대 10개 Repository·Branch·Commit·Path·Line·Symbol 인용

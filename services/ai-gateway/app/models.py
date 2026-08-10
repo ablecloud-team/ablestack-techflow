@@ -166,3 +166,8 @@ class EvaluationRunCreateRequest(StrictModel):
         if bool(self.source_profile_ids) == bool(self.compatibility_set_id):
             raise ValueError("exactly one evaluation scope is required")
         return self
+
+
+class EvaluationExecuteRequest(StrictModel):
+    case_set_id: Literal["ABLESTACK_GOLDEN_V1"] = Field(default="ABLESTACK_GOLDEN_V1", alias="caseSetId")
+    requested_by: Annotated[str, StringConstraints(pattern=r"^[A-Za-z0-9_.:@-]{3,128}$")] = Field(alias="requestedBy")
