@@ -7,7 +7,12 @@
     "reviewer": "dhslove",
     "dataClassification": "D0_ONLY",
     "apiKeyRotation": "DEFERRED_BY_PRODUCT_OWNER",
-    "openAiDataControls": "UNVERIFIED_ACCOUNT_ACCESS_MISMATCH"
+    "openAiDataControls": "VERIFIED_PROJECT_DATA_RETENTION_NONE",
+    "openAiOrganization": "ABLECLOUD",
+    "openAiProject": "ABLESTACK-TechFlow",
+    "openAiApiCallLogging": "ENABLED_PER_CALL",
+    "openAiResponsesStorePolicy": "STORE_FALSE_REQUIRED",
+    "openAiVerifiedAt": "2026-08-10"
   },
   "ownership": {
     "activepieces": [

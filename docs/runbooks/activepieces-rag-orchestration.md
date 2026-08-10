@@ -112,6 +112,15 @@ Flow 이력에는 허용된 Error Code와 Correlation ID만 남긴다. 실패 �
 
 ## 9. OpenAI 데이터 제어 Gate
 
-`store=false`는 ZDR을 뜻하지 않는다. 시험 환경은 D0만 허용하며 D1 이상 확대 전에 ABLESTACK TechFlow Project 권한이 있는 계정으로 OpenAI Dashboard의 ZDR 또는 Modified Abuse Monitoring 적용 상태를 확인해야 한다. 2026-08-10 확인 계정에는 대상 Project가 표시되지 않아 `UNVERIFIED_ACCOUNT_ACCESS_MISMATCH`로 기록했다.
+`store=false`는 ZDR을 뜻하지 않는다. 2026-08-10 제품 책임자가 제공한 시크릿 브라우저 세션에서 OpenAI Dashboard를 읽기 전용으로 확인했다.
+
+- Organization: `ABLECLOUD`
+- Project: `ABLESTACK-TechFlow`
+- Organization Projects 목록의 Project Data Retention: `None`
+- Organization Data controls의 API call logging: `Enabled per call`
+- Dashboard 안내: Responses API 요청은 기본 로깅되며 요청별 저장을 끄려면 `store=false`를 사용
+- 판정: `VERIFIED_PROJECT_DATA_RETENTION_NONE`
+
+따라서 대상 Project 접근과 상태 확인은 완료됐지만 ZDR 또는 Modified Abuse Monitoring이 적용된 상태는 아니다. 시험 환경은 계속 D0만 허용하고 모든 OpenAI Responses 요청에 `store=false`를 유지한다. D1 이상 확대는 별도의 ZDR·MAM 승인·적용 또는 제품 보안정책 변경 후에만 진행한다.
 
 API Key 교체는 제품 책임자가 명시적으로 요청할 때까지 수행하지 않는다.

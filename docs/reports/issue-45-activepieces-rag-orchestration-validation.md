@@ -92,11 +92,11 @@ Event Gateway는 GitHub Payload 전체를 Activepieces로 전달하지 않는다
 - Migration 0006의 Nullable Correlation Column 유지
 - DB 손상 시에만 배포 전 Dump 복원
 
-## 8. OpenAI ZDR·MAM 확인 결과
+## 8. OpenAI Data Controls 확인 결과
 
-OpenAI Dashboard Data Controls를 확인했으나 현재 로그인 계정의 Organization에는 `Default project`만 표시되고 `ABLESTACK TechFlow` Project가 표시되지 않았다. 따라서 대상 Project의 ZDR·Modified Abuse Monitoring 적용 상태는 `UNVERIFIED_ACCOUNT_ACCESS_MISMATCH`로 판정한다.
+2026-08-10 제품 책임자가 제공한 시크릿 브라우저 세션에서 OpenAI Dashboard를 읽기 전용으로 다시 확인했다. Organization은 `ABLECLOUD`, 대상 Project는 `ABLESTACK-TechFlow`로 확인됐다. Organization Projects 목록에서 대상 Project의 `DATA RETENTION` 값은 `None`이며, Organization Data controls의 `API call logging`은 `Enabled per call`로 선택돼 있다. 같은 화면은 Responses API 요청이 기본 로깅되며 요청별 로깅을 끄려면 `store=false`를 사용하라고 안내한다.
 
-이 결과는 D0 PoC 운영을 막지 않는다. 다만 D1 이상 데이터를 사용하기 전에는 대상 Project 권한이 있는 계정으로 Dashboard에서 적용 상태를 확인해야 한다. `store=false`만으로 ZDR이 성립하지 않는다.
+따라서 이전의 계정 접근 불일치 판정은 폐기하고 `VERIFIED_PROJECT_DATA_RETENTION_NONE`으로 정정한다. 대상 Project 접근과 상태 확인은 완료됐지만 ZDR 또는 Modified Abuse Monitoring이 적용된 상태는 아니다. TechFlow는 현재와 같이 D0만 전송하고 모든 Responses 요청에 `store=false`를 유지한다. D1 이상 데이터 확대는 별도의 ZDR·MAM 승인·적용 또는 제품 보안정책 변경 후에만 진행한다.
 
 - [OpenAI API 데이터 제어](https://developers.openai.com/api/docs/guides/your-data)
 
@@ -106,9 +106,8 @@ OpenAI Dashboard Data Controls를 확인했으나 현재 로그인 계정의 Org
 
 Issue #45의 Flow, 최소 Event, Idempotency, Correlation, 오류 분류, 보안, 시험 서버 배포, Canary, 롤백과 문서화 조건을 충족했다. PR 검토·병합 전까지 Issue는 열어 둔다.
 
-다음 실행 단위는 Issue #46 품질·보안·E2E 검증이다. 진행 전에 사용자가 확인할 항목은 다음 두 가지다.
+다음 실행 단위는 Issue #46 품질·보안·E2E 검증이다. OpenAI Dashboard 확인은 완료됐으므로 별도 계정 확인 작업은 남아 있지 않다. Issue #46에서도 D0 전송 정책과 `store=false`를 유지하며, D1 이상 확대는 별도 제품 결정으로 관리한다.
 
-1. 5개 Flow의 책임 경계와 `dhslove` Reviewer 정책 승인
-2. ABLESTACK TechFlow Project 권한이 있는 OpenAI Dashboard 계정으로 ZDR·MAM 상태 확인
+사용자가 검토할 항목은 5개 Flow의 책임 경계와 `dhslove` Reviewer 정책이다.
 
 고객 공개 여부는 제품 책임자의 결정이며 본 구현이나 향후 자체 기능 범위를 제한하지 않는다.
