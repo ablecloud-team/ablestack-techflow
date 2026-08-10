@@ -6,6 +6,8 @@ from datetime import datetime, timezone
 from typing import Any
 from uuid import UUID, uuid4
 
+from .provider import PROVIDER_PROFILES
+
 from .config import Settings
 from .indexing import build_index_bundle, reciprocal_rank_fusion
 from .source_registry import SOURCE_PROFILES, get_profile, list_profiles, validate_candidate_contract
@@ -809,8 +811,8 @@ class PostgresStore:
                 self._record_embedding_call(connection, embedding_result, correlation_id, query_id=query_id)
                 return {"queryId": query_id, "results": [], "resultCount": 0,
                         "provider": embedding_result.provider, "providerCalled": embedding_result.provider == "openai"}
-            base = """SELECT c.id, c.source_kind, c.path, c.start_line, c.end_line, c.symbol, c.content,
-                     s.repository, s.branch, v.commit_sha
+            base = """SELECT c.id, c.source_version_id, c.source_kind, c.path, c.start_line, c.end_line,
+                     c.symbol, c.content, s.source_profile_id, s.repository, s.branch, v.commit_sha
                      FROM rag_chunk c JOIN rag_source_version v ON v.id=c.source_version_id
                      JOIN rag_source s ON s.id=v.source_id"""
             fts = connection.execute(
@@ -835,12 +837,41 @@ class PostgresStore:
         results = []
         for chunk_id, score, channels in ranked:
             row = lookup[chunk_id]
-            results.append({"chunkId": chunk_id, "repository": row["repository"], "branch": row["branch"],
+            results.append({"chunkId": chunk_id, "sourceVersionId": row["source_version_id"],
+                            "sourceProfileId": row["source_profile_id"],
+                            "repository": row["repository"], "branch": row["branch"],
                             "commit": row["commit_sha"], "path": row["path"], "startLine": row["start_line"],
                             "endLine": row["end_line"], "symbol": row["symbol"], "score": score,
                             "channels": channels, "sourceKind": row["source_kind"], "content": row["content"]})
         return {"queryId": query_id, "results": results, "resultCount": len(results),
                 "provider": embedding_result.provider, "providerCalled": embedding_result.provider == "openai"}
+
+    def record_response_call(self, query_id: UUID, result: Any, correlation_id: str) -> None:
+        with self._pool.connection() as connection:
+            connection.execute(
+                """INSERT INTO rag_provider_call
+                   (id, query_id, provider, surface, provider_profile_id, profile_version,
+                    requested_model_id, returned_model_id, reasoning_effort, provider_request_id,
+                    provider_response_id, input_tokens, output_tokens, latency_ms, status, correlation_id)
+                   VALUES (%s,%s,%s,'responses-api',%s,1,%s,%s,%s,%s,%s,%s,%s,%s,'SUCCEEDED',%s)""",
+                (uuid4(), query_id, result.provider, result.profile_id, result.requested_model_id,
+                 result.returned_model_id, PROVIDER_PROFILES[result.profile_id].reasoning_effort,
+                 result.request_id, result.response_id, result.input_tokens, result.output_tokens,
+                 result.latency_ms, correlation_id),
+            )
+
+    def record_response_failure(self, query_id: UUID, error: Any, correlation_id: str) -> None:
+        with self._pool.connection() as connection:
+            connection.execute(
+                """INSERT INTO rag_provider_call
+                   (id, query_id, provider, surface, provider_profile_id, profile_version,
+                    requested_model_id, reasoning_effort, provider_request_id, latency_ms, status,
+                    failure_class, error_code, correlation_id)
+                   VALUES (%s,%s,'openai','responses-api',%s,1,%s,%s,%s,%s,'FAILED',%s,%s,%s)""",
+                (uuid4(), query_id, error.profile_id, error.requested_model_id,
+                 PROVIDER_PROFILES[error.profile_id].reasoning_effort, error.request_id,
+                 error.latency_ms, error.failure_class, error.code, correlation_id),
+            )
 
     def create_evaluation_run(self, request: dict[str, Any], idempotency_key: str) -> dict[str, Any]:
         with self._pool.connection() as connection:

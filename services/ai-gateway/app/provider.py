@@ -52,6 +52,12 @@ class ContextChunk:
     commit: str
     path: str
     text: str
+    source_version_id: str = ""
+    source_profile_id: str = ""
+    source_kind: str = "SOURCE_CODE"
+    start_line: int = 1
+    end_line: int = 1
+    symbol: str | None = None
 
 
 @dataclass(frozen=True)
@@ -64,6 +70,8 @@ class ResponsesRequest:
     background: bool = False
     tools: tuple[str, ...] = ()
     structured_output: bool = True
+    locale: str = "ko-KR"
+    safety_identifier: str = "techflow-anonymous"
 
 
 @dataclass(frozen=True)
@@ -77,6 +85,10 @@ class ResponsesResult:
     response_id: str
     input_tokens: int
     output_tokens: int
+    provider: str = "mock"
+    profile_id: str = "OPENAI_RAG_DEFAULT_V1"
+    abstain_reason: str | None = None
+    latency_ms: int = 0
 
 
 def validate_responses_request(request: ResponsesRequest) -> ProviderProfile:
@@ -93,6 +105,8 @@ def validate_responses_request(request: ResponsesRequest) -> ProviderProfile:
         raise ProviderContractError("only D0 context is permitted")
     if any(len(chunk.text.encode("utf-8")) > 1_048_576 for chunk in request.context):
         raise ProviderContractError("whole file or oversized context is prohibited")
+    if not request.safety_identifier or len(request.safety_identifier) > 64:
+        raise ProviderContractError("stable safety identifier is required")
     return profile
 
 
@@ -113,6 +127,8 @@ class MockResponsesAdapter:
             response_id=f"mock-response-{digest}",
             input_tokens=sum(max(1, len(chunk.text) // 4) for chunk in request.context),
             output_tokens=12,
+            provider="mock",
+            profile_id=profile.profile_id,
         )
 
 

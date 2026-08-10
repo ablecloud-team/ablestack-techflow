@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "TechFlow AI Gateway",
-    "description": "TechFlow AI Gateway with Issue #43 deterministic parsing, embedding, and hybrid retrieval.",
-    "version": "0.3.0"
+    "description": "TechFlow AI Gateway with grounded Responses generation and deterministic retrieval.",
+    "version": "0.4.0"
   },
   "paths": {
     "/healthz": {
@@ -893,7 +893,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/QueryRequest"
+                "$ref": "#/components/schemas/GroundedQueryRequest"
               }
             }
           },
@@ -1181,6 +1181,78 @@
           "requestedBy"
         ],
         "title": "EvaluationRunCreateRequest"
+      },
+      "GroundedQueryRequest": {
+        "properties": {
+          "queryId": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Queryid"
+          },
+          "question": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 3,
+            "title": "Question"
+          },
+          "sourceProfileIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "pattern": "^[A-Z][A-Z0-9_]{2,63}$"
+                },
+                "type": "array",
+                "maxItems": 9,
+                "minItems": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sourceprofileids"
+          },
+          "compatibilitySetId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Compatibilitysetid"
+          },
+          "locale": {
+            "type": "string",
+            "enum": [
+              "ko-KR",
+              "en-US"
+            ],
+            "title": "Locale",
+            "default": "ko-KR"
+          },
+          "classification": {
+            "type": "string",
+            "const": "D0",
+            "title": "Classification",
+            "default": "D0"
+          },
+          "actorId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_.:@-]{3,128}$",
+            "title": "Actorid"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "queryId",
+          "question",
+          "actorId"
+        ],
+        "title": "GroundedQueryRequest"
       },
       "HTTPValidationError": {
         "properties": {

@@ -1,8 +1,19 @@
 # ABLESTACK TechFlow
 
+## Issue #44 OpenAI Responses·근거 답변 구현
+
+TechFlow AI Gateway 0.4.0은 로컬 Hybrid Retrieval 결과를 OpenAI Responses API와 결합해 근거 답변·보류·실패 상태를 구현했습니다. 단일 Repository·Commit은 `gpt-5.6-terra/medium`, 승인된 복수 구성요소는 `gpt-5.6-sol/high`로 결정론적으로 라우팅하며, strict JSON Schema와 Citation 사후 검증을 적용합니다. 시험 서버의 실 호출은 Citation 5개의 `ANSWERED`, 근거 없는 범위는 Provider 생성 호출 없는 `ABSTAINED`를 반환했고 v0.3.0 롤백과 v0.4.0 복귀까지 통과했습니다.
+
+- [Issue #44 구현·검증 완료 보고서](docs/reports/issue-44-grounded-responses-validation.md)
+- [근거 기반 Responses 배포·운영 Runbook](docs/runbooks/grounded-responses.md)
+- [근거 기반 Responses 구조화 결정](docs/decisions/techflow-grounded-responses.json)
+- [완료 보고서 PDF](output/pdf/techflow-grounded-responses-report.pdf)
+- [발표자료 PDF](output/pdf/techflow-grounded-responses-presentation.pdf)
+- [발표자료 PPTX](output/presentation/techflow-grounded-responses.pptx)
+
 ## Issue #43 Parser·Embedding·검색 구현
 
-TechFlow AI Gateway 0.3.0은 승인된 소스의 Parser·Chunk·Embedding·Hybrid Retrieval과 파생 데이터 삭제를 구현했습니다. 최초 실증 대상인 `GENIE_MASTER`의 34개 파일을 `master@3e3c5c364f5c7261b07d49fcbcd4f3605b91f3b1`에서 인덱싱해 64개 Chunk와 Embedding을 활성화했고, 검색 결과는 Repository·Branch·Commit·Path·Line·Symbol 근거를 반환합니다. 이번 실증은 Mock Embedding으로 외부 OpenAI 호출 없이 수행했으며, 운영 API Key를 주입하면 동일 Adapter 경로에서 실 Embedding Canary를 수행할 수 있습니다.
+TechFlow AI Gateway 0.3.0은 승인된 소스의 Parser·Chunk·Embedding·Hybrid Retrieval과 파생 데이터 삭제를 구현했습니다. 최초 실증 대상인 `GENIE_MASTER`의 34개 파일을 `master@3e3c5c364f5c7261b07d49fcbcd4f3605b91f3b1`에서 인덱싱해 64개 Chunk와 Embedding을 활성화했고, 검색 결과는 Repository·Branch·Commit·Path·Line·Symbol 근거를 반환합니다. 이후 실 OpenAI Embedding으로 전체 색인을 전환하고 Issue #44의 Responses 답변 경로에 사용했습니다.
 
 - [Issue #43 구현·검증 완료 보고서](docs/reports/issue-43-parser-embedding-validation.md)
 - [Parser·Embedding·검색 배포·운영 Runbook](docs/runbooks/parser-embedding-retrieval.md)

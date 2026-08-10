@@ -111,16 +111,17 @@ def main() -> int:
         "POST",
         "/v1/rag/query",
         correlation,
-        {"queryId": str(uuid4()), "question": "Issue 42 source boundary canary", "sourceProfileIds": ["GENIE_MASTER"]},
+        {"queryId": str(uuid4()), "question": "Issue 44 source boundary canary",
+         "actorId": "runtime-canary", "sourceProfileIds": ["GENIE_MASTER"]},
     )
     expect(code, 200, "query")
-    if query_response["data"]["state"] != "ABSTAINED" or query_response["data"]["providerCalled"]:
-        raise RuntimeError("Issue #42 query boundary must abstain without provider call")
+    if query_response["data"]["state"] != "ABSTAINED" or query_response["data"]["generationProviderCalled"]:
+        raise RuntimeError("unindexed query boundary must abstain without generation call")
 
     print(
         "runtime_canary=valid profiles=9 mirrors=7 reviewer=dhslove "
         f"sourceProfile=GENIE_MASTER sourceState={source['state']} files={len(files)} "
-        "unapprovedIngestion=denied queryState=ABSTAINED providerCalled=false"
+        "unapprovedIngestion=denied queryState=ABSTAINED generationProviderCalled=false"
     )
     return 0
 

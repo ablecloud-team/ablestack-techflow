@@ -1,8 +1,8 @@
 # ADR-0009: TechFlow OpenAI 런타임 통합 및 모델 라우팅
 
-- 상태: 제안 - 제품 책임자 승인 대기
+- 상태: 승인 - Issue #43·#44 구현 반영
 - 결정일: 2026-08-03
-- 적용 Issue: [#20 ABLESTACK 지식 수집 및 RAG PoC](https://github.com/ablecloud-team/ablestack-techflow/issues/20)
+- 적용 Issue: [#20 ABLESTACK 지식 수집 및 RAG PoC](https://github.com/ablecloud-team/ablestack-techflow/issues/20), [#43](https://github.com/ablecloud-team/ablestack-techflow/issues/43), [#44](https://github.com/ablecloud-team/ablestack-techflow/issues/44)
 - 선행 결정: [ADR-0008](0008-techflow-rag-poc-architecture.md)
 - 구조화 계약: [techflow-rag-poc-contract.json](../decisions/techflow-rag-poc-contract.json)
 

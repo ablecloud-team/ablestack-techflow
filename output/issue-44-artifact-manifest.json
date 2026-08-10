@@ -1,0 +1,168 @@
+{
+  "schemaVersion": "1.0",
+  "issue": 44,
+  "status": "implemented-deployed-and-validated",
+  "gatewayVersion": "0.4.0",
+  "files": [
+    {
+      "path": "README.md",
+      "size": 21101,
+      "sha256": "55FE1C61E7BF1A498A1CC14E39664DA03971905771D40FFC69022218371862CD"
+    },
+    {
+      "path": "docs/adr/0009-openai-runtime-integration.md",
+      "size": 9886,
+      "sha256": "6293D523932C58ED2E1C134250B5318F6583C7104AAE1ACA7622C3277E0FA10F"
+    },
+    {
+      "path": "docs/decisions/techflow-grounded-responses.json",
+      "size": 2297,
+      "sha256": "E7E32F20A53B687F0B6507E4B14C994314DA4B1ECD6204387615AB8FBD539B00"
+    },
+    {
+      "path": "docs/runbooks/grounded-responses.md",
+      "size": 6396,
+      "sha256": "D4ABFA2F7C0B82BC80027AD54E4EFBE83D7E4F023506C9175D31940FDEDC3B6D"
+    },
+    {
+      "path": "docs/reports/issue-44-grounded-responses-validation.md",
+      "size": 6241,
+      "sha256": "C2334BC2EB18EDCD62C001FC8DBF1CEB13C995EE55ED081548F3E0382C79D3D4"
+    },
+    {
+      "path": "services/ai-gateway/README.md",
+      "size": 3490,
+      "sha256": "A53875856041374264AFCE1D605B2E272D4AF213B9E20C7F9DEF55A45B287328"
+    },
+    {
+      "path": "services/ai-gateway/pyproject.toml",
+      "size": 550,
+      "sha256": "71963BE1B58E4D34D7BFC605DCE478EACAFD364C16E6C09CA55E83120528170E"
+    },
+    {
+      "path": "services/ai-gateway/app/__init__.py",
+      "size": 70,
+      "sha256": "37AF172DE8A487572EB99116E9944037363D158B90D5B6217F1C69CF0B159084"
+    },
+    {
+      "path": "services/ai-gateway/app/config.py",
+      "size": 4088,
+      "sha256": "0507300325D004CA357134DDC1ACC4CD4B3710D319ABFB8C5306067FDDD799ED"
+    },
+    {
+      "path": "services/ai-gateway/app/main.py",
+      "size": 19287,
+      "sha256": "E951901AF60DFCBAEC98D00A4B96EE45815E8CD2316588D3A82F83B5436D733D"
+    },
+    {
+      "path": "services/ai-gateway/app/models.py",
+      "size": 6786,
+      "sha256": "D98399238F90A342F15E7C41F0A741B1977E32D98E3FB91E445B81F2F4B25358"
+    },
+    {
+      "path": "services/ai-gateway/app/postgres_store.py",
+      "size": 53058,
+      "sha256": "04D8E364A6F332B29B449B6D71885269277173279CD1CE6D5D93C590AE7769B7"
+    },
+    {
+      "path": "services/ai-gateway/app/provider.py",
+      "size": 5960,
+      "sha256": "9B0CD05DADAFE4CBD13103A0B47865CF9D7C0DF6C2C5981A8283A575B9BB4D12"
+    },
+    {
+      "path": "services/ai-gateway/app/responses.py",
+      "size": 16105,
+      "sha256": "588742D5403DE84F51FCE61F54DC80D4F686A86EF9794688D35EF43F74400472"
+    },
+    {
+      "path": "services/ai-gateway/app/store.py",
+      "size": 30369,
+      "sha256": "55969A82E268F5F7785B116ADEA567F482A504D70B8699D6D960B0A58281188F"
+    },
+    {
+      "path": "services/ai-gateway/openapi/techflow-ai-gateway-v1.json",
+      "size": 40257,
+      "sha256": "1F3B59C3E5117F31FBA6B65CBF4E58B9FA0295CDBDDAEDF66571887B9664F86E"
+    },
+    {
+      "path": "services/ai-gateway/scripts/issue44_canary.py",
+      "size": 2391,
+      "sha256": "74A95CBD06F5437C1FC8CD973931696656E745925FCB62C92A49DF30835F83A7"
+    },
+    {
+      "path": "services/ai-gateway/tests/test_api.py",
+      "size": 14049,
+      "sha256": "7FC096995EB9BFE940CD688835057026DBCB8A9B5670A38859C4880A1F08758F"
+    },
+    {
+      "path": "services/ai-gateway/tests/test_config.py",
+      "size": 1970,
+      "sha256": "45BF23F81AE9DA816E6238AE76DA68EBD7F63A26947C63E57DA57B198C56B52F"
+    },
+    {
+      "path": "services/ai-gateway/tests/test_responses.py",
+      "size": 6513,
+      "sha256": "6484C2E89B77E0D29F6E4913BC5F403B53F6C74651B7429AB1BDB8EA0A8A9899"
+    },
+    {
+      "path": "deploy/compose/ai-gateway/.env.example",
+      "size": 893,
+      "sha256": "332EB604B7FC71F894289C5CAC4EED33A50133001BAC3B1031D7D74BCB95DC32"
+    },
+    {
+      "path": "deploy/compose/ai-gateway/compose.yml",
+      "size": 5203,
+      "sha256": "A4552E576A174FCC8A442674C21A0CBF4F45B49FD9CE487456CDF3564F2F77FE"
+    },
+    {
+      "path": "deploy/compose/ai-gateway/scripts/verify_runtime.py",
+      "size": 5052,
+      "sha256": "56C7796BA4593273B863B11DF78364CDF95863C749C08A97FB2DF98E2BF61365"
+    },
+    {
+      "path": "tools/ai_gateway/validate_issue_44.py",
+      "size": 2254,
+      "sha256": "8E60451933FDA9A22FA8F057A496F27BA25FC5197A90147C82916CE81630D097"
+    },
+    {
+      "path": "tools/artifacts/issue-44/README.md",
+      "size": 692,
+      "sha256": "40142CCAD048730B84A617A0020E90AD3D40AE8911A042D45698D8C79B0ED39E"
+    },
+    {
+      "path": "tools/artifacts/issue-44/build_manifest.py",
+      "size": 2443,
+      "sha256": "C7962C016BC4ACA9B6D9A239D7B720734891CED7451A95DC23F2EAD5C5C17AD0"
+    },
+    {
+      "path": "tools/artifacts/issue-44/build_presentation_pdf.py",
+      "size": 1111,
+      "sha256": "24A964605BEC98DD7516D3809F5F4E4A9C5F6449B194DDBB678DF18D56612EAC"
+    },
+    {
+      "path": "tools/artifacts/issue-44/build_report.py",
+      "size": 11822,
+      "sha256": "A87A936269E223BADAF6CAC0C2F07C6FAC34280F961877A724B63776B967374E"
+    },
+    {
+      "path": "tools/artifacts/issue-44/validate_artifacts.py",
+      "size": 2596,
+      "sha256": "CBC6DF29DDFC1323E99F7DFC8B7A651DFECE55F934A0473754808AC448834CB5"
+    },
+    {
+      "path": "output/pdf/techflow-grounded-responses-report.pdf",
+      "size": 118107,
+      "sha256": "9DC70079E353687F2B38C920298D610A2540235B21A3DA8761E0A2714921A1F1"
+    },
+    {
+      "path": "output/pdf/techflow-grounded-responses-presentation.pdf",
+      "size": 247713,
+      "sha256": "AA40FFE8B01442BD81D0753157E24F18C85E8EBDD968D4A0FB893B01E6EC3B21"
+    },
+    {
+      "path": "output/presentation/techflow-grounded-responses.pptx",
+      "size": 37968,
+      "sha256": "558362FE029948819B578DE7D517CBD984C9B0F59993A54EDFE583E8AA000062"
+    }
+  ]
+}

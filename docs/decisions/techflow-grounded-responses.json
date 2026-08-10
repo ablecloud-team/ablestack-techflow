@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "decisionId": "TECHFLOW-GROUNDED-RESPONSES-001",
+  "issue": 44,
+  "status": "IMPLEMENTED_AND_VALIDATED",
+  "product": "ABLESTACK TechFlow",
+  "gatewayVersion": "0.4.0",
+  "dataBoundary": {
+    "allowedClassification": "D0",
+    "maximumContextChunks": 10,
+    "persistedRawPrompts": 0,
+    "persistedRawResponses": 0,
+    "hostedFileSearch": false,
+    "tools": []
+  },
+  "requestPolicy": {
+    "api": "OpenAI Responses API",
+    "store": false,
+    "background": false,
+    "stream": false,
+    "structuredOutput": "strict-json-schema",
+    "safetyIdentifier": "HMAC-SHA256 pseudonym, maximum 64 characters"
+  },
+  "routing": [
+    {
+      "profileId": "OPENAI_RAG_DEFAULT_V1",
+      "model": "gpt-5.6-terra",
+      "reasoningEffort": "medium",
+      "condition": "single repository and single commit"
+    },
+    {
+      "profileId": "OPENAI_RAG_ESCALATION_V1",
+      "model": "gpt-5.6-sol",
+      "reasoningEffort": "high",
+      "condition": "approved compatibility scope with multiple repositories or commits"
+    }
+  ],
+  "preflightAbstention": [
+    "no-grounding",
+    "test-only-evidence",
+    "branch-conflict",
+    "compatibility-conflict"
+  ],
+  "postValidation": [
+    "citation-subset",
+    "answer-requires-citation",
+    "test-only-evidence-denied",
+    "branch-conflict-denied"
+  ],
+  "states": ["ANSWERED", "ABSTAINED", "FAILED"],
+  "resilience": {
+    "connectTimeoutSeconds": 3,
+    "responseTimeoutSeconds": 12,
+    "maximumProviderAttempts": 3,
+    "circuitWindowSeconds": 300,
+    "minimumCalls": 10,
+    "failureRate": 0.5,
+    "openSeconds": 60,
+    "halfOpenCalls": 1
+  },
+  "runtimeSecrets": [
+    "OPENAI_API_KEY",
+    "OPENAI_PROJECT_ID",
+    "TECHFLOW_SAFETY_IDENTIFIER_SALT"
+  ],
+  "testEvidence": {
+    "localTests": 96,
+    "isolatedContainerTests": 96,
+    "realAnsweredCitations": 5,
+    "realAbstentionGenerationProviderCalled": false,
+    "activeSourceFiles": 34,
+    "activeChunks": 64,
+    "activeEmbeddings": 64,
+    "activeSymbols": 15,
+    "activeRelations": 45,
+    "rollbackFrom": "0.4.0",
+    "rollbackTo": "0.3.0",
+    "forwardRecovery": "0.4.0"
+  },
+  "operatorGate": {
+    "openaiDataControls": "UNVERIFIED_IN_DASHBOARD",
+    "impact": "D0 PoC permitted; verify ZDR or MAM status before expanding data classification"
+  }
+}
