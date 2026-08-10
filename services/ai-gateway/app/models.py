@@ -150,6 +150,10 @@ class QueryRequest(StrictModel):
         return self
 
 
+class GroundedQueryRequest(QueryRequest):
+    actor_id: Annotated[str, StringConstraints(pattern=r"^[A-Za-z0-9_.:@-]{3,128}$")] = Field(alias="actorId")
+
+
 class EvaluationRunCreateRequest(StrictModel):
     name: Annotated[str, StringConstraints(min_length=3, max_length=128)]
     source_profile_ids: list[SafeId] | None = Field(default=None, min_length=1, max_length=9, alias="sourceProfileIds")

@@ -21,6 +21,7 @@ from .models import (
     CompatibilitySetCreateRequest,
     Envelope,
     EvaluationRunCreateRequest,
+    GroundedQueryRequest,
     IngestionCreateRequest,
     JobCompletionRequest,
     JobRunRequest,
@@ -32,7 +33,18 @@ from .models import (
 )
 from .postgres_store import PostgresStore
 from .embedding import EmbeddingsAdapter, build_embedding_adapter
-from .provider import profile_payloads
+from .provider import ResponsesRequest, profile_payloads
+from .responses import (
+    ResponsesAdapter,
+    ResponsesProviderError,
+    build_responses_adapter,
+    citation_payload,
+    context_from_results,
+    decide_generation,
+    load_safety_identifier_salt,
+    stable_safety_identifier,
+    validate_grounded_result,
+)
 from .source_fetcher import FetchError, GitSnapshotFetcher, SnapshotFetcher
 from .source_pipeline import SourcePipeline
 from .source_registry import get_profile
@@ -88,11 +100,14 @@ def create_app(
     store: Store | None = None,
     source_fetcher: SnapshotFetcher | None = None,
     embeddings_adapter: EmbeddingsAdapter | None = None,
+    responses_adapter: ResponsesAdapter | None = None,
 ) -> FastAPI:
     runtime_settings = settings or Settings.from_env()
     runtime_settings.validate()
     runtime_store = store or _build_store(runtime_settings)
     runtime_embeddings = embeddings_adapter or build_embedding_adapter(runtime_settings)
+    runtime_responses = responses_adapter or build_responses_adapter(runtime_settings)
+    safety_identifier_salt = load_safety_identifier_salt(runtime_settings)
     source_pipeline = SourcePipeline(source_fetcher or GitSnapshotFetcher())
 
     @asynccontextmanager
@@ -103,7 +118,7 @@ def create_app(
     application = FastAPI(
         title="TechFlow AI Gateway",
         version=__version__,
-        description="TechFlow AI Gateway with Issue #43 deterministic parsing, embedding, and hybrid retrieval.",
+        description="TechFlow AI Gateway with grounded Responses generation and deterministic retrieval.",
         docs_url=None,
         redoc_url=None,
         lifespan=lifespan,
@@ -328,28 +343,63 @@ def create_app(
         return _envelope(_retrieve(request, correlation_id), correlation_id)
 
     @application.post("/v1/rag/query", response_model=Envelope, operation_id="queryRag")
-    def query_rag(request: QueryRequest, correlation_id: Annotated[str, Depends(_correlation_id)]) -> Envelope:
+    def query_rag(request: GroundedQueryRequest, correlation_id: Annotated[str, Depends(_correlation_id)]) -> Envelope:
         scope = {
             "sourceProfileIds": request.source_profile_ids,
             "compatibilitySetId": request.compatibility_set_id,
         }
         retrieval = _retrieve(request, correlation_id)
-        citations = [{key: item[key] for key in ("chunkId", "repository", "branch", "commit", "path", "startLine", "endLine", "symbol")}
-                     for item in retrieval["results"]]
-        return _envelope(
-            {
-                "queryId": request.query_id,
-                "state": "ABSTAINED",
-                "abstainReason": "GENERATION_NOT_IMPLEMENTED_UNTIL_ISSUE_44",
-                "answer": None,
-                "citations": citations,
-                "retrieval": retrieval,
-                "scope": scope,
-                "providerCalled": retrieval["providerCalled"],
-                "generationProviderCalled": False,
-            },
-            correlation_id,
+        decision = decide_generation(
+            retrieval["results"],
+            compatibility_set_id=str(request.compatibility_set_id) if request.compatibility_set_id else None,
+            source_profile_ids=request.source_profile_ids,
         )
+        common = {
+            "queryId": request.query_id,
+            "scope": scope,
+            "retrieval": {
+                "resultCount": retrieval["resultCount"],
+                "provider": retrieval["provider"],
+                "providerCalled": retrieval["providerCalled"],
+            },
+            "retrievalProviderCalled": retrieval["providerCalled"],
+        }
+        if decision.state == "ABSTAINED":
+            return _envelope(
+                {**common, "state": "ABSTAINED", "abstainReason": decision.abstain_reason,
+                 "answer": None, "citations": [], "providerProfileId": None,
+                 "generationProviderCalled": False},
+                correlation_id,
+            )
+        context = context_from_results(retrieval["results"], request.classification)
+        provider_request = ResponsesRequest(
+            query_id=str(request.query_id),
+            question=request.question,
+            profile_id=decision.profile_id or "",
+            context=context,
+            locale=request.locale,
+            safety_identifier=stable_safety_identifier(request.actor_id, safety_identifier_salt),
+        )
+        try:
+            generated = runtime_responses.generate(provider_request)
+            runtime_store.record_response_call(request.query_id, generated, correlation_id)
+            state, answer, abstain_reason, cited = validate_grounded_result(generated, context)
+            return _envelope(
+                {**common, "state": state, "abstainReason": abstain_reason, "answer": answer,
+                 "citations": [citation_payload(item) for item in cited],
+                 "providerProfileId": generated.profile_id,
+                 "generationProviderCalled": generated.provider == "openai"},
+                correlation_id,
+            )
+        except ResponsesProviderError as exc:
+            runtime_store.record_response_failure(request.query_id, exc, correlation_id)
+            return _envelope(
+                {**common, "state": "FAILED", "abstainReason": None, "answer": None,
+                 "citations": [], "providerProfileId": exc.profile_id,
+                 "generationProviderCalled": exc.provider_called,
+                 "errorCode": exc.code, "failureClass": exc.failure_class},
+                correlation_id,
+            )
 
     @application.post("/v1/evaluations/runs", response_model=Envelope, status_code=status.HTTP_202_ACCEPTED, operation_id="createEvaluationRun")
     def create_evaluation_run(

@@ -23,7 +23,12 @@ class SettingsTest(unittest.TestCase):
             Settings(provider_mode="openai").validate()
 
     def test_openai_mode_accepts_runtime_secret_file_reference(self) -> None:
-        Settings(provider_mode="openai", openai_api_key_file="/run/secrets/openai_api_key").validate()
+        Settings(
+            provider_mode="openai",
+            openai_api_key_file="/run/secrets/openai_api_key",
+            openai_project_id_file="/run/secrets/openai_project_id",
+            safety_identifier_salt_file="/run/secrets/safety_identifier_salt",
+        ).validate()
 
     def test_only_d0_is_allowed(self) -> None:
         with self.assertRaises(ConfigurationError):

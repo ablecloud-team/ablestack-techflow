@@ -17,6 +17,8 @@ class Settings:
     database_dsn: str | None = None
     provider_mode: str = "mock"
     openai_api_key_file: str | None = None
+    openai_project_id_file: str | None = None
+    safety_identifier_salt_file: str | None = None
     embedding_batch_size: int = 64
     classification: str = "D0"
     log_level: str = "INFO"
@@ -31,6 +33,8 @@ class Settings:
             database_dsn=os.getenv("TECHFLOW_RAG_DATABASE_DSN") or None,
             provider_mode=os.getenv("TECHFLOW_RAG_PROVIDER_MODE", "mock").strip().lower(),
             openai_api_key_file=os.getenv("TECHFLOW_OPENAI_API_KEY_FILE") or None,
+            openai_project_id_file=os.getenv("TECHFLOW_OPENAI_PROJECT_ID_FILE") or None,
+            safety_identifier_salt_file=os.getenv("TECHFLOW_SAFETY_IDENTIFIER_SALT_FILE") or None,
             embedding_batch_size=int(os.getenv("TECHFLOW_EMBEDDING_BATCH_SIZE", "64")),
             classification=os.getenv("TECHFLOW_RAG_CLASSIFICATION", "D0").strip().upper(),
             log_level=os.getenv("TECHFLOW_RAG_LOG_LEVEL", "INFO").strip().upper(),
@@ -47,8 +51,15 @@ class Settings:
             raise ConfigurationError("TECHFLOW_RAG_DATABASE_DSN is required for postgres")
         if self.provider_mode not in {"mock", "openai"}:
             raise ConfigurationError("TECHFLOW_RAG_PROVIDER_MODE must be mock or openai")
-        if self.provider_mode == "openai" and not self.openai_api_key_file:
-            raise ConfigurationError("TECHFLOW_OPENAI_API_KEY_FILE is required for openai mode")
+        if self.provider_mode == "openai":
+            required = {
+                "TECHFLOW_OPENAI_API_KEY_FILE": self.openai_api_key_file,
+                "TECHFLOW_OPENAI_PROJECT_ID_FILE": self.openai_project_id_file,
+                "TECHFLOW_SAFETY_IDENTIFIER_SALT_FILE": self.safety_identifier_salt_file,
+            }
+            missing = [name for name, value in required.items() if not value]
+            if missing:
+                raise ConfigurationError(f"{', '.join(missing)} required for openai mode")
         if not 1 <= self.embedding_batch_size <= 128:
             raise ConfigurationError("TECHFLOW_EMBEDDING_BATCH_SIZE must be between 1 and 128")
         if self.classification != "D0":
@@ -59,7 +70,8 @@ class Settings:
     def __repr__(self) -> str:
         return (
             "Settings(environment={!r}, store_backend={!r}, database_dsn=<redacted>, "
-            "provider_mode={!r}, openai_api_key_file=<redacted>, embedding_batch_size={!r}, "
+            "provider_mode={!r}, openai_api_key_file=<redacted>, openai_project_id_file=<redacted>, "
+            "safety_identifier_salt_file=<redacted>, embedding_batch_size={!r}, "
             "classification={!r}, log_level={!r}, "
             "database_pool_min={!r}, database_pool_max={!r})"
         ).format(

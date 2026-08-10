@@ -168,7 +168,7 @@ class ApiContractTest(unittest.TestCase):
         self.assertEqual(201, response.status_code, response.text)
         self.assertEqual("APPROVED", response.json()["data"]["state"])
 
-    def test_query_abstains_without_provider_call(self) -> None:
+    def test_query_returns_grounded_mock_answer(self) -> None:
         source = self.create_source("test-create-source-query")
         self.scan_source(source)
         self.approve_source(source)
@@ -186,6 +186,7 @@ class ApiContractTest(unittest.TestCase):
             json={
                 "queryId": str(uuid4()),
                 "question": "ABLESTACK 상태를 설명해줘",
+                "actorId": "test-user",
                 "sourceProfileIds": ["CLOUD_MAIN"],
                 "classification": "D0",
             },
@@ -193,11 +194,15 @@ class ApiContractTest(unittest.TestCase):
         )
         self.assertEqual(200, response.status_code, response.text)
         data = response.json()["data"]
-        self.assertEqual("ABSTAINED", data["state"])
-        self.assertFalse(data["providerCalled"])
+        self.assertEqual("ANSWERED", data["state"])
+        self.assertFalse(data["retrievalProviderCalled"])
         self.assertFalse(data["generationProviderCalled"])
-        self.assertEqual("GENERATION_NOT_IMPLEMENTED_UNTIL_ISSUE_44", data["abstainReason"])
+        self.assertIsNone(data["abstainReason"])
         self.assertGreaterEqual(len(data["citations"]), 1)
+        self.assertNotIn("content", response.text)
+        calls = self.client.app.state.store._provider_calls
+        self.assertEqual("responses-api", calls[-1]["surface"])
+        self.assertNotIn("question", calls[-1])
 
     def test_retrieve_returns_commit_pinned_citation(self) -> None:
         source = self.create_source("test-create-source-retrieve")
@@ -224,7 +229,7 @@ class ApiContractTest(unittest.TestCase):
     def test_query_requires_exactly_one_scope(self) -> None:
         response = self.client.post(
             "/v1/rag/query",
-            json={"queryId": str(uuid4()), "question": "question"},
+            json={"queryId": str(uuid4()), "question": "question", "actorId": "test-user"},
             headers={"X-Correlation-Id": CORRELATION},
         )
         self.assertEqual(422, response.status_code)
@@ -233,7 +238,8 @@ class ApiContractTest(unittest.TestCase):
         sensitive = "do-not-echo-this-question"
         response = self.client.post(
             "/v1/rag/query",
-            json={"queryId": "invalid", "question": sensitive, "sourceProfileIds": ["CLOUD_MAIN"]},
+            json={"queryId": "invalid", "question": sensitive, "actorId": "test-user",
+                  "sourceProfileIds": ["CLOUD_MAIN"]},
             headers={"X-Correlation-Id": CORRELATION},
         )
         self.assertEqual(422, response.status_code)

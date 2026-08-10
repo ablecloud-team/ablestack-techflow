@@ -2,7 +2,7 @@
 
 TechFlow AI Gateway는 Activepieces와 AI Provider 사이에서 ABLESTACK 지식의 Source Registry, 검역·승인, Parser·Chunk·Embedding, 검색 범위와 인용, 삭제 정책을 소유하는 FastAPI 서비스입니다. 저장소 원문을 실행하지 않으며 Activepieces가 정책·상태·인프라 작업을 대신 소유하지 않습니다.
 
-## v0.3.0 구현 범위
+## v0.4.0 구현 범위
 
 - OpenAPI 21개 Operation, PostgreSQL RAG Table 19개
 - 7개 영속 Bare Mirror, 9개 Allowlisted Source Profile
@@ -14,15 +14,19 @@ TechFlow AI Gateway는 Activepieces와 AI Provider 사이에서 ABLESTACK 지식
 - FTS 20·Identifier 20·exact cosine 30 후보와 RRF `k=60`
 - 최종 최대 10개 Repository·Branch·Commit·Path·Line·Symbol 인용
 - WITHDRAW 즉시 검색 제외와 Chunk·Embedding·Symbol·Relation 삭제 Ledger
+- OpenAI Responses API의 `store=false`·`background=false`·Tool 0개·Strict Structured Output
+- 단일 근거 `gpt-5.6-terra/medium`, 복합 근거 `gpt-5.6-sol/high` 결정론적 라우팅
+- Branch·Compatibility·Test-only 사전 보류와 Citation 사후 검증
+- `ANSWERED`·`ABSTAINED`·`FAILED`, 재시도·Circuit Breaker와 원문 없는 Provider 감사
 
-`POST /v1/rag/query`는 Issue #43에서 검색과 인용까지 수행하지만 답변 생성은 `GENERATION_NOT_IMPLEMENTED_UNTIL_ISSUE_44`로 보류합니다. OpenAI Responses 기반 생성·보류·Structured Output은 Issue #44 범위입니다.
+`POST /v1/rag/query`는 `actorId`를 필수로 받아 안정적인 가명 `safety_identifier`를 만들고, 로컬에서 검색한 최대 10개 D0 Chunk만 답변 Provider에 전달합니다. 원본 질문·응답·Chunk는 Provider 감사 테이블에 저장하지 않습니다.
 
 ## 개발과 검증
 
 ```bash
 python3 -m venv .venv
 .venv/bin/pip install -r requirements-dev.lock
-.venv/bin/python -m pytest tests -q
+.venv/bin/python -m unittest discover -s tests -v
 .venv/bin/python scripts/export_openapi.py
 .venv/bin/python scripts/build_migration_manifest.py
 .venv/bin/python ../../tools/ai_gateway/validate_issue_43.py
@@ -47,6 +51,8 @@ TECHFLOW_RAG_MIGRATION_DSN='runtime-only' python scripts/migrate.py verify
 ```text
 TECHFLOW_RAG_PROVIDER_MODE=openai
 TECHFLOW_OPENAI_API_KEY_FILE=/run/secrets/openai_api_key
+TECHFLOW_OPENAI_PROJECT_ID_FILE=/run/secrets/openai_project_id
+TECHFLOW_SAFETY_IDENTIFIER_SALT_FILE=/run/secrets/safety_identifier_salt
 ```
 
 ## 주요 자산
@@ -57,4 +63,5 @@ TECHFLOW_OPENAI_API_KEY_FILE=/run/secrets/openai_api_key
 - Compose: `../../deploy/compose/ai-gateway/compose.yml`
 - Source Runbook: `../../docs/runbooks/source-registry-quarantine.md`
 - Parser·검색 Runbook: `../../docs/runbooks/parser-embedding-retrieval.md`
-- 완료 보고서: `../../docs/reports/issue-43-parser-embedding-validation.md`
+- 근거 답변 Runbook: `../../docs/runbooks/grounded-responses.md`
+- 완료 보고서: `../../docs/reports/issue-44-grounded-responses-validation.md`

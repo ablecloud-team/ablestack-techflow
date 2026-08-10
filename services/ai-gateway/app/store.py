@@ -8,6 +8,8 @@ from threading import RLock
 from typing import Any, Protocol
 from uuid import UUID, uuid4
 
+from .provider import PROVIDER_PROFILES
+
 
 class StoreError(RuntimeError):
     code = "STORE_ERROR"
@@ -60,6 +62,8 @@ class Store(Protocol):
         correlation_id: str, adapter: Any, batch_size: int,
     ) -> dict[str, Any]: ...
     def retrieve(self, request: dict[str, Any], embedding_result: Any, correlation_id: str) -> dict[str, Any]: ...
+    def record_response_call(self, query_id: UUID, result: Any, correlation_id: str) -> None: ...
+    def record_response_failure(self, query_id: UUID, error: Any, correlation_id: str) -> None: ...
     def create_evaluation_run(self, request: dict[str, Any], idempotency_key: str) -> dict[str, Any]: ...
     def get_evaluation_run(self, run_id: UUID) -> dict[str, Any]: ...
 
@@ -86,6 +90,7 @@ class MemoryStore:
         self._embeddings: dict[UUID, tuple[float, ...]] = {}
         self._symbols: dict[UUID, Any] = {}
         self._relations: dict[UUID, Any] = {}
+        self._provider_calls: list[dict[str, Any]] = []
         self._idempotency: dict[tuple[str, str], dict[str, Any]] = {}
         from .source_registry import list_repositories, mirror_key
 
@@ -523,13 +528,39 @@ class MemoryStore:
                 chunk = lookup[chunk_id]
                 version = self._source_versions[chunk.source_version_id]
                 results.append({
-                    "chunkId": chunk.id, "repository": version["repository"], "branch": version["branch"],
+                    "chunkId": chunk.id, "sourceVersionId": chunk.source_version_id,
+                    "sourceProfileId": version["sourceProfileId"],
+                    "repository": version["repository"], "branch": version["branch"],
                     "commit": version["commit"], "path": chunk.path, "startLine": chunk.start_line,
                     "endLine": chunk.end_line, "symbol": chunk.symbol, "score": score, "channels": channels,
                     "sourceKind": chunk.source_kind, "content": chunk.content,
                 })
             return {"queryId": request["queryId"], "results": results, "resultCount": len(results),
                     "provider": embedding_result.provider, "providerCalled": embedding_result.provider == "openai"}
+
+    def record_response_call(self, query_id: UUID, result: Any, correlation_id: str) -> None:
+        with self._lock:
+            self._provider_calls.append({
+                "queryId": query_id, "surface": "responses-api", "provider": result.provider,
+                "providerProfileId": result.profile_id, "requestedModelId": result.requested_model_id,
+                "returnedModelId": result.returned_model_id, "requestId": result.request_id,
+                "responseId": result.response_id, "inputTokens": result.input_tokens,
+                "outputTokens": result.output_tokens, "latencyMs": result.latency_ms,
+                "reasoningEffort": PROVIDER_PROFILES[result.profile_id].reasoning_effort,
+                "status": "SUCCEEDED", "correlationId": correlation_id,
+            })
+
+    def record_response_failure(self, query_id: UUID, error: Any, correlation_id: str) -> None:
+        with self._lock:
+            self._provider_calls.append({
+                "queryId": query_id, "surface": "responses-api", "provider": "openai",
+                "providerProfileId": error.profile_id, "requestedModelId": error.requested_model_id,
+                "returnedModelId": None, "requestId": error.request_id, "responseId": None,
+                "inputTokens": None, "outputTokens": None, "latencyMs": error.latency_ms,
+                "reasoningEffort": PROVIDER_PROFILES[error.profile_id].reasoning_effort,
+                "status": "FAILED", "failureClass": error.failure_class, "errorCode": error.code,
+                "correlationId": correlation_id,
+            })
 
     def create_evaluation_run(self, request: dict[str, Any], idempotency_key: str) -> dict[str, Any]:
         with self._lock:
