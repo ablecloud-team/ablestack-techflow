@@ -61,11 +61,20 @@ def _json_log(event: str, **fields: object) -> None:
     logger.info(json.dumps(safe, ensure_ascii=True, separators=(",", ":")))
 
 
+MANUAL_REVIEW_ERROR_CODES = {"CONFLICT", "INVALID_STATE", "SOURCE_HEAD_MOVED"}
+
+
 def _error(correlation_id: str, status_code: int, code: str) -> JSONResponse:
+    if code in MANUAL_REVIEW_ERROR_CODES:
+        failure_class = "MANUAL_REVIEW"
+    elif status_code >= 500:
+        failure_class = "RETRYABLE"
+    else:
+        failure_class = "TERMINAL"
     return JSONResponse(
         status_code=status_code,
         content={
-            "error": {"code": code, "failureClass": "TERMINAL" if status_code < 500 else "RETRYABLE"},
+            "error": {"code": code, "failureClass": failure_class},
             "meta": {"correlationId": correlation_id, "apiVersion": "v1"},
         },
     )
@@ -298,7 +307,10 @@ def create_app(
         correlation_id: Annotated[str, Depends(_correlation_id)],
         idempotency_key: Annotated[str, Depends(_idempotency_key)],
     ) -> Envelope:
-        return _envelope(runtime_store.create_ingestion(sourceId, _model_data(request), idempotency_key), correlation_id)
+        return _envelope(
+            runtime_store.create_ingestion(sourceId, _model_data(request), idempotency_key, correlation_id),
+            correlation_id,
+        )
 
     @application.delete("/v1/sources/{sourceId}", response_model=Envelope, status_code=status.HTTP_202_ACCEPTED, operation_id="withdrawSource")
     def withdraw_source(
@@ -306,7 +318,7 @@ def create_app(
         correlation_id: Annotated[str, Depends(_correlation_id)],
         idempotency_key: Annotated[str, Depends(_idempotency_key)],
     ) -> Envelope:
-        return _envelope(runtime_store.withdraw_source(sourceId, idempotency_key), correlation_id)
+        return _envelope(runtime_store.withdraw_source(sourceId, idempotency_key, correlation_id), correlation_id)
 
     @application.get("/v1/jobs/{jobId}", response_model=Envelope, operation_id="getJob")
     def get_job(jobId: UUID, correlation_id: Annotated[str, Depends(_correlation_id)]) -> Envelope:
@@ -407,7 +419,10 @@ def create_app(
         correlation_id: Annotated[str, Depends(_correlation_id)],
         idempotency_key: Annotated[str, Depends(_idempotency_key)],
     ) -> Envelope:
-        return _envelope(runtime_store.create_evaluation_run(_model_data(request), idempotency_key), correlation_id)
+        return _envelope(
+            runtime_store.create_evaluation_run(_model_data(request), idempotency_key, correlation_id),
+            correlation_id,
+        )
 
     @application.get("/v1/evaluations/runs/{runId}", response_model=Envelope, operation_id="getEvaluationRun")
     def get_evaluation_run(runId: UUID, correlation_id: Annotated[str, Depends(_correlation_id)]) -> Envelope:

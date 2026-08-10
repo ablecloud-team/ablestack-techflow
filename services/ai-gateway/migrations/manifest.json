@@ -54,13 +54,23 @@
     },
     {
       "path": "0005_parser_embedding_retrieval_down.sql",
-      "sha256": "83841149508cccb1073fca776be29bc4af206ddffd78a6aa8724ca025cf7300f",
-      "bytes": 1043
+      "sha256": "7814e3616a7fe1fc987d02a642cd2691e264d11ba917c3b95b2a2a0da10a6da2",
+      "bytes": 1061
     },
     {
       "path": "0005_parser_embedding_retrieval_up.sql",
-      "sha256": "d18c84a214148adf11ce10b00048cac0fcddf00301b1bda49252661a3ba3dccc",
-      "bytes": 2082
+      "sha256": "db65f51122859128a10816b519e53c4afeb5b786fbcf2d849488ceffe1527aa4",
+      "bytes": 2113
+    },
+    {
+      "path": "0006_orchestration_correlation_down.sql",
+      "sha256": "36ff4a6c8c23485c5c1baa10cdb8c7cd5c0b390d3cd5fc726cc6d3b76ab000b9",
+      "bytes": 251
+    },
+    {
+      "path": "0006_orchestration_correlation_up.sql",
+      "sha256": "87cfa7d7ba8373b1f886b587e2f9adfcc12c44a063a2f6a12fff2543a7645339",
+      "bytes": 886
     }
   ]
 }

@@ -1,0 +1,194 @@
+{
+  "schemaVersion": "1.0",
+  "issue": 45,
+  "status": "implemented-deployed-and-validated",
+  "aiGatewayVersion": "0.5.0",
+  "eventGatewayVersion": "0.3.0",
+  "files": [
+    {
+      "path": "README.md",
+      "size": 22233,
+      "sha256": "8467171C7F2BF2B62672A9C9B7A4CFC71100333BEF96B9CBC9AD5C2C68AA46AA"
+    },
+    {
+      "path": "docs/plans/techflow-product-roadmap.md",
+      "size": 33785,
+      "sha256": "5FCF541F452998B09BA1B713B18E7735371A847D8F0ED01B722C77DFC4370237"
+    },
+    {
+      "path": "docs/decisions/techflow-activepieces-rag-orchestration.json",
+      "size": 2913,
+      "sha256": "C1B31533040FB04102141AE3F8441BE0607D347AD2EF7ADD0B113F958E752420"
+    },
+    {
+      "path": "docs/runbooks/activepieces-rag-orchestration.md",
+      "size": 6637,
+      "sha256": "C40EE28905F670C2196D067BB13BB0268F37A2D1DD10E9E72819C05A995C8422"
+    },
+    {
+      "path": "docs/reports/issue-45-activepieces-rag-orchestration-validation.md",
+      "size": 6831,
+      "sha256": "702B8AAFC8431CA141AE5550CC4687DB5B922C5ED14729A5C7436328AD5CFF00"
+    },
+    {
+      "path": "deploy/compose/activepieces/.env.example",
+      "size": 3241,
+      "sha256": "CD26CCD7FF450496A387F5EF9BC3089F9A92BF6A20E0B03678B06AF8CCD3FE10"
+    },
+    {
+      "path": "deploy/compose/activepieces/compose.yml",
+      "size": 5274,
+      "sha256": "41B1D25FE3CF1AAA29B350941F5BCF7172168E9A820E7D421EA9896010406AEF"
+    },
+    {
+      "path": "deploy/compose/activepieces/image-lock.json",
+      "size": 2397,
+      "sha256": "844283C3E4ABFEC2DD8035B457178A893AEA1F50AB16C6F3495A11AD66480FDD"
+    },
+    {
+      "path": "deploy/compose/activepieces/event-gateway/Dockerfile",
+      "size": 557,
+      "sha256": "3987F00D785F8BC7B06E3120CB035B2ECCAC7750EC2905196435ECC304BD4506"
+    },
+    {
+      "path": "deploy/compose/activepieces/event-gateway/gateway.py",
+      "size": 37049,
+      "sha256": "DB36A58D8F181660291A65A04BF61ED333C49ECEB775ECDEEA493B58FC3E0D0E"
+    },
+    {
+      "path": "deploy/compose/activepieces/event-gateway/test_gateway.py",
+      "size": 14725,
+      "sha256": "5F61DE4C1E0F911827CD0D738737021F039172F1C92B819AA46C23B83AB0657F"
+    },
+    {
+      "path": "deploy/compose/activepieces/flows/rag-orchestration-v1.json",
+      "size": 3495,
+      "sha256": "C3F1D83D03A853621617621D0DEC3E9F0659B8E921A9210F82C05FEED4D41C1A"
+    },
+    {
+      "path": "deploy/compose/activepieces/scripts/manage-rag-flows.py",
+      "size": 7639,
+      "sha256": "937CDB6C8070219731C9722FC7B37B50F29C0D95AC825959B2E35D0A05E5A9E5"
+    },
+    {
+      "path": "deploy/compose/activepieces/scripts/test_manage_rag_flows.py",
+      "size": 1966,
+      "sha256": "E22409896AD13F956960FE8A427B558B94A0BCC3909E37352C9DE47C41212E61"
+    },
+    {
+      "path": "deploy/compose/ai-gateway/compose.yml",
+      "size": 5283,
+      "sha256": "0E89593A295FCEEB0B33F99A36D1A9560E418CD8F8311F504C03AFDC332CB711"
+    },
+    {
+      "path": "services/ai-gateway/README.md",
+      "size": 3904,
+      "sha256": "48BDB9E9FADE24B04B196FDE93FD68C538557CC88544ECC2489246C2909E226C"
+    },
+    {
+      "path": "services/ai-gateway/pyproject.toml",
+      "size": 553,
+      "sha256": "1892ADB1F617DB88BE5146CD9A151856E6974AC33F4A88B063F2BCE31CAC25B7"
+    },
+    {
+      "path": "services/ai-gateway/app/__init__.py",
+      "size": 70,
+      "sha256": "8A678E590B0EFE7561B417FB75240567CA1CA54894CEF7321EA7144499BF2C73"
+    },
+    {
+      "path": "services/ai-gateway/app/main.py",
+      "size": 19643,
+      "sha256": "3A722871F0FD498DDABCCE3E8B88FC6FDA886A5E8EFC982757572076F6652240"
+    },
+    {
+      "path": "services/ai-gateway/app/postgres_store.py",
+      "size": 53497,
+      "sha256": "B9A73E22132BCAE308413CEB9D669FADB760DE3EA64003696B2BE92AA163B2F4"
+    },
+    {
+      "path": "services/ai-gateway/app/store.py",
+      "size": 30978,
+      "sha256": "8081FDD08F17444D821127393F95754E4AEAF81E81E3F9EBF0777DF0F8208C33"
+    },
+    {
+      "path": "services/ai-gateway/migrations/0006_orchestration_correlation_up.sql",
+      "size": 886,
+      "sha256": "87CFA7D7BA8373B1F886B587E2F9ADFCC12C44A063A2F6A12FFF2543A7645339"
+    },
+    {
+      "path": "services/ai-gateway/migrations/0006_orchestration_correlation_down.sql",
+      "size": 251,
+      "sha256": "36FF4A6C8C23485C5C1BAA10CDB8C7CD5C0B390D3CD5FC726CC6D3B76AB000B9"
+    },
+    {
+      "path": "services/ai-gateway/migrations/manifest.json",
+      "size": 2367,
+      "sha256": "35644FDB533FA1D887B49CB71B7213CBC24D6A79FEA20D48ECB586B16F38218F"
+    },
+    {
+      "path": "services/ai-gateway/openapi/techflow-ai-gateway-v1.json",
+      "size": 40257,
+      "sha256": "7BD4A58C555FD98C29A8C829B23AAF271CA233E653B5CA043F78B37A7BE6576D"
+    },
+    {
+      "path": "services/ai-gateway/scripts/migrate.py",
+      "size": 6717,
+      "sha256": "C5A99549B2FE6D4BDCC367F5E7A038EB477A103BC193F51412BC907D83275978"
+    },
+    {
+      "path": "services/ai-gateway/tests/test_api.py",
+      "size": 14653,
+      "sha256": "67DBE33CFAF1330E979B83B6D61E9EA13297DDBF69BFFD8528A8966C65596AE5"
+    },
+    {
+      "path": "services/ai-gateway/tests/test_container_contract.py",
+      "size": 2902,
+      "sha256": "30D6343ACCF51BC1079CE4EC410B9A1EBDA1B6DD75522DC56C8CD5200E21EC2A"
+    },
+    {
+      "path": "services/ai-gateway/tests/test_migrations.py",
+      "size": 5308,
+      "sha256": "0E1C4A8FDF5740362B39D22B7DD98DB34442BB52AEBC6BDFF78F05B0B0D1E980"
+    },
+    {
+      "path": "tools/artifacts/issue-45/README.md",
+      "size": 737,
+      "sha256": "10640D704692FB47386600536EEB2F45DAB1B39EC5AD63E84DF148280324732E"
+    },
+    {
+      "path": "tools/artifacts/issue-45/build_report.py",
+      "size": 9775,
+      "sha256": "035BEE228F6CD9C92327ED3870F9B5D3C4AB7776D382D8CBFFDEDF94431DF728"
+    },
+    {
+      "path": "tools/artifacts/issue-45/build_presentation_pdf.py",
+      "size": 1113,
+      "sha256": "8D0EAF25BE4FE63F0D84CCA4D039AB22C7A56283719BA0B1A5F854EECF2528D0"
+    },
+    {
+      "path": "tools/artifacts/issue-45/build_manifest.py",
+      "size": 2948,
+      "sha256": "16001208082CE65E0026D3F70D522E01ACAD0B0AE831BEB3F7AF86C455B1D007"
+    },
+    {
+      "path": "tools/artifacts/issue-45/validate_artifacts.py",
+      "size": 2588,
+      "sha256": "8BB288616D38601A3B7FF0BFEAD9EF6C555291DE5A5476DF1A7C145117B2C462"
+    },
+    {
+      "path": "output/pdf/techflow-activepieces-rag-orchestration-report.pdf",
+      "size": 101642,
+      "sha256": "4AE78F664B8D8DA550C3E72967D3D8D70D60FA65F8358BAF956E526E4925364F"
+    },
+    {
+      "path": "output/pdf/techflow-activepieces-rag-orchestration-presentation.pdf",
+      "size": 212159,
+      "sha256": "CE7FD961C7918B9C16E02708F08F6CEB4E343C1D4979A785EC2C627177546CC6"
+    },
+    {
+      "path": "output/presentation/techflow-activepieces-rag-orchestration.pptx",
+      "size": 35590,
+      "sha256": "3C1E13C2E10E7DE82550C2052734306D6F94D0592052E42E75593BB98F99148B"
+    }
+  ]
+}

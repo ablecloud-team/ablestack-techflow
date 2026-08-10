@@ -2,7 +2,13 @@
 
 TechFlow AI Gateway는 Activepieces와 AI Provider 사이에서 ABLESTACK 지식의 Source Registry, 검역·승인, Parser·Chunk·Embedding, 검색 범위와 인용, 삭제 정책을 소유하는 FastAPI 서비스입니다. 저장소 원문을 실행하지 않으며 Activepieces가 정책·상태·인프라 작업을 대신 소유하지 않습니다.
 
-## v0.4.0 구현 범위
+## v0.5.0 구현 범위
+
+- Activepieces 5개 Flow용 최소 Event·Correlation·Idempotency 계약
+- Ingestion Job·Evaluation Run `correlation_id` 영속화
+- 9개 Source Profile Discovery·Scan 반복 실행 멱등성
+- 승인·Compatibility·철회·평가 정책을 Gateway에 유지
+- `RETRYABLE`·`TERMINAL`·`MANUAL_REVIEW` 실패 계약
 
 - OpenAPI 21개 Operation, PostgreSQL RAG Table 19개
 - 7개 영속 Bare Mirror, 9개 Allowlisted Source Profile
@@ -58,10 +64,11 @@ TECHFLOW_SAFETY_IDENTIFIER_SALT_FILE=/run/secrets/safety_identifier_salt
 ## 주요 자산
 
 - OpenAPI: `openapi/techflow-ai-gateway-v1.json`
-- Migration: `migrations/0000_*`부터 `migrations/0005_*`
+- Migration: `migrations/0000_*`부터 `migrations/0006_*`
 - Migration Checksum: `migrations/manifest.json`
 - Compose: `../../deploy/compose/ai-gateway/compose.yml`
 - Source Runbook: `../../docs/runbooks/source-registry-quarantine.md`
 - Parser·검색 Runbook: `../../docs/runbooks/parser-embedding-retrieval.md`
 - 근거 답변 Runbook: `../../docs/runbooks/grounded-responses.md`
-- 완료 보고서: `../../docs/reports/issue-44-grounded-responses-validation.md`
+- Orchestration Runbook: `../../docs/runbooks/activepieces-rag-orchestration.md`
+- 완료 보고서: `../../docs/reports/issue-45-activepieces-rag-orchestration-validation.md`

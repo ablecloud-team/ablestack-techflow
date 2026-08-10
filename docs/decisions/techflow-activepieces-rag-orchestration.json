@@ -1,0 +1,109 @@
+{
+  "decisionId": "TECHFLOW-ISSUE-45-ACTIVEPIECES-RAG-ORCHESTRATION",
+  "status": "DEPLOYED_AND_VALIDATED",
+  "decidedAt": "2026-08-10",
+  "scope": {
+    "sourceProfiles": 9,
+    "reviewer": "dhslove",
+    "dataClassification": "D0_ONLY",
+    "apiKeyRotation": "DEFERRED_BY_PRODUCT_OWNER",
+    "openAiDataControls": "UNVERIFIED_ACCOUNT_ACCESS_MISMATCH"
+  },
+  "ownership": {
+    "activepieces": [
+      "시각적 Flow와 Webhook Trigger",
+      "단계 순서와 재시도 실행",
+      "최소 이벤트 전달",
+      "실행 이력과 Correlation ID 노출"
+    ],
+    "techflowEventGateway": [
+      "HMAC·Timestamp·Event ID 검증",
+      "GitHub Push를 9개 Source Profile에 매핑",
+      "허용 필드만 남기는 이벤트 최소화",
+      "실패 분류와 Activepieces Route 선택"
+    ],
+    "techflowAiGateway": [
+      "Source 상태와 승인자 판정",
+      "Compatibility Set 정책",
+      "검역·Parser·Chunk·Embedding·검색",
+      "철회·Lineage 삭제와 평가 상태"
+    ]
+  },
+  "flows": [
+    {
+      "logicalId": "source-discovery-scan",
+      "runtimeFlowId": "mmXBGOVE0cwz2JmkzKoZl",
+      "state": "ENABLED"
+    },
+    {
+      "logicalId": "review-approval-ingestion",
+      "runtimeFlowId": "FinN9dvxtiGl10t8Br8kt",
+      "state": "ENABLED"
+    },
+    {
+      "logicalId": "compatibility-approval",
+      "runtimeFlowId": "zGckwpMDh3ImsHs0yig4L",
+      "state": "ENABLED"
+    },
+    {
+      "logicalId": "withdrawal-deletion",
+      "runtimeFlowId": "rpsiIRfh8wo6XpdvaxSMa",
+      "state": "ENABLED"
+    },
+    {
+      "logicalId": "evaluation-status",
+      "runtimeFlowId": "JV7tPXmC2cR75HGm4Oft4",
+      "state": "ENABLED"
+    }
+  ],
+  "eventContract": {
+    "required": [
+      "eventId",
+      "correlationId",
+      "idempotencyKey",
+      "occurredAt",
+      "eventType"
+    ],
+    "allowedDomainFields": [
+      "sourceProfileId",
+      "sourceId",
+      "repository",
+      "branch",
+      "commit",
+      "reviewerId",
+      "compatibilitySetId",
+      "jobId",
+      "evaluationRunId",
+      "state",
+      "errorCode"
+    ],
+    "forbidden": [
+      "sourceContent",
+      "prompt",
+      "providerCredential",
+      "githubToken",
+      "authorizationHeader"
+    ]
+  },
+  "failureClasses": {
+    "RETRYABLE": "일시 장애와 5xx. 동일 Idempotency Key로 제한 재시도",
+    "TERMINAL": "계약·권한·입력 오류. 자동 재시도 금지",
+    "MANUAL_REVIEW": "상태 충돌·승인 무효·정책 판정. 담당자 검토 후 새 이벤트"
+  },
+  "network": {
+    "mode": "STRICT",
+    "activepiecesSsrfAllowList": [
+      "172.30.19.3/32",
+      "172.30.19.9/32"
+    ],
+    "directPublicFlowWebhook": false
+  },
+  "completionEvidence": {
+    "localAiGatewayTests": 97,
+    "eventAndFlowTests": 26,
+    "activepiecesFlowsEnabled": 5,
+    "activepiecesContainersHealthy": 6,
+    "secretLeaks": 0,
+    "rootDiskAvailableGiB": 949
+  }
+}

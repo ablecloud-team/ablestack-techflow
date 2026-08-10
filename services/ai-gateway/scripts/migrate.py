@@ -66,7 +66,14 @@ def verify(connection: psycopg.Connection) -> None:
     ).fetchone()[0]
     if issue43_columns != 8:
         raise SystemExit(f"Issue 43 schema mismatch expected=8 actual={issue43_columns}")
-    print(f"schema=valid tables={len(EXPECTED_TABLES)} extensions=2 sourceProfiles=9 issue43Columns=8")
+    issue45_columns = connection.execute(
+        "SELECT count(*) FROM information_schema.columns WHERE table_schema='public' AND "
+        "table_name IN ('rag_ingestion_job','rag_evaluation_run') AND column_name='correlation_id'"
+    ).fetchone()[0]
+    if issue45_columns != 2:
+        raise SystemExit(f"Issue 45 schema mismatch expected=2 actual={issue45_columns}")
+    print(f"schema=valid tables={len(EXPECTED_TABLES)} extensions=2 sourceProfiles=9 "
+          "issue43Columns=8 issue45Columns=2")
 
 
 def main() -> int:
@@ -79,6 +86,11 @@ def main() -> int:
         if args.direction == "down":
             if not args.allow_destructive_rollback:
                 raise SystemExit("--allow-destructive-rollback is required")
+            issue45_present = connection.execute(
+                "SELECT 1 FROM information_schema.columns WHERE table_name='rag_ingestion_job' AND column_name='correlation_id'"
+            ).fetchone()
+            if issue45_present:
+                connection.execute((MIGRATIONS / "0006_orchestration_correlation_down.sql").read_text(encoding="utf-8"))
             issue43_present = connection.execute(
                 "SELECT 1 FROM information_schema.columns WHERE table_name='rag_ingestion_job' AND column_name='metrics'"
             ).fetchone()
@@ -106,6 +118,11 @@ def main() -> int:
         ).fetchone()
         if not issue43_present:
             connection.execute((MIGRATIONS / "0005_parser_embedding_retrieval_up.sql").read_text(encoding="utf-8"))
+        issue45_present = connection.execute(
+            "SELECT 1 FROM information_schema.columns WHERE table_name='rag_ingestion_job' AND column_name='correlation_id'"
+        ).fetchone()
+        if not issue45_present:
+            connection.execute((MIGRATIONS / "0006_orchestration_correlation_up.sql").read_text(encoding="utf-8"))
         verify(connection)
     return 0
 

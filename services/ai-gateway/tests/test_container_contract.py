@@ -40,8 +40,10 @@ class ContainerContractTest(unittest.TestCase):
 
     def test_gateway_has_separate_edge_network(self) -> None:
         gateway = COMPOSE.split("  gateway:", 1)[1].split("\nnetworks:", 1)[0]
-        self.assertIn("- rag_internal", gateway)
-        self.assertIn("- rag_edge", gateway)
+        self.assertIn("rag_internal:", gateway)
+        self.assertIn("rag_edge:", gateway)
+        self.assertIn("ap_automation:", gateway)
+        self.assertIn("techflow-ai-gateway", gateway)
 
     def test_postgres_image_is_digest_pinned(self) -> None:
         self.assertRegex(COMPOSE, r"pgvector/pgvector:pg14@sha256:[0-9a-f]{64}")

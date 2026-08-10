@@ -11,11 +11,12 @@ UP_0002 = (ROOT / "migrations" / "0002_source_registry_up.sql").read_text(encodi
 UP_0003 = (ROOT / "migrations" / "0003_source_mirror_up.sql").read_text(encoding="utf-8")
 UP_0004 = (ROOT / "migrations" / "0004_source_mirror_policy_up.sql").read_text(encoding="utf-8")
 UP_0005 = (ROOT / "migrations" / "0005_parser_embedding_retrieval_up.sql").read_text(encoding="utf-8")
+UP_0006 = (ROOT / "migrations" / "0006_orchestration_correlation_up.sql").read_text(encoding="utf-8")
 DOWN_0001 = (ROOT / "migrations" / "0001_schema_down.sql").read_text(encoding="utf-8")
 DOWN_0002 = (ROOT / "migrations" / "0002_source_registry_down.sql").read_text(encoding="utf-8")
 DOWN_0003 = (ROOT / "migrations" / "0003_source_mirror_down.sql").read_text(encoding="utf-8")
 DOWN_0004 = (ROOT / "migrations" / "0004_source_mirror_policy_down.sql").read_text(encoding="utf-8")
-UP = UP_0001 + "\n" + UP_0002 + "\n" + UP_0003 + "\n" + UP_0004 + "\n" + UP_0005
+UP = UP_0001 + "\n" + UP_0002 + "\n" + UP_0003 + "\n" + UP_0004 + "\n" + UP_0005 + "\n" + UP_0006
 DOWN = DOWN_0004 + "\n" + DOWN_0003 + "\n" + DOWN_0002 + "\n" + DOWN_0001
 BOOTSTRAP = (ROOT / "migrations" / "0000_extensions_roles_up.sql").read_text(encoding="utf-8")
 
@@ -70,7 +71,8 @@ class MigrationContractTest(unittest.TestCase):
         self.assertNotIn("content text", finding_table)
 
     def test_activepieces_role_is_absent(self) -> None:
-        self.assertNotIn("activepieces", (UP + BOOTSTRAP).lower())
+        self.assertNotIn("create role activepieces", (UP + BOOTSTRAP).lower())
+        self.assertNotIn("to activepieces", UP_0006.lower())
 
     def test_source_mirror_registry_has_seven_repositories_and_stale_policy(self) -> None:
         self.assertEqual(7, UP_0003.count("'ablecloud-team/"))
@@ -84,6 +86,11 @@ class MigrationContractTest(unittest.TestCase):
         self.assertIn("execution_idempotency_key", UP_0005)
         self.assertIn("num_nonnulls(query_id, evaluation_run_id, ingestion_job_id) = 1", UP_0005)
         self.assertIn("parser_profile_id", UP_0005)
+
+    def test_issue45_jobs_and_evaluations_are_correlated(self) -> None:
+        self.assertEqual(2, UP_0006.count("ADD COLUMN IF NOT EXISTS correlation_id"))
+        self.assertIn("rag_ingestion_job_correlation_idx", UP_0006)
+        self.assertIn("rag_evaluation_run_correlation_idx", UP_0006)
 
 
 if __name__ == "__main__":

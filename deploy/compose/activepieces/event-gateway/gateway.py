@@ -21,6 +21,23 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 EVENT_ID_PATTERN = re.compile(r"^[A-Za-z0-9._:-]{1,128}$")
 SIGNATURE_PATTERN = re.compile(r"^sha256=([0-9a-fA-F]{64})$")
 CONTROL_PATTERN = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
+COMMIT_PATTERN = re.compile(r"^[0-9a-f]{40}$")
+UUID_PATTERN = re.compile(
+    r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+    re.IGNORECASE,
+)
+
+SOURCE_PROFILE_BY_REPOSITORY_BRANCH = {
+    ("ablecloud-team/ablestack-docs", "master"): "SHARED_DOCS",
+    ("ablecloud-team/ablestack-cloud", "main"): "CLOUD_MAIN",
+    ("ablecloud-team/ablestack-cloud", "ablestack-diplo"): "CLOUD_DIPLO",
+    ("ablecloud-team/ablestack-cloud", "ablestack-europa"): "CLOUD_EUROPA",
+    ("ablecloud-team/ablestack-wall", "main"): "WALL_MAIN",
+    ("ablecloud-team/ablestack-cockpit-plugin", "ablestack-diplo"): "COCKPIT_DIPLO",
+    ("ablecloud-team/ablestack-genie", "master"): "GENIE_MASTER",
+    ("ablecloud-team/ablestack-kickstart", "master"): "KICKSTART_MASTER",
+    ("ablecloud-team/ablestack-qemu-exec-tools", "main"): "QEMU_EXEC_TOOLS_MAIN",
+}
 
 
 def required_env(name: str) -> str:
@@ -70,6 +87,9 @@ class Config:
         self.github_upstream_url = os.environ.get(
             "TECHFLOW_GITHUB_UPSTREAM_URL", ""
         )
+        self.github_source_upstream_url = os.environ.get(
+            "TECHFLOW_GITHUB_SOURCE_UPSTREAM_URL", ""
+        )
         self.github_event_ttl = int_env(
             "TECHFLOW_GITHUB_EVENT_TTL_SECONDS", 604800, 60
         )
@@ -82,6 +102,19 @@ class Config:
         self.chat_min_interval_ms = int_env(
             "TECHFLOW_CHAT_MIN_INTERVAL_MILLISECONDS", 600, 500
         )
+
+        self.rag_paths = {
+            os.environ.get("TECHFLOW_RAG_DISCOVERY_PATH", "/techflow/hooks/rag/discovery"):
+                os.environ.get("TECHFLOW_RAG_DISCOVERY_UPSTREAM_URL", ""),
+            os.environ.get("TECHFLOW_RAG_REVIEW_PATH", "/techflow/hooks/rag/review"):
+                os.environ.get("TECHFLOW_RAG_REVIEW_UPSTREAM_URL", ""),
+            os.environ.get("TECHFLOW_RAG_COMPATIBILITY_PATH", "/techflow/hooks/rag/compatibility"):
+                os.environ.get("TECHFLOW_RAG_COMPATIBILITY_UPSTREAM_URL", ""),
+            os.environ.get("TECHFLOW_RAG_WITHDRAW_PATH", "/techflow/hooks/rag/withdraw"):
+                os.environ.get("TECHFLOW_RAG_WITHDRAW_UPSTREAM_URL", ""),
+            os.environ.get("TECHFLOW_RAG_EVALUATION_PATH", "/techflow/hooks/rag/evaluation"):
+                os.environ.get("TECHFLOW_RAG_EVALUATION_UPSTREAM_URL", ""),
+        }
 
         self.redis_host = os.environ.get("AP_REDIS_HOST", "redis")
         self.redis_port = int_env("AP_REDIS_PORT", 6379, 1)
@@ -323,6 +356,93 @@ def normalize_github_event(
     raise ValueError("event_not_allowed")
 
 
+def normalize_source_discovery_event(normalized: dict, correlation_id: str) -> dict | None:
+    if normalized.get("eventType") != "github.push":
+        return None
+    data = normalized.get("data") or {}
+    if data.get("deleted") is True:
+        return None
+    ref = clean_text(data.get("ref"), 256)
+    branch_prefix = "refs/heads/"
+    if not ref.startswith(branch_prefix):
+        return None
+    branch = ref[len(branch_prefix):]
+    repository = clean_text((normalized.get("repository") or {}).get("fullName"), 256)
+    profile_id = SOURCE_PROFILE_BY_REPOSITORY_BRANCH.get((repository, branch))
+    commit = clean_text(data.get("after"), 40)
+    if not profile_id or not COMMIT_PATTERN.fullmatch(commit):
+        return None
+    return {
+        "contractVersion": "1.0",
+        "eventType": "source.discovery.requested",
+        "eventId": normalized["eventId"],
+        "correlationId": correlation_id,
+        "sourceProfileId": profile_id,
+        "repository": repository,
+        "branch": branch,
+        "commit": commit,
+        "detectedBy": "activepieces-github",
+    }
+
+
+def normalize_rag_event(path: str, payload: object, event_id: str, correlation_id: str) -> dict:
+    """Validate and minimize authenticated orchestration data before AP stores it."""
+    if not isinstance(payload, dict):
+        raise ValueError("body_must_be_object")
+    common = {"eventId": event_id, "correlationId": correlation_id}
+
+    if path.endswith("/discovery"):
+        profile = payload.get("sourceProfileId")
+        commit = payload.get("commit")
+        if profile not in SOURCE_PROFILE_BY_REPOSITORY_BRANCH.values():
+            raise ValueError("invalid_source_profile")
+        if commit is not None and (not isinstance(commit, str) or not COMMIT_PATTERN.fullmatch(commit)):
+            raise ValueError("invalid_commit")
+        return {**common, "sourceProfileId": profile, "commit": commit}
+
+    if path.endswith("/review"):
+        values = [payload.get(key) for key in ("sourceId", "sourceVersionId", "expectedCommit", "reviewer", "decisionNote")]
+        if not all(isinstance(value, str) for value in values):
+            raise ValueError("invalid_review_contract")
+        source_id, version_id, commit, reviewer, note = values
+        if not UUID_PATTERN.fullmatch(source_id) or not UUID_PATTERN.fullmatch(version_id):
+            raise ValueError("invalid_source_identifier")
+        if not COMMIT_PATTERN.fullmatch(commit) or reviewer != "dhslove" or not 10 <= len(note) <= 500:
+            raise ValueError("invalid_review_contract")
+        return {**common, "sourceId": source_id, "sourceVersionId": version_id,
+                "expectedCommit": commit, "reviewer": reviewer, "decisionNote": note,
+                "acceptQuarantineExclusions": payload.get("acceptQuarantineExclusions") is True}
+
+    if path.endswith("/compatibility"):
+        name, version, reviewer = payload.get("name"), payload.get("productVersion"), payload.get("reviewer")
+        members = payload.get("members")
+        if not isinstance(name, str) or not 3 <= len(name) <= 128 or not isinstance(version, str) or not 1 <= len(version) <= 64 or reviewer != "dhslove":
+            raise ValueError("invalid_compatibility_contract")
+        if not isinstance(members, list) or not 1 <= len(members) <= 16:
+            raise ValueError("invalid_compatibility_members")
+        safe_members = []
+        for member in members:
+            version_id = member.get("sourceVersionId") if isinstance(member, dict) else None
+            if not isinstance(version_id, str) or not UUID_PATTERN.fullmatch(version_id):
+                raise ValueError("invalid_compatibility_members")
+            safe_members.append({"sourceVersionId": version_id, "required": member.get("required") is not False})
+        return {**common, "name": name, "productVersion": version, "reviewer": reviewer, "members": safe_members}
+
+    if path.endswith("/withdraw"):
+        source_id, reviewer, reason = payload.get("sourceId"), payload.get("reviewer"), payload.get("reason")
+        if not isinstance(source_id, str) or not UUID_PATTERN.fullmatch(source_id) or reviewer != "dhslove" or not isinstance(reason, str) or not 10 <= len(reason) <= 500:
+            raise ValueError("invalid_withdrawal_contract")
+        return {**common, "sourceId": source_id, "reviewer": reviewer, "reason": reason}
+
+    if path.endswith("/evaluation"):
+        name, profile = payload.get("name"), payload.get("sourceProfileId")
+        if not isinstance(name, str) or not 3 <= len(name) <= 128 or profile not in SOURCE_PROFILE_BY_REPOSITORY_BRANCH.values():
+            raise ValueError("invalid_evaluation_contract")
+        return {**common, "name": name, "sourceProfileId": profile, "requestedBy": "activepieces"}
+
+    raise ValueError("unsupported_rag_route")
+
+
 def synology_form_payload(text: str) -> bytes:
     payload = json.dumps({"text": text}, ensure_ascii=False, separators=(",", ":"))
     return urllib.parse.urlencode({"payload": payload}).encode("utf-8")
@@ -388,6 +508,15 @@ class GatewayHandler(BaseHTTPRequestHandler):
             self.send_json(HTTPStatus.REQUEST_ENTITY_TOO_LARGE, {"error": "too_large"})
             return None
         return self.rfile.read(length)
+
+    @staticmethod
+    def post_upstream(url: str, body: bytes, headers: dict[str, str]) -> None:
+        request = urllib.request.Request(url, data=body, method="POST", headers=headers)
+        with urllib.request.urlopen(request, timeout=10) as response:
+            if not 200 <= response.status < 300:
+                raise urllib.error.HTTPError(
+                    url, response.status, "upstream_rejected", response.headers, None
+                )
 
     def do_GET(self) -> None:
         if self.path not in ("/healthz", "/techflow/hooks/healthz"):
@@ -507,27 +636,22 @@ class GatewayHandler(BaseHTTPRequestHandler):
         upstream_body = json.dumps(
             normalized, ensure_ascii=False, separators=(",", ":")
         ).encode("utf-8")
-        upstream_request = urllib.request.Request(
-            self.config.github_upstream_url,
-            data=upstream_body,
-            method="POST",
-            headers={
+        upstream_headers = {
                 "Content-Type": "application/json",
                 "X-TechFlow-Event-Id": event_id,
                 "X-TechFlow-Request-Id": request_id,
                 "X-TechFlow-Verified": "github-v1",
-            },
-        )
+            }
         try:
-            with urllib.request.urlopen(upstream_request, timeout=10) as response:
-                if not 200 <= response.status < 300:
-                    raise urllib.error.HTTPError(
-                        self.config.github_upstream_url,
-                        response.status,
-                        "upstream_rejected",
-                        response.headers,
-                        None,
-                    )
+            self.post_upstream(self.config.github_upstream_url, upstream_body, upstream_headers)
+            discovery = normalize_source_discovery_event(normalized, request_id)
+            if discovery is not None and self.config.github_source_upstream_url:
+                discovery_body = json.dumps(
+                    discovery, ensure_ascii=False, separators=(",", ":")
+                ).encode("utf-8")
+                self.post_upstream(
+                    self.config.github_source_upstream_url, discovery_body, upstream_headers
+                )
         except (urllib.error.URLError, TimeoutError, OSError):
             try:
                 self.redis.release(event_id, namespace="github")
@@ -547,10 +671,16 @@ class GatewayHandler(BaseHTTPRequestHandler):
             requestId=request_id,
             eventId=event_id,
             eventType=normalized["eventType"],
+            sourceProfileId=(discovery or {}).get("sourceProfileId"),
         )
         self.send_json(
             HTTPStatus.ACCEPTED,
-            {"status": "accepted", "requestId": request_id, "eventId": event_id},
+            {
+                "status": "accepted",
+                "requestId": request_id,
+                "eventId": event_id,
+                "sourceDiscovery": discovery is not None,
+            },
         )
 
     def handle_chat_delivery(self) -> None:
@@ -670,6 +800,15 @@ class GatewayHandler(BaseHTTPRequestHandler):
             return
         timestamp = self.headers.get("X-TechFlow-Timestamp", "")
         signature = self.headers.get("X-TechFlow-Signature", "")
+        upstream_url = self.config.rag_paths.get(self.path)
+        if upstream_url is None:
+            self.send_json(HTTPStatus.NOT_FOUND, {"error": "route_not_found"})
+            return
+        if not upstream_url:
+            self.send_json(
+                HTTPStatus.SERVICE_UNAVAILABLE, {"error": "integration_unconfigured"}
+            )
+            return
         if not timestamp or not event_id or not signature:
             self.send_json(
                 HTTPStatus.BAD_REQUEST, {"error": "required_header_missing"}
@@ -702,7 +841,20 @@ class GatewayHandler(BaseHTTPRequestHandler):
             self.send_json(HTTPStatus.UNAUTHORIZED, {"error": "invalid_signature"})
             return
         try:
-            reserved = self.redis.reserve(event_id, self.config.event_ttl)
+            payload = json.loads(body.decode("utf-8"))
+            minimized = normalize_rag_event(self.path, payload, event_id, request_id)
+            body = json.dumps(minimized, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+        except (UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
+            self.log_event(
+                "warning", "webhook_rejected", requestId=request_id,
+                eventId=event_id, reason=str(exc),
+            )
+            self.send_json(HTTPStatus.BAD_REQUEST, {"error": "invalid_event_contract"})
+            return
+        try:
+            reserved = self.redis.reserve(
+                event_id, self.config.event_ttl, namespace=f"signed:{self.path}"
+            )
         except RedisError:
             self.send_json(
                 HTTPStatus.SERVICE_UNAVAILABLE,
@@ -712,37 +864,24 @@ class GatewayHandler(BaseHTTPRequestHandler):
         if not reserved:
             self.send_json(HTTPStatus.CONFLICT, {"error": "duplicate_event"})
             return
-        if self.config.upstream_url:
-            upstream_request = urllib.request.Request(
-                self.config.upstream_url,
-                data=body,
-                method="POST",
-                headers={
-                    "Content-Type": self.headers.get(
-                        "Content-Type", "application/octet-stream"
-                    ),
+        try:
+            self.post_upstream(
+                upstream_url,
+                body,
+                {
+                    "Content-Type": "application/json",
                     "X-TechFlow-Event-Id": event_id,
                     "X-TechFlow-Request-Id": request_id,
                     "X-TechFlow-Verified": "true",
                 },
             )
+        except (urllib.error.URLError, TimeoutError, OSError):
             try:
-                with urllib.request.urlopen(upstream_request, timeout=10) as response:
-                    if not 200 <= response.status < 300:
-                        raise urllib.error.HTTPError(
-                            self.config.upstream_url,
-                            response.status,
-                            "upstream_rejected",
-                            response.headers,
-                            None,
-                        )
-            except (urllib.error.URLError, TimeoutError, OSError):
-                try:
-                    self.redis.release(event_id)
-                except RedisError:
-                    pass
-                self.send_json(HTTPStatus.BAD_GATEWAY, {"error": "upstream_failed"})
-                return
+                self.redis.release(event_id, namespace=f"signed:{self.path}")
+            except RedisError:
+                pass
+            self.send_json(HTTPStatus.BAD_GATEWAY, {"error": "upstream_failed"})
+            return
         self.log_event(
             "info", "webhook_accepted", requestId=request_id, eventId=event_id
         )

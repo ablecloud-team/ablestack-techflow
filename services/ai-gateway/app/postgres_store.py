@@ -94,6 +94,7 @@ class PostgresStore:
             "failureClass": row["failure_class"],
             "errorCode": row["error_code"],
             "requestedBy": row["requested_by"],
+            "correlationId": row.get("correlation_id", "legacy"),
             "createdAt": row["created_at"],
             "updatedAt": row["updated_at"],
             "startedAt": row.get("started_at"),
@@ -302,7 +303,7 @@ class PostgresStore:
             ).fetchone()
             if not version:
                 raise NotFoundError("source version not found")
-            if version["state"] == "QUARANTINED" and version["snapshot_hash"] == report["snapshotHash"]:
+            if version["state"] != "REGISTERED" and version["snapshot_hash"] == report["snapshotHash"]:
                 return self._source_by_version(connection, version_id)
             if version["state"] != "REGISTERED":
                 raise InvalidStateError("only registered candidates can be scanned")
@@ -503,7 +504,9 @@ class PostgresStore:
             ],
         }
 
-    def create_ingestion(self, source_id: UUID, request: dict[str, Any], idempotency_key: str) -> dict[str, Any]:
+    def create_ingestion(
+        self, source_id: UUID, request: dict[str, Any], idempotency_key: str, correlation_id: str = "legacy"
+    ) -> dict[str, Any]:
         with self._pool.connection() as connection:
             repeated = connection.execute(
                 "SELECT * FROM rag_ingestion_job WHERE idempotency_key=%s", (idempotency_key,)
@@ -521,11 +524,12 @@ class PostgresStore:
             row = connection.execute(
                 """
                 INSERT INTO rag_ingestion_job
-                    (id, job_type, source_id, source_version_id, state, requested_by, idempotency_key)
-                VALUES (%s, 'INGESTION', %s, %s, 'PENDING', %s, %s)
+                    (id, job_type, source_id, source_version_id, state, requested_by,
+                     idempotency_key, correlation_id)
+                VALUES (%s, 'INGESTION', %s, %s, 'PENDING', %s, %s, %s)
                 RETURNING *
                 """,
-                (uuid4(), source_id, version["id"], request["requestedBy"], idempotency_key),
+                (uuid4(), source_id, version["id"], request["requestedBy"], idempotency_key, correlation_id),
             ).fetchone()
             return self._job_payload(row)
 
@@ -580,7 +584,9 @@ class PostgresStore:
                 ).fetchone()
             return self._job_payload(updated)
 
-    def withdraw_source(self, source_id: UUID, idempotency_key: str) -> dict[str, Any]:
+    def withdraw_source(
+        self, source_id: UUID, idempotency_key: str, correlation_id: str = "legacy"
+    ) -> dict[str, Any]:
         with self._pool.connection() as connection:
             repeated = connection.execute(
                 "SELECT * FROM rag_ingestion_job WHERE idempotency_key=%s", (idempotency_key,)
@@ -611,11 +617,12 @@ class PostgresStore:
             row = connection.execute(
                 """
                 INSERT INTO rag_ingestion_job
-                    (id, job_type, source_id, source_version_id, state, requested_by, idempotency_key)
-                VALUES (%s, 'DELETION', %s, %s, 'PENDING', 'system', %s)
+                    (id, job_type, source_id, source_version_id, state, requested_by,
+                     idempotency_key, correlation_id)
+                VALUES (%s, 'DELETION', %s, %s, 'PENDING', 'system', %s, %s)
                 RETURNING *
                 """,
-                (job_id, source_id, version["id"], idempotency_key),
+                (job_id, source_id, version["id"], idempotency_key, correlation_id),
             ).fetchone()
             connection.execute(
                 """
@@ -873,7 +880,9 @@ class PostgresStore:
                  error.latency_ms, error.failure_class, error.code, correlation_id),
             )
 
-    def create_evaluation_run(self, request: dict[str, Any], idempotency_key: str) -> dict[str, Any]:
+    def create_evaluation_run(
+        self, request: dict[str, Any], idempotency_key: str, correlation_id: str = "legacy"
+    ) -> dict[str, Any]:
         with self._pool.connection() as connection:
             repeated = connection.execute(
                 "SELECT * FROM rag_evaluation_run WHERE idempotency_key=%s", (idempotency_key,)
@@ -884,8 +893,8 @@ class PostgresStore:
                 """
                 INSERT INTO rag_evaluation_run
                     (id, name, source_profile_ids, compatibility_set_id, provider_profile_id,
-                     requested_by, state, idempotency_key)
-                VALUES (%s, %s, %s, %s, %s, %s, 'PENDING', %s)
+                     requested_by, state, idempotency_key, correlation_id)
+                VALUES (%s, %s, %s, %s, %s, %s, 'PENDING', %s, %s)
                 RETURNING *
                 """,
                 (
@@ -896,6 +905,7 @@ class PostgresStore:
                     request["providerProfileId"],
                     request["requestedBy"],
                     idempotency_key,
+                    correlation_id,
                 ),
             ).fetchone()
             return self._evaluation_payload(row)
@@ -909,6 +919,7 @@ class PostgresStore:
             "compatibilitySetId": row["compatibility_set_id"],
             "providerProfileId": row["provider_profile_id"],
             "requestedBy": row["requested_by"],
+            "correlationId": row.get("correlation_id", "legacy"),
             "state": row["state"],
             "totalCases": row["total_cases"],
             "passedCases": row["passed_cases"],
