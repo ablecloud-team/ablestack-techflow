@@ -110,17 +110,19 @@ Flow 이력에는 허용된 Error Code와 Correlation ID만 남긴다. 실패 �
 
 시험에서는 `AI 0.5.0 → 0.4.0 → 0.5.0`, `Event 0.3.0 → 0.2.0 → 0.3.0`을 수행했고 양방향 Health를 통과했다.
 
-## 9. OpenAI 데이터 제어 Gate
+## 9. OpenAI 데이터 최소화 제품 정책
 
-`store=false`는 ZDR을 뜻하지 않는다. 2026-08-10 제품 책임자가 제공한 시크릿 브라우저 세션에서 OpenAI Dashboard를 읽기 전용으로 확인했다.
+`store=false`는 애플리케이션 수준 데이터 최소화 통제로 사용한다. 2026-08-10 제품 책임자가 제공한 시크릿 브라우저 세션에서 OpenAI Dashboard를 읽기 전용으로 확인했다.
 
 - Organization: `ABLECLOUD`
 - Project: `ABLESTACK-TechFlow`
 - Organization Projects 목록의 Project Data Retention: `None`
 - Organization Data controls의 API call logging: `Enabled per call`
 - Dashboard 안내: Responses API 요청은 기본 로깅되며 요청별 저장을 끄려면 `store=false`를 사용
-- 판정: `VERIFIED_PROJECT_DATA_RETENTION_NONE`
+- 판정: `PROJECT_RETENTION_NONE_INTENTIONAL`
 
-따라서 대상 Project 접근과 상태 확인은 완료됐지만 ZDR 또는 Modified Abuse Monitoring이 적용된 상태는 아니다. 시험 환경은 계속 D0만 허용하고 모든 OpenAI Responses 요청에 `store=false`를 유지한다. D1 이상 확대는 별도의 ZDR·MAM 승인·적용 또는 제품 보안정책 변경 후에만 진행한다.
+제품 책임자의 2026-08-10 결정에 따라 Zero Data Retention은 사용하지 않으며 적격성 조사, 승인 신청, Dashboard 확인 및 적용 상태를 현재 또는 향후 구현 Gate로 사용하지 않는다. Project Data Retention `None`은 의도된 운영 상태다. 모든 OpenAI Responses 요청에는 애플리케이션 수준 데이터 최소화 통제로 `store=false`를 유지한다.
+
+현재 구현의 D0 제한은 그대로 유지한다. D1 이상 확대는 Zero Data Retention과 연결하지 않고 Source 승인, 비식별화·최소화, 접근권한, 감사, 보존·삭제 및 사고 대응을 포함한 TechFlow 제품 보안심사로 결정한다. Modified Abuse Monitoring이나 Data Residency는 제품 책임자가 별도로 요청할 때만 신규 의사결정으로 검토한다.
 
 API Key 교체는 제품 책임자가 명시적으로 요청할 때까지 수행하지 않는다.

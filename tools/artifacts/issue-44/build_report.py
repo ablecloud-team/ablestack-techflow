@@ -142,9 +142,9 @@ story += [p("6. 배포와 복구", "h1"),
           bullet("Activepieces Volume과 여섯 Container는 변경하지 않았습니다."), PageBreak()]
 
 story += [p("7. 운영 확인과 다음 단계", "h1"),
-          p("OpenAI 공식 문서상 store=false는 애플리케이션 저장을 끄지만 그 자체가 Zero Data Retention을 보장하지 않습니다. Project의 ZDR 또는 Modified Abuse Monitoring 적용 상태는 Organization Dashboard에서 운영자가 확인해야 합니다."),
-          grid([["구분", "조치"], ["Data Controls", "D1 이상 확장 전 ZDR/MAM 적용 상태 확인"],
-                ["Credential", "대화에 직접 입력된 현재 API Key 회전"], ["Issue #44", "Draft PR 검토·병합 후 종료"],
+          p("제품 책임자는 Zero Data Retention을 현재와 향후 TechFlow에서 사용하지 않기로 결정했습니다. 관련 적격성·승인·Dashboard 확인은 구현·배포 Gate에서 제외하고 store=false는 애플리케이션 수준 데이터 최소화 통제로 유지합니다."),
+          grid([["구분", "조치"], ["Data Policy", "Data Retention None 유지 · 향후 Gate 제외"],
+                ["D1 이상", "TechFlow 제품 보안심사 후 확대"], ["Credential", "명시적 요청 시 API Key 회전"], ["Issue #44", "Draft PR 검토·병합 후 종료"],
                 ["Issue #45", "Activepieces Push·승인·재색인 Flow 연동"]], [44 * mm, 130 * mm]),
           Spacer(1, 7 * mm), callout("현재 상태: IMPLEMENTED · DEPLOYED · REAL-PROVIDER VALIDATED · ROLLBACK VERIFIED", GREEN),
           Spacer(1, 7 * mm), p("참고", "h2"),

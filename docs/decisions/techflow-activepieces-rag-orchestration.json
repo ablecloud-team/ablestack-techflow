@@ -7,12 +7,15 @@
     "reviewer": "dhslove",
     "dataClassification": "D0_ONLY",
     "apiKeyRotation": "DEFERRED_BY_PRODUCT_OWNER",
-    "openAiDataControls": "VERIFIED_PROJECT_DATA_RETENTION_NONE",
+    "openAiDataControls": "PROJECT_RETENTION_NONE_INTENTIONAL",
     "openAiOrganization": "ABLECLOUD",
     "openAiProject": "ABLESTACK-TechFlow",
     "openAiApiCallLogging": "ENABLED_PER_CALL",
     "openAiResponsesStorePolicy": "STORE_FALSE_REQUIRED",
-    "openAiVerifiedAt": "2026-08-10"
+    "openAiVerifiedAt": "2026-08-10",
+    "zeroDataRetention": "NOT_USED_BY_PRODUCT_DECISION",
+    "zeroDataRetentionFutureGate": "EXCLUDED",
+    "dataClassificationExpansionGate": "TECHFLOW_PRODUCT_SECURITY_REVIEW"
   },
   "ownership": {
     "activepieces": [
@@ -110,5 +113,11 @@
     "activepiecesContainersHealthy": 6,
     "secretLeaks": 0,
     "rootDiskAvailableGiB": 949
+  },
+  "productDecision": {
+    "decidedAt": "2026-08-10",
+    "decidedBy": "PRODUCT_OWNER",
+    "decision": "ZERO_DATA_RETENTION_WILL_NOT_BE_USED",
+    "effect": "Do not request, evaluate, configure, or use Zero Data Retention as a current or future implementation gate"
   }
 }

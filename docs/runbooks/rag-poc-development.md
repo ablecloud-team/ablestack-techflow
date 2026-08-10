@@ -138,7 +138,7 @@ Migration 후 빈 DB에서 적용·Rollback·재적용을 검증한다.
 4. 최초 대량 색인·전체 재색인·평가만 Batch API 후보이며 증분 색인은 동기 Embeddings API를 사용한다.
 5. Connect 3초·전체 12초, 429·5xx·Network Timeout 최대 3회와 Circuit Breaker를 검증한다.
 6. `rag_provider_call`에 Raw Prompt·Raw Response·Credential이 없음을 확인한다.
-7. OpenAI Organization·Project의 ZDR·MAM·Data Residency 상태를 배포 증적에 기록한다. `store=false`만으로 ZDR이라고 판정하지 않는다.
+7. Zero Data Retention 상태는 배포 증적이나 Gate에서 확인하지 않는다. `store=false` 적용과 승인 데이터 등급·비식별화·감사·보존·삭제 정책을 증적에 기록한다.
 
 ## 11. Golden Set
 
@@ -178,7 +178,7 @@ Flow에는 코드 원문·Provider Key·GitHub Token을 저장하지 않는다. 
 3. Gateway·Fetcher Image Digest와 Parser Dependency 잠금
 4. 내부 Network에만 배포
 5. `/healthz`, Mock Provider, Parser Health 확인
-6. OpenAI API Project의 Model 접근·ZDR/MAM·Data Residency 상태 확인
+6. OpenAI API Project의 Model 접근과 TechFlow 데이터 최소화·보존·감사 정책 확인
 7. 문서와 8개 코드 Source Profile의 소형 Canary 순차 검증
 8. 전체 승인 Commit 색인
 9. 50개 Golden Set·Branch Isolation·Compatibility Set·Model Routing·삭제 Drill 통과

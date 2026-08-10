@@ -122,8 +122,9 @@ story += [p("5. 시험 서버와 복구", "h1"), grid([
           bullet("DB 손상 시에만 서비스 정지 후 배포 전 Dump를 복원합니다."), PageBreak()]
 
 story += [p("6. 운영 Gate와 다음 단계", "h1"),
-          p("시크릿 브라우저 세션에서 ABLECLOUD Organization과 ABLESTACK-TechFlow Project를 확인했습니다. Project Data Retention은 None, Organization API call logging은 Enabled per call입니다. 판정은 VERIFIED_PROJECT_DATA_RETENTION_NONE입니다."),
-          grid([["구분", "조치"], ["D0", "현재 PoC 운영 허용 · store=false 유지"], ["D1 이상", "별도 ZDR·MAM 승인·적용 또는 보안정책 변경 후 확대"],
+          p("제품 책임자는 Zero Data Retention을 현재와 향후 TechFlow에서 사용하지 않기로 결정했습니다. Project Data Retention None은 의도된 상태이며 관련 적격성·승인·Dashboard 확인을 구현·배포 Gate에서 제외합니다."),
+          grid([["구분", "조치"], ["D0", "현재 PoC 운영 허용 · store=false 유지"], ["D1 이상", "TechFlow 제품 보안심사 후 확대"],
+                ["Data Retention", "None 유지 · 향후 Gate 제외"],
                 ["API Key", "사용자 요청에 따라 교체 보류"], ["Issue #45", "Draft PR 검토·병합 후 종료"], ["Issue #46", "품질·보안·E2E 검증 착수"]], [44 * mm, 130 * mm]),
           Spacer(1, 7 * mm), callout("현재 상태: IMPLEMENTED · DEPLOYED · E2E VALIDATED · ROLLBACK VERIFIED", GREEN),
           Spacer(1, 7 * mm), p("참고: https://developers.openai.com/api/docs/guides/your-data", "small")]

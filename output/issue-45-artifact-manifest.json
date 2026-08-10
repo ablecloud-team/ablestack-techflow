@@ -17,18 +17,18 @@
     },
     {
       "path": "docs/decisions/techflow-activepieces-rag-orchestration.json",
-      "size": 3141,
-      "sha256": "C01761FC92980CFEF84849F53808003CCEDC971E20A8D34781B4E7944E27CD25"
+      "size": 3590,
+      "sha256": "5E94CE8E2630BCCCE1D9104E8B9958F05FF57E3373E524ACBC74C25D2A62B71B"
     },
     {
       "path": "docs/runbooks/activepieces-rag-orchestration.md",
-      "size": 7155,
-      "sha256": "6C05FAC74E135F868F211F6291447A4D7FB278664FC86465D9494F16BDE46D11"
+      "size": 7667,
+      "sha256": "446B941F86F65B29637EA0C308940F59E1D3BCB35155AE01B70D41AB33ACAB71"
     },
     {
       "path": "docs/reports/issue-45-activepieces-rag-orchestration-validation.md",
-      "size": 7383,
-      "sha256": "5E8C759F069B912F41A959D8724EF89D44731E7B7D6E63BEC1B50098ECB21FE4"
+      "size": 7731,
+      "sha256": "8519FC727183C8AF7B9511F9EAD6EB7444DC621F41647A0775CE9E4211AD548F"
     },
     {
       "path": "deploy/compose/activepieces/.env.example",
@@ -157,8 +157,8 @@
     },
     {
       "path": "tools/artifacts/issue-45/build_report.py",
-      "size": 9803,
-      "sha256": "43CE86F58E0275B47626E3C540C0B2330DFB4DFD0083E8AEE5278434782D5595"
+      "size": 9847,
+      "sha256": "A2A0F6CF2E79CCA76A697671DA6F47F8538B17E6DAF4FA3105A8E0CD121645BC"
     },
     {
       "path": "tools/artifacts/issue-45/build_presentation_pdf.py",
@@ -172,23 +172,23 @@
     },
     {
       "path": "tools/artifacts/issue-45/validate_artifacts.py",
-      "size": 2618,
-      "sha256": "493D9652B50D7C3FFB2FE92E63D34F774F240EF0577C38DEF7E2A82BC160BFA0"
+      "size": 2620,
+      "sha256": "1127FE8765EFAD349054E9ABA8CDFB6C9B6188DFFB84EC5A2ED01B54D9EE3757"
     },
     {
       "path": "output/pdf/techflow-activepieces-rag-orchestration-report.pdf",
-      "size": 102323,
-      "sha256": "A894328271BF1DEFDB2554556F97F24990483B91B9ED417B6A2C75ACBED24AAE"
+      "size": 101907,
+      "sha256": "357E43E2E4A51F87E3589AE8643DA64C4A6513D477CC8A0AE9D5D40BC22EC861"
     },
     {
       "path": "output/pdf/techflow-activepieces-rag-orchestration-presentation.pdf",
-      "size": 210472,
-      "sha256": "6587AFD507337A14C3D53883C57EEC687CB8FB53150FD179633A23A5CBA0F895"
+      "size": 209789,
+      "sha256": "3DD2E1EAE99320ECE3E6B7BE39439A3AB7B17B1014567BD4C13779996A1C27BB"
     },
     {
       "path": "output/presentation/techflow-activepieces-rag-orchestration.pptx",
-      "size": 35584,
-      "sha256": "0663CBD25FF672A539186412CD660FCF82D1438AE92D41F036501D80B671EBDF"
+      "size": 35571,
+      "sha256": "3A78C3BC20B6BB0B58C0ECA73C4A24226C12FA3A9336A2E0B33D4C33C605A406"
     }
   ]
 }

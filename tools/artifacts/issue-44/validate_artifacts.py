@@ -49,7 +49,7 @@ with zipfile.ZipFile(ROOT / "output/presentation/techflow-grounded-responses.ppt
     slides = [name for name in archive.namelist() if re.fullmatch(r"ppt/slides/slide\d+\.xml", name)]
     assert len(slides) == 10
     slide_xml = "\n".join(archive.read(name).decode("utf-8", errors="ignore") for name in slides)
-    for expected in ("ISSUE #44", "96 + 96", "ZDR", "Issue #45"):
+    for expected in ("ISSUE #44", "96 + 96", "보안심사", "Issue #45"):
         assert expected in slide_xml, expected
     notes = [name for name in archive.namelist() if re.fullmatch(r"ppt/notesSlides/notesSlide\d+\.xml", name)]
     assert len(notes) == 10

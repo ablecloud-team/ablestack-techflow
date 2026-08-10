@@ -46,7 +46,7 @@ with zipfile.ZipFile(ROOT / "output/presentation/techflow-activepieces-rag-orche
     slides = [name for name in archive.namelist() if re.fullmatch(r"ppt/slides/slide\d+\.xml", name)]
     assert len(slides) == 9
     slide_xml = "\n".join(archive.read(name).decode("utf-8", errors="ignore") for name in slides)
-    for expected in ("ISSUE #45", "97 + 26", "Issue #46", "OpenAI 확인 완료", "D0 유지"):
+    for expected in ("ISSUE #45", "97 + 26", "Issue #46", "보존 정책 확정", "보안 Gate"):
         assert expected in slide_xml, expected
     notes = [name for name in archive.namelist() if re.fullmatch(r"ppt/notesSlides/notesSlide\d+\.xml", name)]
     assert len(notes) == 9

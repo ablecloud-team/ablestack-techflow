@@ -92,11 +92,13 @@ Event Gateway는 GitHub Payload 전체를 Activepieces로 전달하지 않는다
 - Migration 0006의 Nullable Correlation Column 유지
 - DB 손상 시에만 배포 전 Dump 복원
 
-## 8. OpenAI Data Controls 확인 결과
+## 8. OpenAI 데이터 최소화 제품 결정
 
 2026-08-10 제품 책임자가 제공한 시크릿 브라우저 세션에서 OpenAI Dashboard를 읽기 전용으로 다시 확인했다. Organization은 `ABLECLOUD`, 대상 Project는 `ABLESTACK-TechFlow`로 확인됐다. Organization Projects 목록에서 대상 Project의 `DATA RETENTION` 값은 `None`이며, Organization Data controls의 `API call logging`은 `Enabled per call`로 선택돼 있다. 같은 화면은 Responses API 요청이 기본 로깅되며 요청별 로깅을 끄려면 `store=false`를 사용하라고 안내한다.
 
-따라서 이전의 계정 접근 불일치 판정은 폐기하고 `VERIFIED_PROJECT_DATA_RETENTION_NONE`으로 정정한다. 대상 Project 접근과 상태 확인은 완료됐지만 ZDR 또는 Modified Abuse Monitoring이 적용된 상태는 아니다. TechFlow는 현재와 같이 D0만 전송하고 모든 Responses 요청에 `store=false`를 유지한다. D1 이상 데이터 확대는 별도의 ZDR·MAM 승인·적용 또는 제품 보안정책 변경 후에만 진행한다.
+따라서 이전의 계정 접근 불일치 판정은 폐기했다. 제품 책임자는 2026-08-10 Zero Data Retention을 현재와 향후 TechFlow에서 사용하지 않기로 결정했으며, 적격성 조사·승인·Dashboard 확인·적용 상태를 구현 또는 배포 Gate에서 제외했다. Project Data Retention `None`은 의도된 운영 상태로 `PROJECT_RETENTION_NONE_INTENTIONAL`을 기록한다.
+
+TechFlow는 현재와 같이 D0만 전송하고 모든 Responses 요청에 애플리케이션 수준 데이터 최소화 통제로 `store=false`를 유지한다. D1 이상 데이터 확대는 Zero Data Retention과 연결하지 않고 Source 승인, 비식별화·최소화, 접근권한, 감사, 보존·삭제 및 사고 대응을 포함한 TechFlow 제품 보안심사로 결정한다.
 
 - [OpenAI API 데이터 제어](https://developers.openai.com/api/docs/guides/your-data)
 
@@ -106,7 +108,7 @@ Event Gateway는 GitHub Payload 전체를 Activepieces로 전달하지 않는다
 
 Issue #45의 Flow, 최소 Event, Idempotency, Correlation, 오류 분류, 보안, 시험 서버 배포, Canary, 롤백과 문서화 조건을 충족했다. PR 검토·병합 전까지 Issue는 열어 둔다.
 
-다음 실행 단위는 Issue #46 품질·보안·E2E 검증이다. OpenAI Dashboard 확인은 완료됐으므로 별도 계정 확인 작업은 남아 있지 않다. Issue #46에서도 D0 전송 정책과 `store=false`를 유지하며, D1 이상 확대는 별도 제품 결정으로 관리한다.
+다음 실행 단위는 Issue #46 품질·보안·E2E 검증이다. OpenAI 데이터 보존 제어의 적격성·승인·Dashboard 확인 작업은 범위에서 제거한다. Issue #46에서도 D0 전송 정책과 `store=false`를 유지하며, D1 이상 확대는 별도 TechFlow 제품 보안심사로 관리한다.
 
 사용자가 검토할 항목은 5개 Flow의 책임 경계와 `dhslove` Reviewer 정책이다.
 

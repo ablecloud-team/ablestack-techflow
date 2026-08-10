@@ -78,7 +78,8 @@
     "forwardRecovery": "0.4.0"
   },
   "operatorGate": {
-    "openaiDataControls": "UNVERIFIED_IN_DASHBOARD",
-    "impact": "D0 PoC permitted; verify ZDR or MAM status before expanding data classification"
+    "openaiDataControls": "ZERO_DATA_RETENTION_NOT_USED_BY_PRODUCT_DECISION",
+    "dashboardVerification": "NOT_REQUIRED",
+    "impact": "No future Zero Data Retention gate; data classification expansion requires TechFlow product security review"
   }
 }
