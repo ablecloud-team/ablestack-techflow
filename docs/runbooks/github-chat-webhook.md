@@ -35,8 +35,11 @@ GitHub의 HTTP 2xx는 Gateway 접수 성공만 의미한다. 업무 성공은 Ac
 | Runtime Lock | `/var/lib/ablestack-techflow/releases/runtime-lock.current.json` |
 | 관측 상태 | `/var/lib/ablestack-techflow/observability/status.json` |
 | 현재 경보 | `/var/lib/ablestack-techflow/observability/current-alerts.json` |
+| 보호 계약 | `deploy/compose/activepieces/protected-services.json` |
 
 비밀번호, GitHub HMAC Secret과 Chat Webhook URL은 이 Runbook의 명령 인자에 넣지 않는다. 보호 파일 또는 런타임 표준입력만 사용한다.
+
+`github-chat-v1`은 제품 책임자의 명시적 승인 없이는 Flow ID·Published Version·내부 Adapter 주소·Ingress를 변경하지 않는 `FROZEN` 서비스다. 모든 잠금 배포는 `protected_service_guard.py`를 먼저 실행하며, 보호된 Flow Manifest의 Checksum이나 `172.30.19.10/32` 허용 주소가 달라지면 컨테이너를 변경하기 전에 실패한다.
 
 ## 3. 배포 전 점검
 

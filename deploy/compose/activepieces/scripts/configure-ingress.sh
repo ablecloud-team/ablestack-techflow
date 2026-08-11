@@ -63,7 +63,7 @@ set_default TECHFLOW_CHAT_INTERNAL_PATH "/internal/chat/github"
 set_default TECHFLOW_CHAT_TIMEOUT_SECONDS "10"
 set_default TECHFLOW_CHAT_MIN_INTERVAL_MILLISECONDS "600"
 set_default TECHFLOW_CHAT_WEBHOOK_URL ""
-set_default AP_SSRF_ALLOW_LIST "172.30.19.9,172.30.19.10"
+set_default AP_SSRF_ALLOW_LIST "172.30.19.3/32,172.30.19.9/32,172.30.19.10/32"
 
 if [[ -w ${env_file} ]]; then
   chmod 600 "${env_file}"

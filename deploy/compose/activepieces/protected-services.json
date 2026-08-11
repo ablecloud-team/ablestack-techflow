@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "1.0",
+  "services": {
+    "github-chat-v1": {
+      "state": "FROZEN",
+      "changePolicy": "PRODUCT_OWNER_EXPLICIT_APPROVAL_ONLY",
+      "organization": "ablecloud-team",
+      "organizationHookId": "650151350",
+      "publicEndpoint": "/techflow/hooks/github/chat",
+      "flowId": "BjLSSjbSp3tyNLjnxWUS8",
+      "publishedVersionId": "pRg5UyXXPlVUwdutbrNMz",
+      "flowManifest": "flows/github-chat-v1.json",
+      "flowManifestSha256": "35905c0a8f7369a73062b63a8c0c5df2903a4d874455ae95ca302806d6094434",
+      "chatAdapterHost": "chat-adapter",
+      "chatAdapterIpv4": "172.30.19.10",
+      "requiredSsrfAllowList": [
+        "172.30.19.10/32"
+      ]
+    }
+  }
+}
