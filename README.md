@@ -1,8 +1,8 @@
 # ABLESTACK TechFlow
 
-## Issues #56~#58 종합·멀티모달 Assist
+## Issues #56~#58 종합·멀티모달·로그 Assist
 
-TechFlow AI Gateway 0.7.0은 ABLESTACK 질문을 영역별로 계획하고, 승인된 Compatibility Set으로 여러 저장소의 문서·소스코드를 결합하며, PNG/JPEG/WebP 화면을 함께 분석해 관찰·진단·권장 조치·미확인 사항을 분리한 기술지원 보고서를 생성합니다. Cloud 브랜치나 호환성 범위가 불명확하면 생성 전에 추가 정보를 요청합니다.
+TechFlow AI Gateway 0.8.0은 ABLESTACK 질문을 영역별로 계획하고, 승인된 Compatibility Set으로 여러 저장소의 문서·소스코드를 결합하며, PNG/JPEG/WebP 화면과 일반·ZIP·GZIP·TAR.GZ 로그를 함께 분석해 관찰·진단·권장 조치·미확인 사항을 분리한 기술지원 보고서를 생성합니다. 압축 로그는 경로 탈출·압축 폭탄·중첩 압축을 차단하고 비밀정보를 마스킹한 오류 주변 구간만 AI에 전달합니다. Cloud 브랜치나 호환성 범위가 불명확하면 생성 전에 추가 정보를 요청합니다.
 
 - [종합·멀티모달 설계](docs/plans/issues-56-58-assist-multimodal-design.md)
 - [배포·운영 Runbook](docs/runbooks/assist-multimodal.md)

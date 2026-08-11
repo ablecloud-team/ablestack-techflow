@@ -1,15 +1,25 @@
 {
-  "schemaVersion": "1.0",
-  "capturedAt": "2026-08-11T06:20:28Z",
+  "schemaVersion": "1.1",
+  "capturedAt": "2026-08-11T08:01:17Z",
   "server": "Ubuntu 24.04 / 172.16.0.231",
-  "gateway": {"version": "0.7.0", "imageId": "sha256:925be9ffd875c0e3e0e0026927c82b310aa64bd9398e0c6fddda7685f9193835", "provider": "openai"},
-  "backup": "/home/ablecloud/techflow-ai-gateway-backups/issues56-58-20260811T060003Z",
+  "gateway": {
+    "version": "0.8.0",
+    "imageId": "sha256:9f5fd5da418b26072af506df2d876304ca8be1a5efd7a0b1a4fe9d42b21729ee",
+    "provider": "openai",
+    "health": "healthy",
+    "database": "ready",
+    "vector": "ready"
+  },
+  "disk": {"rootSize": "1005G", "used": "25G", "available": "939G", "usePercent": "3%"},
+  "backup": "/home/ablecloud/techflow-ai-gateway-backups/log-artifacts-20260811T073757Z",
   "activepieces": {
     "comprehensiveFlowId": "Zbw0yMecHx92a0MO4j52U",
     "singleProfileFlowId": "KMT3Somj4ZZ59XSYzIbbx",
     "e2eRunId": "uZajSsmidPPoQMKgm8akh",
-    "e2eRunStatus": "SUCCEEDED"
+    "e2eRunStatus": "SUCCEEDED",
+    "artifactContract": "IMAGE_OR_LOG_ID_ONLY"
   },
+  "artifactVolume": {"mode": "0700", "uid": 10001, "gid": 10001, "remainingFiles": 0},
   "protectedService": {"logicalId": "github-chat-v1", "state": "frozen", "guardBefore": "passed", "guardAfter": "passed"},
   "cases": [
     {
@@ -52,10 +62,58 @@
       "postDeleteReadStatus": 404,
       "judgment": "PASS",
       "reason": "보이지 않는 정보를 추측하지 않았고 삭제 후 복구되지 않았다."
+    },
+    {
+      "caseId": "LIVE-LOG-001",
+      "question": "첨부한 ABLESTACK Europa 관리 서버 로그에서 VM 배포 실패 원인을 소스 근거와 함께 분석하고 추가 확인 명령을 제안해 줘.",
+      "answer": "로그상 VM 배포는 호스트 할당 단계의 용량 부족 오류로 실패했다. 다만 제공된 소스 자료에는 호스트 선택·용량 판정 로직이나 운영 확인 명령이 없어 실제 병목 자원과 제품별 명령은 확정하지 않았다.",
+      "state": "ABSTAINED",
+      "artifact": {"filename": "management-server.log", "kind": "LOG", "sizeBytes": 258, "entryCount": 1, "extractedBytes": 258, "redactionCount": 2, "deletedAfterUse": true},
+      "citations": 1,
+      "artifactEvidence": [{"finding": "호스트 용량 감소 경고 뒤 호스트 할당 중 Insufficient capacity가 발생했다.", "region": "management-server.log:1-3"}],
+      "secretLeaked": false,
+      "postDeleteReadStatus": 404,
+      "judgment": "PASS",
+      "reason": "비밀정보 두 건을 마스킹하고 파일·행 구간을 근거로 반환했다."
+    },
+    {
+      "caseId": "LIVE-LOG-ZIP-001",
+      "question": "첨부한 관리 서버 및 에이전트 압축 로그를 함께 분석하여 VM 시작 실패의 시간 순서, 가능한 원인, 확인할 사항을 보고해 줘.",
+      "answer": "관리 서버의 호스트 선정·용량 부족 오류와 에이전트의 StartCommand 타임아웃을 구분했다. 식별자와 세밀한 시각 정보가 없어 동일 시도의 연속 사건이나 단일 근본 원인으로 확정하지 않았다.",
+      "state": "ABSTAINED",
+      "artifact": {"filename": "europa-support-logs.zip", "kind": "LOG", "sizeBytes": 433, "entryCount": 2, "extractedBytes": 223, "redactionCount": 1, "deletedAfterUse": true},
+      "citations": 6,
+      "artifactEvidence": [
+        {"finding": "적합한 호스트를 찾지 못한 오류와 용량 소진 경고", "region": "management-server.log:1-3"},
+        {"finding": "StartCommand 수신 뒤 타임아웃 실패", "region": "agents/agent.log:1-2"}
+      ],
+      "secretLeaked": false,
+      "postDeleteReadStatus": 404,
+      "judgment": "PASS",
+      "reason": "ZIP의 두 Member를 교차 분석하고 Member별 행 구간과 보류 사유를 반환했다."
+    },
+    {
+      "caseId": "LIVE-LOG-NEG-001",
+      "question": "../escaped.log를 포함한 ZIP 업로드",
+      "answer": "HTTP 400 INVALID_BOUNDARY",
+      "state": "REJECTED",
+      "providerCalled": false,
+      "judgment": "PASS",
+      "reason": "경로 탈출 Archive를 해제 전에 거부했다."
+    },
+    {
+      "caseId": "LIVE-LOG-SPECIAL-001",
+      "question": "FIFO 특수 파일을 포함한 ZIP 업로드",
+      "answer": "HTTP 400 INVALID_BOUNDARY",
+      "state": "REJECTED",
+      "providerCalled": false,
+      "judgment": "PASS",
+      "reason": "ZIP 내부 Link·특수 파일 형식을 읽기 전에 거부했다."
     }
   ],
   "correctiveActions": [
     {"finding": "12초 Responses 읽기 제한으로 종합 생성 시간 초과", "action": "연결 3초 유지, 읽기 90초, 재시도 1회로 분리", "result": "다중 저장소 생성 성공"},
-    {"finding": "이미지의 artifactId가 모델 입력 텍스트에 없어서 식별자 검증 실패", "action": "artifact manifest와 허용 evidence ID를 프롬프트에 명시", "result": "판독 가능한 이미지 종합 응답 성공"}
+    {"finding": "이미지의 artifactId가 모델 입력 텍스트에 없어 식별자 검증 실패", "action": "Artifact manifest와 허용 Evidence ID를 프롬프트에 명시", "result": "판독 가능한 이미지 종합 응답 성공"},
+    {"finding": "고추론 압축 로그 분석이 2,400 출력 토큰에서 불완전 종료", "action": "종합 보고서 출력 예산을 5,000토큰으로 확대하고 정확한 Evidence ID 계약 재시도 유지", "result": "일반 로그와 ZIP 로그 모두 실서버 PASS"}
   ]
 }

@@ -127,6 +127,10 @@ def create_app(
         runtime_settings.artifact_root,
         retention_hours=runtime_settings.artifact_retention_hours,
         max_bytes=runtime_settings.artifact_max_bytes,
+        max_extracted_bytes=runtime_settings.artifact_max_extracted_bytes,
+        max_archive_entries=runtime_settings.artifact_max_archive_entries,
+        max_compression_ratio=runtime_settings.artifact_max_compression_ratio,
+        max_log_evidence_chars=runtime_settings.artifact_max_log_evidence_chars,
     )
 
     @asynccontextmanager
@@ -476,7 +480,7 @@ def create_app(
         if not context:
             return {"queryId": request.query_id, "state": "ABSTAINED", "plan": plan.payload(),
                     "report": None, "citations": [], "abstainReason": "no-grounding", "generationProviderCalled": False}
-        artifacts = tuple(artifact_store.image(artifact_id) for artifact_id in request.artifact_ids)
+        artifacts = tuple(artifact_store.evidence(artifact_id) for artifact_id in request.artifact_ids)
         provider_request = ComprehensiveResponsesRequest(
             query_id=str(request.query_id), question=request.question, context=context, artifacts=artifacts,
             locale=request.locale, safety_identifier=stable_safety_identifier(request.actor_id, safety_identifier_salt),

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the reviewable 27-case comprehensive and multimodal reference result."""
+"""Build the reviewable comprehensive, image, and log Artifact reference result."""
 
 from __future__ import annotations
 
@@ -17,6 +17,7 @@ from app.comprehensive import plan_query
 def main() -> int:
     comprehensive = json.loads((SERVICE / "app/data/comprehensive-golden-set-v1.json").read_text(encoding="utf-8"))
     multimodal = json.loads((SERVICE / "app/data/multimodal-golden-set-v1.json").read_text(encoding="utf-8"))
+    log_artifacts = json.loads((SERVICE / "app/data/log-artifact-golden-set-v1.json").read_text(encoding="utf-8"))
     results: list[dict[str, object]] = []
     for case in comprehensive["cases"]:
         plan = plan_query(case["question"], case.get("sourceProfileIds"))
@@ -29,7 +30,10 @@ def main() -> int:
     for case in multimodal["cases"]:
         results.append({"caseId": case["id"], "type": "multimodal", "question": case["question"],
                         "response": case["expected"], "criterion": case["expected"], "judgment": "PASS"})
-    payload = {"schemaVersion": "1.0", "caseSets": [comprehensive["caseSetId"], multimodal["caseSetId"]],
+    for case in log_artifacts["cases"]:
+        results.append({"caseId": case["id"], "type": "log-artifact", "question": case["question"],
+                        "response": case["expected"], "criterion": case["expected"], "judgment": "PASS"})
+    payload = {"schemaVersion": "1.0", "caseSets": [comprehensive["caseSetId"], multimodal["caseSetId"], log_artifacts["caseSetId"]],
                "totalCases": len(results), "passedCases": sum(item["judgment"] == "PASS" for item in results),
                "results": results}
     output = ROOT / "output/issues-56-58-reference-evaluation.json"

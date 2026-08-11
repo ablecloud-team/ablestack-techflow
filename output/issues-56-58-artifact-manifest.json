@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0",
-  "generatedAt": "2026-08-11T06:37:23.896475Z",
+  "generatedAt": "2026-08-11T08:17:53.002313Z",
   "scope": [
     "issue-56",
     "issue-57",
@@ -9,33 +9,38 @@
   "files": [
     {
       "path": "README.md",
-      "bytes": 24715,
-      "sha256": "504ca9be8ec78c90ac235f8eb7bf29864d85fae9ede13bf2d4fcab3a5107eabc"
+      "bytes": 24912,
+      "sha256": "99cdaed59b94446189985e33b7c21ffc1adf490421afeca9b7a0eb322f024ba8"
     },
     {
       "path": "deploy/compose/activepieces/flows/assist-orchestration-v1.json",
-      "bytes": 2173,
-      "sha256": "44ed9af9564102233cc9f9cfc2a0e2f2e28dc42967e0e079c69d470d59f5282d"
+      "bytes": 2273,
+      "sha256": "bff3f51e7506e16a343c23e609efea6379ad1f1ff6867676aa7e56ad7243c589"
     },
     {
       "path": "docs/plans/issues-56-58-assist-multimodal-design.md",
-      "bytes": 4244,
-      "sha256": "2ef18b7713f55c0707d884aca100727c080aecc45d43f52699af9501c39ccd01"
+      "bytes": 5834,
+      "sha256": "fcf00ce86c398d596f0665579cff394c168f89eaef0e41a2db9cc21206c6f891"
     },
     {
       "path": "docs/reports/issues-56-58-assist-multimodal-validation.md",
-      "bytes": 6984,
-      "sha256": "40a614f259df4858fc0e2e7b692b5f27f19e501449c8db8f24306528351d49e3"
+      "bytes": 10619,
+      "sha256": "0fc0508a5d50df2b39e16834a3fc423b2055d1a7abb80a20254320f2e2f53b6e"
     },
     {
       "path": "docs/runbooks/assist-multimodal.md",
-      "bytes": 3442,
-      "sha256": "79bc8cd19399d12a4485932ee0cd4a754691b95a76ab40250d672d72196295c0"
+      "bytes": 4436,
+      "sha256": "b5cb91f1f75eb5d8edbea4edc078a675a2313de0bc4398666639d3a2ddc475fd"
     },
     {
       "path": "services/ai-gateway/app/artifacts.py",
-      "bytes": 6405,
-      "sha256": "97bd5bc8567ea5006e6345d1124055d9a68fa3d08a4940962aed37c088cbbc4a"
+      "bytes": 10544,
+      "sha256": "4b0af9c1b4dad63416fc06c30f808e580d975cfe237f3ac916f5956d41716e76"
+    },
+    {
+      "path": "services/ai-gateway/app/log_artifacts.py",
+      "bytes": 12069,
+      "sha256": "2a8ac3e50b466613e48b7e1d8304f09e3a9e2d448c2201348b690edc4f7cbc10"
     },
     {
       "path": "services/ai-gateway/app/comprehensive.py",
@@ -44,13 +49,13 @@
     },
     {
       "path": "services/ai-gateway/app/main.py",
-      "bytes": 28869,
-      "sha256": "c9246f55ff4d4188c647350ce433c9d4cb3dfa5798823b5d61f0746bf60238fe"
+      "bytes": 29182,
+      "sha256": "333fe2723c4aecd3846d0368fb2d3fd96ada39ff833ec1ae266db891377a6292"
     },
     {
       "path": "services/ai-gateway/app/responses.py",
-      "bytes": 22190,
-      "sha256": "6013fbe2dfc95118af4b833d53ab053e14d1e50c92813eb2f56ecad347e5a9da"
+      "bytes": 25707,
+      "sha256": "1c3fd18e7c88465bc4c247223af66a7c17e44edbf653ee353757f73b22d9d493"
     },
     {
       "path": "services/ai-gateway/app/data/comprehensive-golden-set-v1.json",
@@ -63,6 +68,11 @@
       "sha256": "ee3dc3ed6ddf4483841e33e55378f27f5118593e1f050e4bfd3a680ac46f6a28"
     },
     {
+      "path": "services/ai-gateway/app/data/log-artifact-golden-set-v1.json",
+      "bytes": 2922,
+      "sha256": "6138465fa7766de391f1b2eaa14d6193b911c352d12c550fecd69fb2c42e3f04"
+    },
+    {
       "path": "services/ai-gateway/app/data/golden-artifacts/synthetic-vm-error.png",
       "bytes": 46420,
       "sha256": "05c10d12091805879d6f343fe8bf88edb3c606fde274afa84876b1fccd90fe84"
@@ -70,32 +80,32 @@
     {
       "path": "services/ai-gateway/openapi/techflow-ai-gateway-v1.json",
       "bytes": 52499,
-      "sha256": "28b230a8542f36bfb6e6403c88ece4f8aa888c54ee168be13e6f0f2a41352afe"
+      "sha256": "1010abf555b35ccea20735b5d41fec9d480334ff3718aeaed9fee5a33970ce4e"
     },
     {
       "path": "output/issues-56-58-reference-evaluation.json",
-      "bytes": 9274,
-      "sha256": "7b64aed3b97019a8ca67a190c0b1fe31e1bee3c2a6b8770437d41a808aa3f4f5"
+      "bytes": 13563,
+      "sha256": "a0823480e3f5b177298b0ee26b31b5ac58930f1fba246a8645e2e352c2f6391f"
     },
     {
       "path": "output/issues-56-58-live-evaluation.json",
-      "bytes": 3623,
-      "sha256": "37bb3a3c0bc3f1eaa347645dbd7bb5231860aaaeb4680af1241730170bdc6297"
+      "bytes": 7185,
+      "sha256": "1481b5d10814d581fbafc503bbb0a8f1fa03a581e2e575abbcf2b86e1e0bb2a9"
     },
     {
       "path": "output/pdf/techflow-assist-multimodal-report.pdf",
-      "bytes": 138490,
-      "sha256": "2024641f8a4079a9c4d01a71df47701c32e9ef8f873da60226ed094bd03aa45c"
+      "bytes": 151096,
+      "sha256": "796c33134cba0526936712754d57eaa15c540bb2063bb5d2d49092777e60e3f0"
     },
     {
       "path": "output/pdf/techflow-assist-multimodal-presentation.pdf",
-      "bytes": 251931,
-      "sha256": "c51138b2a73133524b0710711d1632e54b27ed881256247048960805a738e5ec"
+      "bytes": 276618,
+      "sha256": "63453aa7809d45271273d5076f236d6f8d7f3573f33bb5295e2883e5cb348ce9"
     },
     {
       "path": "output/presentation/techflow-assist-multimodal.pptx",
-      "bytes": 76244,
-      "sha256": "0d9884d528fc52b4ae08d2bd42ed37dfeec557e4e410899092bc17a48cea4f38"
+      "bytes": 79257,
+      "sha256": "8aa3e6ad74326b938a2648435f3f5422e5f2221a54d3ee199c2f52c7b12cb54b"
     }
   ]
 }

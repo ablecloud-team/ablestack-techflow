@@ -110,6 +110,10 @@ services:
       TECHFLOW_ARTIFACT_ROOT: /var/lib/techflow-artifacts
       TECHFLOW_ARTIFACT_RETENTION_HOURS: "24"
       TECHFLOW_ARTIFACT_MAX_BYTES: "10485760"
+      TECHFLOW_ARTIFACT_MAX_EXTRACTED_BYTES: "20971520"
+      TECHFLOW_ARTIFACT_MAX_ARCHIVE_ENTRIES: "100"
+      TECHFLOW_ARTIFACT_MAX_COMPRESSION_RATIO: "20"
+      TECHFLOW_ARTIFACT_MAX_LOG_EVIDENCE_CHARS: "120000"
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8090", "--no-access-log"]
     secrets:
       - app_password

@@ -28,6 +28,10 @@ class Settings:
     artifact_root: str = os.path.join(tempfile.gettempdir(), "techflow-artifacts")
     artifact_retention_hours: int = 24
     artifact_max_bytes: int = 10 * 1024 * 1024
+    artifact_max_extracted_bytes: int = 20 * 1024 * 1024
+    artifact_max_archive_entries: int = 100
+    artifact_max_compression_ratio: int = 20
+    artifact_max_log_evidence_chars: int = 120_000
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -47,6 +51,10 @@ class Settings:
             artifact_root=os.getenv("TECHFLOW_ARTIFACT_ROOT", os.path.join(tempfile.gettempdir(), "techflow-artifacts")),
             artifact_retention_hours=int(os.getenv("TECHFLOW_ARTIFACT_RETENTION_HOURS", "24")),
             artifact_max_bytes=int(os.getenv("TECHFLOW_ARTIFACT_MAX_BYTES", str(10 * 1024 * 1024))),
+            artifact_max_extracted_bytes=int(os.getenv("TECHFLOW_ARTIFACT_MAX_EXTRACTED_BYTES", str(20 * 1024 * 1024))),
+            artifact_max_archive_entries=int(os.getenv("TECHFLOW_ARTIFACT_MAX_ARCHIVE_ENTRIES", "100")),
+            artifact_max_compression_ratio=int(os.getenv("TECHFLOW_ARTIFACT_MAX_COMPRESSION_RATIO", "20")),
+            artifact_max_log_evidence_chars=int(os.getenv("TECHFLOW_ARTIFACT_MAX_LOG_EVIDENCE_CHARS", "120000")),
         )
         settings.validate()
         return settings
@@ -77,6 +85,14 @@ class Settings:
             raise ConfigurationError("TECHFLOW_ARTIFACT_RETENTION_HOURS must be between 1 and 168")
         if not 1024 <= self.artifact_max_bytes <= 20 * 1024 * 1024:
             raise ConfigurationError("TECHFLOW_ARTIFACT_MAX_BYTES must be between 1 KiB and 20 MiB")
+        if not self.artifact_max_bytes <= self.artifact_max_extracted_bytes <= 100 * 1024 * 1024:
+            raise ConfigurationError("TECHFLOW_ARTIFACT_MAX_EXTRACTED_BYTES must be between upload max and 100 MiB")
+        if not 1 <= self.artifact_max_archive_entries <= 500:
+            raise ConfigurationError("TECHFLOW_ARTIFACT_MAX_ARCHIVE_ENTRIES must be between 1 and 500")
+        if not 1 <= self.artifact_max_compression_ratio <= 100:
+            raise ConfigurationError("TECHFLOW_ARTIFACT_MAX_COMPRESSION_RATIO must be between 1 and 100")
+        if not 4096 <= self.artifact_max_log_evidence_chars <= 500_000:
+            raise ConfigurationError("TECHFLOW_ARTIFACT_MAX_LOG_EVIDENCE_CHARS must be between 4096 and 500000")
 
     def __repr__(self) -> str:
         return (
@@ -85,7 +101,9 @@ class Settings:
             "safety_identifier_salt_file=<redacted>, embedding_batch_size={!r}, "
             "classification={!r}, log_level={!r}, "
             "database_pool_min={!r}, database_pool_max={!r}, artifact_root=<redacted>, "
-            "artifact_retention_hours={!r}, artifact_max_bytes={!r})"
+            "artifact_retention_hours={!r}, artifact_max_bytes={!r}, artifact_max_extracted_bytes={!r}, "
+            "artifact_max_archive_entries={!r}, artifact_max_compression_ratio={!r}, "
+            "artifact_max_log_evidence_chars={!r})"
         ).format(
             self.environment,
             self.store_backend,
@@ -97,4 +115,8 @@ class Settings:
             self.database_pool_max,
             self.artifact_retention_hours,
             self.artifact_max_bytes,
+            self.artifact_max_extracted_bytes,
+            self.artifact_max_archive_entries,
+            self.artifact_max_compression_ratio,
+            self.artifact_max_log_evidence_chars,
         )

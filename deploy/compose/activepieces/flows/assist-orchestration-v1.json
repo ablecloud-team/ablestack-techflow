@@ -1,5 +1,5 @@
 {
-  "contractVersion": "1.0",
+  "contractVersion": "1.1",
   "issue": 58,
   "activepiecesVersion": "0.86.3",
   "schemaVersion": 22,
@@ -56,6 +56,8 @@
     "automaticApproval": false,
     "rawSourceInFlowRun": false,
     "credentialsInBundle": false,
-    "artifactBytesInFlowRun": false
+    "artifactBytesInFlowRun": false,
+    "acceptedArtifactKinds": ["IMAGE", "LOG"],
+    "artifactUploadBoundary": "techflow-ai-gateway"
   }
 }

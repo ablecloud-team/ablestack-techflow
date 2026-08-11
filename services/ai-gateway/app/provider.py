@@ -100,11 +100,26 @@ class ImageArtifact:
 
 
 @dataclass(frozen=True)
+class LogArtifact:
+    artifact_id: str
+    media_type: str
+    sha256: str
+    evidence_text: str
+    entry_count: int
+    extracted_bytes: int
+    truncated: bool
+    redaction_count: int
+
+
+EvidenceArtifact = ImageArtifact | LogArtifact
+
+
+@dataclass(frozen=True)
 class ComprehensiveResponsesRequest:
     query_id: str
     question: str
     context: tuple[ContextChunk, ...]
-    artifacts: tuple[ImageArtifact, ...] = ()
+    artifacts: tuple[EvidenceArtifact, ...] = ()
     locale: str = "ko-KR"
     safety_identifier: str = "techflow-anonymous"
 
@@ -167,14 +182,15 @@ class MockResponsesAdapter:
     def generate_comprehensive(self, request: ComprehensiveResponsesRequest) -> ComprehensiveResponsesResult:
         if not request.context or len(request.context) > 20:
             raise ProviderContractError("comprehensive context must contain 1 to 20 chunks")
-        if any(item.media_type not in {"image/png", "image/jpeg", "image/webp"} for item in request.artifacts):
-            raise ProviderContractError("unsupported image artifact")
+        if any(not isinstance(item, (ImageArtifact, LogArtifact)) for item in request.artifacts):
+            raise ProviderContractError("unsupported evidence artifact")
         citations = tuple(item.chunk_id for item in request.context[:3])
         digest = hashlib.sha256(request.query_id.encode("utf-8")).hexdigest()[:16]
-        artifact_findings = [
-            {"artifactId": item.artifact_id, "finding": "합성 시험 이미지가 분석 입력으로 전달됨", "region": "전체"}
-            for item in request.artifacts
-        ]
+        artifact_findings = [{
+            "artifactId": item.artifact_id,
+            "finding": "첨부 증거가 검증된 분석 입력으로 전달됨",
+            "region": "전체" if isinstance(item, ImageArtifact) else "오류 주변 로그 구간",
+        } for item in request.artifacts]
         report: dict[str, object] = {
             "state": "ANSWERED",
             "summary": "문서·소스코드·첨부 이미지를 종합한 계약 검증 응답입니다.",
