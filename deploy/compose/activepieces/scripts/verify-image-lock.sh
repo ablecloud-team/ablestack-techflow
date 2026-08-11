@@ -8,11 +8,16 @@ lock_file=${1:-${deploy_dir}/image-lock.json}
 
 cd "${deploy_dir}"
 lock_file=$(realpath -- "${lock_file}")
-python3 -m unittest -v scripts/test_release_lock.py
+python3 -m unittest -v scripts/test_release_lock.py scripts/test_protected_service_guard.py
 python3 scripts/release_lock.py validate \
   --lock "${lock_file}" \
   --compose compose.yml \
   --dockerfile event-gateway/Dockerfile
+python3 scripts/protected_service_guard.py \
+  --lock protected-services.json \
+  --env-file .env \
+  --compose compose.yml \
+  --ingress ingress/Caddyfile
 
 release_env=$(mktemp)
 trap 'rm -f -- "${release_env}"' EXIT
@@ -23,7 +28,8 @@ python3 scripts/release_lock.py verify-running --lock "${lock_file}"
 
 scan_target=$(mktemp -d)
 trap 'rm -rf -- "${scan_target}" "${release_env}"' EXIT
-cp -a image-lock.json scripts/release_lock.py scripts/deploy-locked.sh \
+cp -a image-lock.json protected-services.json scripts/release_lock.py \
+  scripts/protected_service_guard.py scripts/deploy-locked.sh \
   scripts/build-gateway-release.sh scripts/rollback-release.sh \
   scripts/verify-image-lock.sh scripts/test-image-release.sh \
   "${scan_target}/"
