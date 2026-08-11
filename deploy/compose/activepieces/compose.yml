@@ -91,11 +91,11 @@ services:
           - activepieces-control
 
   event-gateway:
-    image: "${TECHFLOW_GATEWAY_IMAGE:-ablestack-techflow/event-gateway:0.3.0}"
+    image: "${TECHFLOW_GATEWAY_IMAGE:-ablestack-techflow/event-gateway:0.4.0}"
     build:
       context: ./event-gateway
       args:
-        TECHFLOW_GATEWAY_VERSION: "${TECHFLOW_GATEWAY_VERSION:-0.3.0}"
+        TECHFLOW_GATEWAY_VERSION: "${TECHFLOW_GATEWAY_VERSION:-0.4.0}"
         SOURCE_DATE_EPOCH: "0"
       provenance: false
     restart: unless-stopped

@@ -7,7 +7,7 @@ from typing import Any, Iterable, Sequence
 from uuid import UUID
 
 from .chunking import ChunkRecord, RelationRecord, SymbolRecord, chunk_file
-from .embedding import EmbeddingBatchResult, EmbeddingsAdapter, MAX_BATCH_ITEMS
+from .embedding import EmbeddingBatchResult, EmbeddingsAdapter, MAX_BATCH_BYTES, MAX_BATCH_ITEMS
 
 
 @dataclass(frozen=True)
@@ -36,7 +36,7 @@ def build_index_bundle(
     source_version_id: UUID,
     files: Sequence[dict[str, Any]],
     adapter: EmbeddingsAdapter,
-    batch_size: int = 64,
+    batch_size: int = 128,
 ) -> IndexBundle:
     if not 1 <= batch_size <= MAX_BATCH_ITEMS:
         raise ValueError("embedding batch size must be between 1 and 128")
@@ -56,8 +56,20 @@ def build_index_bundle(
             fallback_files += 1
     embeddings: list[tuple[UUID, tuple[float, ...]]] = []
     audits: list[ProviderAudit] = []
-    for offset in range(0, len(chunks), batch_size):
-        batch = chunks[offset : offset + batch_size]
+    batches: list[list[ChunkRecord]] = []
+    batch: list[ChunkRecord] = []
+    batch_bytes = 0
+    for chunk in chunks:
+        content_bytes = len(chunk.content.encode("utf-8"))
+        if batch and (len(batch) >= batch_size or batch_bytes + content_bytes > MAX_BATCH_BYTES):
+            batches.append(batch)
+            batch = []
+            batch_bytes = 0
+        batch.append(chunk)
+        batch_bytes += content_bytes
+    if batch:
+        batches.append(batch)
+    for batch in batches:
         result: EmbeddingBatchResult = adapter.embed([chunk.content for chunk in batch])
         embeddings.extend((chunk.id, vector) for chunk, vector in zip(batch, result.vectors, strict=True))
         audits.append(

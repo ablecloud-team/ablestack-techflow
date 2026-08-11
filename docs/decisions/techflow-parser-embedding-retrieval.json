@@ -2,6 +2,11 @@
   "schemaVersion": "1.0",
   "decisionId": "TECHFLOW-PARSER-EMBEDDING-RETRIEVAL-ISSUE-43",
   "effectiveDate": "2026-08-05",
+  "amendedBy": {
+    "issue": 46,
+    "date": "2026-08-10",
+    "reason": "OpenAI 8192-token production boundary requires a 7936-byte safety ceiling"
+  },
   "classification": "D0",
   "initialCanary": {
     "sourceProfileId": "GENIE_MASTER",
@@ -16,7 +21,7 @@
     "sourceExecution": false,
     "fallbackMaxLines": 160,
     "fallbackOverlapLines": 20,
-    "maxEmbeddingInputBytes": 24576,
+    "maxEmbeddingInputBytes": 7936,
     "stableIds": true
   },
   "embedding": {

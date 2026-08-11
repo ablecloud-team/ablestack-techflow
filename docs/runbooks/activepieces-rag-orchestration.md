@@ -34,7 +34,7 @@ Flow 정의는 `deploy/compose/activepieces/flows/rag-orchestration-v1.json`, �
 2. Activepieces·AI Gateway PostgreSQL Dump와 현재 Image ID를 별도 백업 경로에 기록한다.
 3. 실제 Secret은 서버의 보호된 Runtime File과 `.env`에만 존재하는지 확인한다.
 4. `TECHFLOW_RAG_*_URL`은 Activepieces가 접근할 수 있는 내부 URL만 사용한다.
-5. SSRF 제한은 `STRICT`, Allowlist는 AI Gateway `172.30.19.3/32`와 Control Plane `172.30.19.9/32`만 허용한다.
+5. SSRF 제한은 `STRICT`를 유지한다. AI Gateway `172.30.19.3/32`, Control Plane `172.30.19.9/32`와 동결된 GitHub→Chat Adapter `172.30.19.10/32`만 허용한다. RAG 배포는 `172.30.19.10/32`를 제거하거나 GitHub Chat Flow를 변경할 수 없다.
 
 시험 서버의 Issue #45 배포 전 백업은 `/home/ablecloud/techflow-ai-gateway-backups/issue45-20260810T042137Z`에 있으며 DB Dump, Compose와 이전 Image ID만 포함한다. Secret File은 복제하지 않았다.
 

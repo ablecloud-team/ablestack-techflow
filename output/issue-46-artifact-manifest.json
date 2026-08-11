@@ -1,0 +1,168 @@
+{
+  "schemaVersion": "1.0",
+  "issue": 46,
+  "generatedAt": "2026-08-10T11:08:58.319248+00:00",
+  "artifactCount": 32,
+  "artifacts": [
+    {
+      "path": "services/ai-gateway/app/data/golden-set-v1.json",
+      "bytes": 64774,
+      "sha256": "1952bca937d2425d2aea7e7cd8f896dce0b4f1ab89e3b0cd9e17de6cd8c871e4"
+    },
+    {
+      "path": "services/ai-gateway/app/evaluation.py",
+      "bytes": 10322,
+      "sha256": "81d74877d4eb248f5e90a463de556c58a9a90acabb28b3337c5f6735c33b1f98"
+    },
+    {
+      "path": "services/ai-gateway/scripts/run_golden_evaluation.py",
+      "bytes": 6239,
+      "sha256": "4a3dcb26868676b6f9d94a517193525a963887974f6d04caf40088da64cbb990"
+    },
+    {
+      "path": "services/ai-gateway/openapi/techflow-ai-gateway-v1.json",
+      "bytes": 44890,
+      "sha256": "5e45299075041a3a9d8441149f82b7768ce0a02f7cdadf935a6d1ec513b8ee77"
+    },
+    {
+      "path": "services/ai-gateway/migrations/0007_reindex_fk_performance_up.sql",
+      "bytes": 406,
+      "sha256": "08cb7df96f17ba47bd4308f9ba2d55eae333fda9b95af46b88c04d340aef9b3e"
+    },
+    {
+      "path": "services/ai-gateway/migrations/0007_reindex_fk_performance_down.sql",
+      "bytes": 102,
+      "sha256": "0afe6165d3a8d978c2c42a6c28b5078f22c7e2976c40ebc29d4f71c7637a545c"
+    },
+    {
+      "path": "services/ai-gateway/migrations/manifest.json",
+      "bytes": 2776,
+      "sha256": "bf63ae41a80a9742f57f69d385d91dee4a26a0454fd5cf1bd3c11cefb4e3ffa4"
+    },
+    {
+      "path": "deploy/compose/ai-gateway/.env.example",
+      "bytes": 904,
+      "sha256": "1adb0af8c184c300130775b21b1db56f2aa79021954886f2b0e707a0d8296aea"
+    },
+    {
+      "path": "deploy/compose/ai-gateway/compose.openai.override.yml",
+      "bytes": 682,
+      "sha256": "36b23a0b476d459be853cc591c15ac456f711890900034be8307c12111273dcf"
+    },
+    {
+      "path": "deploy/compose/activepieces/flows/rag-orchestration-v1.json",
+      "bytes": 3784,
+      "sha256": "8971fe05f2bec75313eb522a8d1abc8d7ecac9f618bfa6c68a26b50c1a058fdb"
+    },
+    {
+      "path": "docs/decisions/techflow-golden-evaluation.json",
+      "bytes": 2520,
+      "sha256": "76e61e7139150e230e4c5c0bdb7bd402cfe388afdabf5e298a4e293b41f4c8c3"
+    },
+    {
+      "path": "docs/decisions/techflow-parser-embedding-retrieval.json",
+      "bytes": 1776,
+      "sha256": "5ce724447ad54e1237fbb71a9490f9b02e4d9a4a6cfacfa7c8718011dcbe4c4a"
+    },
+    {
+      "path": "docs/runbooks/golden-set-quality-security-e2e.md",
+      "bytes": 7755,
+      "sha256": "8b4f3c725b2daaf7bcf1b4ee9ee900c20782d025b78c7a80be84fa2ba5f812fe"
+    },
+    {
+      "path": "docs/reports/issue-46-golden-set-quality-security-e2e-validation.md",
+      "bytes": 73563,
+      "sha256": "3fd06a61f8ea0cc1f0e78b2b6cb7adeaa9f99315c57a5f3c6a6e4261fd1e6b46"
+    },
+    {
+      "path": "output/issue-46-reference-evaluation.json",
+      "bytes": 130408,
+      "sha256": "6c0dd0955b720f02cacec5e0698b23796ce4f7acf1b4b33a64c82d5f04ce3a59"
+    },
+    {
+      "path": "output/issue-46-live-evaluation.json",
+      "bytes": 155345,
+      "sha256": "98f6294c2fd07c9ffc23d6041ea782bda5860824ca6e8c8d493922c38e75b540"
+    },
+    {
+      "path": "output/issue-46-server-evidence.json",
+      "bytes": 7995,
+      "sha256": "85eac341b3f620a1cec00d45d66b39333375bbbc3a04dc109b5063203e07abd8"
+    },
+    {
+      "path": "output/presentation/techflow-golden-set-quality-security-e2e.pptx",
+      "bytes": 51215,
+      "sha256": "0a9888fb0929790e946239e726eab5a97e6ba12ed865953b1e56cf9e6ba01552"
+    },
+    {
+      "path": "output/pdf/techflow-golden-set-quality-security-e2e-presentation.pdf",
+      "bytes": 869694,
+      "sha256": "acd733dd4ce94ab3346d7465686eabeb89d95249a1112f6306c3de2e90ad80b1"
+    },
+    {
+      "path": "output/pdf/techflow-golden-set-quality-security-e2e-report.pdf",
+      "bytes": 261889,
+      "sha256": "826e0039e08caf93e5ba299ab7e573f3e201ba2e72d9dbb9bb35680051601790"
+    },
+    {
+      "path": "tools/artifacts/issue-46/build_golden_set.py",
+      "bytes": 23890,
+      "sha256": "11d9c91c69e64cf6ed35110f10675ec143e930844cb02a099f24c5fd761a5d94"
+    },
+    {
+      "path": "tools/artifacts/issue-46/apply_codex_review.py",
+      "bytes": 3584,
+      "sha256": "5689974ba6076543ca73f6f27b4216d76a6fd4a28f8989d1d610946a5454511c"
+    },
+    {
+      "path": "tools/artifacts/issue-46/build_markdown_report.py",
+      "bytes": 8699,
+      "sha256": "ed0144f58e6a2a06444be0deec3fb295b464b2a57cd2c1d0db39db2817f29e30"
+    },
+    {
+      "path": "tools/artifacts/issue-46/build_report.py",
+      "bytes": 10842,
+      "sha256": "bb88c13ddfb9a69d849262dd7be4d22e3a8fdb3b47418e2d8a846fcada1a4e1a"
+    },
+    {
+      "path": "tools/artifacts/issue-46/build_presentation.mjs",
+      "bytes": 15203,
+      "sha256": "1cfb2fcbd25b869b534302d60e5efe414a1533c0615590584ada77b3df023fb5"
+    },
+    {
+      "path": "tools/artifacts/issue-46/build_presentation_pdf.py",
+      "bytes": 1129,
+      "sha256": "0bea9c810fa7d34fec4c13c7d69a9fa81af2fc6b8757d86bedc85c21f279aab4"
+    },
+    {
+      "path": "tools/artifacts/issue-46/validate_artifacts.py",
+      "bytes": 2713,
+      "sha256": "18a451e0287236a8735b47ffb2136e6c53a82d5dd6988f28092ff0e5d39f3f2d"
+    },
+    {
+      "path": "tools/artifacts/issue-46/remote_exec.py",
+      "bytes": 2755,
+      "sha256": "e609c3b7d81e7dcde38db02ca6389af580d78065791204c66f93c2ac639f022f"
+    },
+    {
+      "path": "tools/artifacts/issue-46/server_api.py",
+      "bytes": 1415,
+      "sha256": "e611119060ef723ff4e21ec10cee01dcb9b5c855aad222693a0d32ea994a0144"
+    },
+    {
+      "path": "tools/artifacts/issue-46/send_evaluation_event.py",
+      "bytes": 1516,
+      "sha256": "eac072b98ea089c7c1f4affc1680778991de059278d1cf5694e46672d6eee429"
+    },
+    {
+      "path": "tools/artifacts/issue-46/reindex_active_sources.py",
+      "bytes": 3404,
+      "sha256": "5a83203df5a77eff9087a4b5e884de52b68ab2bf81014556bbbae1097c677caf"
+    },
+    {
+      "path": "tools/ai_gateway/validate_issue_46.py",
+      "bytes": 2253,
+      "sha256": "b3d323bb1bb5b07445665a542ff0bf1d2ebe3bff3fac92d30561f4faa7137cfb"
+    }
+  ]
+}

@@ -91,6 +91,54 @@ class ResponsesResult:
     latency_ms: int = 0
 
 
+@dataclass(frozen=True)
+class ImageArtifact:
+    artifact_id: str
+    media_type: str
+    data: bytes
+    sha256: str
+
+
+@dataclass(frozen=True)
+class LogArtifact:
+    artifact_id: str
+    media_type: str
+    sha256: str
+    evidence_text: str
+    entry_count: int
+    extracted_bytes: int
+    truncated: bool
+    redaction_count: int
+
+
+EvidenceArtifact = ImageArtifact | LogArtifact
+
+
+@dataclass(frozen=True)
+class ComprehensiveResponsesRequest:
+    query_id: str
+    question: str
+    context: tuple[ContextChunk, ...]
+    artifacts: tuple[EvidenceArtifact, ...] = ()
+    locale: str = "ko-KR"
+    safety_identifier: str = "techflow-anonymous"
+
+
+@dataclass(frozen=True)
+class ComprehensiveResponsesResult:
+    report: dict[str, object]
+    citations_used: tuple[str, ...]
+    requested_model_id: str
+    returned_model_id: str
+    request_id: str
+    response_id: str
+    provider: str = "mock"
+    profile_id: str = "OPENAI_RAG_ESCALATION_V1"
+    latency_ms: int = 0
+    input_tokens: int = 0
+    output_tokens: int = 0
+
+
 def validate_responses_request(request: ResponsesRequest) -> ProviderProfile:
     profile = PROVIDER_PROFILES.get(request.profile_id)
     if profile is None or profile.surface != "responses-api":
@@ -129,6 +177,37 @@ class MockResponsesAdapter:
             output_tokens=12,
             provider="mock",
             profile_id=profile.profile_id,
+        )
+
+    def generate_comprehensive(self, request: ComprehensiveResponsesRequest) -> ComprehensiveResponsesResult:
+        if not request.context or len(request.context) > 20:
+            raise ProviderContractError("comprehensive context must contain 1 to 20 chunks")
+        if any(not isinstance(item, (ImageArtifact, LogArtifact)) for item in request.artifacts):
+            raise ProviderContractError("unsupported evidence artifact")
+        citations = tuple(item.chunk_id for item in request.context[:3])
+        digest = hashlib.sha256(request.query_id.encode("utf-8")).hexdigest()[:16]
+        artifact_findings = [{
+            "artifactId": item.artifact_id,
+            "finding": "첨부 증거가 검증된 분석 입력으로 전달됨",
+            "region": "전체" if isinstance(item, ImageArtifact) else "오류 주변 로그 구간",
+        } for item in request.artifacts]
+        report: dict[str, object] = {
+            "state": "ANSWERED",
+            "summary": "문서·소스코드·첨부 이미지를 종합한 계약 검증 응답입니다.",
+            "observedFacts": ["검색 근거와 첨부물이 하나의 분석 요청으로 결합되었습니다."],
+            "diagnoses": [{"title": "근거 기반 종합 분석", "likelihood": "HIGH", "evidenceIds": list(citations)}],
+            "recommendedActions": ["인용된 소스와 실제 환경 상태를 확인하십시오."],
+            "unknowns": [],
+            "confidence": "HIGH",
+            "citationsUsed": list(citations),
+            "artifactEvidence": artifact_findings,
+            "abstainReason": None,
+        }
+        return ComprehensiveResponsesResult(
+            report=report, citations_used=citations,
+            requested_model_id=PROVIDER_PROFILES["OPENAI_RAG_ESCALATION_V1"].model,
+            returned_model_id=PROVIDER_PROFILES["OPENAI_RAG_ESCALATION_V1"].model,
+            request_id=f"mock-request-{digest}", response_id=f"mock-response-{digest}",
         )
 
 

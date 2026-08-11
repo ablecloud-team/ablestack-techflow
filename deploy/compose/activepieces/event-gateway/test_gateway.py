@@ -225,10 +225,11 @@ class RagContractTests(unittest.TestCase):
         self.assertEqual("dhslove", withdrawal["reviewer"])
         evaluation = gateway.normalize_rag_event(
             "/techflow/hooks/rag/evaluation",
-            {"name": "GENIE regression", "sourceProfileId": "GENIE_MASTER", "question": "drop me"},
+            {"name": "ABLESTACK regression", "sourceProfileIds": ["GENIE_MASTER", "CLOUD_MAIN"], "question": "drop me"},
             "event-6", "correlation-6",
         )
         self.assertNotIn("question", evaluation)
+        self.assertEqual(["GENIE_MASTER", "CLOUD_MAIN"], evaluation["sourceProfileIds"])
 
     def test_branch_delete_uses_repository_url(self) -> None:
         payload = {

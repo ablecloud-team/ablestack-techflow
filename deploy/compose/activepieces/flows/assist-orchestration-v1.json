@@ -1,0 +1,63 @@
+{
+  "contractVersion": "1.1",
+  "issue": 58,
+  "activepiecesVersion": "0.86.3",
+  "schemaVersion": 22,
+  "gatewayBaseUrl": "http://techflow-ai-gateway:8090",
+  "flows": [
+    {
+      "logicalId": "comprehensive-assist-v1",
+      "displayName": "TechFlow - Comprehensive Assist v1",
+      "route": "assist",
+      "operations": [
+        {
+          "name": "generate_comprehensive_report",
+          "method": "POST",
+          "url": "/v1/assist/query",
+          "body": {
+            "queryId": "{{trigger['output']['body']['queryId']}}",
+            "question": "{{trigger['output']['body']['question']}}",
+            "actorId": "{{trigger['output']['body']['actorId']}}",
+            "compatibilitySetId": "{{trigger['output']['body']['compatibilitySetId']}}",
+            "artifactIds": "{{trigger['output']['body']['artifactIds']}}",
+            "environment": "{{trigger['output']['body']['environment']}}",
+            "classification": "D0",
+            "locale": "{{trigger['output']['body']['locale']}}"
+          }
+        }
+      ]
+    },
+    {
+      "logicalId": "single-profile-assist-v1",
+      "displayName": "TechFlow - Single Profile Assist v1",
+      "route": "assist-single",
+      "operations": [
+        {
+          "name": "generate_single_profile_report",
+          "method": "POST",
+          "url": "/v1/assist/query",
+          "body": {
+            "queryId": "{{trigger['output']['body']['queryId']}}",
+            "question": "{{trigger['output']['body']['question']}}",
+            "actorId": "{{trigger['output']['body']['actorId']}}",
+            "sourceProfileIds": "{{trigger['output']['body']['sourceProfileIds']}}",
+            "artifactIds": "{{trigger['output']['body']['artifactIds']}}",
+            "environment": "{{trigger['output']['body']['environment']}}",
+            "classification": "D0",
+            "locale": "{{trigger['output']['body']['locale']}}"
+          }
+        }
+      ]
+    }
+  ],
+  "security": {
+    "policyOwner": "techflow-ai-gateway",
+    "reviewer": "dhslove",
+    "automaticApproval": false,
+    "rawSourceInFlowRun": false,
+    "credentialsInBundle": false,
+    "artifactBytesInFlowRun": false,
+    "acceptedArtifactKinds": ["IMAGE", "LOG"],
+    "artifactUploadBoundary": "techflow-ai-gateway"
+  }
+}

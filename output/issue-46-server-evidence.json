@@ -1,0 +1,171 @@
+{
+  "schemaVersion": "1.0",
+  "issue": 46,
+  "capturedAt": "2026-08-10T11:05:00Z",
+  "server": {
+    "os": "Ubuntu 24.04",
+    "rootBytes": 1078686560256,
+    "rootUsedBytes": 20299972608,
+    "rootAvailableBytes": 1014019862528,
+    "rootUsePercent": 2
+  },
+  "aiGatewayImage": "techflow/ai-gateway:issue-46@sha256:72fad7d3a3ef4f0dc44ace86bd823e9a158d886c5cdc47a197ea70139831500b",
+  "eventGatewayImage": "ablestack-techflow/event-gateway:0.4.0@sha256:ae33662eb227c9826563e94236272547f586437082f65d4d385837793e63670e",
+  "provider": "openai",
+  "aiGatewayTests": 112,
+  "eventGatewayTests": 23,
+  "aiBackup": "/home/ablecloud/techflow-ai-gateway/backups/issue46-predeploy-20260810T065722Z/techflow-ai-gateway.pgdump (85,201,267 bytes)",
+  "activepiecesBackup": "/opt/ablestack-techflow/activepieces/backups/issue46-predeploy-20260810T065722Z/activepieces.pgdump (86,142,344 bytes)",
+  "rollback": "issue-46 0.6.0 -> issue-45 0.5.0 -> issue-46 0.6.0, 두 전환 모두 OpenAI·Database·Vector ready 확인; 서버 .env는 issue-46으로 복귀",
+  "migrationIndexes": [
+    "rag_code_symbol_chunk_idx",
+    "rag_code_relation_to_symbol_idx"
+  ],
+  "sources": [
+    {
+      "sourceProfileId": "CLOUD_DIPLO",
+      "repository": "ablecloud-team/ablestack-cloud",
+      "branch": "ablestack-diplo",
+      "commit": "2a0564fa00987a1127874b954fa85c1cb9832365",
+      "sourceVersionId": "c5e75468-2913-4a04-98e8-979fe8527fe7",
+      "jobId": "b28fb540-6733-43fc-98cf-c934e1a20466",
+      "state": "ACTIVE",
+      "metrics": {"indexedFiles": 10286, "chunks": 23839, "symbols": 116109, "relations": 471071, "parsedFiles": 9067, "fallbackFiles": 1219, "embeddingBatches": 333}
+    },
+    {
+      "sourceProfileId": "CLOUD_EUROPA",
+      "repository": "ablecloud-team/ablestack-cloud",
+      "branch": "ablestack-europa",
+      "commit": "423465d7818fd4b248d5a6b141e6b49aeb2ee233",
+      "sourceVersionId": "c5cec6f5-dd48-408f-84ee-1bffa8edb276",
+      "jobId": "1c69906a-1b7f-48f2-a68d-7ac9488c71e3",
+      "state": "ACTIVE",
+      "metrics": {"indexedFiles": 11188, "chunks": 27581, "symbols": 129688, "relations": 529727, "parsedFiles": 9881, "fallbackFiles": 1307, "embeddingBatches": 431}
+    },
+    {
+      "sourceProfileId": "CLOUD_MAIN",
+      "repository": "ablecloud-team/ablestack-cloud",
+      "branch": "main",
+      "commit": "a873fb1ff436990fd523e2fe56682ff7aa31d1ec",
+      "sourceVersionId": "274f93c2-aab2-489c-b2a3-4397dd7e967c",
+      "jobId": "d135cbee-cb3a-44e1-9117-28fe2dee02da",
+      "state": "ACTIVE",
+      "metrics": {"indexedFiles": 10233, "chunks": 23444, "symbols": 117674, "relations": 482175, "parsedFiles": 9015, "fallbackFiles": 1218, "embeddingBatches": 367}
+    },
+    {
+      "sourceProfileId": "COCKPIT_DIPLO",
+      "repository": "ablecloud-team/ablestack-cockpit-plugin",
+      "branch": "ablestack-diplo",
+      "commit": "c8b37dd6a4c35a8ba18169189a553595b24e54ab",
+      "sourceVersionId": "20b187e8-2ae1-4c74-8410-57c1b3fbf630",
+      "jobId": "7c431568-c6fd-446b-a3cf-7048af5ffc85",
+      "state": "ACTIVE",
+      "metrics": {"indexedFiles": 203, "chunks": 1313, "symbols": 1370, "relations": 5854, "parsedFiles": 138, "fallbackFiles": 65, "embeddingBatches": 21}
+    },
+    {
+      "sourceProfileId": "GENIE_MASTER",
+      "repository": "ablecloud-team/ablestack-genie",
+      "branch": "master",
+      "commit": "3e3c5c364f5c7261b07d49fcbcd4f3605b91f3b1",
+      "sourceVersionId": "059ae7d0-7d6c-4fb3-a0ed-fa3eab1f6cae",
+      "jobId": "b95583ed-24bd-4fb8-b259-1a182aa01951",
+      "state": "ACTIVE",
+      "metrics": {"indexedFiles": 34, "chunks": 65, "symbols": 15, "relations": 45, "parsedFiles": 8, "fallbackFiles": 26, "embeddingBatches": 2}
+    },
+    {
+      "sourceProfileId": "KICKSTART_MASTER",
+      "repository": "ablecloud-team/ablestack-kickstart",
+      "branch": "master",
+      "commit": "ffe24390544dd58e3441ac7362fe46b93472d0e1",
+      "sourceVersionId": "0d22878a-ecb7-4e34-8a0f-5ce78eaa4055",
+      "jobId": "fed455be-ebed-4320-ac93-50b7601b39b7",
+      "state": "ACTIVE",
+      "metrics": {"indexedFiles": 17, "chunks": 27, "symbols": 4, "relations": 1, "parsedFiles": 7, "fallbackFiles": 10, "embeddingBatches": 1}
+    },
+    {
+      "sourceProfileId": "QEMU_EXEC_TOOLS_MAIN",
+      "repository": "ablecloud-team/ablestack-qemu-exec-tools",
+      "branch": "main",
+      "commit": "a00e4db275172fd91fdecd976b3344e1b3bcb7de",
+      "sourceVersionId": "5e5bb2ef-5ab6-40cf-9c51-2d981773f097",
+      "jobId": "474d7e4e-f720-4043-bd7a-7b3b16943da8",
+      "state": "ACTIVE",
+      "metrics": {"indexedFiles": 214, "chunks": 1634, "symbols": 1508, "relations": 3650, "parsedFiles": 165, "fallbackFiles": 49, "embeddingBatches": 26}
+    },
+    {
+      "sourceProfileId": "SHARED_DOCS",
+      "repository": "ablecloud-team/ablestack-docs",
+      "branch": "master",
+      "commit": "50d50ad6c8c548dc58db866ca28b4cbb43cc74d0",
+      "sourceVersionId": "23b85c1f-2d8a-43b4-b046-eab5371451b2",
+      "jobId": "c6e3c659-a044-4395-84ef-ee23e064b5cd",
+      "state": "ACTIVE",
+      "metrics": {"indexedFiles": 272, "chunks": 2921, "symbols": 0, "relations": 0, "parsedFiles": 267, "fallbackFiles": 5, "embeddingBatches": 46}
+    },
+    {
+      "sourceProfileId": "WALL_MAIN",
+      "repository": "ablecloud-team/ablestack-wall",
+      "branch": "main",
+      "commit": "f27b3f1b0b35489e05c64924b5cff7dc64dd2f6d",
+      "sourceVersionId": "885e481e-2ff3-48ce-b7dd-838473bffbd6",
+      "jobId": "73e03f28-0849-4cf0-9aa2-31bd7ffd30c4",
+      "state": "ACTIVE",
+      "metrics": {"indexedFiles": 6336, "chunks": 13527, "symbols": 20555, "relations": 108722, "parsedFiles": 5589, "fallbackFiles": 747, "embeddingBatches": 212}
+    }
+  ],
+  "quality": {
+    "liveRunId": "cdeefa13-33f6-49f3-9ac1-c8b48a026435",
+    "totalCases": 70,
+    "automatedPassedCases": 48,
+    "automatedAcceptableAnswerRate": 0.6333,
+    "codexAcceptedCases": 59,
+    "codexAcceptableAnswerRate": 0.8167,
+    "correctAbstentionRate": 1.0,
+    "answeredCitationRate": 1.0,
+    "codeLineResolvableRate": 1.0,
+    "providerP95Ms": 6028,
+    "providerCalls": 66,
+    "securityBoundaryAnsweredViolations": 0
+  },
+  "compatibility": {
+    "approvedSetId": "7e158413-3c16-409d-909a-9746e9a87a55",
+    "state": "APPROVED",
+    "queryId": "9891bafe-d3af-4b9d-823b-e7a6ed8271a6",
+    "queryState": "ANSWERED",
+    "providerProfileId": "OPENAI_RAG_ESCALATION_V1",
+    "citationRepositories": ["ablecloud-team/ablestack-cloud", "ablecloud-team/ablestack-qemu-exec-tools"],
+    "unapprovedCrossRepositoryCases": 2,
+    "unapprovedCrossRepositoryAnsweredViolations": 0
+  },
+  "activepieces": {
+    "flowId": "JV7tPXmC2cR75HGm4Oft4",
+    "flowVersionId": "mpqNbd4cs6sRq142wjJfK",
+    "eventId": "issue46-evaluation-5fb2bad6-5d9d-4491-a283-8b46a66a058b",
+    "requestId": "9164e545-826e-43ee-8a03-d2ddd31f7e1b",
+    "runId": "aBbGEqOVA3DVn1tZS0OjF",
+    "runState": "SUCCEEDED",
+    "evaluationRunId": "5016a21f-675c-431b-9427-d18bf1efdd00",
+    "evaluationState": "SUCCEEDED",
+    "evaluationPassedCases": 6,
+    "evaluationTotalCases": 6
+  },
+  "security": {
+    "classificationRejected": "D1",
+    "classificationHttpStatus": 422,
+    "providerCallsBefore": 3215,
+    "providerCallsAfter": 3215,
+    "providerTransmissionDelta": 0,
+    "validationContentLengthRegressionFixed": true,
+    "secretPatternMatches": 0,
+    "zdrUsed": false
+  },
+  "deletionDrill": "Canary job 51b4aada-60f0-4030-9cda-d1c036688b26 SUCCEEDED; Chunk 1·Embedding 1·Symbol 1·Relation 1 삭제, Chunk·Symbol·Relation 잔존 0건",
+  "recovery": {
+    "failedJobs": [
+      {"jobId": "c2df4315-bb19-40a7-91f3-02b5516096ed", "errorCode": "DEPLOYMENT_INTERRUPTED", "activeIndexPreserved": true},
+      {"jobId": "f7d0d581-3775-465e-a4a2-9c60cc82dde0", "errorCode": "INDEXING_FAILED", "cause": "OpenAI aggregate embedding batch limit", "activeIndexPreserved": true}
+    ],
+    "successfulRetryJobId": "b28fb540-6733-43fc-98cf-c934e1a20466",
+    "batchPolicy": "max 128 chunks and max 256 KiB UTF-8 aggregate"
+  }
+}

@@ -15,14 +15,17 @@ import re
 from typing import Iterable
 from uuid import UUID, uuid5
 
+from .embedding import MAX_INPUT_BYTES
+
 
 PARSER_PROFILE_ID = "TREE_SITTER_V1"
 FALLBACK_MAX_LINES = 160
 FALLBACK_OVERLAP_LINES = 20
-MAX_EMBEDDING_INPUT_BYTES = 24 * 1024
+MAX_EMBEDDING_INPUT_BYTES = MAX_INPUT_BYTES
 _CHUNK_NAMESPACE = UUID("43000000-0000-0000-0000-000000000001")
 _SYMBOL_NAMESPACE = UUID("43000000-0000-0000-0000-000000000002")
 _RELATION_NAMESPACE = UUID("43000000-0000-0000-0000-000000000003")
+MAX_QUALIFIED_NAME_CHARS = 1024
 
 _LANGUAGE_BY_SUFFIX = {
     ".java": "java", ".py": "python", ".js": "javascript", ".jsx": "javascript",
@@ -104,6 +107,38 @@ def _path_hash(path: str) -> str:
     return hashlib.sha256(path.encode("utf-8")).hexdigest()
 
 
+def _bounded_qualified_name(value: str) -> str:
+    """Fit parser-derived names into the schema while retaining uniqueness."""
+
+    if len(value) <= MAX_QUALIFIED_NAME_CHARS:
+        return value
+    digest = hashlib.sha256(value.encode("utf-8")).hexdigest()[:16]
+    suffix = f"…#{digest}"
+    return value[: MAX_QUALIFIED_NAME_CHARS - len(suffix)] + suffix
+
+
+def _byte_segments(value: str, maximum: int = MAX_EMBEDDING_INPUT_BYTES) -> list[str]:
+    """Split UTF-8 text without cutting a code point or exceeding provider limits."""
+
+    if len(value.encode("utf-8")) <= maximum:
+        return [value]
+    segments: list[str] = []
+    remaining = value
+    while remaining:
+        low, high = 1, len(remaining)
+        while low < high:
+            middle = (low + high + 1) // 2
+            if len(remaining[:middle].encode("utf-8")) <= maximum:
+                low = middle
+            else:
+                high = middle - 1
+        if low <= 0:
+            raise ValueError("unable to split UTF-8 content within embedding limit")
+        segments.append(remaining[:low])
+        remaining = remaining[low:]
+    return segments
+
+
 def _chunk_record(
     source_version_id: UUID,
     source_kind: str,
@@ -136,6 +171,20 @@ def _chunk_record(
     )
 
 
+def _dedupe_chunks(chunks: Iterable[ChunkRecord]) -> list[ChunkRecord]:
+    """Match the database uniqueness contract for overlapping parser nodes."""
+
+    seen: set[tuple[str, str, int, int]] = set()
+    retained: list[ChunkRecord] = []
+    for chunk in chunks:
+        key = (chunk.path_hash, chunk.content_hash, chunk.start_line, chunk.end_line)
+        if key in seen:
+            continue
+        seen.add(key)
+        retained.append(chunk)
+    return retained
+
+
 def _windowed_chunks(
     source_version_id: UUID,
     source_kind: str,
@@ -145,8 +194,8 @@ def _windowed_chunks(
     symbol: str | None = None,
     parser_status: str = "FALLBACK",
 ) -> list[ChunkRecord]:
-    if not lines:
-        lines = [""]
+    if not lines or not any(line.strip() for line in lines):
+        return []
     chunks: list[ChunkRecord] = []
     start = 0
     while start < len(lines):
@@ -154,14 +203,18 @@ def _windowed_chunks(
         while end > start + 1 and len("\n".join(lines[start:end]).encode("utf-8")) > MAX_EMBEDDING_INPUT_BYTES:
             end -= 1
         text = "\n".join(lines[start:end]).strip("\n")
-        if not text:
-            text = "\n"
-        chunks.append(
-            _chunk_record(
-                source_version_id, source_kind, path, symbol, base_line + start,
-                base_line + end - 1, text, parser_status, len(chunks),
+        if not text.strip():
+            if end >= len(lines):
+                break
+            start = end
+            continue
+        for segment in _byte_segments(text):
+            chunks.append(
+                _chunk_record(
+                    source_version_id, source_kind, path, symbol, base_line + start,
+                    base_line + end - 1, segment, parser_status, len(chunks),
+                )
             )
-        )
         if end >= len(lines):
             break
         next_start = end - FALLBACK_OVERLAP_LINES
@@ -235,17 +288,25 @@ def _tree_sitter_chunks(
         text = str(getattr(raw, "content", ""))
         if not text.strip():
             continue
-        chunks.append(
-            _chunk_record(
-                source_version_id, source_kind, path, symbol, start_line, end_line, text, "PARSED", len(chunks)
+        if len(text.encode("utf-8")) > MAX_EMBEDDING_INPUT_BYTES:
+            chunks.extend(
+                _windowed_chunks(
+                    source_version_id, source_kind, path, text.splitlines(), start_line, symbol, "PARSED"
+                )
             )
-        )
+        else:
+            chunks.append(
+                _chunk_record(
+                    source_version_id, source_kind, path, symbol, start_line, end_line, text, "PARSED", len(chunks)
+                )
+            )
+    chunks = _dedupe_chunks(chunks)
     if not chunks:
         raise RuntimeError("tree-sitter produced only empty chunks")
 
     package_match = _PACKAGE.search(content)
     package_name = package_match.group(1) if package_match else None
-    file_qualified_name = f"{path}::FILE"
+    file_qualified_name = _bounded_qualified_name(f"{path}::FILE")
     file_symbol = SymbolRecord(
         id=_stable_uuid(_SYMBOL_NAMESPACE, source_version_id, file_qualified_name, 1),
         source_version_id=source_version_id,
@@ -267,7 +328,9 @@ def _tree_sitter_chunks(
             continue
         start_line = int(getattr(span, "start_line", 0)) + 1
         end_line = max(start_line, int(getattr(span, "end_line", start_line - 1)) + 1)
-        qualified = ".".join(filter(None, (package_name, str(name)))) if package_name else f"{path}::{name}"
+        qualified = _bounded_qualified_name(
+            ".".join(filter(None, (package_name, str(name)))) if package_name else f"{path}::{name}"
+        )
         if (qualified, start_line) in seen:
             continue
         seen.add((qualified, start_line))
@@ -291,7 +354,7 @@ def _tree_sitter_chunks(
     relation_keys: set[tuple[UUID, str, str]] = set()
 
     def add_relation(from_symbol: SymbolRecord, target: str, kind: str, confidence: float) -> None:
-        clean = target.strip()
+        clean = _bounded_qualified_name(target.strip())
         key = (from_symbol.id, clean, kind)
         if not clean or key in relation_keys:
             return

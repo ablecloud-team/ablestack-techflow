@@ -435,10 +435,18 @@ def normalize_rag_event(path: str, payload: object, event_id: str, correlation_i
         return {**common, "sourceId": source_id, "reviewer": reviewer, "reason": reason}
 
     if path.endswith("/evaluation"):
-        name, profile = payload.get("name"), payload.get("sourceProfileId")
-        if not isinstance(name, str) or not 3 <= len(name) <= 128 or profile not in SOURCE_PROFILE_BY_REPOSITORY_BRANCH.values():
+        name = payload.get("name")
+        profiles = payload.get("sourceProfileIds")
+        if profiles is None and payload.get("sourceProfileId") is not None:
+            profiles = [payload.get("sourceProfileId")]
+        allowed = set(SOURCE_PROFILE_BY_REPOSITORY_BRANCH.values())
+        if (
+            not isinstance(name, str) or not 3 <= len(name) <= 128
+            or not isinstance(profiles, list) or not 1 <= len(profiles) <= 9
+            or len(profiles) != len(set(profiles)) or any(profile not in allowed for profile in profiles)
+        ):
             raise ValueError("invalid_evaluation_contract")
-        return {**common, "name": name, "sourceProfileId": profile, "requestedBy": "activepieces"}
+        return {**common, "name": name, "sourceProfileIds": profiles, "requestedBy": "activepieces"}
 
     raise ValueError("unsupported_rag_route")
 

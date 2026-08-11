@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 import unittest
 from uuid import UUID, uuid4
 
@@ -8,6 +9,9 @@ from app.indexing import build_index_bundle, reciprocal_rank_fusion
 
 
 class IndexingTest(unittest.TestCase):
+    def test_default_embedding_batch_uses_provider_contract_maximum(self) -> None:
+        self.assertEqual(128, inspect.signature(build_index_bundle).parameters["batch_size"].default)
+
     def test_bundle_preserves_file_count_and_one_embedding_per_chunk(self) -> None:
         bundle = build_index_bundle(
             uuid4(),
@@ -19,6 +23,15 @@ class IndexingTest(unittest.TestCase):
         self.assertEqual(2, bundle.indexed_file_count)
         self.assertEqual(len(bundle.chunks), len(bundle.embeddings))
         self.assertEqual(len(bundle.chunks), len(bundle.provider_audits))
+
+    def test_large_chunks_are_split_by_aggregate_provider_byte_limit(self) -> None:
+        files = [
+            {"path": f"docs/{index:02d}.md", "sourceKind": "DOCUMENTATION", "content": "x" * 7000}
+            for index in range(50)
+        ]
+        bundle = build_index_bundle(uuid4(), files, MockEmbeddingsAdapter(), batch_size=128)
+        self.assertGreater(len(bundle.provider_audits), 1)
+        self.assertEqual(len(bundle.chunks), len(bundle.embeddings))
 
     def test_rrf_is_stable_and_test_evidence_weighted_down(self) -> None:
         code_id = UUID("00000000-0000-0000-0000-000000000001")

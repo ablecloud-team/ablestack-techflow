@@ -8,9 +8,9 @@ import logging
 import re
 import time
 from typing import Annotated, Any
-from uuid import UUID
+from uuid import UUID, uuid4
 
-from fastapi import Depends, FastAPI, Header, Request, status
+from fastapi import BackgroundTasks, Depends, FastAPI, Header, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
@@ -19,7 +19,9 @@ from .config import ConfigurationError, Settings
 from .models import (
     ApiMeta,
     CompatibilitySetCreateRequest,
+    ComprehensiveQueryRequest,
     Envelope,
+    EvaluationExecuteRequest,
     EvaluationRunCreateRequest,
     GroundedQueryRequest,
     IngestionCreateRequest,
@@ -31,9 +33,10 @@ from .models import (
     SourceDiscoveryRequest,
     SourceScanRequest,
 )
+from .evaluation import judge_case, load_golden_set
 from .postgres_store import PostgresStore
 from .embedding import EmbeddingsAdapter, build_embedding_adapter
-from .provider import ResponsesRequest, profile_payloads
+from .provider import ComprehensiveResponsesRequest, ResponsesRequest, profile_payloads
 from .responses import (
     ResponsesAdapter,
     ResponsesProviderError,
@@ -49,6 +52,8 @@ from .source_fetcher import FetchError, GitSnapshotFetcher, SnapshotFetcher
 from .source_pipeline import SourcePipeline
 from .source_registry import get_profile
 from .store import InvalidBoundaryError, MemoryStore, Store, StoreError
+from .artifacts import ArtifactStore
+from .comprehensive import plan_query
 
 
 CORRELATION_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:-]{7,127}$")
@@ -118,6 +123,15 @@ def create_app(
     runtime_responses = responses_adapter or build_responses_adapter(runtime_settings)
     safety_identifier_salt = load_safety_identifier_salt(runtime_settings)
     source_pipeline = SourcePipeline(source_fetcher or GitSnapshotFetcher())
+    artifact_store = ArtifactStore(
+        runtime_settings.artifact_root,
+        retention_hours=runtime_settings.artifact_retention_hours,
+        max_bytes=runtime_settings.artifact_max_bytes,
+        max_extracted_bytes=runtime_settings.artifact_max_extracted_bytes,
+        max_archive_entries=runtime_settings.artifact_max_archive_entries,
+        max_compression_ratio=runtime_settings.artifact_max_compression_ratio,
+        max_log_evidence_chars=runtime_settings.artifact_max_log_evidence_chars,
+    )
 
     @asynccontextmanager
     async def lifespan(_: FastAPI):
@@ -134,6 +148,7 @@ def create_app(
     )
     application.state.store = runtime_store
     application.state.settings = runtime_settings
+    application.state.artifacts = artifact_store
 
     @application.middleware("http")
     async def boundary_middleware(request: Request, call_next):
@@ -180,7 +195,12 @@ def create_app(
         response = _error(getattr(request.state, "correlation_id", "missing"), 422, "VALIDATION_ERROR")
         payload = json.loads(response.body)
         payload["error"]["fields"] = safe_fields[:20]
-        return JSONResponse(status_code=422, content=payload, headers=dict(response.headers))
+        safe_headers = {
+            key: value
+            for key, value in response.headers.items()
+            if key.lower() not in {"content-length", "content-type"}
+        }
+        return JSONResponse(status_code=422, content=payload, headers=safe_headers)
 
     @application.get("/healthz", response_model=Envelope, operation_id="getHealth")
     def health() -> Envelope | JSONResponse:
@@ -354,8 +374,7 @@ def create_app(
     def retrieve_rag(request: QueryRequest, correlation_id: Annotated[str, Depends(_correlation_id)]) -> Envelope:
         return _envelope(_retrieve(request, correlation_id), correlation_id)
 
-    @application.post("/v1/rag/query", response_model=Envelope, operation_id="queryRag")
-    def query_rag(request: GroundedQueryRequest, correlation_id: Annotated[str, Depends(_correlation_id)]) -> Envelope:
+    def _query_grounded(request: GroundedQueryRequest, correlation_id: str) -> dict[str, Any]:
         scope = {
             "sourceProfileIds": request.source_profile_ids,
             "compatibilitySetId": request.compatibility_set_id,
@@ -377,12 +396,9 @@ def create_app(
             "retrievalProviderCalled": retrieval["providerCalled"],
         }
         if decision.state == "ABSTAINED":
-            return _envelope(
-                {**common, "state": "ABSTAINED", "abstainReason": decision.abstain_reason,
-                 "answer": None, "citations": [], "providerProfileId": None,
-                 "generationProviderCalled": False},
-                correlation_id,
-            )
+            return {**common, "state": "ABSTAINED", "abstainReason": decision.abstain_reason,
+                    "answer": None, "citations": [], "providerProfileId": None,
+                    "generationProviderCalled": False}
         context = context_from_results(retrieval["results"], request.classification)
         provider_request = ResponsesRequest(
             query_id=str(request.query_id),
@@ -396,22 +412,96 @@ def create_app(
             generated = runtime_responses.generate(provider_request)
             runtime_store.record_response_call(request.query_id, generated, correlation_id)
             state, answer, abstain_reason, cited = validate_grounded_result(generated, context)
-            return _envelope(
-                {**common, "state": state, "abstainReason": abstain_reason, "answer": answer,
-                 "citations": [citation_payload(item) for item in cited],
-                 "providerProfileId": generated.profile_id,
-                 "generationProviderCalled": generated.provider == "openai"},
-                correlation_id,
-            )
+            return {**common, "state": state, "abstainReason": abstain_reason, "answer": answer,
+                    "citations": [citation_payload(item) for item in cited],
+                    "providerProfileId": generated.profile_id,
+                    "generationProviderCalled": generated.provider == "openai"}
         except ResponsesProviderError as exc:
             runtime_store.record_response_failure(request.query_id, exc, correlation_id)
-            return _envelope(
-                {**common, "state": "FAILED", "abstainReason": None, "answer": None,
-                 "citations": [], "providerProfileId": exc.profile_id,
-                 "generationProviderCalled": exc.provider_called,
-                 "errorCode": exc.code, "failureClass": exc.failure_class},
-                correlation_id,
-            )
+            return {**common, "state": "FAILED", "abstainReason": None, "answer": None,
+                    "citations": [], "providerProfileId": exc.profile_id,
+                    "generationProviderCalled": exc.provider_called,
+                    "errorCode": exc.code, "failureClass": exc.failure_class}
+
+    @application.post("/v1/rag/query", response_model=Envelope, operation_id="queryRag")
+    def query_rag(request: GroundedQueryRequest, correlation_id: Annotated[str, Depends(_correlation_id)]) -> Envelope:
+        return _envelope(_query_grounded(request, correlation_id), correlation_id)
+
+    @application.post("/v1/artifacts", response_model=Envelope, status_code=status.HTTP_201_CREATED, operation_id="createArtifact")
+    async def create_artifact(
+        request: Request,
+        correlation_id: Annotated[str, Depends(_correlation_id)],
+        filename: Annotated[str, Header(alias="X-Artifact-Filename")],
+        classification: Annotated[str, Header(alias="X-Artifact-Classification")] = "D0",
+    ) -> Envelope:
+        if classification != "D0":
+            raise InvalidBoundaryError("only D0 artifacts are permitted")
+        media_type = request.headers.get("Content-Type", "").split(";", 1)[0].strip().lower()
+        record = artifact_store.put(filename, media_type, await request.body())
+        return _envelope(record.payload(), correlation_id)
+
+    @application.get("/v1/artifacts/{artifactId}", response_model=Envelope, operation_id="getArtifact")
+    def get_artifact(artifactId: UUID, correlation_id: Annotated[str, Depends(_correlation_id)]) -> Envelope:
+        return _envelope(artifact_store.get(artifactId).payload(), correlation_id)
+
+    @application.delete("/v1/artifacts/{artifactId}", response_model=Envelope, operation_id="deleteArtifact")
+    def delete_artifact(
+        artifactId: UUID,
+        correlation_id: Annotated[str, Depends(_correlation_id)],
+        idempotency_key: Annotated[str, Depends(_idempotency_key)],
+    ) -> Envelope:
+        return _envelope({"artifactId": artifactId, "deleted": artifact_store.delete(artifactId)}, correlation_id)
+
+    def _query_comprehensive(request: ComprehensiveQueryRequest, correlation_id: str) -> dict[str, Any]:
+        compatibility = runtime_store.resolve_compatibility_set(request.compatibility_set_id, request.product_version)
+        explicit_profiles = request.source_profile_ids or (compatibility or {}).get("sourceProfileIds")
+        plan = plan_query(request.question, explicit_profiles)
+        if plan.state != "READY":
+            return {"queryId": request.query_id, "state": "NEEDS_INFORMATION", "plan": plan.payload(),
+                    "report": None, "citations": [], "generationProviderCalled": False}
+        profiles = list(plan.profile_ids)
+        if compatibility and not set(profiles).issubset(set(compatibility["sourceProfileIds"])):
+            return {"queryId": request.query_id, "state": "NEEDS_INFORMATION", "plan": plan.payload(),
+                    "questionsNeeded": ["선택한 영역을 모두 포함하는 승인된 Compatibility Set이 필요합니다."],
+                    "report": None, "citations": [], "generationProviderCalled": False}
+        if len(profiles) > 1 and not compatibility:
+            return {"queryId": request.query_id, "state": "NEEDS_INFORMATION", "plan": plan.payload(),
+                    "questionsNeeded": ["제품 버전 또는 승인된 compatibilitySetId를 지정하십시오."],
+                    "report": None, "citations": [], "generationProviderCalled": False}
+        scope = {"compatibilitySetId": compatibility["compatibilitySetId"] if compatibility else None,
+                 "sourceProfileIds": None if compatibility else profiles}
+        retrieval_request = QueryRequest(
+            queryId=request.query_id, question=request.question,
+            compatibilitySetId=scope["compatibilitySetId"], sourceProfileIds=scope["sourceProfileIds"],
+            locale=request.locale, classification=request.classification,
+        )
+        retrieval = _retrieve(retrieval_request, correlation_id)
+        context = context_from_results(retrieval["results"], request.classification)
+        if not context:
+            return {"queryId": request.query_id, "state": "ABSTAINED", "plan": plan.payload(),
+                    "report": None, "citations": [], "abstainReason": "no-grounding", "generationProviderCalled": False}
+        artifacts = tuple(artifact_store.evidence(artifact_id) for artifact_id in request.artifact_ids)
+        provider_request = ComprehensiveResponsesRequest(
+            query_id=str(request.query_id), question=request.question, context=context, artifacts=artifacts,
+            locale=request.locale, safety_identifier=stable_safety_identifier(request.actor_id, safety_identifier_salt),
+        )
+        try:
+            generated = runtime_responses.generate_comprehensive(provider_request)
+            runtime_store.record_response_call(request.query_id, generated, correlation_id)
+            cited = {item.chunk_id: item for item in context}
+            citations = [citation_payload(cited[item]) for item in generated.citations_used if item in cited]
+            return {"queryId": request.query_id, "state": generated.report["state"], "plan": plan.payload(),
+                    "scope": scope, "report": generated.report, "citations": citations,
+                    "generationProviderCalled": generated.provider == "openai", "providerProfileId": generated.profile_id}
+        except ResponsesProviderError as exc:
+            runtime_store.record_response_failure(request.query_id, exc, correlation_id)
+            return {"queryId": request.query_id, "state": "FAILED", "plan": plan.payload(), "report": None,
+                    "citations": [], "generationProviderCalled": exc.provider_called, "errorCode": exc.code,
+                    "failureClass": exc.failure_class}
+
+    @application.post("/v1/assist/query", response_model=Envelope, operation_id="queryAssist")
+    def query_assist(request: ComprehensiveQueryRequest, correlation_id: Annotated[str, Depends(_correlation_id)]) -> Envelope:
+        return _envelope(_query_comprehensive(request, correlation_id), correlation_id)
 
     @application.post("/v1/evaluations/runs", response_model=Envelope, status_code=status.HTTP_202_ACCEPTED, operation_id="createEvaluationRun")
     def create_evaluation_run(
@@ -427,6 +517,71 @@ def create_app(
     @application.get("/v1/evaluations/runs/{runId}", response_model=Envelope, operation_id="getEvaluationRun")
     def get_evaluation_run(runId: UUID, correlation_id: Annotated[str, Depends(_correlation_id)]) -> Envelope:
         return _envelope(runtime_store.get_evaluation_run(runId), correlation_id)
+
+    def _execute_golden_cases(run_id: UUID, cases: list[dict[str, Any]], actor_id: str) -> None:
+        try:
+            for index, case in enumerate(cases, 1):
+                case_correlation_id = f"eval-{str(run_id)[:12]}-{index:03d}"
+                started = time.perf_counter()
+                result = _query_grounded(
+                    GroundedQueryRequest(
+                        queryId=uuid4(),
+                        question=case["question"],
+                        actorId=actor_id,
+                        sourceProfileIds=case["sourceProfileIds"],
+                        classification="D0",
+                        locale=case["locale"],
+                    ),
+                    case_correlation_id,
+                )
+                latency_ms = round((time.perf_counter() - started) * 1000)
+                runtime_store.record_evaluation_result(
+                    run_id, case, result, judge_case(case, result).payload(), latency_ms
+                )
+            runtime_store.finish_evaluation_run(run_id)
+        except Exception as exc:
+            _json_log("evaluation_failed", runId=str(run_id), errorType=type(exc).__name__)
+            try:
+                runtime_store.finish_evaluation_run(run_id, failed=True)
+            except Exception:
+                _json_log("evaluation_failure_record_failed", runId=str(run_id))
+
+    @application.post(
+        "/v1/evaluations/runs/{runId}/execute",
+        response_model=Envelope,
+        status_code=status.HTTP_202_ACCEPTED,
+        operation_id="executeEvaluationRun",
+    )
+    def execute_evaluation_run(
+        runId: UUID,
+        request: EvaluationExecuteRequest,
+        background_tasks: BackgroundTasks,
+        correlation_id: Annotated[str, Depends(_correlation_id)],
+    ) -> Envelope:
+        run = runtime_store.get_evaluation_run(runId)
+        profiles = set(run.get("sourceProfileIds") or [])
+        if not profiles:
+            raise InvalidBoundaryError("Golden Set execution requires sourceProfileIds scope")
+        golden = load_golden_set()
+        cases = [case for case in golden["cases"] if set(case["sourceProfileIds"]).issubset(profiles)]
+        if not cases:
+            raise InvalidBoundaryError("evaluation scope selects no Golden Set cases")
+        runtime_store.start_evaluation_run(runId, len(cases))
+        background_tasks.add_task(_execute_golden_cases, runId, cases, request.requested_by)
+        return _envelope(
+            {"runId": runId, "caseSetId": request.case_set_id, "state": "RUNNING", "totalCases": len(cases)},
+            correlation_id,
+        )
+
+    @application.get(
+        "/v1/evaluations/runs/{runId}/results",
+        response_model=Envelope,
+        operation_id="listEvaluationResults",
+    )
+    def list_evaluation_results(
+        runId: UUID, correlation_id: Annotated[str, Depends(_correlation_id)]
+    ) -> Envelope:
+        return _envelope(runtime_store.list_evaluation_results(runId), correlation_id)
 
     return application
 

@@ -13,8 +13,13 @@ from .provider import PROVIDER_PROFILES, ProviderContractError, ProviderProfile
 
 
 MAX_BATCH_ITEMS = 128
-MAX_INPUT_BYTES = 24 * 1024
-MAX_BATCH_BYTES = 2 * 1024 * 1024
+# BPE token count cannot exceed UTF-8 byte count. Keep a 256-byte margin below
+# the provider's 8,192-token per-input limit so source code never crosses it.
+MAX_INPUT_BYTES = (8 * 1024) - 256
+# The embeddings API accepts at most 300,000 tokens across all inputs. A BPE
+# token count cannot exceed the UTF-8 byte count, so 256 KiB leaves a stable
+# margin while allowing up to 128 small chunks per request.
+MAX_BATCH_BYTES = 256 * 1024
 
 
 @dataclass(frozen=True)

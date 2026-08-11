@@ -3,7 +3,7 @@
   "info": {
     "title": "TechFlow AI Gateway",
     "description": "TechFlow AI Gateway with grounded Responses generation and deterministic retrieval.",
-    "version": "0.5.0"
+    "version": "0.8.0"
   },
   "paths": {
     "/healthz": {
@@ -923,6 +923,187 @@
         }
       }
     },
+    "/v1/artifacts": {
+      "post": {
+        "summary": "Create Artifact",
+        "operationId": "createArtifact",
+        "parameters": [
+          {
+            "name": "X-Artifact-Filename",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "X-Artifact-Filename"
+            }
+          },
+          {
+            "name": "X-Artifact-Classification",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "D0",
+              "title": "X-Artifact-Classification"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/artifacts/{artifactId}": {
+      "get": {
+        "summary": "Get Artifact",
+        "operationId": "getArtifact",
+        "parameters": [
+          {
+            "name": "artifactId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Artifactid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete Artifact",
+        "operationId": "deleteArtifact",
+        "parameters": [
+          {
+            "name": "artifactId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Artifactid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/assist/query": {
+      "post": {
+        "summary": "Query Assist",
+        "operationId": "queryAssist",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ComprehensiveQueryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/evaluations/runs": {
       "post": {
         "summary": "Create Evaluation Run",
@@ -983,6 +1164,96 @@
       "get": {
         "summary": "Get Evaluation Run",
         "operationId": "getEvaluationRun",
+        "parameters": [
+          {
+            "name": "runId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Runid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/evaluations/runs/{runId}/execute": {
+      "post": {
+        "summary": "Execute Evaluation Run",
+        "operationId": "executeEvaluationRun",
+        "parameters": [
+          {
+            "name": "runId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Runid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvaluationExecuteRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/evaluations/runs/{runId}/results": {
+      "get": {
+        "summary": "List Evaluation Results",
+        "operationId": "listEvaluationResults",
         "parameters": [
           {
             "name": "runId",
@@ -1105,6 +1376,112 @@
         ],
         "title": "CompatibilitySetCreateRequest"
       },
+      "ComprehensiveQueryRequest": {
+        "properties": {
+          "queryId": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Queryid"
+          },
+          "question": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 3,
+            "title": "Question"
+          },
+          "actorId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_.:@-]{3,128}$",
+            "title": "Actorid"
+          },
+          "productVersion": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Productversion"
+          },
+          "compatibilitySetId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Compatibilitysetid"
+          },
+          "sourceProfileIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "pattern": "^[A-Z][A-Z0-9_]{2,63}$"
+                },
+                "type": "array",
+                "maxItems": 9,
+                "minItems": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sourceprofileids"
+          },
+          "artifactIds": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "maxItems": 5,
+            "title": "Artifactids"
+          },
+          "environment": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Environment"
+          },
+          "locale": {
+            "type": "string",
+            "enum": [
+              "ko-KR",
+              "en-US"
+            ],
+            "title": "Locale",
+            "default": "ko-KR"
+          },
+          "classification": {
+            "type": "string",
+            "const": "D0",
+            "title": "Classification",
+            "default": "D0"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "queryId",
+          "question",
+          "actorId"
+        ],
+        "title": "ComprehensiveQueryRequest"
+      },
       "Envelope": {
         "properties": {
           "data": {
@@ -1121,6 +1498,27 @@
           "meta"
         ],
         "title": "Envelope"
+      },
+      "EvaluationExecuteRequest": {
+        "properties": {
+          "caseSetId": {
+            "type": "string",
+            "const": "ABLESTACK_GOLDEN_V1",
+            "title": "Casesetid",
+            "default": "ABLESTACK_GOLDEN_V1"
+          },
+          "requestedBy": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_.:@-]{3,128}$",
+            "title": "Requestedby"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "requestedBy"
+        ],
+        "title": "EvaluationExecuteRequest"
       },
       "EvaluationRunCreateRequest": {
         "properties": {

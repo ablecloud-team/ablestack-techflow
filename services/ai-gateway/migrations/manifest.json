@@ -71,6 +71,16 @@
       "path": "0006_orchestration_correlation_up.sql",
       "sha256": "87cfa7d7ba8373b1f886b587e2f9adfcc12c44a063a2f6a12fff2543a7645339",
       "bytes": 886
+    },
+    {
+      "path": "0007_reindex_fk_performance_down.sql",
+      "sha256": "0afe6165d3a8d978c2c42a6c28b5078f22c7e2976c40ebc29d4f71c7637a545c",
+      "bytes": 102
+    },
+    {
+      "path": "0007_reindex_fk_performance_up.sql",
+      "sha256": "08cb7df96f17ba47bd4308f9ba2d55eae333fda9b95af46b88c04d340aef9b3e",
+      "bytes": 406
     }
   ]
 }

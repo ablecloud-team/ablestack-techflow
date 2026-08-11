@@ -1,0 +1,19 @@
+services:
+  gateway:
+    environment:
+      TECHFLOW_RAG_PROVIDER_MODE: openai
+      TECHFLOW_OPENAI_API_KEY_FILE: /run/secrets/openai_api_key
+      TECHFLOW_OPENAI_PROJECT_ID_FILE: /run/secrets/openai_project_id
+      TECHFLOW_SAFETY_IDENTIFIER_SALT_FILE: /run/secrets/safety_identifier_salt
+    secrets:
+      - openai_api_key
+      - openai_project_id
+      - safety_identifier_salt
+
+secrets:
+  openai_api_key:
+    file: /home/ablecloud/techflow-ai-gateway/.secrets/openai_api_key
+  openai_project_id:
+    file: /home/ablecloud/techflow-ai-gateway/.secrets/openai_project_id
+  safety_identifier_salt:
+    file: /home/ablecloud/techflow-ai-gateway/.secrets/safety_identifier_salt

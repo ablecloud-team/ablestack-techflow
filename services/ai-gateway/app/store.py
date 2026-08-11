@@ -54,6 +54,7 @@ class Store(Protocol):
     def get_source(self, source_id: UUID) -> dict[str, Any]: ...
     def approve_source(self, source_id: UUID, request: dict[str, Any], idempotency_key: str) -> dict[str, Any]: ...
     def create_compatibility_set(self, request: dict[str, Any], idempotency_key: str) -> dict[str, Any]: ...
+    def resolve_compatibility_set(self, compatibility_set_id: UUID | None, product_version: str | None) -> dict[str, Any] | None: ...
     def create_ingestion(
         self, source_id: UUID, request: dict[str, Any], idempotency_key: str, correlation_id: str = "legacy"
     ) -> dict[str, Any]: ...
@@ -72,6 +73,12 @@ class Store(Protocol):
         self, request: dict[str, Any], idempotency_key: str, correlation_id: str = "legacy"
     ) -> dict[str, Any]: ...
     def get_evaluation_run(self, run_id: UUID) -> dict[str, Any]: ...
+    def start_evaluation_run(self, run_id: UUID, total_cases: int) -> dict[str, Any]: ...
+    def record_evaluation_result(
+        self, run_id: UUID, case: dict[str, Any], result: dict[str, Any], judgment: dict[str, Any], latency_ms: int
+    ) -> None: ...
+    def finish_evaluation_run(self, run_id: UUID, failed: bool = False) -> dict[str, Any]: ...
+    def list_evaluation_results(self, run_id: UUID) -> list[dict[str, Any]]: ...
 
 
 def utc_now() -> datetime:
@@ -356,6 +363,25 @@ class MemoryStore:
             self._compatibility_sets[set_id] = value
             return self._remember("create_compatibility_set", idempotency_key, value)
 
+    def resolve_compatibility_set(self, compatibility_set_id: UUID | None, product_version: str | None) -> dict[str, Any] | None:
+        with self._lock:
+            candidates = [item for item in self._compatibility_sets.values() if item["state"] == "APPROVED"]
+            if compatibility_set_id:
+                candidates = [item for item in candidates if item["compatibilitySetId"] == compatibility_set_id]
+            elif product_version:
+                candidates = [item for item in candidates if item["productVersion"] == product_version]
+            else:
+                return None
+            if not candidates:
+                return None
+            selected = max(candidates, key=lambda item: item["createdAt"])
+            profiles = []
+            for member in selected["members"]:
+                version = self._source_versions.get(UUID(str(member["sourceVersionId"])))
+                if version:
+                    profiles.append(version["sourceProfileId"])
+            return {**deepcopy(selected), "sourceProfileIds": profiles}
+
     def create_ingestion(
         self, source_id: UUID, request: dict[str, Any], idempotency_key: str, correlation_id: str = "legacy"
     ) -> dict[str, Any]:
@@ -365,13 +391,15 @@ class MemoryStore:
             if source_id not in self._sources:
                 raise NotFoundError("source not found")
             source = self._latest_version(source_id)
-            if source["state"] != "APPROVED":
-                raise InvalidStateError("source must be approved before indexing")
-            source["state"] = "INDEXING"
+            if source["state"] not in {"APPROVED", "ACTIVE"}:
+                raise InvalidStateError("source must be approved or active before indexing")
+            job_type = "REINDEX" if source["state"] == "ACTIVE" else "INGESTION"
+            if job_type == "INGESTION":
+                source["state"] = "INDEXING"
             job_id = uuid4()
             value = {
                 "jobId": job_id,
-                "jobType": "INGESTION",
+                "jobType": job_type,
                 "sourceId": source_id,
                 "sourceVersionId": source["sourceVersionId"],
                 "state": "PENDING",
@@ -491,16 +519,25 @@ class MemoryStore:
                 if bundle.indexed_file_count != version["eligibleFileCount"]:
                     raise ConflictError("partial indexing cannot activate a source version")
             except Exception:
-                version["state"] = "APPROVED"
+                if job["jobType"] != "REINDEX":
+                    version["state"] = "APPROVED"
                 job.update(state="FAILED", failureClass="TERMINAL", errorCode="INDEXING_FAILED", updatedAt=utc_now())
                 raise
+            if job["jobType"] == "REINDEX":
+                version_ids = {version["sourceVersionId"]}
+                chunk_ids = {chunk_id for chunk_id, chunk in self._chunks.items() if chunk.source_version_id in version_ids}
+                self._chunks = {key: value for key, value in self._chunks.items() if key not in chunk_ids}
+                self._embeddings = {key: value for key, value in self._embeddings.items() if key not in chunk_ids}
+                self._symbols = {key: value for key, value in self._symbols.items() if value.source_version_id not in version_ids}
+                self._relations = {key: value for key, value in self._relations.items() if value.source_version_id not in version_ids}
             self._chunks.update({item.id: item for item in bundle.chunks})
             self._embeddings.update(dict(bundle.embeddings))
             self._symbols.update({item.id: item for item in bundle.symbols})
             self._relations.update({item.id: item for item in bundle.relations})
-            for candidate in self._source_versions.values():
-                if candidate["sourceId"] == version["sourceId"] and candidate["state"] == "ACTIVE":
-                    candidate["state"] = "WITHDRAWN"
+            if job["jobType"] != "REINDEX":
+                for candidate in self._source_versions.values():
+                    if candidate["sourceId"] == version["sourceId"] and candidate["state"] == "ACTIVE":
+                        candidate["state"] = "WITHDRAWN"
             version.update(state="ACTIVE", indexedFileCount=bundle.indexed_file_count)
             job.update(
                 state="SUCCEEDED", completedAt=utc_now(), updatedAt=utc_now(),
@@ -601,3 +638,45 @@ class MemoryStore:
             if run_id not in self._evaluation_runs:
                 raise NotFoundError("evaluation run not found")
             return deepcopy(self._evaluation_runs[run_id])
+
+    def start_evaluation_run(self, run_id: UUID, total_cases: int) -> dict[str, Any]:
+        with self._lock:
+            if run_id not in self._evaluation_runs:
+                raise NotFoundError("evaluation run not found")
+            value = self._evaluation_runs[run_id]
+            if value["state"] != "PENDING":
+                raise InvalidStateError("only pending evaluation runs can start")
+            value.update(state="RUNNING", totalCases=total_cases, passedCases=0, updatedAt=utc_now())
+            value["results"] = []
+            return deepcopy(value)
+
+    def record_evaluation_result(
+        self, run_id: UUID, case: dict[str, Any], result: dict[str, Any], judgment: dict[str, Any], latency_ms: int
+    ) -> None:
+        with self._lock:
+            if run_id not in self._evaluation_runs or self._evaluation_runs[run_id]["state"] != "RUNNING":
+                raise InvalidStateError("evaluation run is not running")
+            self._evaluation_runs[run_id]["results"].append({
+                "caseKey": case["caseKey"], "state": result.get("state"), "passed": judgment["passed"],
+                "citationCount": len(result.get("citations") or []), "latencyMs": latency_ms,
+                "errorCode": result.get("errorCode"),
+            })
+
+    def finish_evaluation_run(self, run_id: UUID, failed: bool = False) -> dict[str, Any]:
+        with self._lock:
+            if run_id not in self._evaluation_runs:
+                raise NotFoundError("evaluation run not found")
+            value = self._evaluation_runs[run_id]
+            results = value.get("results", [])
+            value.update(
+                state="FAILED" if failed else "SUCCEEDED",
+                passedCases=sum(bool(item["passed"]) for item in results),
+                updatedAt=utc_now(),
+            )
+            return deepcopy(value)
+
+    def list_evaluation_results(self, run_id: UUID) -> list[dict[str, Any]]:
+        with self._lock:
+            if run_id not in self._evaluation_runs:
+                raise NotFoundError("evaluation run not found")
+            return deepcopy(self._evaluation_runs[run_id].get("results", []))

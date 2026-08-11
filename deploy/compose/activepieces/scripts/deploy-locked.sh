@@ -19,6 +19,11 @@ python3 scripts/release_lock.py validate \
   --lock "${lock_file}" \
   --compose compose.yml \
   --dockerfile event-gateway/Dockerfile
+python3 scripts/protected_service_guard.py \
+  --lock protected-services.json \
+  --env-file .env \
+  --compose compose.yml \
+  --ingress ingress/Caddyfile
 
 install -d -m 0750 -o root -g ablecloud "${release_dir}" "${release_dir}/history"
 release_env=$(mktemp /run/techflow-release.XXXXXX.env)

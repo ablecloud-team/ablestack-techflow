@@ -72,8 +72,14 @@ def verify(connection: psycopg.Connection) -> None:
     ).fetchone()[0]
     if issue45_columns != 2:
         raise SystemExit(f"Issue 45 schema mismatch expected=2 actual={issue45_columns}")
+    issue46_indexes = connection.execute(
+        "SELECT count(*) FROM pg_indexes WHERE schemaname='public' AND "
+        "indexname IN ('rag_code_symbol_chunk_idx','rag_code_relation_to_symbol_idx')"
+    ).fetchone()[0]
+    if issue46_indexes != 2:
+        raise SystemExit(f"Issue 46 schema mismatch expectedIndexes=2 actual={issue46_indexes}")
     print(f"schema=valid tables={len(EXPECTED_TABLES)} extensions=2 sourceProfiles=9 "
-          "issue43Columns=8 issue45Columns=2")
+          "issue43Columns=8 issue45Columns=2 issue46Indexes=2")
 
 
 def main() -> int:
@@ -86,6 +92,12 @@ def main() -> int:
         if args.direction == "down":
             if not args.allow_destructive_rollback:
                 raise SystemExit("--allow-destructive-rollback is required")
+            issue46_present = connection.execute(
+                "SELECT 1 FROM pg_indexes WHERE schemaname='public' AND "
+                "indexname IN ('rag_code_symbol_chunk_idx','rag_code_relation_to_symbol_idx')"
+            ).fetchone()
+            if issue46_present:
+                connection.execute((MIGRATIONS / "0007_reindex_fk_performance_down.sql").read_text(encoding="utf-8"))
             issue45_present = connection.execute(
                 "SELECT 1 FROM information_schema.columns WHERE table_name='rag_ingestion_job' AND column_name='correlation_id'"
             ).fetchone()
@@ -123,6 +135,7 @@ def main() -> int:
         ).fetchone()
         if not issue45_present:
             connection.execute((MIGRATIONS / "0006_orchestration_correlation_up.sql").read_text(encoding="utf-8"))
+        connection.execute((MIGRATIONS / "0007_reindex_fk_performance_up.sql").read_text(encoding="utf-8"))
         verify(connection)
     return 0
 

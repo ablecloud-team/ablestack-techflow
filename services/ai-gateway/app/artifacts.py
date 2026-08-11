@@ -1,0 +1,226 @@
+"""Short-lived D0 evidence artifact storage with strict format validation."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from datetime import datetime, timedelta, timezone
+import hashlib
+import json
+import os
+from pathlib import Path
+import struct
+from threading import RLock
+from uuid import UUID, uuid4
+
+from .log_artifacts import ARCHIVE_MEDIA_TYPES, PLAIN_MEDIA_TYPES, parse_log_artifact
+from .provider import EvidenceArtifact, ImageArtifact, LogArtifact
+from .store import InvalidBoundaryError, NotFoundError
+
+
+IMAGE_MEDIA_TYPES = {"image/png", "image/jpeg", "image/webp"}
+ALLOWED_MEDIA_TYPES = IMAGE_MEDIA_TYPES | PLAIN_MEDIA_TYPES | ARCHIVE_MEDIA_TYPES
+MEDIA_TYPE_ALIASES = {"application/x-zip-compressed", "application/octet-stream"}
+
+
+def _normalized_media_type(filename: str, media_type: str, data: bytes) -> str:
+    if media_type == "application/x-zip-compressed":
+        return "application/zip"
+    if media_type == "application/octet-stream":
+        if data[:4] in {b"PK\x03\x04", b"PK\x05\x06", b"PK\x07\x08"} and filename.casefold().endswith(".zip"):
+            return "application/zip"
+        if data[:2] == b"\x1f\x8b" and filename.casefold().endswith((".gz", ".tgz")):
+            return "application/gzip"
+        return "text/plain"
+    return media_type
+
+
+def _dimensions(data: bytes, media_type: str) -> tuple[int, int]:
+    if media_type == "image/png" and data[:8] == b"\x89PNG\r\n\x1a\n" and len(data) >= 24:
+        return struct.unpack(">II", data[16:24])
+    if media_type == "image/jpeg" and data[:2] == b"\xff\xd8":
+        offset = 2
+        while offset + 9 < len(data):
+            if data[offset] != 0xFF:
+                offset += 1
+                continue
+            marker = data[offset + 1]
+            if marker in {0xC0, 0xC1, 0xC2, 0xC3, 0xC5, 0xC6, 0xC7, 0xC9, 0xCA, 0xCB, 0xCD, 0xCE, 0xCF}:
+                return struct.unpack(">HH", data[offset + 5:offset + 9])[::-1]
+            if offset + 4 > len(data):
+                break
+            size = struct.unpack(">H", data[offset + 2:offset + 4])[0]
+            offset += max(2, size + 2)
+    if media_type == "image/webp" and data[:4] == b"RIFF" and data[8:12] == b"WEBP" and len(data) >= 30:
+        kind = data[12:16]
+        if kind == b"VP8X":
+            return (1 + int.from_bytes(data[24:27], "little"), 1 + int.from_bytes(data[27:30], "little"))
+        if kind == b"VP8 " and data[23:26] == b"\x9d\x01\x2a":
+            return (int.from_bytes(data[26:28], "little") & 0x3FFF, int.from_bytes(data[28:30], "little") & 0x3FFF)
+    raise InvalidBoundaryError("artifact bytes do not match the declared media type")
+
+
+@dataclass(frozen=True)
+class ArtifactRecord:
+    artifact_id: UUID
+    filename: str
+    media_type: str
+    sha256: str
+    size_bytes: int
+    kind: str
+    width: int | None
+    height: int | None
+    entry_count: int | None
+    extracted_bytes: int | None
+    evidence_truncated: bool
+    redaction_count: int
+    created_at: datetime
+    expires_at: datetime
+
+    def payload(self) -> dict[str, object]:
+        return {
+            "artifactId": self.artifact_id, "filename": self.filename, "mediaType": self.media_type,
+            "sha256": self.sha256, "sizeBytes": self.size_bytes, "kind": self.kind,
+            "width": self.width, "height": self.height, "entryCount": self.entry_count,
+            "extractedBytes": self.extracted_bytes, "evidenceTruncated": self.evidence_truncated,
+            "redactionCount": self.redaction_count,
+            "classification": "D0", "createdAt": self.created_at, "expiresAt": self.expires_at,
+        }
+
+
+class ArtifactStore:
+    def __init__(
+        self, root: str, *, retention_hours: int, max_bytes: int,
+        max_extracted_bytes: int = 20 * 1024 * 1024, max_archive_entries: int = 100,
+        max_compression_ratio: int = 20, max_log_evidence_chars: int = 120_000,
+    ) -> None:
+        self.root = Path(root)
+        self.root.mkdir(parents=True, exist_ok=True, mode=0o700)
+        try:
+            os.chmod(self.root, 0o700)
+        except OSError:
+            pass
+        self.retention = timedelta(hours=retention_hours)
+        self.max_bytes = max_bytes
+        self.max_extracted_bytes = max_extracted_bytes
+        self.max_archive_entries = max_archive_entries
+        self.max_compression_ratio = max_compression_ratio
+        self.max_log_evidence_chars = max_log_evidence_chars
+        self._lock = RLock()
+
+    def _paths(self, artifact_id: UUID) -> tuple[Path, Path]:
+        base = self.root / str(artifact_id)
+        return base.with_suffix(".bin"), base.with_suffix(".json")
+
+    def put(self, filename: str, media_type: str, data: bytes) -> ArtifactRecord:
+        if media_type not in ALLOWED_MEDIA_TYPES | MEDIA_TYPE_ALIASES:
+            raise InvalidBoundaryError("unsupported evidence artifact media type")
+        if not data or len(data) > self.max_bytes:
+            raise InvalidBoundaryError("artifact size is outside the permitted boundary")
+        safe_name = Path(filename).name[:128]
+        if not safe_name or safe_name != filename or "/" in filename or "\\" in filename:
+            raise InvalidBoundaryError("artifact filename is invalid")
+        media_type = _normalized_media_type(safe_name, media_type, data)
+        width = height = entry_count = extracted_bytes = None
+        evidence_truncated = False
+        redaction_count = 0
+        if media_type in IMAGE_MEDIA_TYPES:
+            kind = "IMAGE"
+            width, height = _dimensions(data, media_type)
+            if width < 1 or height < 1 or width > 12000 or height > 12000 or width * height > 40_000_000:
+                raise InvalidBoundaryError("artifact dimensions exceed the permitted boundary")
+        else:
+            kind = "LOG"
+            analysis = parse_log_artifact(
+                safe_name, media_type, data, max_entries=self.max_archive_entries,
+                max_extracted_bytes=self.max_extracted_bytes, max_ratio=self.max_compression_ratio,
+                max_evidence_chars=self.max_log_evidence_chars,
+            )
+            entry_count, extracted_bytes = analysis.entry_count, analysis.extracted_bytes
+            evidence_truncated, redaction_count = analysis.truncated, analysis.redaction_count
+        now, artifact_id = datetime.now(timezone.utc), uuid4()
+        record = ArtifactRecord(
+            artifact_id, safe_name, media_type, hashlib.sha256(data).hexdigest(), len(data), kind,
+            width, height, entry_count, extracted_bytes, evidence_truncated, redaction_count,
+            now, now + self.retention,
+        )
+        binary, metadata = self._paths(artifact_id)
+        with self._lock:
+            binary.write_bytes(data)
+            metadata.write_text(json.dumps(record.payload(), default=str, separators=(",", ":")), encoding="utf-8")
+            try:
+                os.chmod(binary, 0o600); os.chmod(metadata, 0o600)
+            except OSError:
+                pass
+        return record
+
+    def _load(self, artifact_id: UUID) -> ArtifactRecord:
+        binary, metadata = self._paths(artifact_id)
+        if not binary.exists() or not metadata.exists():
+            raise NotFoundError("artifact not found")
+        raw = json.loads(metadata.read_text(encoding="utf-8"))
+        record = ArtifactRecord(
+            UUID(raw["artifactId"]), raw["filename"], raw["mediaType"], raw["sha256"], int(raw["sizeBytes"]),
+            raw.get("kind", "IMAGE"), int(raw["width"]) if raw.get("width") is not None else None,
+            int(raw["height"]) if raw.get("height") is not None else None,
+            int(raw["entryCount"]) if raw.get("entryCount") is not None else None,
+            int(raw["extractedBytes"]) if raw.get("extractedBytes") is not None else None,
+            bool(raw.get("evidenceTruncated", False)), int(raw.get("redactionCount", 0)),
+            datetime.fromisoformat(raw["createdAt"]), datetime.fromisoformat(raw["expiresAt"]),
+        )
+        if record.expires_at <= datetime.now(timezone.utc):
+            self.delete(artifact_id)
+            raise NotFoundError("artifact expired")
+        return record
+
+    def get(self, artifact_id: UUID) -> ArtifactRecord:
+        with self._lock:
+            return self._load(artifact_id)
+
+    def image(self, artifact_id: UUID) -> ImageArtifact:
+        artifact = self.evidence(artifact_id)
+        if not isinstance(artifact, ImageArtifact):
+            raise InvalidBoundaryError("artifact is not an image")
+        return artifact
+
+    def evidence(self, artifact_id: UUID) -> EvidenceArtifact:
+        with self._lock:
+            record = self._load(artifact_id)
+            binary, _ = self._paths(artifact_id)
+            data = binary.read_bytes()
+            if hashlib.sha256(data).hexdigest() != record.sha256:
+                raise InvalidBoundaryError("artifact integrity validation failed")
+            if record.kind == "IMAGE":
+                return ImageArtifact(str(artifact_id), record.media_type, data, record.sha256)
+            analysis = parse_log_artifact(
+                record.filename, record.media_type, data, max_entries=self.max_archive_entries,
+                max_extracted_bytes=self.max_extracted_bytes, max_ratio=self.max_compression_ratio,
+                max_evidence_chars=self.max_log_evidence_chars,
+            )
+            if (
+                analysis.entry_count != record.entry_count or analysis.extracted_bytes != record.extracted_bytes
+                or analysis.redaction_count != record.redaction_count
+            ):
+                raise InvalidBoundaryError("artifact normalization integrity validation failed")
+            return LogArtifact(
+                str(artifact_id), record.media_type, record.sha256, analysis.evidence_text,
+                analysis.entry_count, analysis.extracted_bytes, analysis.truncated, analysis.redaction_count,
+            )
+
+    def delete(self, artifact_id: UUID) -> bool:
+        binary, metadata = self._paths(artifact_id)
+        existed = binary.exists() or metadata.exists()
+        with self._lock:
+            binary.unlink(missing_ok=True); metadata.unlink(missing_ok=True)
+        return existed
+
+    def purge_expired(self) -> int:
+        removed = 0
+        for metadata in self.root.glob("*.json"):
+            try:
+                artifact_id = UUID(metadata.stem)
+                self._load(artifact_id)
+            except NotFoundError:
+                removed += 1
+            except (ValueError, OSError, json.JSONDecodeError):
+                continue
+        return removed

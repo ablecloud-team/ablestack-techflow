@@ -154,6 +154,29 @@ class GroundedQueryRequest(QueryRequest):
     actor_id: Annotated[str, StringConstraints(pattern=r"^[A-Za-z0-9_.:@-]{3,128}$")] = Field(alias="actorId")
 
 
+class ComprehensiveQueryRequest(StrictModel):
+    query_id: UUID = Field(alias="queryId")
+    question: Annotated[str, StringConstraints(min_length=3, max_length=4000)]
+    actor_id: Annotated[str, StringConstraints(pattern=r"^[A-Za-z0-9_.:@-]{3,128}$")] = Field(alias="actorId")
+    product_version: Annotated[str, StringConstraints(min_length=1, max_length=64)] | None = Field(
+        default=None, alias="productVersion"
+    )
+    compatibility_set_id: UUID | None = Field(default=None, alias="compatibilitySetId")
+    source_profile_ids: list[SafeId] | None = Field(default=None, min_length=1, max_length=9, alias="sourceProfileIds")
+    artifact_ids: list[UUID] = Field(default_factory=list, max_length=5, alias="artifactIds")
+    environment: Annotated[str, StringConstraints(max_length=1000)] | None = None
+    locale: Literal["ko-KR", "en-US"] = "ko-KR"
+    classification: Literal["D0"] = "D0"
+
+    @model_validator(mode="after")
+    def explicit_scopes_are_exclusive(self) -> "ComprehensiveQueryRequest":
+        if self.compatibility_set_id and self.source_profile_ids:
+            raise ValueError("compatibilitySetId and sourceProfileIds are mutually exclusive")
+        if len(self.artifact_ids) != len(set(self.artifact_ids)):
+            raise ValueError("artifactIds must be unique")
+        return self
+
+
 class EvaluationRunCreateRequest(StrictModel):
     name: Annotated[str, StringConstraints(min_length=3, max_length=128)]
     source_profile_ids: list[SafeId] | None = Field(default=None, min_length=1, max_length=9, alias="sourceProfileIds")
@@ -166,3 +189,8 @@ class EvaluationRunCreateRequest(StrictModel):
         if bool(self.source_profile_ids) == bool(self.compatibility_set_id):
             raise ValueError("exactly one evaluation scope is required")
         return self
+
+
+class EvaluationExecuteRequest(StrictModel):
+    case_set_id: Literal["ABLESTACK_GOLDEN_V1"] = Field(default="ABLESTACK_GOLDEN_V1", alias="caseSetId")
+    requested_by: Annotated[str, StringConstraints(pattern=r"^[A-Za-z0-9_.:@-]{3,128}$")] = Field(alias="requestedBy")

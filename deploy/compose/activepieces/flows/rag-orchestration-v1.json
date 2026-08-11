@@ -46,7 +46,8 @@
       "displayName": "TechFlow - Golden Set Evaluation v1",
       "route": "evaluation",
       "operations": [
-        {"name": "create_evaluation", "method": "POST", "url": "/v1/evaluations/runs", "body": {"name": "{{trigger['output']['body']['name']}}", "sourceProfileIds": ["{{trigger['output']['body']['sourceProfileId']}}"], "providerProfileId": "OPENAI_RAG_DEFAULT_V1", "requestedBy": "activepieces"}},
+        {"name": "create_evaluation", "method": "POST", "url": "/v1/evaluations/runs", "body": {"name": "{{trigger['output']['body']['name']}}", "sourceProfileIds": "{{trigger['output']['body']['sourceProfileIds']}}", "providerProfileId": "OPENAI_RAG_DEFAULT_V1", "requestedBy": "activepieces"}},
+        {"name": "execute_evaluation", "method": "POST", "url": "/v1/evaluations/runs/{{create_evaluation['output']['body']['data']['runId']}}/execute", "body": {"caseSetId": "ABLESTACK_GOLDEN_V1", "requestedBy": "activepieces"}},
         {"name": "read_evaluation_status", "method": "GET", "url": "/v1/evaluations/runs/{{create_evaluation['output']['body']['data']['runId']}}"}
       ]
     }

@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "techflow-ai-gateway"
-version = "0.5.0"
-description = "TechFlow AI Gateway with correlated Activepieces orchestration and grounded Responses"
+version = "0.8.0"
+description = "TechFlow AI Gateway with comprehensive image and log Artifact evidence"
 requires-python = ">=3.12,<3.13"
 dependencies = [
   "fastapi==0.139.2",
@@ -21,3 +21,6 @@ test = ["httpx==0.28.1"]
 
 [tool.setuptools]
 packages = ["app"]
+
+[tool.setuptools.package-data]
+app = ["data/*.json", "data/golden-artifacts/*.png"]

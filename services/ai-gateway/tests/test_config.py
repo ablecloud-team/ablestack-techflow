@@ -13,6 +13,7 @@ class SettingsTest(unittest.TestCase):
         settings.validate()
         self.assertEqual("memory", settings.store_backend)
         self.assertEqual("mock", settings.provider_mode)
+        self.assertEqual(128, settings.embedding_batch_size)
 
     def test_postgres_requires_dsn(self) -> None:
         with self.assertRaises(ConfigurationError):

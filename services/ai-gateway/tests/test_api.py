@@ -208,6 +208,7 @@ class ApiContractTest(unittest.TestCase):
         self.assertFalse(data["generationProviderCalled"])
         self.assertIsNone(data["abstainReason"])
         self.assertGreaterEqual(len(data["citations"]), 1)
+        self.assertEqual("SOURCE_CODE", data["citations"][0]["sourceKind"])
         self.assertNotIn("content", response.text)
         calls = self.client.app.state.store._provider_calls
         self.assertEqual("responses-api", calls[-1]["surface"])
@@ -253,6 +254,7 @@ class ApiContractTest(unittest.TestCase):
         )
         self.assertEqual(422, response.status_code)
         self.assertNotIn(sensitive, response.text)
+        self.assertEqual(len(response.content), int(response.headers["content-length"]))
 
     def test_withdrawal_creates_deletion_job(self) -> None:
         source = self.create_source("test-create-source-delete")
@@ -281,6 +283,21 @@ class ApiContractTest(unittest.TestCase):
             f"/v1/evaluations/runs/{run_id}", headers={"X-Correlation-Id": CORRELATION}
         )
         self.assertEqual("PENDING", get_response.json()["data"]["state"])
+        execute = self.client.post(
+            f"/v1/evaluations/runs/{run_id}/execute",
+            json={"caseSetId": "ABLESTACK_GOLDEN_V1", "requestedBy": "evaluator"},
+            headers={"X-Correlation-Id": CORRELATION},
+        )
+        self.assertEqual(202, execute.status_code, execute.text)
+        completed = self.client.get(
+            f"/v1/evaluations/runs/{run_id}", headers={"X-Correlation-Id": CORRELATION}
+        ).json()["data"]
+        self.assertEqual("SUCCEEDED", completed["state"])
+        results = self.client.get(
+            f"/v1/evaluations/runs/{run_id}/results", headers={"X-Correlation-Id": CORRELATION}
+        ).json()["data"]
+        self.assertEqual(completed["totalCases"], len(results))
+        self.assertTrue(all("caseKey" in item and "passed" in item for item in results))
 
     def test_registry_contains_nine_profiles_and_discovery_is_registered(self) -> None:
         profiles = self.client.get("/v1/source-profiles", headers={"X-Correlation-Id": CORRELATION})
@@ -299,7 +316,7 @@ class ApiContractTest(unittest.TestCase):
         self.assertEqual("HEALTHY", cloud["state"])
         self.assertEqual("a" * 40, cloud["lastHeadCommit"])
 
-    def test_openapi_contains_twenty_one_operations(self) -> None:
+    def test_openapi_contains_twenty_seven_operations(self) -> None:
         schema = self.client.get("/openapi.json").json()
         operations = [
             operation
@@ -307,8 +324,8 @@ class ApiContractTest(unittest.TestCase):
             for method, operation in path.items()
             if method.lower() in {"get", "post", "delete", "put", "patch"}
         ]
-        self.assertEqual(21, len(operations))
-        self.assertEqual(21, len({operation["operationId"] for operation in operations}))
+        self.assertEqual(27, len(operations))
+        self.assertEqual(27, len({operation["operationId"] for operation in operations}))
 
     def test_all_responses_disable_cache_and_echo_correlation(self) -> None:
         response = self.client.get("/v1/jobs/00000000-0000-0000-0000-000000000000", headers={"X-Correlation-Id": CORRELATION})
