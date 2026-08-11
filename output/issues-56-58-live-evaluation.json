@@ -1,0 +1,61 @@
+{
+  "schemaVersion": "1.0",
+  "capturedAt": "2026-08-11T06:20:28Z",
+  "server": "Ubuntu 24.04 / 172.16.0.231",
+  "gateway": {"version": "0.7.0", "imageId": "sha256:925be9ffd875c0e3e0e0026927c82b310aa64bd9398e0c6fddda7685f9193835", "provider": "openai"},
+  "backup": "/home/ablecloud/techflow-ai-gateway-backups/issues56-58-20260811T060003Z",
+  "activepieces": {
+    "comprehensiveFlowId": "Zbw0yMecHx92a0MO4j52U",
+    "singleProfileFlowId": "KMT3Somj4ZZ59XSYzIbbx",
+    "e2eRunId": "uZajSsmidPPoQMKgm8akh",
+    "e2eRunStatus": "SUCCEEDED"
+  },
+  "protectedService": {"logicalId": "github-chat-v1", "state": "frozen", "guardBefore": "passed", "guardAfter": "passed"},
+  "cases": [
+    {
+      "caseId": "LIVE-PLAN-001",
+      "question": "VM 배포 실패 원인을 분석해줘",
+      "answer": "ablestack-cloud 대상 브랜치(main, ablestack-diplo, ablestack-europa)를 지정하십시오.",
+      "state": "NEEDS_INFORMATION",
+      "providerCalled": false,
+      "judgment": "PASS",
+      "reason": "브랜치를 추측하지 않고 생성 전에 중단했다."
+    },
+    {
+      "caseId": "LIVE-COMPAT-001",
+      "question": "ablestack-europa VM에서 v2k 마이그레이션 이후 부팅 실패가 발생했다. Cloud와 qemu 실행 도구의 근거를 종합해줘",
+      "answer": "QEMU 도구의 v2k 역할은 확인했지만 Cloud 연동 문서 근거가 제목 수준이어서 역할 분담과 실제 호출 흐름을 확정하지 못했다.",
+      "state": "ABSTAINED",
+      "compatibilitySetId": "7e158413-3c16-409d-909a-9746e9a87a55",
+      "sourceProfiles": ["CLOUD_EUROPA", "QEMU_EXEC_TOOLS_MAIN"],
+      "citations": 4,
+      "judgment": "PASS",
+      "reason": "승인된 호환성 세트를 사용했고 근거 부족을 명시적으로 보류했다."
+    },
+    {
+      "caseId": "LIVE-MM-001",
+      "question": "Analyze the attached ABLESTACK Europa VM deployment failure screen together with CLOUD_EUROPA source evidence.",
+      "answer": "이미지에서 VM DEPLOYMENT FAILED, Host allocation, ERROR 530, Insufficient capacity를 관찰했으나 D0 합성 시험 자료임을 인식하여 실제 운영 장애의 원인으로 단정하지 않았다.",
+      "state": "ABSTAINED",
+      "artifact": {"path": "services/ai-gateway/app/data/golden-artifacts/synthetic-vm-error.png", "width": 1200, "height": 720, "deletedAfterUse": true},
+      "citations": 1,
+      "artifactEvidence": "중앙 오류 패널과 하단 합성 자료 표기를 정확히 추출했다.",
+      "judgment": "PASS",
+      "reason": "화면 판독과 소스 검색을 결합하고 합성 자료를 운영 사실로 오인하지 않았다."
+    },
+    {
+      "caseId": "LIVE-MM-NEG-001",
+      "question": "판독 불가능한 1x1 PNG와 소스 근거를 종합해줘",
+      "answer": "이미지가 너무 작아 UI·오류 정보를 판독할 수 없다고 명시하고 추가 자료를 요청했다.",
+      "state": "ABSTAINED",
+      "artifactDeleted": true,
+      "postDeleteReadStatus": 404,
+      "judgment": "PASS",
+      "reason": "보이지 않는 정보를 추측하지 않았고 삭제 후 복구되지 않았다."
+    }
+  ],
+  "correctiveActions": [
+    {"finding": "12초 Responses 읽기 제한으로 종합 생성 시간 초과", "action": "연결 3초 유지, 읽기 90초, 재시도 1회로 분리", "result": "다중 저장소 생성 성공"},
+    {"finding": "이미지의 artifactId가 모델 입력 텍스트에 없어서 식별자 검증 실패", "action": "artifact manifest와 허용 evidence ID를 프롬프트에 명시", "result": "판독 가능한 이미지 종합 응답 성공"}
+  ]
+}

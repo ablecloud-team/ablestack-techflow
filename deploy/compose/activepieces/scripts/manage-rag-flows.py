@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Idempotently publish the five Issue #46 Activepieces flows.
+"""Idempotently publish a validated TechFlow Activepieces flow bundle.
 
 Authentication values are accepted only through process environment variables.
 The script never prints tokens, passwords, or authentication responses.
@@ -124,7 +124,7 @@ def publish(base: str, bundle: dict[str, Any]) -> list[dict[str, Any]]:
         else:
             created = api(base, "/api/v1/flows", "POST", {
                 "displayName": flow["displayName"], "projectId": project_id,
-                "metadata": {"techflowLogicalId": flow["logicalId"], "issue": 46},
+                "metadata": {"techflowLogicalId": flow["logicalId"], "issue": bundle["issue"]},
             }, token)
             flow_id = created["id"]
         imported = api(base, f"/api/v1/flows/{flow_id}", "POST", {
@@ -151,10 +151,11 @@ def main() -> int:
     parser.add_argument("--validate-only", action="store_true")
     args = parser.parse_args()
     bundle = json.loads(args.bundle.read_text(encoding="utf-8"))
-    if len(bundle.get("flows", [])) != 5 or bundle.get("security", {}).get("automaticApproval") is not False:
-        raise RuntimeError("invalid Issue #46 flow bundle")
+    flow_count = len(bundle.get("flows", []))
+    if not 1 <= flow_count <= 10 or bundle.get("security", {}).get("automaticApproval") is not False:
+        raise RuntimeError("invalid TechFlow flow bundle")
     if args.validate_only:
-        print(json.dumps({"valid": True, "flowCount": 5}, ensure_ascii=False))
+        print(json.dumps({"valid": True, "flowCount": flow_count}, ensure_ascii=False))
         return 0
     print(json.dumps(publish(args.base_url, bundle), ensure_ascii=False))
     return 0

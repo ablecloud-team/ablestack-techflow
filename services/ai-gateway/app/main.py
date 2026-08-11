@@ -19,6 +19,7 @@ from .config import ConfigurationError, Settings
 from .models import (
     ApiMeta,
     CompatibilitySetCreateRequest,
+    ComprehensiveQueryRequest,
     Envelope,
     EvaluationExecuteRequest,
     EvaluationRunCreateRequest,
@@ -35,7 +36,7 @@ from .models import (
 from .evaluation import judge_case, load_golden_set
 from .postgres_store import PostgresStore
 from .embedding import EmbeddingsAdapter, build_embedding_adapter
-from .provider import ResponsesRequest, profile_payloads
+from .provider import ComprehensiveResponsesRequest, ResponsesRequest, profile_payloads
 from .responses import (
     ResponsesAdapter,
     ResponsesProviderError,
@@ -51,6 +52,8 @@ from .source_fetcher import FetchError, GitSnapshotFetcher, SnapshotFetcher
 from .source_pipeline import SourcePipeline
 from .source_registry import get_profile
 from .store import InvalidBoundaryError, MemoryStore, Store, StoreError
+from .artifacts import ArtifactStore
+from .comprehensive import plan_query
 
 
 CORRELATION_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:-]{7,127}$")
@@ -120,6 +123,11 @@ def create_app(
     runtime_responses = responses_adapter or build_responses_adapter(runtime_settings)
     safety_identifier_salt = load_safety_identifier_salt(runtime_settings)
     source_pipeline = SourcePipeline(source_fetcher or GitSnapshotFetcher())
+    artifact_store = ArtifactStore(
+        runtime_settings.artifact_root,
+        retention_hours=runtime_settings.artifact_retention_hours,
+        max_bytes=runtime_settings.artifact_max_bytes,
+    )
 
     @asynccontextmanager
     async def lifespan(_: FastAPI):
@@ -136,6 +144,7 @@ def create_app(
     )
     application.state.store = runtime_store
     application.state.settings = runtime_settings
+    application.state.artifacts = artifact_store
 
     @application.middleware("http")
     async def boundary_middleware(request: Request, call_next):
@@ -413,6 +422,82 @@ def create_app(
     @application.post("/v1/rag/query", response_model=Envelope, operation_id="queryRag")
     def query_rag(request: GroundedQueryRequest, correlation_id: Annotated[str, Depends(_correlation_id)]) -> Envelope:
         return _envelope(_query_grounded(request, correlation_id), correlation_id)
+
+    @application.post("/v1/artifacts", response_model=Envelope, status_code=status.HTTP_201_CREATED, operation_id="createArtifact")
+    async def create_artifact(
+        request: Request,
+        correlation_id: Annotated[str, Depends(_correlation_id)],
+        filename: Annotated[str, Header(alias="X-Artifact-Filename")],
+        classification: Annotated[str, Header(alias="X-Artifact-Classification")] = "D0",
+    ) -> Envelope:
+        if classification != "D0":
+            raise InvalidBoundaryError("only D0 artifacts are permitted")
+        media_type = request.headers.get("Content-Type", "").split(";", 1)[0].strip().lower()
+        record = artifact_store.put(filename, media_type, await request.body())
+        return _envelope(record.payload(), correlation_id)
+
+    @application.get("/v1/artifacts/{artifactId}", response_model=Envelope, operation_id="getArtifact")
+    def get_artifact(artifactId: UUID, correlation_id: Annotated[str, Depends(_correlation_id)]) -> Envelope:
+        return _envelope(artifact_store.get(artifactId).payload(), correlation_id)
+
+    @application.delete("/v1/artifacts/{artifactId}", response_model=Envelope, operation_id="deleteArtifact")
+    def delete_artifact(
+        artifactId: UUID,
+        correlation_id: Annotated[str, Depends(_correlation_id)],
+        idempotency_key: Annotated[str, Depends(_idempotency_key)],
+    ) -> Envelope:
+        return _envelope({"artifactId": artifactId, "deleted": artifact_store.delete(artifactId)}, correlation_id)
+
+    def _query_comprehensive(request: ComprehensiveQueryRequest, correlation_id: str) -> dict[str, Any]:
+        compatibility = runtime_store.resolve_compatibility_set(request.compatibility_set_id, request.product_version)
+        explicit_profiles = request.source_profile_ids or (compatibility or {}).get("sourceProfileIds")
+        plan = plan_query(request.question, explicit_profiles)
+        if plan.state != "READY":
+            return {"queryId": request.query_id, "state": "NEEDS_INFORMATION", "plan": plan.payload(),
+                    "report": None, "citations": [], "generationProviderCalled": False}
+        profiles = list(plan.profile_ids)
+        if compatibility and not set(profiles).issubset(set(compatibility["sourceProfileIds"])):
+            return {"queryId": request.query_id, "state": "NEEDS_INFORMATION", "plan": plan.payload(),
+                    "questionsNeeded": ["선택한 영역을 모두 포함하는 승인된 Compatibility Set이 필요합니다."],
+                    "report": None, "citations": [], "generationProviderCalled": False}
+        if len(profiles) > 1 and not compatibility:
+            return {"queryId": request.query_id, "state": "NEEDS_INFORMATION", "plan": plan.payload(),
+                    "questionsNeeded": ["제품 버전 또는 승인된 compatibilitySetId를 지정하십시오."],
+                    "report": None, "citations": [], "generationProviderCalled": False}
+        scope = {"compatibilitySetId": compatibility["compatibilitySetId"] if compatibility else None,
+                 "sourceProfileIds": None if compatibility else profiles}
+        retrieval_request = QueryRequest(
+            queryId=request.query_id, question=request.question,
+            compatibilitySetId=scope["compatibilitySetId"], sourceProfileIds=scope["sourceProfileIds"],
+            locale=request.locale, classification=request.classification,
+        )
+        retrieval = _retrieve(retrieval_request, correlation_id)
+        context = context_from_results(retrieval["results"], request.classification)
+        if not context:
+            return {"queryId": request.query_id, "state": "ABSTAINED", "plan": plan.payload(),
+                    "report": None, "citations": [], "abstainReason": "no-grounding", "generationProviderCalled": False}
+        artifacts = tuple(artifact_store.image(artifact_id) for artifact_id in request.artifact_ids)
+        provider_request = ComprehensiveResponsesRequest(
+            query_id=str(request.query_id), question=request.question, context=context, artifacts=artifacts,
+            locale=request.locale, safety_identifier=stable_safety_identifier(request.actor_id, safety_identifier_salt),
+        )
+        try:
+            generated = runtime_responses.generate_comprehensive(provider_request)
+            runtime_store.record_response_call(request.query_id, generated, correlation_id)
+            cited = {item.chunk_id: item for item in context}
+            citations = [citation_payload(cited[item]) for item in generated.citations_used if item in cited]
+            return {"queryId": request.query_id, "state": generated.report["state"], "plan": plan.payload(),
+                    "scope": scope, "report": generated.report, "citations": citations,
+                    "generationProviderCalled": generated.provider == "openai", "providerProfileId": generated.profile_id}
+        except ResponsesProviderError as exc:
+            runtime_store.record_response_failure(request.query_id, exc, correlation_id)
+            return {"queryId": request.query_id, "state": "FAILED", "plan": plan.payload(), "report": None,
+                    "citations": [], "generationProviderCalled": exc.provider_called, "errorCode": exc.code,
+                    "failureClass": exc.failure_class}
+
+    @application.post("/v1/assist/query", response_model=Envelope, operation_id="queryAssist")
+    def query_assist(request: ComprehensiveQueryRequest, correlation_id: Annotated[str, Depends(_correlation_id)]) -> Envelope:
+        return _envelope(_query_comprehensive(request, correlation_id), correlation_id)
 
     @application.post("/v1/evaluations/runs", response_model=Envelope, status_code=status.HTTP_202_ACCEPTED, operation_id="createEvaluationRun")
     def create_evaluation_run(

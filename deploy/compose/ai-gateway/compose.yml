@@ -76,6 +76,21 @@ services:
     restart: "no"
     network_mode: none
 
+  artifact-init:
+    image: techflow/ai-gateway:${TECHFLOW_RAG_RELEASE:-issue-58}
+    build:
+      context: ../../../services/ai-gateway
+    user: "0:0"
+    command: ["sh", "-c", "chown 10001:10001 /var/lib/techflow-artifacts && chmod 0700 /var/lib/techflow-artifacts"]
+    volumes:
+      - techflow_artifacts:/var/lib/techflow-artifacts
+    read_only: true
+    cap_drop: ["ALL"]
+    cap_add: ["CHOWN", "FOWNER"]
+    security_opt: ["no-new-privileges:true"]
+    restart: "no"
+    network_mode: none
+
   gateway:
     image: techflow/ai-gateway:${TECHFLOW_RAG_RELEASE:-issue-46}
     build:
@@ -92,6 +107,9 @@ services:
       TECHFLOW_RAG_DATABASE_USER: techflow_rag_app_login
       TECHFLOW_RAG_DATABASE_PASSWORD_FILE: /run/secrets/app_password
       TECHFLOW_SOURCE_MIRROR_ROOT: /var/lib/techflow-source-mirrors
+      TECHFLOW_ARTIFACT_ROOT: /var/lib/techflow-artifacts
+      TECHFLOW_ARTIFACT_RETENTION_HOURS: "24"
+      TECHFLOW_ARTIFACT_MAX_BYTES: "10485760"
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8090", "--no-access-log"]
     secrets:
       - app_password
@@ -99,6 +117,8 @@ services:
       migrate:
         condition: service_completed_successfully
       source-mirror-init:
+        condition: service_completed_successfully
+      artifact-init:
         condition: service_completed_successfully
     ports:
       - "${TECHFLOW_RAG_BIND_ADDRESS:-127.0.0.1}:18090:8090"
@@ -111,6 +131,7 @@ services:
           - techflow-ai-gateway
     volumes:
       - techflow_source_mirrors:/var/lib/techflow-source-mirrors
+      - techflow_artifacts:/var/lib/techflow-artifacts
     read_only: true
     tmpfs:
       - /tmp:size=32m,mode=1777
@@ -157,6 +178,7 @@ networks:
 volumes:
   techflow_rag_database:
   techflow_source_mirrors:
+  techflow_artifacts:
 
 secrets:
   bootstrap_password:

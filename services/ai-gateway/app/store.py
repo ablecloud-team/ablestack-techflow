@@ -54,6 +54,7 @@ class Store(Protocol):
     def get_source(self, source_id: UUID) -> dict[str, Any]: ...
     def approve_source(self, source_id: UUID, request: dict[str, Any], idempotency_key: str) -> dict[str, Any]: ...
     def create_compatibility_set(self, request: dict[str, Any], idempotency_key: str) -> dict[str, Any]: ...
+    def resolve_compatibility_set(self, compatibility_set_id: UUID | None, product_version: str | None) -> dict[str, Any] | None: ...
     def create_ingestion(
         self, source_id: UUID, request: dict[str, Any], idempotency_key: str, correlation_id: str = "legacy"
     ) -> dict[str, Any]: ...
@@ -361,6 +362,25 @@ class MemoryStore:
             }
             self._compatibility_sets[set_id] = value
             return self._remember("create_compatibility_set", idempotency_key, value)
+
+    def resolve_compatibility_set(self, compatibility_set_id: UUID | None, product_version: str | None) -> dict[str, Any] | None:
+        with self._lock:
+            candidates = [item for item in self._compatibility_sets.values() if item["state"] == "APPROVED"]
+            if compatibility_set_id:
+                candidates = [item for item in candidates if item["compatibilitySetId"] == compatibility_set_id]
+            elif product_version:
+                candidates = [item for item in candidates if item["productVersion"] == product_version]
+            else:
+                return None
+            if not candidates:
+                return None
+            selected = max(candidates, key=lambda item: item["createdAt"])
+            profiles = []
+            for member in selected["members"]:
+                version = self._source_versions.get(UUID(str(member["sourceVersionId"])))
+                if version:
+                    profiles.append(version["sourceProfileId"])
+            return {**deepcopy(selected), "sourceProfileIds": profiles}
 
     def create_ingestion(
         self, source_id: UUID, request: dict[str, Any], idempotency_key: str, correlation_id: str = "legacy"

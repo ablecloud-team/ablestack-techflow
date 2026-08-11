@@ -1,0 +1,101 @@
+{
+  "schemaVersion": "1.0",
+  "generatedAt": "2026-08-11T06:37:23.896475Z",
+  "scope": [
+    "issue-56",
+    "issue-57",
+    "issue-58"
+  ],
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 24715,
+      "sha256": "504ca9be8ec78c90ac235f8eb7bf29864d85fae9ede13bf2d4fcab3a5107eabc"
+    },
+    {
+      "path": "deploy/compose/activepieces/flows/assist-orchestration-v1.json",
+      "bytes": 2173,
+      "sha256": "44ed9af9564102233cc9f9cfc2a0e2f2e28dc42967e0e079c69d470d59f5282d"
+    },
+    {
+      "path": "docs/plans/issues-56-58-assist-multimodal-design.md",
+      "bytes": 4244,
+      "sha256": "2ef18b7713f55c0707d884aca100727c080aecc45d43f52699af9501c39ccd01"
+    },
+    {
+      "path": "docs/reports/issues-56-58-assist-multimodal-validation.md",
+      "bytes": 6984,
+      "sha256": "40a614f259df4858fc0e2e7b692b5f27f19e501449c8db8f24306528351d49e3"
+    },
+    {
+      "path": "docs/runbooks/assist-multimodal.md",
+      "bytes": 3442,
+      "sha256": "79bc8cd19399d12a4485932ee0cd4a754691b95a76ab40250d672d72196295c0"
+    },
+    {
+      "path": "services/ai-gateway/app/artifacts.py",
+      "bytes": 6405,
+      "sha256": "97bd5bc8567ea5006e6345d1124055d9a68fa3d08a4940962aed37c088cbbc4a"
+    },
+    {
+      "path": "services/ai-gateway/app/comprehensive.py",
+      "bytes": 2975,
+      "sha256": "1e8bdb59c50f81b284f26f38dcbd6efb0a3af3357d7a0a0c5b7cce80efb66991"
+    },
+    {
+      "path": "services/ai-gateway/app/main.py",
+      "bytes": 28869,
+      "sha256": "c9246f55ff4d4188c647350ce433c9d4cb3dfa5798823b5d61f0746bf60238fe"
+    },
+    {
+      "path": "services/ai-gateway/app/responses.py",
+      "bytes": 22190,
+      "sha256": "6013fbe2dfc95118af4b833d53ab053e14d1e50c92813eb2f56ecad347e5a9da"
+    },
+    {
+      "path": "services/ai-gateway/app/data/comprehensive-golden-set-v1.json",
+      "bytes": 3480,
+      "sha256": "3faf350f9ebd0b16693c48b3b9bd53eb21c3e3709fa458351bbbc5f82dd5af94"
+    },
+    {
+      "path": "services/ai-gateway/app/data/multimodal-golden-set-v1.json",
+      "bytes": 2664,
+      "sha256": "ee3dc3ed6ddf4483841e33e55378f27f5118593e1f050e4bfd3a680ac46f6a28"
+    },
+    {
+      "path": "services/ai-gateway/app/data/golden-artifacts/synthetic-vm-error.png",
+      "bytes": 46420,
+      "sha256": "05c10d12091805879d6f343fe8bf88edb3c606fde274afa84876b1fccd90fe84"
+    },
+    {
+      "path": "services/ai-gateway/openapi/techflow-ai-gateway-v1.json",
+      "bytes": 52499,
+      "sha256": "28b230a8542f36bfb6e6403c88ece4f8aa888c54ee168be13e6f0f2a41352afe"
+    },
+    {
+      "path": "output/issues-56-58-reference-evaluation.json",
+      "bytes": 9274,
+      "sha256": "7b64aed3b97019a8ca67a190c0b1fe31e1bee3c2a6b8770437d41a808aa3f4f5"
+    },
+    {
+      "path": "output/issues-56-58-live-evaluation.json",
+      "bytes": 3623,
+      "sha256": "37bb3a3c0bc3f1eaa347645dbd7bb5231860aaaeb4680af1241730170bdc6297"
+    },
+    {
+      "path": "output/pdf/techflow-assist-multimodal-report.pdf",
+      "bytes": 138490,
+      "sha256": "2024641f8a4079a9c4d01a71df47701c32e9ef8f873da60226ed094bd03aa45c"
+    },
+    {
+      "path": "output/pdf/techflow-assist-multimodal-presentation.pdf",
+      "bytes": 251931,
+      "sha256": "c51138b2a73133524b0710711d1632e54b27ed881256247048960805a738e5ec"
+    },
+    {
+      "path": "output/presentation/techflow-assist-multimodal.pptx",
+      "bytes": 76244,
+      "sha256": "0d9884d528fc52b4ae08d2bd42ed37dfeec557e4e410899092bc17a48cea4f38"
+    }
+  ]
+}

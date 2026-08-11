@@ -491,6 +491,32 @@ class PostgresStore:
                 )
             return self._compatibility_payload(row, request["members"])
 
+    def resolve_compatibility_set(self, compatibility_set_id: UUID | None, product_version: str | None) -> dict[str, Any] | None:
+        if not compatibility_set_id and not product_version:
+            return None
+        with self._pool.connection() as connection:
+            if compatibility_set_id:
+                row = connection.execute(
+                    "SELECT id, name, product, product_version, state, created_at FROM rag_compatibility_set WHERE id=%s AND state='APPROVED'",
+                    (compatibility_set_id,),
+                ).fetchone()
+            else:
+                row = connection.execute(
+                    "SELECT id, name, product, product_version, state, created_at FROM rag_compatibility_set WHERE product='ABLESTACK' AND product_version=%s AND state='APPROVED' ORDER BY created_at DESC LIMIT 1",
+                    (product_version,),
+                ).fetchone()
+            if not row:
+                return None
+            members = connection.execute(
+                """SELECT css.source_version_id, css.required, s.source_profile_id
+                   FROM rag_compatibility_set_source css
+                   JOIN rag_source_version v ON v.id=css.source_version_id
+                   JOIN rag_source s ON s.id=v.source_id
+                   WHERE css.compatibility_set_id=%s ORDER BY s.source_profile_id""",
+                (row["id"],),
+            ).fetchall()
+            return {**self._compatibility_payload(row, members), "sourceProfileIds": [item["source_profile_id"] for item in members]}
+
     @staticmethod
     def _compatibility_payload(row: dict[str, Any], members: list[dict[str, Any]]) -> dict[str, Any]:
         return {

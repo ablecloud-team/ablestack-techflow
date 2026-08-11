@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "techflow-ai-gateway"
-version = "0.6.0"
-description = "TechFlow AI Gateway with Golden Set quality, security, and E2E evidence"
+version = "0.7.0"
+description = "TechFlow AI Gateway with comprehensive and multimodal Assist evidence"
 requires-python = ">=3.12,<3.13"
 dependencies = [
   "fastapi==0.139.2",
@@ -23,4 +23,4 @@ test = ["httpx==0.28.1"]
 packages = ["app"]
 
 [tool.setuptools.package-data]
-app = ["data/*.json"]
+app = ["data/*.json", "data/golden-artifacts/*.png"]

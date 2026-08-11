@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import os
+import tempfile
 
 
 class ConfigurationError(RuntimeError):
@@ -24,6 +25,9 @@ class Settings:
     log_level: str = "INFO"
     database_pool_min: int = 1
     database_pool_max: int = 4
+    artifact_root: str = os.path.join(tempfile.gettempdir(), "techflow-artifacts")
+    artifact_retention_hours: int = 24
+    artifact_max_bytes: int = 10 * 1024 * 1024
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -40,6 +44,9 @@ class Settings:
             log_level=os.getenv("TECHFLOW_RAG_LOG_LEVEL", "INFO").strip().upper(),
             database_pool_min=int(os.getenv("TECHFLOW_RAG_DATABASE_POOL_MIN", "1")),
             database_pool_max=int(os.getenv("TECHFLOW_RAG_DATABASE_POOL_MAX", "4")),
+            artifact_root=os.getenv("TECHFLOW_ARTIFACT_ROOT", os.path.join(tempfile.gettempdir(), "techflow-artifacts")),
+            artifact_retention_hours=int(os.getenv("TECHFLOW_ARTIFACT_RETENTION_HOURS", "24")),
+            artifact_max_bytes=int(os.getenv("TECHFLOW_ARTIFACT_MAX_BYTES", str(10 * 1024 * 1024))),
         )
         settings.validate()
         return settings
@@ -66,6 +73,10 @@ class Settings:
             raise ConfigurationError("Issue #41 permits D0 data only")
         if self.database_pool_min < 0 or self.database_pool_max < max(1, self.database_pool_min):
             raise ConfigurationError("invalid database pool bounds")
+        if not 1 <= self.artifact_retention_hours <= 168:
+            raise ConfigurationError("TECHFLOW_ARTIFACT_RETENTION_HOURS must be between 1 and 168")
+        if not 1024 <= self.artifact_max_bytes <= 20 * 1024 * 1024:
+            raise ConfigurationError("TECHFLOW_ARTIFACT_MAX_BYTES must be between 1 KiB and 20 MiB")
 
     def __repr__(self) -> str:
         return (
@@ -73,7 +84,8 @@ class Settings:
             "provider_mode={!r}, openai_api_key_file=<redacted>, openai_project_id_file=<redacted>, "
             "safety_identifier_salt_file=<redacted>, embedding_batch_size={!r}, "
             "classification={!r}, log_level={!r}, "
-            "database_pool_min={!r}, database_pool_max={!r})"
+            "database_pool_min={!r}, database_pool_max={!r}, artifact_root=<redacted>, "
+            "artifact_retention_hours={!r}, artifact_max_bytes={!r})"
         ).format(
             self.environment,
             self.store_backend,
@@ -83,4 +95,6 @@ class Settings:
             self.log_level,
             self.database_pool_min,
             self.database_pool_max,
+            self.artifact_retention_hours,
+            self.artifact_max_bytes,
         )
