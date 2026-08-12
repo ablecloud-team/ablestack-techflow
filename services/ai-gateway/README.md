@@ -2,6 +2,12 @@
 
 TechFlow AI Gateway는 Activepieces와 AI Provider 사이에서 ABLESTACK 지식의 Source Registry, 검역·승인, Parser·Chunk·Embedding, 검색 범위와 인용, 삭제 정책을 소유하는 FastAPI 서비스입니다. 저장소 원문을 실행하지 않으며 Activepieces가 정책·상태·인프라 작업을 대신 소유하지 않습니다.
 
+## v0.11.2 구현 범위
+
+- 콘솔이 `연결중`에 머무는 질문은 Console Proxy, noVNC, WebSocket, websockify, VNC 구현 용어를 내부 검색에 확장한다.
+- 정확한 런타임 원인이 미확정이어도 근거가 있는 안전한 점검 절차는 답변하되, 원인을 확정해서 표현하지 않는다.
+- 공개 답변은 내부 검색어·저장소·브랜치·경로를 노출하지 않고 트러블슈팅 문서 형식을 유지한다.
+
 ## v0.11.1 구현 범위
 
 - 모든 일반 기술지원 질의에서 공개 문서, Diplo 현재 출시 Cloud와 5개 연관 제품 코드를 각각 검토

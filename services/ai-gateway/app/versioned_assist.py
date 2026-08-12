@@ -30,6 +30,18 @@ SOURCE_ROLES = {
     "CLOUD_EUROPA": "UNRELEASED_PREVIEW_CLOUD",
 }
 
+CONSOLE_CONNECTION_MARKERS: tuple[str, ...] = (
+    "console",
+    "console proxy",
+    "consoleproxy",
+    "novnc",
+    "websocket",
+    "websockify",
+    "vnc",
+    "createconsoleendpoint",
+    "콘솔 프록시",
+)
+
 
 def versioned_plan(question: str) -> dict[str, object]:
     return {
@@ -63,16 +75,43 @@ def _query_terms(question: str) -> set[str]:
     return {item for item in terms if item not in STOP_WORDS}
 
 
+def _is_console_connection_question(question: str) -> bool:
+    normalized = question.casefold()
+    return "콘솔" in normalized and any(marker in normalized for marker in ("연결", "화면", "보이지", "표시"))
+
+
+def expand_retrieval_question(question: str) -> str:
+    """Add implementation vocabulary without changing the user's visible question."""
+    if not _is_console_connection_question(question):
+        return question
+    anchors = " ".join(CONSOLE_CONNECTION_MARKERS)
+    return f"{question}\n진단 검색어: {anchors}"
+
+
+def _relevance_score(question: str, item: dict[str, Any]) -> int:
+    searchable = f"{item.get('symbol') or ''}\n{item.get('path') or ''}\n{item.get('content') or ''}".casefold()
+    score = sum(1 for term in _query_terms(question) if term in searchable)
+    if _is_console_connection_question(question):
+        score += sum(6 for marker in CONSOLE_CONNECTION_MARKERS if marker in searchable)
+        path = str(item.get("path") or "").casefold()
+        if any(marker in path for marker in ("consoleproxy", "novnc", "console.vue", "systemvm")):
+            score += 12
+    return score
+
+
 def relevant_results(question: str, rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     terms = _query_terms(question)
     if not terms:
         return []
-    relevant = []
-    for item in rows:
-        searchable = f"{item.get('symbol') or ''}\n{item.get('path') or ''}\n{item.get('content') or ''}".casefold()
-        if any(term in searchable for term in terms):
-            relevant.append(item)
-    return relevant
+    if not _is_console_connection_question(question):
+        relevant = []
+        for item in rows:
+            searchable = f"{item.get('symbol') or ''}\n{item.get('path') or ''}\n{item.get('content') or ''}".casefold()
+            if any(term in searchable for term in terms):
+                relevant.append(item)
+        return relevant
+    ranked = [(_relevance_score(question, item), index, item) for index, item in enumerate(rows)]
+    return [item for score, _, item in sorted(ranked, key=lambda value: (-value[0], value[1])) if score > 0]
 
 
 def coverage_payload(question: str, results_by_profile: dict[str, list[dict[str, Any]]]) -> list[dict[str, object]]:
@@ -92,7 +131,7 @@ def select_context_results(question: str, results_by_profile: dict[str, list[dic
     """Keep every source reviewed while bounding a provider request to twenty chunks."""
     selected: list[dict[str, Any]] = []
     for profile_id in VERSIONED_SOURCE_PROFILES:
-        limit = 2 if profile_id in {"SHARED_DOCS", "CLOUD_DIPLO", "CLOUD_EUROPA"} else 1
+        limit = 4 if profile_id in {"SHARED_DOCS", "CLOUD_DIPLO", "CLOUD_EUROPA"} else 1
         selected.extend(relevant_results(question, results_by_profile.get(profile_id) or [])[:limit])
     return selected[:20]
 
@@ -124,7 +163,14 @@ def _projection_replacements(citations: Iterable[dict[str, Any]]) -> set[str]:
 def sanitize_public_text(value: object, citations: Iterable[dict[str, Any]] = ()) -> str:
     text = str(value or "").strip()
     for secret in sorted(_projection_replacements(citations), key=len, reverse=True):
-        text = text.replace(secret, "제품 내부 구현")
+        if re.fullmatch(r"[A-Za-z0-9_.-]+", secret):
+            text = re.sub(
+                rf"(?<![A-Za-z0-9_.-]){re.escape(secret)}(?![A-Za-z0-9_.-])",
+                "제품 내부 구현",
+                text,
+            )
+        else:
+            text = text.replace(secret, "제품 내부 구현")
     text = re.sub(r"(?:https?://)?(?:www\.)?github\.com/\S+", "제품 내부 근거", text, flags=re.IGNORECASE)
     text = re.sub(r"\b[0-9a-f]{40}\b", "제품 버전", text, flags=re.IGNORECASE)
     text = re.sub(r"(?:[\w.-]+/){2,}[\w.@-]+(?::\d+(?:-\d+)?)?", "제품 내부 경로", text)

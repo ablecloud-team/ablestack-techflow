@@ -109,6 +109,10 @@ current assessment. Use PREVIEW_IMPROVED only when preview evidence directly add
 PREVIEW_PARTIAL for incomplete overlap; PREVIEW_NOT_FOUND when searched preview evidence does not address it;
 PREVIEW_INSUFFICIENT when comparison evidence is too weak; NOT_APPLICABLE when no comparison is useful.
 Do not promise a release date, version inclusion, or customer availability without explicit release metadata.
+When the exact runtime cause cannot be confirmed but the supplied evidence supports a safe, deterministic
+troubleshooting sequence, return ANSWERED with currentAssessment INSUFFICIENT_EVIDENCE. State that the root cause is
+not yet confirmed, keep possible causes conditional, and put the missing runtime checks in unknowns. Return ABSTAINED
+only when neither a supported diagnosis nor a supported next-step procedure can be provided.
 """
 
 
