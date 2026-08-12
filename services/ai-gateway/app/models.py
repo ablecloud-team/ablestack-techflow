@@ -7,7 +7,7 @@ from enum import StrEnum
 from typing import Annotated, Any, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator, model_validator
 
 
 SafeId = Annotated[str, StringConstraints(pattern=r"^[A-Z][A-Z0-9_]{2,63}$")]
@@ -200,6 +200,14 @@ class CommunityDecisionRequest(StrictModel):
     expected_draft_version: int = Field(ge=1, alias="expectedDraftVersion")
     edited_answer: Annotated[str, StringConstraints(min_length=3, max_length=12000)] | None = Field(default=None, alias="editedAnswer")
     note: Annotated[str, StringConstraints(max_length=1000)] | None = None
+
+    @field_validator("edited_answer", mode="before")
+    @classmethod
+    def normalize_visual_flow_empty_edit(cls, value: Any) -> Any:
+        """Activepieces renders an unset optional template value as an empty string."""
+        if isinstance(value, str) and not value.strip():
+            return None
+        return value
 
 
 class CommunityPublishRequest(StrictModel):

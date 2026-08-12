@@ -47,6 +47,21 @@ class SettingsTest(unittest.TestCase):
         with self.assertRaises(ConfigurationError):
             Settings(flarum_public_url="http://172.16.0.234").validate()
 
+    def test_chat_bot_requires_all_runtime_secret_references(self) -> None:
+        with self.assertRaises(ConfigurationError):
+            Settings(chat_bot_enabled=True).validate()
+        Settings(
+            chat_bot_enabled=True,
+            chat_bot_token_file="/run/secrets/chat_bot_token",
+            chat_reviewer_usernames=("ceo",),
+            community_approve_webhook_file="/run/secrets/community_approve_webhook",
+            community_reject_webhook_file="/run/secrets/community_reject_webhook",
+        ).validate()
+
+    def test_unapproved_chat_origin_is_rejected(self) -> None:
+        with self.assertRaises(ConfigurationError):
+            Settings(chat_base_url="http://chat.ablecloud.io").validate()
+
     def test_repr_redacts_dsn(self) -> None:
         value = repr(Settings(database_dsn="postgresql://user:runtime-value@db/name"))
         self.assertNotIn("runtime-value", value)

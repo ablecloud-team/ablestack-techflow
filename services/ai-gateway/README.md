@@ -2,6 +2,17 @@
 
 TechFlow AI Gateway는 Activepieces와 AI Provider 사이에서 ABLESTACK 지식의 Source Registry, 검역·승인, Parser·Chunk·Embedding, 검색 범위와 인용, 삭제 정책을 소유하는 FastAPI 서비스입니다. 저장소 원문을 실행하지 않으며 Activepieces가 정책·상태·인프라 작업을 대신 소유하지 않습니다.
 
+## v0.10.0 구현 범위
+
+- Synology Chat Bot Token과 Reviewer 허용목록 검증
+- Chat 사용자 ID·이름 연결과 Community Case 대기·상세·이력 조회
+- 승인·수정 승인·반려 명령과 interactive button 처리
+- Activepieces의 사설 승인·반려 Flow 경유와 최종 상태 대기
+- 새 Community 초안의 연결 Reviewer 알림
+- 같은 상태·Draft Version 결정의 멱등 재처리
+- 삭제된 원본 Discussion의 게시 재시도 금지·반려 정리 운영 기준
+- OpenAPI 33개 Operation, PostgreSQL 22개 Table
+
 ## v0.6.0 구현 범위
 
 - 70개 D0 Golden Question과 7개 저장소·9개 Source Profile 고정 Commit 계약
@@ -81,3 +92,5 @@ TECHFLOW_SAFETY_IDENTIFIER_SALT_FILE=/run/secrets/safety_identifier_salt
 - 근거 답변 Runbook: `../../docs/runbooks/grounded-responses.md`
 - Orchestration Runbook: `../../docs/runbooks/activepieces-rag-orchestration.md`
 - 완료 보고서: `../../docs/reports/issue-45-activepieces-rag-orchestration-validation.md`
+- Chat 승인 Runbook: `../../docs/runbooks/chat-community-approval.md`
+- Chat 승인 완료 보고서: `../../docs/reports/issue-22-chat-community-approval-validation.md`

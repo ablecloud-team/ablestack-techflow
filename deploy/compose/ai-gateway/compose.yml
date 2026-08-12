@@ -133,10 +133,19 @@ services:
       TECHFLOW_FLARUM_PUBLIC_URL: ${TECHFLOW_FLARUM_PUBLIC_URL:-https://community.ablecloud.io}
       TECHFLOW_FLARUM_API_KEY_FILE: /run/secrets/flarum_api_key
       TECHFLOW_COMMUNITY_PUBLISH_ENABLED: ${TECHFLOW_COMMUNITY_PUBLISH_ENABLED:-false}
+      TECHFLOW_CHAT_BOT_ENABLED: ${TECHFLOW_CHAT_BOT_ENABLED:-false}
+      TECHFLOW_CHAT_BASE_URL: ${TECHFLOW_CHAT_BASE_URL:-https://chat.ablecloud.io}
+      TECHFLOW_CHAT_BOT_TOKEN_FILE: /run/secrets/chat_bot_token
+      TECHFLOW_CHAT_REVIEWER_USERNAMES: ${TECHFLOW_CHAT_REVIEWER_USERNAMES:-}
+      TECHFLOW_COMMUNITY_APPROVE_WEBHOOK_FILE: /run/secrets/community_approve_webhook
+      TECHFLOW_COMMUNITY_REJECT_WEBHOOK_FILE: /run/secrets/community_reject_webhook
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8090", "--no-access-log"]
     secrets:
       - app_password
       - flarum_api_key
+      - chat_bot_token
+      - community_approve_webhook
+      - community_reject_webhook
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -209,8 +218,9 @@ services:
       - flarum_api_key
       - community_ingest_webhook
     networks:
-      - rag_edge
-      - ap_automation
+      rag_edge:
+      ap_automation:
+        ipv4_address: 172.30.19.4
     volumes:
       - techflow_community_poller:/var/lib/techflow-community-poller
     read_only: true
@@ -247,3 +257,9 @@ secrets:
     file: ${TECHFLOW_FLARUM_API_KEY_SECRET_FILE:?set Flarum API key file}
   community_ingest_webhook:
     file: ${TECHFLOW_COMMUNITY_INGEST_WEBHOOK_SECRET_FILE:?set Community ingest webhook file}
+  community_approve_webhook:
+    file: ${TECHFLOW_COMMUNITY_APPROVE_WEBHOOK_SECRET_FILE:?set Community approve webhook file}
+  community_reject_webhook:
+    file: ${TECHFLOW_COMMUNITY_REJECT_WEBHOOK_SECRET_FILE:?set Community reject webhook file}
+  chat_bot_token:
+    file: ${TECHFLOW_CHAT_BOT_TOKEN_SECRET_FILE:?set Chat Bot token file}

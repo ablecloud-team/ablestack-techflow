@@ -36,6 +36,12 @@ class Settings:
     flarum_public_url: str = "https://community.ablecloud.io"
     flarum_api_key_file: str | None = None
     community_publish_enabled: bool = False
+    chat_bot_enabled: bool = False
+    chat_base_url: str = "https://chat.ablecloud.io"
+    chat_bot_token_file: str | None = None
+    chat_reviewer_usernames: tuple[str, ...] = ()
+    community_approve_webhook_file: str | None = None
+    community_reject_webhook_file: str | None = None
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -63,6 +69,14 @@ class Settings:
             flarum_public_url=os.getenv("TECHFLOW_FLARUM_PUBLIC_URL", "https://community.ablecloud.io").rstrip("/"),
             flarum_api_key_file=os.getenv("TECHFLOW_FLARUM_API_KEY_FILE") or None,
             community_publish_enabled=os.getenv("TECHFLOW_COMMUNITY_PUBLISH_ENABLED", "false").lower() == "true",
+            chat_bot_enabled=os.getenv("TECHFLOW_CHAT_BOT_ENABLED", "false").lower() == "true",
+            chat_base_url=os.getenv("TECHFLOW_CHAT_BASE_URL", "https://chat.ablecloud.io").rstrip("/"),
+            chat_bot_token_file=os.getenv("TECHFLOW_CHAT_BOT_TOKEN_FILE") or None,
+            chat_reviewer_usernames=tuple(
+                item.strip() for item in os.getenv("TECHFLOW_CHAT_REVIEWER_USERNAMES", "").split(",") if item.strip()
+            ),
+            community_approve_webhook_file=os.getenv("TECHFLOW_COMMUNITY_APPROVE_WEBHOOK_FILE") or None,
+            community_reject_webhook_file=os.getenv("TECHFLOW_COMMUNITY_REJECT_WEBHOOK_FILE") or None,
         )
         settings.validate()
         return settings
@@ -107,6 +121,19 @@ class Settings:
             raise ConfigurationError("TECHFLOW_FLARUM_PUBLIC_URL must use the approved HTTPS community origin")
         if self.community_publish_enabled and not self.flarum_api_key_file:
             raise ConfigurationError("TECHFLOW_FLARUM_API_KEY_FILE is required when publishing is enabled")
+        if self.chat_base_url != "https://chat.ablecloud.io":
+            raise ConfigurationError("TECHFLOW_CHAT_BASE_URL must use the approved HTTPS Chat origin")
+        if self.chat_bot_enabled:
+            required = {
+                "TECHFLOW_CHAT_BOT_TOKEN_FILE": self.chat_bot_token_file,
+                "TECHFLOW_COMMUNITY_APPROVE_WEBHOOK_FILE": self.community_approve_webhook_file,
+                "TECHFLOW_COMMUNITY_REJECT_WEBHOOK_FILE": self.community_reject_webhook_file,
+            }
+            missing = [name for name, value in required.items() if not value]
+            if missing:
+                raise ConfigurationError(f"{', '.join(missing)} required when Chat Bot is enabled")
+            if not self.chat_reviewer_usernames:
+                raise ConfigurationError("TECHFLOW_CHAT_REVIEWER_USERNAMES required when Chat Bot is enabled")
 
     def __repr__(self) -> str:
         return (
@@ -118,7 +145,9 @@ class Settings:
             "artifact_retention_hours={!r}, artifact_max_bytes={!r}, artifact_max_extracted_bytes={!r}, "
             "artifact_max_archive_entries={!r}, artifact_max_compression_ratio={!r}, "
             "artifact_max_log_evidence_chars={!r}, flarum_base_url={!r}, flarum_public_url={!r}, "
-            "flarum_api_key_file=<redacted>, community_publish_enabled={!r})"
+            "flarum_api_key_file=<redacted>, community_publish_enabled={!r}, chat_bot_enabled={!r}, "
+            "chat_base_url={!r}, chat_bot_token_file=<redacted>, chat_reviewer_usernames=<redacted>, "
+            "community_approve_webhook_file=<redacted>, community_reject_webhook_file=<redacted>)"
         ).format(
             self.environment,
             self.store_backend,
@@ -137,4 +166,6 @@ class Settings:
             self.flarum_base_url,
             self.flarum_public_url,
             self.community_publish_enabled,
+            self.chat_bot_enabled,
+            self.chat_base_url,
         )

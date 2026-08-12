@@ -3,7 +3,7 @@
   "info": {
     "title": "TechFlow AI Gateway",
     "description": "TechFlow AI Gateway with grounded Responses generation and deterministic retrieval.",
-    "version": "0.9.0"
+    "version": "0.10.0"
   },
   "paths": {
     "/healthz": {
@@ -1365,6 +1365,22 @@
                 "schema": {
                   "$ref": "#/components/schemas/HTTPValidationError"
                 }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/chat/synology/events": {
+      "post": {
+        "summary": "Handle Synology Chat Event",
+        "operationId": "handleSynologyChatEvent",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
               }
             }
           }

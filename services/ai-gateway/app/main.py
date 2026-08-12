@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
+import asyncio
 import json
 import logging
 import re
@@ -58,6 +59,17 @@ from .store import InvalidBoundaryError, InvalidStateError, MemoryStore, Store, 
 from .artifacts import ArtifactStore
 from .comprehensive import plan_query
 from .community import FlarumClient, format_draft, profiles_for_tags
+from .chat_assist import (
+    CASE_REFERENCE,
+    CommunityFlowClient,
+    SynologyBotClient,
+    case_card,
+    case_reference,
+    case_text,
+    help_text,
+    parse_chat_event,
+    parse_command,
+)
 
 
 CORRELATION_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:-]{7,127}$")
@@ -119,6 +131,8 @@ def create_app(
     source_fetcher: SnapshotFetcher | None = None,
     embeddings_adapter: EmbeddingsAdapter | None = None,
     responses_adapter: ResponsesAdapter | None = None,
+    chat_bot_client: SynologyBotClient | None = None,
+    community_flow_client: CommunityFlowClient | None = None,
 ) -> FastAPI:
     runtime_settings = settings or Settings.from_env()
     runtime_settings.validate()
@@ -142,6 +156,14 @@ def create_app(
         runtime_settings.flarum_api_key_file,
         runtime_settings.community_publish_enabled,
     )
+    runtime_chat_bot = chat_bot_client or SynologyBotClient(
+        runtime_settings.chat_base_url, runtime_settings.chat_bot_token_file, runtime_settings.chat_bot_enabled,
+    )
+    runtime_community_flows = community_flow_client or CommunityFlowClient(
+        runtime_settings.community_approve_webhook_file,
+        runtime_settings.community_reject_webhook_file,
+        runtime_settings.chat_bot_enabled,
+    )
 
     @asynccontextmanager
     async def lifespan(_: FastAPI):
@@ -164,6 +186,8 @@ def create_app(
     async def boundary_middleware(request: Request, call_next):
         started = time.perf_counter()
         correlation_id = request.headers.get("X-Correlation-Id", "")
+        if request.url.path == "/v1/chat/synology/events" and not correlation_id:
+            correlation_id = f"chat-{uuid4().hex}"
         if request.url.path.startswith("/v1") and not CORRELATION_PATTERN.fullmatch(correlation_id):
             return _error("missing", 400, "INVALID_CORRELATION_ID")
         request.state.correlation_id = correlation_id or "healthcheck"
@@ -531,10 +555,19 @@ def create_app(
         result = _query_comprehensive(assist_request, correlation_id)
         draft = {"draftAnswer": format_draft(result), "answerState": result.get("state"),
                  "citations": result.get("citations") or []}
-        return _envelope(
-            runtime_store.create_community_case(_model_data(request), draft, idempotency_key, correlation_id),
-            correlation_id,
-        )
+        result = runtime_store.create_community_case(_model_data(request), draft, idempotency_key, correlation_id)
+        if runtime_settings.chat_bot_enabled and result.pop("created", False):
+            try:
+                reviewer_ids = [item["userId"] for item in runtime_store.list_chat_reviewers()]
+                runtime_chat_bot.send(reviewer_ids, case_card(result))
+            except Exception as exc:
+                _json_log(
+                    "community_chat_notification_failed", correlationId=correlation_id,
+                    caseId=str(result["caseId"]), errorType=type(exc).__name__,
+                )
+        else:
+            result.pop("created", None)
+        return _envelope(result, correlation_id)
 
     @application.get("/v1/community/cases/{caseId}", response_model=Envelope, operation_id="getCommunityCase")
     def get_community_case(caseId: UUID, correlation_id: Annotated[str, Depends(_correlation_id)]) -> Envelope:
@@ -575,6 +608,108 @@ def create_app(
         result = runtime_store.mark_community_published(caseId, publication, idempotency_key)
         result["requestedBy"] = request.requested_by
         return _envelope(result, correlation_id)
+
+    def _resolve_chat_case(reference: str) -> dict[str, Any]:
+        if not CASE_REFERENCE.fullmatch(reference):
+            raise InvalidBoundaryError("invalid Community case reference")
+        return runtime_store.resolve_community_case(reference)
+
+    def _pending_chat_response() -> dict[str, Any]:
+        cases = runtime_store.list_community_cases(("DRAFT_PENDING", "APPROVED"), 10)
+        if not cases:
+            return {"text": "현재 승인 대기 중인 Community 답변이 없습니다."}
+        lines = ["Community 승인 대기 목록"]
+        for item in cases:
+            lines.append(
+                f"• {case_reference(item)} · Discussion #{item['discussionId']} · V{item['draftVersion']} · "
+                f"{item.get('answerState') or '-'} · {item['title']}"
+            )
+        lines.append("상세 <Case 앞 8자> 명령으로 답변과 Citation을 확인하세요.")
+        return {"text": "\n".join(lines)[:7000]}
+
+    async def _wait_for_case(case_id: UUID, desired: set[str], timeout_seconds: float = 15.0) -> dict[str, Any]:
+        deadline = time.monotonic() + timeout_seconds
+        current = runtime_store.get_community_case(case_id)
+        while current["state"] not in desired and time.monotonic() < deadline:
+            await asyncio.sleep(0.2)
+            current = runtime_store.get_community_case(case_id)
+        return current
+
+    @application.post(
+        "/v1/chat/synology/events", response_class=JSONResponse,
+        operation_id="handleSynologyChatEvent",
+    )
+    async def handle_synology_chat_event(request: Request) -> JSONResponse:
+        try:
+            event = parse_chat_event(request.headers.get("content-type", ""), await request.body())
+            runtime_chat_bot.validate(event.token)
+            allowed = {item.casefold() for item in runtime_settings.chat_reviewer_usernames}
+            if event.username.casefold() not in allowed:
+                return JSONResponse(status_code=403, content={"text": "승인 권한이 없는 Chat 사용자입니다."})
+            runtime_store.upsert_chat_reviewer(event.user_id, event.username)
+            command, args = parse_command(event)
+            if command in {"help", "connect"}:
+                response = _pending_chat_response() if command == "connect" else {"text": help_text()}
+                if command == "connect":
+                    response["text"] = f"{event.username} 계정을 TechFlow 승인 담당자로 연결했습니다.\n\n{response['text']}"
+                return JSONResponse(content=response)
+            if command == "pending":
+                return JSONResponse(content=_pending_chat_response())
+            if command == "detail":
+                if len(args) != 1:
+                    return JSONResponse(content={"text": "사용법: 상세 <Discussion ID 또는 Case 앞 8자>"})
+                return JSONResponse(content=case_card(_resolve_chat_case(args[0])))
+            if command == "history":
+                if not args:
+                    cases = runtime_store.list_community_cases(None, 10)
+                    text = "최근 Community 처리 이력\n" + "\n".join(
+                        f"• {case_reference(item)} · {item['state']} · {item.get('reviewer') or '-'} · {item['title']}"
+                        for item in cases
+                    )
+                    return JSONResponse(content={"text": text[:7000]})
+                case = _resolve_chat_case(args[0])
+                events = runtime_store.list_community_case_events(case["caseId"], 10)
+                text = f"Case {case_reference(case)} 처리 이력\n" + "\n".join(
+                    f"• {item['createdAt'].isoformat()} · {item['eventType']} · {item['actor']}"
+                    for item in events
+                )
+                return JSONResponse(content={"text": text[:7000]})
+            if command in {"approve", "reject", "edit"}:
+                minimum = 3 if command == "edit" else 2
+                if len(args) < minimum:
+                    return JSONResponse(content={"text": help_text()})
+                case = _resolve_chat_case(args[0])
+                try:
+                    version = int(args[1])
+                except ValueError:
+                    return JSONResponse(content={"text": "Draft Version은 숫자여야 합니다."})
+                decision = "APPROVE" if command in {"approve", "edit"} else "REJECT"
+                edited_answer = args[2] if command == "edit" else None
+                note = (args[2] if command == "reject" and len(args) > 2 else "Chat button decision")[:1000]
+                if decision == "APPROVE" and case["state"] == "PUBLISHED":
+                    return JSONResponse(content={"text": case_text(case, include_answer=False)})
+                if decision == "REJECT" and case["state"] == "REJECTED":
+                    return JSONResponse(content={"text": case_text(case, include_answer=False)})
+                flow_payload = {
+                    "eventId": event.event_key, "correlationId": request.state.correlation_id,
+                    "caseId": str(case["caseId"]), "reviewer": f"chat:{event.username}",
+                    "expectedDraftVersion": version, "editedAnswer": edited_answer, "note": note,
+                }
+                await asyncio.to_thread(runtime_community_flows.decide, decision, flow_payload)
+                desired = {"PUBLISHED"} if decision == "APPROVE" else {"REJECTED"}
+                current = await _wait_for_case(case["caseId"], desired)
+                if current["state"] not in desired:
+                    return JSONResponse(content={
+                        "text": f"요청은 접수됐지만 최종 상태가 {current['state']}입니다. 이력 명령으로 확인하세요."
+                    })
+                return JSONResponse(content={"text": case_text(current, include_answer=False)})
+            return JSONResponse(content={"text": "알 수 없는 명령입니다.\n\n" + help_text()})
+        except InvalidBoundaryError:
+            return JSONResponse(status_code=403, content={"text": "요청 인증 또는 입력 검증에 실패했습니다."})
+        except StoreError as exc:
+            return JSONResponse(status_code=exc.http_status, content={"text": "Case 상태가 변경됐거나 찾을 수 없습니다."})
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            return JSONResponse(status_code=400, content={"text": "Chat 요청 형식을 해석할 수 없습니다."})
 
     @application.post("/v1/evaluations/runs", response_model=Envelope, status_code=status.HTTP_202_ACCEPTED, operation_id="createEvaluationRun")
     def create_evaluation_run(
