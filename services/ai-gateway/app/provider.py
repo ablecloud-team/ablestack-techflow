@@ -122,6 +122,7 @@ class ComprehensiveResponsesRequest:
     artifacts: tuple[EvidenceArtifact, ...] = ()
     locale: str = "ko-KR"
     safety_identifier: str = "techflow-anonymous"
+    source_roles: tuple[tuple[str, str], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -201,6 +202,9 @@ class MockResponsesAdapter:
             "confidence": "HIGH",
             "citationsUsed": list(citations),
             "artifactEvidence": artifact_findings,
+            "currentAssessment": "CURRENT_NORMAL",
+            "previewAssessment": "PREVIEW_NOT_FOUND",
+            "previewGuidance": "차기 버전 코드에서 직접 대응하는 개선 근거를 확인하지 못했습니다.",
             "abstainReason": None,
         }
         return ComprehensiveResponsesResult(

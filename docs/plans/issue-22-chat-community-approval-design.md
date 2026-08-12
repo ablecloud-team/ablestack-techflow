@@ -4,7 +4,7 @@
 
 Issue #21에서 생성하는 Community AI 답변 초안을 담당자가 `chat.ablecloud.io` 안에서 확인하고, 승인·수정 승인·반려할 수 있게 한다. 새 초안 알림, 질문·요약·Citation·Case 링크, 담당자 연결, 대기 목록과 처리 이력을 Chat에 일원화한다.
 
-이 구현은 Issue #22의 사내 메신저 기술지원 Bot을 위한 첫 번째 제품 경로다. 이번 범위는 **Community 답변 검토·승인**이며, 임의의 Chat 기술 질문을 직접 RAG로 답하는 일반 Q&A는 후속 범위로 남긴다.
+이 구현은 Issue #22의 사내 메신저 기술지원 Bot을 위한 첫 번째 제품 경로다. PR #61의 후속 보완으로 일반 Chat 기술 질문도 공개 문서·Diplo 현재판·연관 제품 코드·Europa 프리뷰 비교 경로를 통해 직접 응답한다. 승인 명령은 등록 Reviewer에게만 허용하고 일반 질의 응답은 유효한 Chat Bot 이벤트 사용자에게 제공한다. 상세 설계는 [Issue #62·#63 설계](issues-62-63-versioned-safe-answer-design.md)를 따른다.
 
 ```mermaid
 flowchart LR

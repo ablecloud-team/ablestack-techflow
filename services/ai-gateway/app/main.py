@@ -59,6 +59,15 @@ from .store import InvalidBoundaryError, InvalidStateError, MemoryStore, Store, 
 from .artifacts import ArtifactStore
 from .comprehensive import plan_query
 from .community import FlarumClient, format_draft, profiles_for_tags
+from .versioned_assist import (
+    SOURCE_ROLES,
+    VERSIONED_SOURCE_PROFILES,
+    coverage_payload,
+    evidence_ledger,
+    format_public_answer,
+    select_context_results,
+    versioned_plan,
+)
 from .chat_assist import (
     CASE_REFERENCE,
     CommunityFlowClient,
@@ -489,47 +498,79 @@ def create_app(
     def _query_comprehensive(request: ComprehensiveQueryRequest, correlation_id: str) -> dict[str, Any]:
         compatibility = runtime_store.resolve_compatibility_set(request.compatibility_set_id, request.product_version)
         explicit_profiles = request.source_profile_ids or (compatibility or {}).get("sourceProfileIds")
+        versioned_review = not explicit_profiles and not compatibility
         plan = plan_query(request.question, explicit_profiles)
+        plan_payload = versioned_plan(request.question) if versioned_review else plan.payload()
+        if versioned_review:
+            profiles = list(VERSIONED_SOURCE_PROFILES)
+        else:
+            profiles = list(plan.profile_ids)
         if plan.state != "READY":
-            return {"queryId": request.query_id, "state": "NEEDS_INFORMATION", "plan": plan.payload(),
+            if versioned_review:
+                pass
+            else:
+                return {"queryId": request.query_id, "state": "NEEDS_INFORMATION", "plan": plan_payload,
                     "report": None, "citations": [], "generationProviderCalled": False}
-        profiles = list(plan.profile_ids)
         if compatibility and not set(profiles).issubset(set(compatibility["sourceProfileIds"])):
-            return {"queryId": request.query_id, "state": "NEEDS_INFORMATION", "plan": plan.payload(),
+            return {"queryId": request.query_id, "state": "NEEDS_INFORMATION", "plan": plan_payload,
                     "questionsNeeded": ["선택한 영역을 모두 포함하는 승인된 Compatibility Set이 필요합니다."],
                     "report": None, "citations": [], "generationProviderCalled": False}
-        if len(profiles) > 1 and not compatibility:
-            return {"queryId": request.query_id, "state": "NEEDS_INFORMATION", "plan": plan.payload(),
+        if len(profiles) > 1 and not compatibility and not versioned_review:
+            return {"queryId": request.query_id, "state": "NEEDS_INFORMATION", "plan": plan_payload,
                     "questionsNeeded": ["제품 버전 또는 승인된 compatibilitySetId를 지정하십시오."],
                     "report": None, "citations": [], "generationProviderCalled": False}
-        scope = {"compatibilitySetId": compatibility["compatibilitySetId"] if compatibility else None,
-                 "sourceProfileIds": None if compatibility else profiles}
-        retrieval_request = QueryRequest(
-            queryId=request.query_id, question=request.question,
-            compatibilitySetId=scope["compatibilitySetId"], sourceProfileIds=scope["sourceProfileIds"],
-            locale=request.locale, classification=request.classification,
-        )
-        retrieval = _retrieve(retrieval_request, correlation_id)
+        scope = {
+            "policy": "DIPLO_CURRENT_EUROPA_PREVIEW_V1" if versioned_review else "EXPLICIT_V1",
+            "compatibilitySetId": compatibility["compatibilitySetId"] if compatibility else None,
+            "sourceProfileIds": None if compatibility else profiles,
+        }
+        coverage: list[dict[str, object]] = []
+        if versioned_review:
+            embedding_result = runtime_embeddings.embed([request.question])
+            results_by_profile: dict[str, list[dict[str, Any]]] = {}
+            provider_called = embedding_result.provider == "openai"
+            for profile_id in VERSIONED_SOURCE_PROFILES:
+                retrieval_request = QueryRequest(
+                    queryId=request.query_id, question=request.question, sourceProfileIds=[profile_id],
+                    locale=request.locale, classification=request.classification,
+                )
+                item = runtime_store.retrieve(_model_data(retrieval_request), embedding_result, correlation_id)
+                results_by_profile[profile_id] = item["results"]
+            coverage = coverage_payload(request.question, results_by_profile)
+            retrieval = {
+                "results": select_context_results(request.question, results_by_profile),
+                "providerCalled": provider_called,
+            }
+        else:
+            retrieval_request = QueryRequest(
+                queryId=request.query_id, question=request.question,
+                compatibilitySetId=scope["compatibilitySetId"], sourceProfileIds=scope["sourceProfileIds"],
+                locale=request.locale, classification=request.classification,
+            )
+            retrieval = _retrieve(retrieval_request, correlation_id)
         context = context_from_results(retrieval["results"], request.classification)
         if not context:
-            return {"queryId": request.query_id, "state": "ABSTAINED", "plan": plan.payload(),
+            return {"queryId": request.query_id, "state": "ABSTAINED", "plan": plan_payload,
+                    "scope": scope, "coverage": coverage,
                     "report": None, "citations": [], "abstainReason": "no-grounding", "generationProviderCalled": False}
         artifacts = tuple(artifact_store.evidence(artifact_id) for artifact_id in request.artifact_ids)
         provider_request = ComprehensiveResponsesRequest(
             query_id=str(request.query_id), question=request.question, context=context, artifacts=artifacts,
             locale=request.locale, safety_identifier=stable_safety_identifier(request.actor_id, safety_identifier_salt),
+            source_roles=tuple(SOURCE_ROLES.items()) if versioned_review else (),
         )
         try:
             generated = runtime_responses.generate_comprehensive(provider_request)
             runtime_store.record_response_call(request.query_id, generated, correlation_id)
             cited = {item.chunk_id: item for item in context}
             citations = [citation_payload(cited[item]) for item in generated.citations_used if item in cited]
-            return {"queryId": request.query_id, "state": generated.report["state"], "plan": plan.payload(),
-                    "scope": scope, "report": generated.report, "citations": citations,
+            return {"queryId": request.query_id, "state": generated.report["state"], "plan": plan_payload,
+                    "scope": scope, "coverage": coverage, "report": generated.report, "citations": citations,
                     "generationProviderCalled": generated.provider == "openai", "providerProfileId": generated.profile_id}
         except ResponsesProviderError as exc:
             runtime_store.record_response_failure(request.query_id, exc, correlation_id)
-            return {"queryId": request.query_id, "state": "FAILED", "plan": plan.payload(), "report": None,
+            return {"queryId": request.query_id, "state": "FAILED", "plan": plan_payload, "report": None,
+                    "scope": scope, "coverage": coverage,
                     "citations": [], "generationProviderCalled": exc.provider_called, "errorCode": exc.code,
                     "failureClass": exc.failure_class}
 
@@ -546,15 +587,14 @@ def create_app(
         correlation_id: Annotated[str, Depends(_correlation_id)],
         idempotency_key: Annotated[str, Depends(_idempotency_key)],
     ) -> Envelope:
-        profiles = profiles_for_tags(request.tag_slugs)
         assist_request = ComprehensiveQueryRequest(
             queryId=uuid4(), question=f"{request.title}\n\n{request.question}", actorId=f"community:{request.author_id}",
-            productVersion=request.product_version, sourceProfileIds=[profiles[0]], artifactIds=request.artifact_ids,
+            productVersion=request.product_version or "diplo", artifactIds=request.artifact_ids,
             locale="ko-KR", classification="D0",
         )
         result = _query_comprehensive(assist_request, correlation_id)
         draft = {"draftAnswer": format_draft(result), "answerState": result.get("state"),
-                 "citations": result.get("citations") or []}
+                 "citations": result.get("citations") or [], "evidenceLedger": evidence_ledger(result)}
         result = runtime_store.create_community_case(_model_data(request), draft, idempotency_key, correlation_id)
         if runtime_settings.chat_bot_enabled and result.pop("created", False):
             try:
@@ -644,10 +684,12 @@ def create_app(
             event = parse_chat_event(request.headers.get("content-type", ""), await request.body())
             runtime_chat_bot.validate(event.token)
             allowed = {item.casefold() for item in runtime_settings.chat_reviewer_usernames}
-            if event.username.casefold() not in allowed:
-                return JSONResponse(status_code=403, content={"text": "승인 권한이 없는 Chat 사용자입니다."})
-            runtime_store.upsert_chat_reviewer(event.user_id, event.username)
             command, args = parse_command(event)
+            reviewer_commands = {"connect", "pending", "detail", "history", "approve", "reject", "edit"}
+            if command in reviewer_commands and event.username.casefold() not in allowed:
+                return JSONResponse(status_code=403, content={"text": "승인 권한이 없는 Chat 사용자입니다."})
+            if command in reviewer_commands:
+                runtime_store.upsert_chat_reviewer(event.user_id, event.username)
             if command in {"help", "connect"}:
                 response = _pending_chat_response() if command == "connect" else {"text": help_text()}
                 if command == "connect":
@@ -703,6 +745,19 @@ def create_app(
                         "text": f"요청은 접수됐지만 최종 상태가 {current['state']}입니다. 이력 명령으로 확인하세요."
                     })
                 return JSONResponse(content={"text": case_text(current, include_answer=False)})
+            if command == "unknown" and event.text:
+                assist_request = ComprehensiveQueryRequest(
+                    queryId=uuid4(), question=event.text, actorId=f"chat:{event.user_id}",
+                    productVersion="diplo", locale="ko-KR", classification="D0",
+                )
+                result = await asyncio.to_thread(_query_comprehensive, assist_request, request.state.correlation_id)
+                answer = format_public_answer(result)
+                if answer:
+                    return JSONResponse(content={"text": answer[:7000]})
+                if result.get("state") == "NEEDS_INFORMATION":
+                    needed = result.get("questionsNeeded") or (result.get("plan") or {}).get("questionsNeeded") or []
+                    return JSONResponse(content={"text": ("추가 정보가 필요합니다.\n" + "\n".join(f"• {item}" for item in needed))[:7000]})
+                return JSONResponse(content={"text": "검토 근거가 충분하지 않아 답변을 보류했습니다. 로그나 화면 정보를 함께 제공해 주세요."})
             return JSONResponse(content={"text": "알 수 없는 명령입니다.\n\n" + help_text()})
         except InvalidBoundaryError:
             return JSONResponse(status_code=403, content={"text": "요청 인증 또는 입력 검증에 실패했습니다."})

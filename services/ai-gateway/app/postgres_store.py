@@ -1088,6 +1088,7 @@ class PostgresStore:
             "discussionUrl": row["discussion_url"], "title": row["title"], "state": row["state"],
             "draftVersion": row["draft_version"], "draftAnswer": row["draft_answer"],
             "answerState": row["answer_state"], "citations": row["citations"] or [],
+            "evidenceLedger": (row["source_metadata"] or {}).get("evidenceLedger") or {},
             "approvalVersion": row["approval_version"], "reviewer": row["reviewer"],
             "publishedPostId": row["published_post_id"], "publishedPostUrl": row["published_post_url"],
             "correlationId": row["correlation_id"], "createdAt": row["created_at"], "updatedAt": row["updated_at"],
@@ -1114,7 +1115,8 @@ class PostgresStore:
                 (case_id, request["discussionId"], request["discussionUrl"], request["title"],
                  draft.get("draftAnswer"), draft.get("answerState"), json.dumps(draft.get("citations") or []),
                  correlation_id, idempotency_key,
-                 json.dumps({"authorId": request["authorId"], "tagSlugs": request.get("tagSlugs") or []})),
+                 json.dumps({"authorId": request["authorId"], "tagSlugs": request.get("tagSlugs") or [],
+                             "evidenceLedger": draft.get("evidenceLedger") or {}})),
             ).fetchone()
             connection.execute(
                 "INSERT INTO community_case_event (id,case_id,event_type,actor,correlation_id,details) VALUES (%s,%s,'DRAFT_CREATED','techflow',%s,%s)",

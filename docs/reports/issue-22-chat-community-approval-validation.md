@@ -202,4 +202,4 @@ Discussion #143은 제품 책임자가 영구 삭제 사실을 확인했다. 기
 
 요청된 “Community AI 답변의 전 과정을 Chat에서 승인·수정·반려” 범위는 완료했다. 담당자는 별도 승인 페이지 없이 Chat 하나로 검토를 끝낼 수 있고, Activepieces는 승인·게시 실행 경로로 유지된다.
 
-Issue #22 전체 목표에는 아직 **사내 메신저에서 들어오는 일반 기술 질문을 RAG로 직접 답변하고 필요 시 담당자에게 전환하는 경로**가 남아 있다. 따라서 이번 PR은 Issue #22를 자동 종료하지 않고, 완료된 Community 승인 하위 범위와 실제 증적을 연결한다.
+PR #61의 Issue #62·#63 보완으로 사내 메신저 일반 기술 질문의 전 Source RAG 직접 응답, Diplo 현재판·Europa 프리뷰 비교, 내부 Evidence Ledger와 외부 안전 Projection 분리를 추가했다. 최종 검증은 [Issue #62·#63 구현·검증 보고서](issues-62-63-versioned-safe-answer-validation.md)에 기록한다. 일반 질의와 Community·Reviewer Chat E2E가 모두 통과했으므로 Issue #22의 구현 완료 기준을 충족한다. 운영 KPI는 Issue #23에서 이어간다.

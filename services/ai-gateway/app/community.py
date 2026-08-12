@@ -13,9 +13,9 @@ from .store import InvalidBoundaryError
 
 
 TAG_PROFILE_MAP = {
-    "mold": "CLOUD_EUROPA",
-    "ablestack-vm": "CLOUD_EUROPA",
-    "vm-manage": "CLOUD_EUROPA",
+    "mold": "CLOUD_DIPLO",
+    "ablestack-vm": "CLOUD_DIPLO",
+    "vm-manage": "CLOUD_DIPLO",
     "cube": "SHARED_DOCS",
     "ablestack": "SHARED_DOCS",
     "ablestack-hci": "SHARED_DOCS",
@@ -43,29 +43,10 @@ def citation_url(citation: dict[str, Any]) -> str:
 
 
 def format_draft(result: dict[str, Any]) -> str | None:
-    if result.get("state") != "ANSWERED" or not result.get("report"):
-        return None
-    report = result["report"]
-    lines = ["## AI 답변 초안", "", report.get("summary", "").strip()]
-    for heading, key in (("확인된 내용", "observedFacts"), ("가능한 원인", "diagnoses"), ("권장 확인 사항", "recommendedActions")):
-        rows = report.get(key) or []
-        if rows:
-            lines.extend(["", f"### {heading}"])
-            for row in rows:
-                if isinstance(row, str):
-                    text = row
-                else:
-                    text = row.get("text") or row.get("title") or row.get("action") or row.get("finding") or ""
-                if text:
-                    lines.append(f"- {text}")
-    citations = result.get("citations") or []
-    if citations:
-        lines.extend(["", "### 근거"])
-        for item in citations:
-            label = f"{item['repository']} · {item['path']}:{item['startLine']}-{item['endLine']}"
-            lines.append(f"- [{label}]({citation_url(item)})")
-    lines.extend(["", "> 이 답변은 ABLESTACK TechFlow가 생성하고 담당자가 검토·승인했습니다."])
-    return "\n".join(lines).strip()
+    """Compatibility alias; Community always receives the safe public projection."""
+    from .versioned_assist import format_public_answer
+
+    return format_public_answer(result)
 
 
 class FlarumClient:
