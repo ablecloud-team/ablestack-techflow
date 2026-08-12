@@ -86,6 +86,33 @@ class CommunityTests(unittest.TestCase):
         )
         self.assertEqual(400, publish.status_code)
 
+    def test_empty_visual_flow_edit_uses_existing_draft(self) -> None:
+        store = MemoryStore()
+        case = store.create_community_case(
+            self.payload(),
+            {"draftAnswer": "기존 AI 답변 초안", "answerState": "ANSWERED", "citations": []},
+            "community-empty-edit-case-0001",
+            "community-empty-edit-correlation",
+        )
+        client = TestClient(create_app(Settings(), store))
+        approved = client.post(
+            f"/v1/community/cases/{case['caseId']}/decision",
+            headers={**HEADERS, "Idempotency-Key": "community-approve-empty-edit-0001"},
+            json={"decision": "APPROVE", "reviewer": "chat:ceo", "expectedDraftVersion": 1,
+                  "editedAnswer": "", "note": "visual flow optional field"},
+        )
+        self.assertEqual(200, approved.status_code)
+        self.assertEqual("APPROVED", approved.json()["data"]["state"])
+        self.assertEqual(case["draftAnswer"], approved.json()["data"]["draftAnswer"])
+        retried = client.post(
+            f"/v1/community/cases/{case['caseId']}/decision",
+            headers={**HEADERS, "Idempotency-Key": "community-approve-empty-edit-retry-0001"},
+            json={"decision": "APPROVE", "reviewer": "chat:ceo", "expectedDraftVersion": 1,
+                  "editedAnswer": "", "note": "publish retry"},
+        )
+        self.assertEqual(200, retried.status_code)
+        self.assertEqual(1, retried.json()["data"]["approvalVersion"])
+
     def test_rejected_case_cannot_publish(self) -> None:
         client = TestClient(create_app(Settings(), MemoryStore()))
         case = client.post("/v1/community/cases", headers=HEADERS, json=self.payload()).json()["data"]

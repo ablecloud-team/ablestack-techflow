@@ -1102,7 +1102,9 @@ class PostgresStore:
                 (idempotency_key, request["discussionId"]),
             ).fetchone()
             if existing:
-                return self._community_payload(existing)
+                result = self._community_payload(existing)
+                result["created"] = False
+                return result
             case_id = uuid4()
             row = connection.execute(
                 """INSERT INTO community_case
@@ -1118,7 +1120,9 @@ class PostgresStore:
                 "INSERT INTO community_case_event (id,case_id,event_type,actor,correlation_id,details) VALUES (%s,%s,'DRAFT_CREATED','techflow',%s,%s)",
                 (uuid4(), case_id, correlation_id, json.dumps({"answerState": draft.get("answerState")})),
             )
-            return self._community_payload(row)
+            result = self._community_payload(row)
+            result["created"] = True
+            return result
 
     def get_community_case(self, case_id: UUID) -> dict[str, Any]:
         with self._pool.connection() as connection:
@@ -1136,6 +1140,47 @@ class PostgresStore:
                 raise NotFoundError("community case not found")
             return self._community_payload(row)
 
+    def resolve_community_case(self, reference: str) -> dict[str, Any]:
+        with self._pool.connection() as connection:
+            if reference.isdigit():
+                row = connection.execute(
+                    "SELECT * FROM community_case WHERE discussion_id=%s", (reference,)
+                ).fetchone()
+                if row:
+                    return self._community_payload(row)
+            rows = connection.execute(
+                "SELECT * FROM community_case WHERE id::text LIKE %s ORDER BY created_at DESC LIMIT 2",
+                (reference.lower() + "%",),
+            ).fetchall()
+            if len(rows) != 1:
+                raise NotFoundError("Community case reference is not unique")
+            return self._community_payload(rows[0])
+
+    def list_community_cases(self, states: tuple[str, ...] | None = None, limit: int = 10) -> list[dict[str, Any]]:
+        with self._pool.connection() as connection:
+            if states:
+                rows = connection.execute(
+                    "SELECT * FROM community_case WHERE state=ANY(%s) ORDER BY updated_at DESC LIMIT %s",
+                    (list(states), limit),
+                ).fetchall()
+            else:
+                rows = connection.execute(
+                    "SELECT * FROM community_case ORDER BY updated_at DESC LIMIT %s", (limit,)
+                ).fetchall()
+            return [self._community_payload(row) for row in rows]
+
+    def list_community_case_events(self, case_id: UUID, limit: int = 10) -> list[dict[str, Any]]:
+        with self._pool.connection() as connection:
+            rows = connection.execute(
+                "SELECT case_id,event_type,actor,details,created_at FROM community_case_event "
+                "WHERE case_id=%s ORDER BY created_at DESC LIMIT %s",
+                (case_id, limit),
+            ).fetchall()
+            return [{
+                "caseId": row["case_id"], "eventType": row["event_type"], "actor": row["actor"],
+                "details": row["details"] or {}, "createdAt": row["created_at"],
+            } for row in rows]
+
     def decide_community_case(self, case_id: UUID, request: dict[str, Any], idempotency_key: str) -> dict[str, Any]:
         with self._pool.connection() as connection:
             repeated = connection.execute(
@@ -1147,12 +1192,18 @@ class PostgresStore:
             row = connection.execute("SELECT * FROM community_case WHERE id=%s FOR UPDATE", (case_id,)).fetchone()
             if not row:
                 raise NotFoundError("community case not found")
+            target_state = "APPROVED" if request["decision"] == "APPROVE" else "REJECTED"
+            if row["state"] == target_state and row["draft_version"] == request["expectedDraftVersion"]:
+                edited_answer = request.get("editedAnswer")
+                if edited_answer and edited_answer != row["draft_answer"]:
+                    raise InvalidStateError("draft state or version changed")
+                return self._community_payload(row)
             if row["state"] != "DRAFT_PENDING" or row["draft_version"] != request["expectedDraftVersion"]:
                 raise InvalidStateError("draft state or version changed")
             answer = request.get("editedAnswer") or row["draft_answer"]
             if request["decision"] == "APPROVE" and not answer:
                 raise InvalidStateError("an answer is required for approval")
-            state = "APPROVED" if request["decision"] == "APPROVE" else "REJECTED"
+            state = target_state
             updated = connection.execute(
                 """UPDATE community_case SET state=%s,draft_answer=%s,reviewer=%s,approval_version=approval_version+1,
                    approved_at=CASE WHEN %s='APPROVED' THEN now() ELSE NULL END,updated_at=now() WHERE id=%s RETURNING *""",
@@ -1192,3 +1243,22 @@ class PostgresStore:
                 (uuid4(), case_id, idempotency_key, row["correlation_id"], json.dumps(publication)),
             )
             return self._community_payload(updated)
+
+    def upsert_chat_reviewer(self, user_id: str, username: str) -> dict[str, Any]:
+        with self._pool.connection() as connection:
+            row = connection.execute(
+                """INSERT INTO chat_reviewer_identity (user_id,username,last_seen_at)
+                   VALUES (%s,%s,now())
+                   ON CONFLICT (user_id) DO UPDATE SET username=EXCLUDED.username,last_seen_at=now()
+                   RETURNING user_id,username,last_seen_at""",
+                (user_id, username),
+            ).fetchone()
+            return {"userId": row["user_id"], "username": row["username"], "lastSeenAt": row["last_seen_at"]}
+
+    def list_chat_reviewers(self) -> list[dict[str, Any]]:
+        with self._pool.connection() as connection:
+            rows = connection.execute(
+                "SELECT user_id,username,last_seen_at FROM chat_reviewer_identity WHERE enabled=true ORDER BY username"
+            ).fetchall()
+            return [{"userId": row["user_id"], "username": row["username"], "lastSeenAt": row["last_seen_at"]}
+                    for row in rows]

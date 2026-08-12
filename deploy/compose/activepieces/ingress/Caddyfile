@@ -9,6 +9,20 @@
 		reverse_proxy event-gateway:8081
 	}
 
+	@chat_assist {
+		path /techflow/chat/assist
+		method POST
+	}
+	handle @chat_assist {
+		rewrite * /v1/chat/synology/events
+		reverse_proxy techflow-ai-gateway:8090
+	}
+
+	@chat_assist_other path /techflow/chat/assist
+	handle @chat_assist_other {
+		respond 405
+	}
+
 	# All public Webhooks must pass through the validating Event Gateway.
 	@direct_activepieces_webhook path /api/v1/webhooks/*
 	handle @direct_activepieces_webhook {

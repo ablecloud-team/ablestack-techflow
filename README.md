@@ -1,5 +1,16 @@
 # ABLESTACK TechFlow
 
+## Issue #22 Chat 기반 Community 승인
+
+Community AI 답변 검토를 Synology Chat의 `TechFlowAssist` Bot으로 일원화합니다. 담당자는 Chat에서 새 초안 알림, 질문·Citation·Community 링크를 확인하고 승인·수정 승인·반려할 수 있으며, 처리 이력과 대기 목록도 같은 대화에서 조회합니다. Activepieces는 승인·게시 순서를 실행하고 AI Gateway가 Bot 인증, Reviewer 권한, Draft Version, 상태·멱등성·감사를 강제합니다.
+
+- [Chat 기반 Community 승인 설계](docs/plans/issue-22-chat-community-approval-design.md)
+- [Chat 기반 Community 승인 운영 Runbook](docs/runbooks/chat-community-approval.md)
+- [구현·검증 보고서](docs/reports/issue-22-chat-community-approval-validation.md)
+- [보고서 PDF](output/pdf/techflow-chat-community-approval-report.pdf)
+- [발표자료 PDF](output/pdf/techflow-chat-community-approval-presentation.pdf)
+- [발표자료 PPTX](output/presentation/techflow-chat-community-approval.pptx)
+
 ## Issue #21 Community 질문 답변·승인
 
 Flarum Community의 새 ABLESTACK 질문을 수집해 문서·소스코드·이미지·로그 근거 기반 초안을 만들고, 담당자가 현재 Draft Version을 승인한 경우에만 `AI-Assistant` 계정으로 게시합니다. Activepieces는 질문 수집·승인·게시 순서를 실행하고 AI Gateway가 상태·멱등성·감사와 승인 강제를 소유합니다.

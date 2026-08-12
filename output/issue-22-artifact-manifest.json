@@ -1,0 +1,53 @@
+{
+  "schemaVersion": "1.0",
+  "issue": 22,
+  "scope": "chat-community-approval",
+  "generatedAt": "2026-08-12T09:18:32.836740+00:00",
+  "artifacts": [
+    {
+      "path": "docs/plans/issue-22-chat-community-approval-design.md",
+      "bytes": 5221,
+      "sha256": "b38792f34a54f958eb0d803a1fd230c8997c60e2bf040ccedf61476401987adc"
+    },
+    {
+      "path": "docs/runbooks/chat-community-approval.md",
+      "bytes": 5913,
+      "sha256": "46e4200cf66f10b13a3ba88decd3fca0300fea42727d3ae02665093cb25cd6bd"
+    },
+    {
+      "path": "docs/reports/issue-22-chat-community-approval-validation.md",
+      "bytes": 9601,
+      "sha256": "1b93625d985384eb86dabf18adb5801bc915361685bc0892a1dde12f326f6f97"
+    },
+    {
+      "path": "services/ai-gateway/app/chat_assist.py",
+      "bytes": 8909,
+      "sha256": "1ea17fe1d50b4d6f230616c0732b8495edb6ba89e173f9e1d25b7c7749ccf96e"
+    },
+    {
+      "path": "services/ai-gateway/migrations/0009_chat_approval_up.sql",
+      "bytes": 479,
+      "sha256": "d4fb59351aa8aa8b8c68f6a05d07b4a6653b5110bd8957d452c6c15324fa20ec"
+    },
+    {
+      "path": "services/ai-gateway/openapi/techflow-ai-gateway-v1.json",
+      "bytes": 63886,
+      "sha256": "cbaeb07a82e905a24574cb6d8e1f309296a2c0e522e803ebaa8e396b2edc78b5"
+    },
+    {
+      "path": "output/presentation/techflow-chat-community-approval.pptx",
+      "bytes": 33786,
+      "sha256": "f41742c6dc86657fe9b143da0ef0f804207376cb7f1a8148662be0f5873099ec"
+    },
+    {
+      "path": "output/pdf/techflow-chat-community-approval-presentation.pdf",
+      "bytes": 477314,
+      "sha256": "afbc9ee52dc5084bfe70ed32247e931c4c86eb4a3f4ee511d0b89892c771073d"
+    },
+    {
+      "path": "output/pdf/techflow-chat-community-approval-report.pdf",
+      "bytes": 124260,
+      "sha256": "4f316dee2f8d694cb7a0509f1303301e83318f5d4f3cba927190ab9bbd5e5605"
+    }
+  ]
+}
