@@ -126,6 +126,20 @@ def case_text(value: dict[str, Any], *, include_answer: bool = True) -> str:
             lines.append(
                 f"- {item['repository']} · {item['path']}:{item['startLine']}-{item['endLine']} @ {item['commit'][:12]}"
             )
+    ledger = value.get("evidenceLedger") or {}
+    coverage = ledger.get("coverage") or []
+    if coverage:
+        lines.extend(["", "내부 전 Source 검토:"])
+        for item in coverage:
+            lines.append(
+                f"- {item['sourceProfileId']} · {item['role']} · {item['state']} ({item['evidenceCount']})"
+            )
+    if ledger.get("currentAssessment") or ledger.get("previewAssessment"):
+        lines.extend([
+            "",
+            f"현재판 판정: {ledger.get('currentAssessment') or '-'}",
+            f"Europa 프리뷰 비교: {ledger.get('previewAssessment') or '-'}",
+        ])
     return "\n".join(lines)[:7000]
 
 

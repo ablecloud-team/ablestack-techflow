@@ -2,7 +2,13 @@
 
 TechFlow AI Gateway는 Activepieces와 AI Provider 사이에서 ABLESTACK 지식의 Source Registry, 검역·승인, Parser·Chunk·Embedding, 검색 범위와 인용, 삭제 정책을 소유하는 FastAPI 서비스입니다. 저장소 원문을 실행하지 않으며 Activepieces가 정책·상태·인프라 작업을 대신 소유하지 않습니다.
 
-## v0.10.0 구현 범위
+## v0.11.0 구현 범위
+
+- 모든 일반 기술지원 질의에서 공개 문서, Diplo 현재 출시 Cloud와 5개 연관 제품 코드를 각각 검토
+- Europa는 미출시 프리뷰로 분리해 현재 오류의 개선 진행·일부 개선·미확인 여부만 비교
+- 내부 Evidence Ledger와 Community·일반 Chat용 안전 Projection 분리
+- 일반 Chat 사용자 기술 질문 자동 응답과 승인 담당자 전용 상세 근거·결정 명령 분리
+- 현재 오류·Europa 개선·미개선·설정 오류·정상·근거 부족 6개 Versioned Golden Case
 
 - Synology Chat Bot Token과 Reviewer 허용목록 검증
 - Chat 사용자 ID·이름 연결과 Community Case 대기·상세·이력 조회

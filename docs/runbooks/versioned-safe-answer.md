@@ -1,0 +1,56 @@
+# Diplo 현재판·Europa 프리뷰 안전 답변 배포·운영 Runbook
+
+## 배포 전
+
+1. `main...upstream/main`이 `0 0`인지 확인한다.
+2. 전체 AI Gateway 단위 시험과 OpenAPI 생성을 수행한다.
+3. `protected_service_guard.py`로 `github-chat-v1 state=frozen guard=passed`를 확인한다.
+4. 시험 서버 `/` 용량과 AI Gateway·Community Poller 상태를 확인한다.
+5. `services/ai-gateway`, Compose 설정, 현재 Gateway Image Inspect를 UTC 시각 백업 경로에 복사한다.
+
+## 배포
+
+시험 서버 작업 루트는 `/home/ablecloud/techflow-ai-gateway`다. Secret 파일과 `.env`는 기존 서버 파일을 그대로 사용하고 배포 묶음에 포함하지 않는다.
+
+```bash
+cd /home/ablecloud/techflow-ai-gateway/deploy/compose/ai-gateway
+export TECHFLOW_RAG_RELEASE=issue-62-versioned
+docker compose --env-file .env \
+  -f compose.yml -f compose.openai.override.yml \
+  build gateway community-poller
+docker compose --env-file .env \
+  -f compose.yml -f compose.openai.override.yml \
+  up -d gateway community-poller
+```
+
+## 확인
+
+1. `/healthz`에서 Version `0.11.0`, Database·Vector `ready`, Provider `openai`를 확인한다.
+2. 일반 Assist 질문이 Coverage 8개와 현재판·프리뷰 구조화 판정을 반환하는지 확인한다.
+3. 일반 Chat 사용자의 기술 질문이 Reviewer 권한 없이 응답되며 내부 계보가 없는지 확인한다.
+4. Community 질문이 `DRAFT_PENDING` Case를 생성하고 `ANSWERED` 또는 올바른 보류 판정을 갖는지 확인한다.
+5. 승인 담당자의 Chat `상세 <Case>`에서 내부 Citation, 전체 Coverage, 현재판·프리뷰 판정을 확인한다.
+6. Community 공개 Draft에서 `github.com`, Source Profile, 저장소, Commit, 경로, 라인 패턴이 0건인지 확인한다.
+7. `techflow-activepieces-event-gateway-1`이 재시작 없이 기존 Image로 계속 `healthy`인지 확인한다.
+
+HTTP 200만으로 성공 판정하지 않는다. 구조화 상태, Coverage, 외부 Projection 검사, Reviewer Ledger, 컨테이너 Health를 모두 확인한다.
+
+## 운영 판정
+
+- 범용 장애 질문이 특정 환경·로그 없이 입력되면 `INSUFFICIENT_EVIDENCE`로 보류하는 것이 정상이다.
+- 코드 식별자나 재현 정보가 충분하면 관련 Profile 근거만 생성 컨텍스트에 포함한다.
+- Europa에 동일 클래스가 존재하는 것만으로 개선으로 판정하지 않는다. 동일 원인에 대한 변경 근거가 있어야 한다.
+- `PREVIEW_NOT_FOUND`는 향후 보완 검토 가이드이며 출시 계획을 대신하지 않는다.
+
+## 롤백
+
+1. Gateway와 Community Poller만 이전 Image Tag로 되돌린다.
+2. 필요하면 `/home/ablecloud/techflow-ai-gateway-backups/issue62-predeploy-<UTC>`의 소스와 Compose를 복원한다.
+3. Database Migration은 추가되지 않았으므로 Schema 롤백은 필요 없다.
+4. Community에 이미 게시된 답변은 자동 삭제하지 않는다.
+5. 테스트용 Discussion도 자동 삭제하지 않고 E2E 증적으로 유지한다.
+6. `github-chat-v1`과 Event Gateway는 롤백 대상에 포함하지 않는다.
+
+## Secret 정책
+
+SSH 암호, OpenAI Key·Project ID, Flarum API Key, Chat Bot Token, Activepieces Webhook URL은 서버의 기존 보호 파일 또는 실행 환경에서만 사용한다. 명령 출력·보고서·Git 저장소·배포 묶음에 값을 남기지 않는다.

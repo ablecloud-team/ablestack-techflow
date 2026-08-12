@@ -41,18 +41,22 @@ class CommunityTests(unittest.TestCase):
         }
 
     def test_tag_mapping_is_deterministic(self) -> None:
-        self.assertEqual(["CLOUD_EUROPA", "SHARED_DOCS"], profiles_for_tags(["mold", "cube", "mold"]))
+        self.assertEqual(["CLOUD_DIPLO", "SHARED_DOCS"], profiles_for_tags(["mold", "cube", "mold"]))
         self.assertEqual(["SHARED_DOCS"], profiles_for_tags(["unknown-tag"]))
 
-    def test_format_draft_contains_grounding_and_review_notice(self) -> None:
+    def test_format_draft_is_safe_public_projection(self) -> None:
         draft = format_draft({
-            "state": "ANSWERED", "report": {"summary": "원인을 확인했습니다.", "observedFacts": ["오류가 있습니다."]},
+            "state": "ANSWERED", "report": {"summary": "원인을 확인했습니다.", "observedFacts": ["오류가 있습니다."],
+                "currentAssessment": "CURRENT_DEFECT", "previewAssessment": "PREVIEW_IMPROVED",
+                "previewGuidance": "개선 검증이 진행 중입니다."},
             "citations": [{"repository": "ablecloud-team/ablestack-docs", "commit": "a" * 40,
                            "path": "docs/test.md", "startLine": 1, "endLine": 3}],
         })
-        self.assertIn("AI 답변 초안", draft)
-        self.assertIn("#L1-L3", draft)
-        self.assertIn("검토·승인", draft)
+        self.assertIn("ABLESTACK 기술지원 답변", draft)
+        self.assertIn("개선이 진행 중", draft)
+        self.assertNotIn("github.com", draft)
+        self.assertNotIn("docs/test.md", draft)
+        self.assertNotIn("a" * 40, draft)
 
     def test_case_requires_approval_before_publish(self) -> None:
         client = TestClient(create_app(Settings(), MemoryStore()))

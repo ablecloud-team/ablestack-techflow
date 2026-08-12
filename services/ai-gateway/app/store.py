@@ -713,6 +713,7 @@ class MemoryStore:
                 "title": request["title"], "state": "DRAFT_PENDING", "draftVersion": 1,
                 "draftAnswer": draft.get("draftAnswer"), "answerState": draft.get("answerState"),
                 "citations": deepcopy(draft.get("citations") or []), "approvalVersion": 0,
+                "evidenceLedger": deepcopy(draft.get("evidenceLedger") or {}),
                 "reviewer": None, "publishedPostId": None, "publishedPostUrl": None,
                 "correlationId": correlation_id, "createdAt": utc_now(), "updatedAt": utc_now(),
             }

@@ -79,9 +79,12 @@ COMPREHENSIVE_SCHEMA: dict[str, Any] = {
         "artifactEvidence": {"type": "array", "maxItems": 10, "items": {"type": "object", "additionalProperties": False,
             "properties": {"artifactId": {"type": "string"}, "finding": {"type": "string"}, "region": {"type": "string"}},
             "required": ["artifactId", "finding", "region"]}},
+        "currentAssessment": {"type": "string", "enum": ["CURRENT_NORMAL", "CURRENT_CONFIG_ERROR", "CURRENT_DEFECT", "INSUFFICIENT_EVIDENCE"]},
+        "previewAssessment": {"type": "string", "enum": ["PREVIEW_IMPROVED", "PREVIEW_PARTIAL", "PREVIEW_NOT_FOUND", "PREVIEW_INSUFFICIENT", "NOT_APPLICABLE"]},
+        "previewGuidance": {"type": ["string", "null"]},
         "abstainReason": {"type": ["string", "null"]},
     },
-    "required": ["state", "summary", "observedFacts", "diagnoses", "recommendedActions", "unknowns", "confidence", "citationsUsed", "artifactEvidence", "abstainReason"],
+    "required": ["state", "summary", "observedFacts", "diagnoses", "recommendedActions", "unknowns", "confidence", "citationsUsed", "artifactEvidence", "currentAssessment", "previewAssessment", "previewGuidance", "abstainReason"],
 }
 
 COMPREHENSIVE_SYSTEM_POLICY = SYSTEM_POLICY + """
@@ -94,6 +97,17 @@ For citationsUsed and diagnosis evidenceIds, copy only exact citationId or artif
 For artifactEvidence, copy the exact supplied artifactId; never create, shorten, translate, or replace an identifier.
 For log findings, identify the supplied artifactId and the exact member path and line range shown in the evidence.
 If an image or log is unreadable or the evidence is insufficient, say so; never infer hidden UI state or secrets."""
+
+VERSIONED_REVIEW_POLICY = """
+Source roles are strict. CURRENT_DOCUMENTATION and CURRENT_RELEASED_CLOUD describe the released Diplo product.
+CURRENT_RELATED_PRODUCT sources may explain integrations. UNRELEASED_PREVIEW_CLOUD is Europa and must never be
+used to claim current behavior, current configuration, or a released fix. First classify the released state as
+CURRENT_NORMAL, CURRENT_CONFIG_ERROR, CURRENT_DEFECT, or INSUFFICIENT_EVIDENCE. Compare Europa only after the
+current assessment. Use PREVIEW_IMPROVED only when preview evidence directly addresses the same cause;
+PREVIEW_PARTIAL for incomplete overlap; PREVIEW_NOT_FOUND when searched preview evidence does not address it;
+PREVIEW_INSUFFICIENT when comparison evidence is too weak; NOT_APPLICABLE when no comparison is useful.
+Do not promise a release date, version inclusion, or customer availability without explicit release metadata.
+"""
 
 
 @dataclass(frozen=True)
@@ -254,7 +268,7 @@ def context_from_results(results: Iterable[dict[str, Any]], classification: str 
             end_line=int(item["endLine"]),
             symbol=item.get("symbol"),
         )
-        for item in list(results)[:10]
+        for item in list(results)[:20]
     )
 
 
@@ -457,7 +471,9 @@ class OpenAIResponsesAdapter:
             raise ProviderContractError("unsupported evidence artifact")
         if sum(len(item.evidence_text) for item in logs) > 300_000:
             raise ProviderContractError("log evidence exceeds the comprehensive request boundary")
+        source_roles = dict(request.source_roles)
         context = [{"citationId": chunk.chunk_id, "sourceProfileId": chunk.source_profile_id,
+                    "sourceRole": source_roles.get(chunk.source_profile_id, "UNSPECIFIED"),
                     "repository": chunk.repository, "branch": chunk.branch, "commit": chunk.commit,
                     "path": chunk.path, "startLine": chunk.start_line, "endLine": chunk.end_line,
                     "symbol": chunk.symbol, "sourceKind": chunk.source_kind, "text": chunk.text}
@@ -496,7 +512,7 @@ class OpenAIResponsesAdapter:
                 )
                 response = self._client.responses.create(
                     model=profile.model,
-                    input=[{"role": "system", "content": COMPREHENSIVE_SYSTEM_POLICY + retry_policy},
+                    input=[{"role": "system", "content": COMPREHENSIVE_SYSTEM_POLICY + VERSIONED_REVIEW_POLICY + retry_policy},
                            {"role": "user", "content": user_content}],
                     reasoning={"effort": profile.reasoning_effort},
                     text={"format": {"type": "json_schema", "name": "techflow_comprehensive_report", "strict": True, "schema": COMPREHENSIVE_SCHEMA}},

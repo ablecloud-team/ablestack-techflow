@@ -236,7 +236,7 @@ class _Responses:
     def create(self, **kwargs):
         self.kwargs = kwargs
         return SimpleNamespace(
-            output_text='{"state":"ANSWERED","summary":"ok","observedFacts":[],"diagnoses":[],"recommendedActions":[],"unknowns":[],"confidence":"HIGH","citationsUsed":["chunk-1"],"artifactEvidence":[{"artifactId":"artifact-1","finding":"visible","region":"all"}],"abstainReason":null}',
+            output_text='{"state":"ANSWERED","summary":"ok","observedFacts":[],"diagnoses":[],"recommendedActions":[],"unknowns":[],"confidence":"HIGH","citationsUsed":["chunk-1"],"artifactEvidence":[{"artifactId":"artifact-1","finding":"visible","region":"all"}],"currentAssessment":"CURRENT_DEFECT","previewAssessment":"PREVIEW_IMPROVED","previewGuidance":"개선 중","abstainReason":null}',
             model="gpt-5.6-sol", id="resp", _request_id="req",
         )
 
@@ -248,9 +248,9 @@ class _RetryResponses:
     def create(self, **kwargs):
         self.calls.append(kwargs)
         if len(self.calls) == 1:
-            output = '{"state":"ANSWERED","summary":"retry","observedFacts":[],"diagnoses":[{"title":"x","likelihood":"LOW","evidenceIds":["invented-id"]}],"recommendedActions":[],"unknowns":[],"confidence":"LOW","citationsUsed":["invented-id"],"artifactEvidence":[],"abstainReason":null}'
+            output = '{"state":"ANSWERED","summary":"retry","observedFacts":[],"diagnoses":[{"title":"x","likelihood":"LOW","evidenceIds":["invented-id"]}],"recommendedActions":[],"unknowns":[],"confidence":"LOW","citationsUsed":["invented-id"],"artifactEvidence":[],"currentAssessment":"INSUFFICIENT_EVIDENCE","previewAssessment":"PREVIEW_INSUFFICIENT","previewGuidance":null,"abstainReason":null}'
         else:
-            output = '{"state":"ANSWERED","summary":"ok","observedFacts":[],"diagnoses":[{"title":"x","likelihood":"LOW","evidenceIds":["chunk-1","artifact-1"]}],"recommendedActions":[],"unknowns":[],"confidence":"LOW","citationsUsed":["chunk-1"],"artifactEvidence":[{"artifactId":"artifact-1","finding":"error","region":"server.log:1-1"}],"abstainReason":null}'
+            output = '{"state":"ANSWERED","summary":"ok","observedFacts":[],"diagnoses":[{"title":"x","likelihood":"LOW","evidenceIds":["chunk-1","artifact-1"]}],"recommendedActions":[],"unknowns":[],"confidence":"LOW","citationsUsed":["chunk-1"],"artifactEvidence":[{"artifactId":"artifact-1","finding":"error","region":"server.log:1-1"}],"currentAssessment":"CURRENT_DEFECT","previewAssessment":"PREVIEW_NOT_FOUND","previewGuidance":"보완 필요","abstainReason":null}'
         return SimpleNamespace(output_text=output, model="gpt-5.6-sol", id="resp", _request_id="req")
 
 
