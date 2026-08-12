@@ -137,23 +137,23 @@ def format_public_answer(result: dict[str, Any]) -> str | None:
         return None
     report = result["report"]
     citations = result.get("citations") or []
-    lines = ["## ABLESTACK 기술지원 답변", "", sanitize_public_text(report.get("summary"), citations)]
+    lines = ["## ABLESTACK 트러블슈팅 가이드"]
+
+    symptom_rows = [report.get("summary"), *(report.get("observedFacts") or [])]
     sections = (
-        ("검토 결과", "observedFacts"),
-        ("가능한 원인", "diagnoses"),
-        ("권장 확인 및 조치", "recommendedActions"),
-        ("추가 확인 필요", "unknowns"),
+        ("증상", symptom_rows, "확인된 증상 정보가 없습니다."),
+        ("원인", report.get("diagnoses") or [], "현재 근거에서 확정된 원인은 없습니다."),
+        ("해결 방법", report.get("recommendedActions") or [], "추가 진단 정보를 확보한 뒤 해결 방법을 결정해야 합니다."),
     )
-    for heading, key in sections:
-        rows = report.get(key) or []
-        if not rows:
-            continue
-        lines.extend(["", f"### {heading}"])
+    for heading, rows, empty_message in sections:
+        values: list[str] = []
         for row in rows:
             raw = row if isinstance(row, str) else row.get("text") or row.get("title") or row.get("action") or ""
             clean = sanitize_public_text(raw, citations)
-            if clean:
-                lines.append(f"- {clean}")
+            if clean and clean not in values:
+                values.append(clean)
+        lines.extend(["", f"### {heading}"])
+        lines.extend(f"- {value}" for value in values or [empty_message])
     current = report.get("currentAssessment")
     if current:
         labels = {
@@ -162,9 +162,10 @@ def format_public_answer(result: dict[str, Any]) -> str | None:
             "CURRENT_DEFECT": "현재 출시 버전의 제품 결함 가능성이 확인됩니다.",
             "INSUFFICIENT_EVIDENCE": "현재 정보만으로는 출시 버전의 상태를 확정하기 어렵습니다.",
         }
-        lines.extend(["", "### 현재 버전 기준 판단", f"- {labels.get(current, sanitize_public_text(current, citations))}"])
+        current_label = labels.get(current, sanitize_public_text(current, citations))
     preview = report.get("previewAssessment")
     guidance = sanitize_public_text(report.get("previewGuidance"), citations)
+    preview_label = "이번 사례에서 차기 버전 비교는 적용 대상이 아닙니다."
     if preview and preview != "NOT_APPLICABLE":
         labels = {
             "PREVIEW_IMPROVED": "차기 버전 코드에서 관련 개선이 진행 중인 정황이 확인됩니다.",
@@ -172,9 +173,24 @@ def format_public_answer(result: dict[str, Any]) -> str | None:
             "PREVIEW_NOT_FOUND": "차기 버전 코드에서 직접 대응하는 개선을 확인하지 못해 제품 보완 검토가 필요합니다.",
             "PREVIEW_INSUFFICIENT": "차기 버전 개선 여부를 판단할 근거가 충분하지 않습니다.",
         }
-        lines.extend(["", "### 차기 버전 개선 여부", f"- {labels.get(preview, sanitize_public_text(preview, citations))}"])
-        if guidance:
-            lines.append(f"- {guidance}")
+        preview_label = labels.get(preview, sanitize_public_text(preview, citations))
+
+    considerations: list[str] = []
+    for row in report.get("unknowns") or []:
+        clean = sanitize_public_text(row, citations)
+        if clean and clean not in considerations:
+            considerations.append(clean)
+    if guidance and guidance not in considerations:
+        considerations.append(guidance)
+    lines.extend(["", "### 추가 고려사항"])
+    lines.extend(f"- {value}" for value in considerations or ["별도의 추가 고려사항은 확인되지 않았습니다."])
+
+    lines.extend(["", "### 적용 버전"])
+    if current:
+        lines.append(f"- 현재 적용 기준: ABLESTACK Cloud Diplo(현재 출시판) - {current_label}")
+    else:
+        lines.append("- 현재 적용 기준: ABLESTACK Cloud Diplo(현재 출시판) - 판정 정보가 없습니다.")
+    lines.append(f"- 차기 참고 기준: ABLESTACK Cloud Europa(미출시 Preview) - {preview_label}")
     lines.extend(["", "> 이 답변은 ABLESTACK TechFlow가 제품 자료와 구현을 종합 검토한 뒤 담당자 승인을 거쳐 제공합니다."])
     return "\n".join(line for line in lines if line is not None).strip()
 

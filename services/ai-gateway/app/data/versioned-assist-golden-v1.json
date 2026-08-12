@@ -1,6 +1,7 @@
 {
   "schemaVersion": "1.0",
   "setId": "ABLESTACK_VERSIONED_ASSIST_GOLDEN_V1",
+  "publicDocumentSections": ["증상", "원인", "해결 방법", "추가 고려사항", "적용 버전"],
   "caseCount": 6,
   "cases": [
     {

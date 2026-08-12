@@ -14,7 +14,7 @@
 
 ```bash
 cd /home/ablecloud/techflow-ai-gateway/deploy/compose/ai-gateway
-export TECHFLOW_RAG_RELEASE=issue-62-versioned
+export TECHFLOW_RAG_RELEASE=issue-63-troubleshooting
 docker compose --env-file .env \
   -f compose.yml -f compose.openai.override.yml \
   build gateway community-poller
@@ -25,13 +25,14 @@ docker compose --env-file .env \
 
 ## 확인
 
-1. `/healthz`에서 Version `0.11.0`, Database·Vector `ready`, Provider `openai`를 확인한다.
+1. `/healthz`에서 Version `0.11.1`, Database·Vector `ready`, Provider `openai`를 확인한다.
 2. 일반 Assist 질문이 Coverage 8개와 현재판·프리뷰 구조화 판정을 반환하는지 확인한다.
 3. 일반 Chat 사용자의 기술 질문이 Reviewer 권한 없이 응답되며 내부 계보가 없는지 확인한다.
 4. Community 질문이 `DRAFT_PENDING` Case를 생성하고 `ANSWERED` 또는 올바른 보류 판정을 갖는지 확인한다.
 5. 승인 담당자의 Chat `상세 <Case>`에서 내부 Citation, 전체 Coverage, 현재판·프리뷰 판정을 확인한다.
 6. Community 공개 Draft에서 `github.com`, Source Profile, 저장소, Commit, 경로, 라인 패턴이 0건인지 확인한다.
 7. `techflow-activepieces-event-gateway-1`이 재시작 없이 기존 Image로 계속 `healthy`인지 확인한다.
+8. 일반 Chat과 Community Draft에 `증상`, `원인`, `해결 방법`, `추가 고려사항`, `적용 버전`이 순서대로 모두 나타나는지 확인한다.
 
 HTTP 200만으로 성공 판정하지 않는다. 구조화 상태, Coverage, 외부 Projection 검사, Reviewer Ledger, 컨테이너 Health를 모두 확인한다.
 
@@ -41,6 +42,7 @@ HTTP 200만으로 성공 판정하지 않는다. 구조화 상태, Coverage, 외
 - 코드 식별자나 재현 정보가 충분하면 관련 Profile 근거만 생성 컨텍스트에 포함한다.
 - Europa에 동일 클래스가 존재하는 것만으로 개선으로 판정하지 않는다. 동일 원인에 대한 변경 근거가 있어야 한다.
 - `PREVIEW_NOT_FOUND`는 향후 보완 검토 가이드이며 출시 계획을 대신하지 않는다.
+- `적용 버전`에는 Diplo 현재 출시판과 Europa 미출시 Preview를 분리해 표시하며, 근거 없는 숫자 버전과 출시 일정을 생성하지 않는다.
 
 ## 롤백
 

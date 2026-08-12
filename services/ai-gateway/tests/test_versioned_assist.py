@@ -56,14 +56,34 @@ class VersionedAssistPolicyTest(unittest.TestCase):
         }
         answer = format_public_answer(result) or ""
         self.assertTrue(projection_is_safe(answer), answer)
+        headings = ["### 증상", "### 원인", "### 해결 방법", "### 추가 고려사항", "### 적용 버전"]
+        self.assertTrue(all(heading in answer for heading in headings), answer)
+        self.assertEqual(sorted(answer.index(heading) for heading in headings), [answer.index(heading) for heading in headings])
+        self.assertIn("ABLESTACK Cloud Diplo(현재 출시판)", answer)
+        self.assertIn("ABLESTACK Cloud Europa(미출시 Preview)", answer)
         self.assertIn("개선이 진행 중", answer)
         self.assertNotIn("Foo.java", answer)
         self.assertNotIn("CLOUD_DIPLO", answer)
+
+    def test_troubleshooting_sections_remain_when_optional_content_is_empty(self) -> None:
+        answer = format_public_answer({
+            "state": "ANSWERED",
+            "report": {
+                "summary": "현상을 확인했습니다.", "observedFacts": [], "diagnoses": [],
+                "recommendedActions": [], "unknowns": [], "currentAssessment": "CURRENT_NORMAL",
+                "previewAssessment": "NOT_APPLICABLE", "previewGuidance": None,
+            },
+            "citations": [],
+        }) or ""
+        self.assertIn("현재 근거에서 확정된 원인은 없습니다.", answer)
+        self.assertIn("별도의 추가 고려사항은 확인되지 않았습니다.", answer)
+        self.assertIn("차기 버전 비교는 적용 대상이 아닙니다.", answer)
 
     def test_versioned_golden_set_has_required_decision_cases(self) -> None:
         source = Path(__file__).parents[1] / "app" / "data" / "versioned-assist-golden-v1.json"
         payload = json.loads(source.read_text(encoding="utf-8"))
         self.assertEqual(payload["caseCount"], len(payload["cases"]))
+        self.assertEqual(["증상", "원인", "해결 방법", "추가 고려사항", "적용 버전"], payload["publicDocumentSections"])
         pairs = {(item["expectedCurrentAssessment"], item["expectedPreviewAssessment"]) for item in payload["cases"]}
         self.assertIn(("CURRENT_DEFECT", "PREVIEW_IMPROVED"), pairs)
         self.assertIn(("CURRENT_DEFECT", "PREVIEW_NOT_FOUND"), pairs)

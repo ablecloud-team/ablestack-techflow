@@ -52,7 +52,8 @@ class CommunityTests(unittest.TestCase):
             "citations": [{"repository": "ablecloud-team/ablestack-docs", "commit": "a" * 40,
                            "path": "docs/test.md", "startLine": 1, "endLine": 3}],
         })
-        self.assertIn("ABLESTACK 기술지원 답변", draft)
+        self.assertIn("ABLESTACK 트러블슈팅 가이드", draft)
+        self.assertIn("### 적용 버전", draft)
         self.assertIn("개선이 진행 중", draft)
         self.assertNotIn("github.com", draft)
         self.assertNotIn("docs/test.md", draft)

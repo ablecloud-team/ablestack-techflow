@@ -4,7 +4,7 @@
 
 Diplo 현재 출시판과 Europa 미출시 프리뷰의 역할을 분리한 전 Source 기술지원 경로와 내부·외부 답변 분리를 구현했다. 일반 Chat 질문과 Community Draft는 사용자용 안전 Projection만 제공하고 승인 담당자의 Chat 상세에는 8개 Source Coverage와 코드 Citation을 제공한다.
 
-AI Gateway `0.11.0`을 Ubuntu 24.04 시험 서버에 배포했다. 최종 Community E2E Discussion #150은 `ANSWERED`, `DRAFT_PENDING`, 안전 Draft 1,810자, 내부 Citation 4개, Coverage 8개를 기록했다. Reviewer Chat 상세에서는 Diplo 2건과 Europa 2건을 확인했고 나머지 6개 Profile은 직접 관련 근거 없음으로 명시됐다.
+AI Gateway `0.11.1`은 공개 답변을 `증상·원인·해결 방법·추가 고려사항·적용 버전` 순서의 트러블슈팅 문서로 표준화한다. Ubuntu 24.04 시험 서버 검증에서도 내부 Evidence Ledger와 외부 문서 분리, 8개 Source Coverage, Diplo 현재판과 Europa Preview 격리 원칙을 그대로 유지한다.
 
 ## 구현 자산
 
@@ -18,7 +18,7 @@ AI Gateway `0.11.0`을 Ubuntu 24.04 시험 서버에 배포했다. 최종 Commun
 
 ```mermaid
 flowchart TB
-    U["사용자 질문"] --> G["TechFlow AI Gateway 0.11.0"]
+    U["사용자 질문"] --> G["TechFlow AI Gateway 0.11.1"]
     G --> D["Docs"]
     G --> C["Diplo Current"]
     G --> O["5 Related Products"]
@@ -39,7 +39,7 @@ flowchart TB
 
 | 항목 | 결과 |
 |---|---:|
-| Python Unit/Contract Test | 158 PASS |
+| Python Unit/Contract Test | 159 PASS |
 | OpenAPI Operation | 33 |
 | Versioned Golden Case | 6 |
 | 현재 오류·프리뷰 개선 Case | 포함 |
@@ -52,17 +52,31 @@ flowchart TB
 | 항목 | 최종 값 |
 |---|---|
 | OS | Ubuntu 24.04 |
-| Root Volume | 1007 GiB, 사용 65 GiB, 여유 892 GiB |
-| AI Gateway Image | `techflow/ai-gateway:issue-62-versioned` |
-| Gateway Version | `0.11.0` |
+| Root Volume | 1005 GiB, 사용 28 GiB, 여유 936 GiB |
+| AI Gateway Image | `techflow/ai-gateway:issue-63-troubleshooting` |
+| Gateway Version | `0.11.1` |
 | Database / Vector | ready / ready |
 | Provider | OpenAI |
 | Gateway / Community Poller | healthy / running |
-| 최종 백업 | `/home/ablecloud/techflow-ai-gateway-backups/issue62-predeploy-20260812T095938Z` |
+| 최종 백업 | `/home/ablecloud/techflow-ai-gateway-backups/troubleshooting-predeploy-20260812T104416Z` |
+
+기존 0.11.0 배포 전 백업도 `/home/ablecloud/techflow-ai-gateway-backups/issue62-predeploy-20260812T095938Z`에 보존되어 있다.
 
 Secret 파일과 값은 복사·출력·문서화하지 않았다. Database Migration은 없으며 기존 `source_metadata` JSON에 Evidence Ledger를 저장한다.
 
 ## E2E 결과
+
+### E2E 0: 트러블슈팅 문서 형식
+
+- Gateway: `0.11.1`, Image `techflow/ai-gateway:issue-63-troubleshooting`
+- 일반 Chat: `ANSWERED`, 1,881자, 필수 Section 5개 순서 검증 PASS
+- Community Discussion: [#151](https://community.ablecloud.io/d/151)
+- Community Case: `9be04737...`, `DRAFT_PENDING / ANSWERED`
+- Community Draft: 1,806자, 필수 Section 5개 순서 검증 PASS
+- Coverage: 8개, 내부 Citation: 4개
+- 외부 저장소·Profile·Commit·경로·라인 노출: 0건
+- `증상 → 원인 → 해결 방법 → 추가 고려사항 → 적용 버전` 순서를 Chat과 Community에서 동일하게 확인
+- 자동 게시·승인: 수행하지 않음
 
 ### E2E 1: 범용 질문 보류
 
@@ -118,4 +132,4 @@ Reviewer 상세에는 Commit·파일·라인 Citation 4개와 `CURRENT_NORMAL / 
 
 ## 완료 판정
 
-Issue #62의 전 Source 검토·Diplo/Europa 비교와 Issue #63의 내부 Ledger·외부 Projection 분리 완료 기준을 충족했다. PR #61은 자동 시험, 실서버 배포, Community·Chat E2E, 동결 서비스 보호, 문서·보고 자산이 모두 갖춰졌으므로 Draft 해제 가능한 상태다.
+Issue #62의 전 Source 검토·Diplo/Europa 비교와 Issue #63의 내부 Ledger·외부 Projection 분리 완료 기준을 충족했다. 사용자 답변은 5개 Section의 트러블슈팅 문서로 표준화했으며 PR #61은 Ready 상태를 유지한다.
