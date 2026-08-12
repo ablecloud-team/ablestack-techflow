@@ -1,0 +1,83 @@
+{
+  "contractVersion": "1.0",
+  "issue": 21,
+  "activepiecesVersion": "0.86.3",
+  "schemaVersion": 22,
+  "gatewayBaseUrl": "http://techflow-ai-gateway:8090",
+  "flows": [
+    {
+      "logicalId": "community-question-draft-v1",
+      "displayName": "TechFlow - Community Question Draft v1",
+      "route": "community-draft",
+      "operations": [
+        {
+          "name": "create_reviewable_draft",
+          "method": "POST",
+          "url": "/v1/community/cases",
+          "body": {
+            "discussionId": "{{trigger['output']['body']['discussionId']}}",
+            "discussionUrl": "{{trigger['output']['body']['discussionUrl']}}",
+            "title": "{{trigger['output']['body']['title']}}",
+            "question": "{{trigger['output']['body']['question']}}",
+            "authorId": "{{trigger['output']['body']['authorId']}}",
+            "tagSlugs": "{{trigger['output']['body']['tagSlugs']}}",
+            "artifactIds": "{{trigger['output']['body']['artifactIds']}}"
+          }
+        }
+      ]
+    },
+    {
+      "logicalId": "community-approve-publish-v1",
+      "displayName": "TechFlow - Community Approve and Publish v1",
+      "route": "community-approve",
+      "operations": [
+        {
+          "name": "approve_draft",
+          "method": "POST",
+          "url": "/v1/community/cases/{{trigger['output']['body']['caseId']}}/decision",
+          "body": {
+            "decision": "APPROVE",
+            "reviewer": "{{trigger['output']['body']['reviewer']}}",
+            "expectedDraftVersion": "{{trigger['output']['body']['expectedDraftVersion']}}",
+            "editedAnswer": "{{trigger['output']['body']['editedAnswer']}}",
+            "note": "{{trigger['output']['body']['note']}}"
+          }
+        },
+        {
+          "name": "publish_approved_answer",
+          "method": "POST",
+          "url": "/v1/community/cases/{{trigger['output']['body']['caseId']}}/publish",
+          "body": {"requestedBy": "{{trigger['output']['body']['reviewer']}}"}
+        }
+      ]
+    },
+    {
+      "logicalId": "community-reject-v1",
+      "displayName": "TechFlow - Community Reject Draft v1",
+      "route": "community-reject",
+      "operations": [
+        {
+          "name": "reject_draft",
+          "method": "POST",
+          "url": "/v1/community/cases/{{trigger['output']['body']['caseId']}}/decision",
+          "body": {
+            "decision": "REJECT",
+            "reviewer": "{{trigger['output']['body']['reviewer']}}",
+            "expectedDraftVersion": "{{trigger['output']['body']['expectedDraftVersion']}}",
+            "note": "{{trigger['output']['body']['note']}}"
+          }
+        }
+      ]
+    }
+  ],
+  "security": {
+    "policyOwner": "techflow-ai-gateway",
+    "reviewer": "dhslove",
+    "automaticApproval": false,
+    "rawSourceInFlowRun": false,
+    "credentialsInBundle": false,
+    "artifactBytesInFlowRun": false,
+    "publishRequiresCurrentApproval": true,
+    "approvalInvalidatedOnDraftChange": true
+  }
+}

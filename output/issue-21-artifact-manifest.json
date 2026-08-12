@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0",
+  "issue": 21,
+  "generatedAt": "2026-08-12T06:10:15.767704+00:00",
+  "artifacts": [
+    {
+      "path": "docs/plans/issue-21-community-assist-design.md",
+      "bytes": 4839,
+      "sha256": "4384b53d7715c2dcb0c3302eb383a73dbeda30700c19d6e99d04067b3240515b"
+    },
+    {
+      "path": "docs/runbooks/community-assist.md",
+      "bytes": 3468,
+      "sha256": "7dfe108ba0c1ecf662fdad13e96aec88168df955b1fa5aa49b0fc6ee344137c4"
+    },
+    {
+      "path": "docs/reports/issue-21-community-assist-validation.md",
+      "bytes": 14674,
+      "sha256": "974b8450d85a3b2d7e4ab8a4383119e9b6b1c8d60537f45272747724781a155b"
+    },
+    {
+      "path": "deploy/compose/activepieces/flows/community-assist-v1.json",
+      "bytes": 2983,
+      "sha256": "634403ea853c8aa1186e7f6c18443215b24f3d5692a63266c87e2f86b5e76a97"
+    },
+    {
+      "path": "services/ai-gateway/openapi/techflow-ai-gateway-v1.json",
+      "bytes": 61077,
+      "sha256": "853b1880938081884767b58717629608bd1da949c86017c92d59be8bdef40469"
+    },
+    {
+      "path": "output/presentation/techflow-community-assist.pptx",
+      "bytes": 34558,
+      "sha256": "343419ed829aef15f134e6b6423672cc620d8e553b589939cd96e23d8c6cde85"
+    },
+    {
+      "path": "output/pdf/techflow-community-assist-presentation.pdf",
+      "bytes": 483023,
+      "sha256": "799c4b2f53e2affa27d6b6e71609d03cf49e098655544a91bd2f203791b24a7a"
+    },
+    {
+      "path": "output/pdf/techflow-community-assist-report.pdf",
+      "bytes": 141042,
+      "sha256": "893bc332d179163fc7ec8e133fa7d4971e14e5e730024e26a5f475403786ea38"
+    }
+  ]
+}

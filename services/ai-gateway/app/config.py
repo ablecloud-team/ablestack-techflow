@@ -32,6 +32,10 @@ class Settings:
     artifact_max_archive_entries: int = 100
     artifact_max_compression_ratio: int = 20
     artifact_max_log_evidence_chars: int = 120_000
+    flarum_base_url: str = "https://community.ablecloud.io"
+    flarum_public_url: str = "https://community.ablecloud.io"
+    flarum_api_key_file: str | None = None
+    community_publish_enabled: bool = False
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -55,6 +59,10 @@ class Settings:
             artifact_max_archive_entries=int(os.getenv("TECHFLOW_ARTIFACT_MAX_ARCHIVE_ENTRIES", "100")),
             artifact_max_compression_ratio=int(os.getenv("TECHFLOW_ARTIFACT_MAX_COMPRESSION_RATIO", "20")),
             artifact_max_log_evidence_chars=int(os.getenv("TECHFLOW_ARTIFACT_MAX_LOG_EVIDENCE_CHARS", "120000")),
+            flarum_base_url=os.getenv("TECHFLOW_FLARUM_BASE_URL", "https://community.ablecloud.io").rstrip("/"),
+            flarum_public_url=os.getenv("TECHFLOW_FLARUM_PUBLIC_URL", "https://community.ablecloud.io").rstrip("/"),
+            flarum_api_key_file=os.getenv("TECHFLOW_FLARUM_API_KEY_FILE") or None,
+            community_publish_enabled=os.getenv("TECHFLOW_COMMUNITY_PUBLISH_ENABLED", "false").lower() == "true",
         )
         settings.validate()
         return settings
@@ -93,6 +101,12 @@ class Settings:
             raise ConfigurationError("TECHFLOW_ARTIFACT_MAX_COMPRESSION_RATIO must be between 1 and 100")
         if not 4096 <= self.artifact_max_log_evidence_chars <= 500_000:
             raise ConfigurationError("TECHFLOW_ARTIFACT_MAX_LOG_EVIDENCE_CHARS must be between 4096 and 500000")
+        if self.flarum_base_url not in {"https://community.ablecloud.io", "http://172.16.0.234"}:
+            raise ConfigurationError("TECHFLOW_FLARUM_BASE_URL must use an approved Community API route")
+        if self.flarum_public_url != "https://community.ablecloud.io":
+            raise ConfigurationError("TECHFLOW_FLARUM_PUBLIC_URL must use the approved HTTPS community origin")
+        if self.community_publish_enabled and not self.flarum_api_key_file:
+            raise ConfigurationError("TECHFLOW_FLARUM_API_KEY_FILE is required when publishing is enabled")
 
     def __repr__(self) -> str:
         return (
@@ -103,7 +117,8 @@ class Settings:
             "database_pool_min={!r}, database_pool_max={!r}, artifact_root=<redacted>, "
             "artifact_retention_hours={!r}, artifact_max_bytes={!r}, artifact_max_extracted_bytes={!r}, "
             "artifact_max_archive_entries={!r}, artifact_max_compression_ratio={!r}, "
-            "artifact_max_log_evidence_chars={!r})"
+            "artifact_max_log_evidence_chars={!r}, flarum_base_url={!r}, flarum_public_url={!r}, "
+            "flarum_api_key_file=<redacted>, community_publish_enabled={!r})"
         ).format(
             self.environment,
             self.store_backend,
@@ -119,4 +134,7 @@ class Settings:
             self.artifact_max_archive_entries,
             self.artifact_max_compression_ratio,
             self.artifact_max_log_evidence_chars,
+            self.flarum_base_url,
+            self.flarum_public_url,
+            self.community_publish_enabled,
         )

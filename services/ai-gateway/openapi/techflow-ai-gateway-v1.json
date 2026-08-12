@@ -3,7 +3,7 @@
   "info": {
     "title": "TechFlow AI Gateway",
     "description": "TechFlow AI Gateway with grounded Responses generation and deterministic retrieval.",
-    "version": "0.8.0"
+    "version": "0.9.0"
   },
   "paths": {
     "/healthz": {
@@ -1104,6 +1104,273 @@
         }
       }
     },
+    "/v1/community/cases": {
+      "post": {
+        "summary": "Create Community Case",
+        "operationId": "createCommunityCase",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommunityCaseCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/community/cases/{caseId}": {
+      "get": {
+        "summary": "Get Community Case",
+        "operationId": "getCommunityCase",
+        "parameters": [
+          {
+            "name": "caseId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Caseid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/community/discussions/{discussionId}/case": {
+      "get": {
+        "summary": "Get Community Case By Discussion",
+        "operationId": "getCommunityCaseByDiscussion",
+        "parameters": [
+          {
+            "name": "discussionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Discussionid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/community/cases/{caseId}/decision": {
+      "post": {
+        "summary": "Decide Community Case",
+        "operationId": "decideCommunityCase",
+        "parameters": [
+          {
+            "name": "caseId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Caseid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommunityDecisionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/community/cases/{caseId}/publish": {
+      "post": {
+        "summary": "Publish Community Case",
+        "operationId": "publishCommunityCase",
+        "parameters": [
+          {
+            "name": "caseId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Caseid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommunityPublishRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/evaluations/runs": {
       "post": {
         "summary": "Create Evaluation Run",
@@ -1316,6 +1583,148 @@
           "correlationId"
         ],
         "title": "ApiMeta"
+      },
+      "CommunityCaseCreateRequest": {
+        "properties": {
+          "discussionId": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$",
+            "title": "Discussionid"
+          },
+          "discussionUrl": {
+            "type": "string",
+            "pattern": "^https://community\\.ablecloud\\.io/d/[A-Za-z0-9._~/-]+$",
+            "title": "Discussionurl"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 3,
+            "title": "Title"
+          },
+          "question": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 3,
+            "title": "Question"
+          },
+          "authorId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_.:@-]{1,128}$",
+            "title": "Authorid"
+          },
+          "tagSlugs": {
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z0-9-]{1,64}$"
+            },
+            "type": "array",
+            "maxItems": 20,
+            "title": "Tagslugs"
+          },
+          "artifactIds": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "maxItems": 5,
+            "title": "Artifactids"
+          },
+          "productVersion": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Productversion"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "discussionId",
+          "discussionUrl",
+          "title",
+          "question",
+          "authorId"
+        ],
+        "title": "CommunityCaseCreateRequest"
+      },
+      "CommunityDecisionRequest": {
+        "properties": {
+          "decision": {
+            "type": "string",
+            "enum": [
+              "APPROVE",
+              "REJECT"
+            ],
+            "title": "Decision"
+          },
+          "reviewer": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_.:@-]{3,128}$",
+            "title": "Reviewer"
+          },
+          "expectedDraftVersion": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expecteddraftversion"
+          },
+          "editedAnswer": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 12000,
+                "minLength": 3
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Editedanswer"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "decision",
+          "reviewer",
+          "expectedDraftVersion"
+        ],
+        "title": "CommunityDecisionRequest"
+      },
+      "CommunityPublishRequest": {
+        "properties": {
+          "requestedBy": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_.:@-]{3,128}$",
+            "title": "Requestedby"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "requestedBy"
+        ],
+        "title": "CommunityPublishRequest"
       },
       "CompatibilityMember": {
         "properties": {

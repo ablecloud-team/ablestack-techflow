@@ -64,23 +64,33 @@
     },
     {
       "path": "0006_orchestration_correlation_down.sql",
-      "sha256": "36ff4a6c8c23485c5c1baa10cdb8c7cd5c0b390d3cd5fc726cc6d3b76ab000b9",
-      "bytes": 251
+      "sha256": "eb8ec06af81032666e820f346312a2bc8df6e4b268f30b02110704698079c7a3",
+      "bytes": 256
     },
     {
       "path": "0006_orchestration_correlation_up.sql",
-      "sha256": "87cfa7d7ba8373b1f886b587e2f9adfcc12c44a063a2f6a12fff2543a7645339",
-      "bytes": 886
+      "sha256": "c2b923eb6dc01fad0d3dc62df3be8ed273fb36f2ab330b7ab65dfd6819cce643",
+      "bytes": 903
     },
     {
       "path": "0007_reindex_fk_performance_down.sql",
-      "sha256": "0afe6165d3a8d978c2c42a6c28b5078f22c7e2976c40ebc29d4f71c7637a545c",
-      "bytes": 102
+      "sha256": "7910dc1527ba4ef4a9915d37c1873e884f21a8a984c35abe2675393f56339e5f",
+      "bytes": 104
     },
     {
       "path": "0007_reindex_fk_performance_up.sql",
-      "sha256": "08cb7df96f17ba47bd4308f9ba2d55eae333fda9b95af46b88c04d340aef9b3e",
-      "bytes": 406
+      "sha256": "b4f8bb0804110ee91789cab80d2fbb32cc79223e42cf6e3c4f8a239925127f7e",
+      "bytes": 415
+    },
+    {
+      "path": "0008_community_assist_down.sql",
+      "sha256": "47f55c788725e7339b2599c03bdf1ca3f37fc47521f714c2ab0fcce71c1e3985",
+      "bytes": 80
+    },
+    {
+      "path": "0008_community_assist_up.sql",
+      "sha256": "8e9ec16f87c60471456d7a49eba4229610e6f9443b7bc83e963009f03c1080b9",
+      "bytes": 1651
     }
   ]
 }

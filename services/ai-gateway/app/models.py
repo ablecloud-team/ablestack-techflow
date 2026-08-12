@@ -177,6 +177,35 @@ class ComprehensiveQueryRequest(StrictModel):
         return self
 
 
+class CommunityCaseCreateRequest(StrictModel):
+    discussion_id: Annotated[str, StringConstraints(pattern=r"^[1-9][0-9]{0,18}$")] = Field(alias="discussionId")
+    discussion_url: Annotated[str, StringConstraints(pattern=r"^https://community\.ablecloud\.io/d/[A-Za-z0-9._~/-]+$")] = Field(alias="discussionUrl")
+    title: Annotated[str, StringConstraints(min_length=3, max_length=200)]
+    question: Annotated[str, StringConstraints(min_length=3, max_length=4000)]
+    author_id: Annotated[str, StringConstraints(pattern=r"^[A-Za-z0-9_.:@-]{1,128}$")] = Field(alias="authorId")
+    tag_slugs: list[Annotated[str, StringConstraints(pattern=r"^[a-z0-9-]{1,64}$")]] = Field(default_factory=list, max_length=20, alias="tagSlugs")
+    artifact_ids: list[UUID] = Field(default_factory=list, max_length=5, alias="artifactIds")
+    product_version: Annotated[str, StringConstraints(min_length=1, max_length=64)] | None = Field(default=None, alias="productVersion")
+
+    @model_validator(mode="after")
+    def unique_artifacts_and_tags(self) -> "CommunityCaseCreateRequest":
+        if len(self.artifact_ids) != len(set(self.artifact_ids)) or len(self.tag_slugs) != len(set(self.tag_slugs)):
+            raise ValueError("artifactIds and tagSlugs must be unique")
+        return self
+
+
+class CommunityDecisionRequest(StrictModel):
+    decision: Literal["APPROVE", "REJECT"]
+    reviewer: Annotated[str, StringConstraints(pattern=r"^[A-Za-z0-9_.:@-]{3,128}$")]
+    expected_draft_version: int = Field(ge=1, alias="expectedDraftVersion")
+    edited_answer: Annotated[str, StringConstraints(min_length=3, max_length=12000)] | None = Field(default=None, alias="editedAnswer")
+    note: Annotated[str, StringConstraints(max_length=1000)] | None = None
+
+
+class CommunityPublishRequest(StrictModel):
+    requested_by: Annotated[str, StringConstraints(pattern=r"^[A-Za-z0-9_.:@-]{3,128}$")] = Field(alias="requestedBy")
+
+
 class EvaluationRunCreateRequest(StrictModel):
     name: Annotated[str, StringConstraints(min_length=3, max_length=128)]
     source_profile_ids: list[SafeId] | None = Field(default=None, min_length=1, max_length=9, alias="sourceProfileIds")
