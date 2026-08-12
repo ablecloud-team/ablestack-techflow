@@ -1080,3 +1080,115 @@ class PostgresStore:
                 "citationCount": row["citation_count"], "latencyMs": row["latency_ms"],
                 "errorCode": row["error_code"],
             } for row in rows]
+
+    @staticmethod
+    def _community_payload(row: dict[str, Any]) -> dict[str, Any]:
+        return {
+            "caseId": row["id"], "discussionId": row["discussion_id"],
+            "discussionUrl": row["discussion_url"], "title": row["title"], "state": row["state"],
+            "draftVersion": row["draft_version"], "draftAnswer": row["draft_answer"],
+            "answerState": row["answer_state"], "citations": row["citations"] or [],
+            "approvalVersion": row["approval_version"], "reviewer": row["reviewer"],
+            "publishedPostId": row["published_post_id"], "publishedPostUrl": row["published_post_url"],
+            "correlationId": row["correlation_id"], "createdAt": row["created_at"], "updatedAt": row["updated_at"],
+        }
+
+    def create_community_case(
+        self, request: dict[str, Any], draft: dict[str, Any], idempotency_key: str, correlation_id: str
+    ) -> dict[str, Any]:
+        with self._pool.connection() as connection:
+            existing = connection.execute(
+                "SELECT * FROM community_case WHERE idempotency_key=%s OR discussion_id=%s ORDER BY created_at LIMIT 1",
+                (idempotency_key, request["discussionId"]),
+            ).fetchone()
+            if existing:
+                return self._community_payload(existing)
+            case_id = uuid4()
+            row = connection.execute(
+                """INSERT INTO community_case
+                   (id,discussion_id,discussion_url,title,state,draft_version,draft_answer,answer_state,citations,
+                    approval_version,correlation_id,idempotency_key,source_metadata)
+                   VALUES (%s,%s,%s,%s,'DRAFT_PENDING',1,%s,%s,%s,0,%s,%s,%s) RETURNING *""",
+                (case_id, request["discussionId"], request["discussionUrl"], request["title"],
+                 draft.get("draftAnswer"), draft.get("answerState"), json.dumps(draft.get("citations") or []),
+                 correlation_id, idempotency_key,
+                 json.dumps({"authorId": request["authorId"], "tagSlugs": request.get("tagSlugs") or []})),
+            ).fetchone()
+            connection.execute(
+                "INSERT INTO community_case_event (id,case_id,event_type,actor,correlation_id,details) VALUES (%s,%s,'DRAFT_CREATED','techflow',%s,%s)",
+                (uuid4(), case_id, correlation_id, json.dumps({"answerState": draft.get("answerState")})),
+            )
+            return self._community_payload(row)
+
+    def get_community_case(self, case_id: UUID) -> dict[str, Any]:
+        with self._pool.connection() as connection:
+            row = connection.execute("SELECT * FROM community_case WHERE id=%s", (case_id,)).fetchone()
+            if not row:
+                raise NotFoundError("community case not found")
+            return self._community_payload(row)
+
+    def get_community_case_by_discussion(self, discussion_id: str) -> dict[str, Any]:
+        with self._pool.connection() as connection:
+            row = connection.execute(
+                "SELECT * FROM community_case WHERE discussion_id=%s", (discussion_id,)
+            ).fetchone()
+            if not row:
+                raise NotFoundError("community case not found")
+            return self._community_payload(row)
+
+    def decide_community_case(self, case_id: UUID, request: dict[str, Any], idempotency_key: str) -> dict[str, Any]:
+        with self._pool.connection() as connection:
+            repeated = connection.execute(
+                "SELECT c.* FROM community_case_event e JOIN community_case c ON c.id=e.case_id WHERE e.idempotency_key=%s",
+                (idempotency_key,),
+            ).fetchone()
+            if repeated:
+                return self._community_payload(repeated)
+            row = connection.execute("SELECT * FROM community_case WHERE id=%s FOR UPDATE", (case_id,)).fetchone()
+            if not row:
+                raise NotFoundError("community case not found")
+            if row["state"] != "DRAFT_PENDING" or row["draft_version"] != request["expectedDraftVersion"]:
+                raise InvalidStateError("draft state or version changed")
+            answer = request.get("editedAnswer") or row["draft_answer"]
+            if request["decision"] == "APPROVE" and not answer:
+                raise InvalidStateError("an answer is required for approval")
+            state = "APPROVED" if request["decision"] == "APPROVE" else "REJECTED"
+            updated = connection.execute(
+                """UPDATE community_case SET state=%s,draft_answer=%s,reviewer=%s,approval_version=approval_version+1,
+                   approved_at=CASE WHEN %s='APPROVED' THEN now() ELSE NULL END,updated_at=now() WHERE id=%s RETURNING *""",
+                (state, answer, request["reviewer"], state, case_id),
+            ).fetchone()
+            connection.execute(
+                """INSERT INTO community_case_event
+                   (id,case_id,event_type,actor,idempotency_key,correlation_id,details)
+                   VALUES (%s,%s,%s,%s,%s,%s,%s)""",
+                (uuid4(), case_id, state, request["reviewer"], idempotency_key, row["correlation_id"],
+                 json.dumps({"draftVersion": row["draft_version"], "note": request.get("note")})),
+            )
+            return self._community_payload(updated)
+
+    def mark_community_published(self, case_id: UUID, publication: dict[str, Any], idempotency_key: str) -> dict[str, Any]:
+        with self._pool.connection() as connection:
+            repeated = connection.execute(
+                "SELECT c.* FROM community_case_event e JOIN community_case c ON c.id=e.case_id WHERE e.idempotency_key=%s",
+                (idempotency_key,),
+            ).fetchone()
+            if repeated:
+                return self._community_payload(repeated)
+            row = connection.execute("SELECT * FROM community_case WHERE id=%s FOR UPDATE", (case_id,)).fetchone()
+            if not row:
+                raise NotFoundError("community case not found")
+            if row["state"] != "APPROVED":
+                raise InvalidStateError("only approved drafts can be published")
+            updated = connection.execute(
+                """UPDATE community_case SET state='PUBLISHED',published_post_id=%s,published_post_url=%s,
+                   published_at=now(),updated_at=now() WHERE id=%s RETURNING *""",
+                (publication["postId"], publication["postUrl"], case_id),
+            ).fetchone()
+            connection.execute(
+                """INSERT INTO community_case_event
+                   (id,case_id,event_type,actor,idempotency_key,correlation_id,details)
+                   VALUES (%s,%s,'PUBLISHED','techflow',%s,%s,%s)""",
+                (uuid4(), case_id, idempotency_key, row["correlation_id"], json.dumps(publication)),
+            )
+            return self._community_payload(updated)

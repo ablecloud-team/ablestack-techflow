@@ -79,6 +79,11 @@ class Store(Protocol):
     ) -> None: ...
     def finish_evaluation_run(self, run_id: UUID, failed: bool = False) -> dict[str, Any]: ...
     def list_evaluation_results(self, run_id: UUID) -> list[dict[str, Any]]: ...
+    def create_community_case(self, request: dict[str, Any], draft: dict[str, Any], idempotency_key: str, correlation_id: str) -> dict[str, Any]: ...
+    def get_community_case(self, case_id: UUID) -> dict[str, Any]: ...
+    def get_community_case_by_discussion(self, discussion_id: str) -> dict[str, Any]: ...
+    def decide_community_case(self, case_id: UUID, request: dict[str, Any], idempotency_key: str) -> dict[str, Any]: ...
+    def mark_community_published(self, case_id: UUID, publication: dict[str, Any], idempotency_key: str) -> dict[str, Any]: ...
 
 
 def utc_now() -> datetime:
@@ -104,6 +109,8 @@ class MemoryStore:
         self._symbols: dict[UUID, Any] = {}
         self._relations: dict[UUID, Any] = {}
         self._provider_calls: list[dict[str, Any]] = []
+        self._community_cases: dict[UUID, dict[str, Any]] = {}
+        self._community_by_discussion: dict[str, UUID] = {}
         self._idempotency: dict[tuple[str, str], dict[str, Any]] = {}
         from .source_registry import list_repositories, mirror_key
 
@@ -680,3 +687,69 @@ class MemoryStore:
             if run_id not in self._evaluation_runs:
                 raise NotFoundError("evaluation run not found")
             return deepcopy(self._evaluation_runs[run_id].get("results", []))
+
+    def create_community_case(
+        self, request: dict[str, Any], draft: dict[str, Any], idempotency_key: str, correlation_id: str
+    ) -> dict[str, Any]:
+        with self._lock:
+            if repeated := self._repeat("create_community_case", idempotency_key):
+                return repeated
+            discussion_id = request["discussionId"]
+            if discussion_id in self._community_by_discussion:
+                return deepcopy(self._community_cases[self._community_by_discussion[discussion_id]])
+            case_id = uuid4()
+            value = {
+                "caseId": case_id, "discussionId": discussion_id, "discussionUrl": request["discussionUrl"],
+                "title": request["title"], "state": "DRAFT_PENDING", "draftVersion": 1,
+                "draftAnswer": draft.get("draftAnswer"), "answerState": draft.get("answerState"),
+                "citations": deepcopy(draft.get("citations") or []), "approvalVersion": 0,
+                "reviewer": None, "publishedPostId": None, "publishedPostUrl": None,
+                "correlationId": correlation_id, "createdAt": utc_now(), "updatedAt": utc_now(),
+            }
+            self._community_cases[case_id] = value
+            self._community_by_discussion[discussion_id] = case_id
+            return self._remember("create_community_case", idempotency_key, value)
+
+    def get_community_case(self, case_id: UUID) -> dict[str, Any]:
+        with self._lock:
+            if case_id not in self._community_cases:
+                raise NotFoundError("community case not found")
+            return deepcopy(self._community_cases[case_id])
+
+    def get_community_case_by_discussion(self, discussion_id: str) -> dict[str, Any]:
+        with self._lock:
+            case_id = self._community_by_discussion.get(discussion_id)
+            if not case_id:
+                raise NotFoundError("community case not found")
+            return deepcopy(self._community_cases[case_id])
+
+    def decide_community_case(self, case_id: UUID, request: dict[str, Any], idempotency_key: str) -> dict[str, Any]:
+        with self._lock:
+            if repeated := self._repeat("decide_community_case", idempotency_key):
+                return repeated
+            value = self._community_cases.get(case_id)
+            if not value:
+                raise NotFoundError("community case not found")
+            if value["state"] != "DRAFT_PENDING" or value["draftVersion"] != request["expectedDraftVersion"]:
+                raise InvalidStateError("draft state or version changed")
+            if request["decision"] == "APPROVE" and not (request.get("editedAnswer") or value.get("draftAnswer")):
+                raise InvalidStateError("an answer is required for approval")
+            value["state"] = "APPROVED" if request["decision"] == "APPROVE" else "REJECTED"
+            value["draftAnswer"] = request.get("editedAnswer") or value.get("draftAnswer")
+            value["reviewer"] = request["reviewer"]
+            value["approvalVersion"] += 1
+            value["updatedAt"] = utc_now()
+            return self._remember("decide_community_case", idempotency_key, value)
+
+    def mark_community_published(self, case_id: UUID, publication: dict[str, Any], idempotency_key: str) -> dict[str, Any]:
+        with self._lock:
+            if repeated := self._repeat("publish_community_case", idempotency_key):
+                return repeated
+            value = self._community_cases.get(case_id)
+            if not value:
+                raise NotFoundError("community case not found")
+            if value["state"] != "APPROVED":
+                raise InvalidStateError("only approved drafts can be published")
+            value.update(state="PUBLISHED", publishedPostId=publication["postId"],
+                         publishedPostUrl=publication["postUrl"], updatedAt=utc_now())
+            return self._remember("publish_community_case", idempotency_key, value)

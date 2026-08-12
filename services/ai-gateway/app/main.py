@@ -20,6 +20,9 @@ from .models import (
     ApiMeta,
     CompatibilitySetCreateRequest,
     ComprehensiveQueryRequest,
+    CommunityCaseCreateRequest,
+    CommunityDecisionRequest,
+    CommunityPublishRequest,
     Envelope,
     EvaluationExecuteRequest,
     EvaluationRunCreateRequest,
@@ -51,9 +54,10 @@ from .responses import (
 from .source_fetcher import FetchError, GitSnapshotFetcher, SnapshotFetcher
 from .source_pipeline import SourcePipeline
 from .source_registry import get_profile
-from .store import InvalidBoundaryError, MemoryStore, Store, StoreError
+from .store import InvalidBoundaryError, InvalidStateError, MemoryStore, Store, StoreError
 from .artifacts import ArtifactStore
 from .comprehensive import plan_query
+from .community import FlarumClient, format_draft, profiles_for_tags
 
 
 CORRELATION_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:-]{7,127}$")
@@ -131,6 +135,12 @@ def create_app(
         max_archive_entries=runtime_settings.artifact_max_archive_entries,
         max_compression_ratio=runtime_settings.artifact_max_compression_ratio,
         max_log_evidence_chars=runtime_settings.artifact_max_log_evidence_chars,
+    )
+    flarum_client = FlarumClient(
+        runtime_settings.flarum_base_url,
+        runtime_settings.flarum_public_url,
+        runtime_settings.flarum_api_key_file,
+        runtime_settings.community_publish_enabled,
     )
 
     @asynccontextmanager
@@ -502,6 +512,69 @@ def create_app(
     @application.post("/v1/assist/query", response_model=Envelope, operation_id="queryAssist")
     def query_assist(request: ComprehensiveQueryRequest, correlation_id: Annotated[str, Depends(_correlation_id)]) -> Envelope:
         return _envelope(_query_comprehensive(request, correlation_id), correlation_id)
+
+    @application.post(
+        "/v1/community/cases", response_model=Envelope, status_code=status.HTTP_201_CREATED,
+        operation_id="createCommunityCase",
+    )
+    def create_community_case(
+        request: CommunityCaseCreateRequest,
+        correlation_id: Annotated[str, Depends(_correlation_id)],
+        idempotency_key: Annotated[str, Depends(_idempotency_key)],
+    ) -> Envelope:
+        profiles = profiles_for_tags(request.tag_slugs)
+        assist_request = ComprehensiveQueryRequest(
+            queryId=uuid4(), question=f"{request.title}\n\n{request.question}", actorId=f"community:{request.author_id}",
+            productVersion=request.product_version, sourceProfileIds=[profiles[0]], artifactIds=request.artifact_ids,
+            locale="ko-KR", classification="D0",
+        )
+        result = _query_comprehensive(assist_request, correlation_id)
+        draft = {"draftAnswer": format_draft(result), "answerState": result.get("state"),
+                 "citations": result.get("citations") or []}
+        return _envelope(
+            runtime_store.create_community_case(_model_data(request), draft, idempotency_key, correlation_id),
+            correlation_id,
+        )
+
+    @application.get("/v1/community/cases/{caseId}", response_model=Envelope, operation_id="getCommunityCase")
+    def get_community_case(caseId: UUID, correlation_id: Annotated[str, Depends(_correlation_id)]) -> Envelope:
+        return _envelope(runtime_store.get_community_case(caseId), correlation_id)
+
+    @application.get(
+        "/v1/community/discussions/{discussionId}/case",
+        response_model=Envelope,
+        operation_id="getCommunityCaseByDiscussion",
+    )
+    def get_community_case_by_discussion(
+        discussionId: str, correlation_id: Annotated[str, Depends(_correlation_id)]
+    ) -> Envelope:
+        return _envelope(runtime_store.get_community_case_by_discussion(discussionId), correlation_id)
+
+    @application.post("/v1/community/cases/{caseId}/decision", response_model=Envelope, operation_id="decideCommunityCase")
+    def decide_community_case(
+        caseId: UUID, request: CommunityDecisionRequest,
+        correlation_id: Annotated[str, Depends(_correlation_id)],
+        idempotency_key: Annotated[str, Depends(_idempotency_key)],
+    ) -> Envelope:
+        return _envelope(runtime_store.decide_community_case(caseId, _model_data(request), idempotency_key), correlation_id)
+
+    @application.post("/v1/community/cases/{caseId}/publish", response_model=Envelope, operation_id="publishCommunityCase")
+    def publish_community_case(
+        caseId: UUID, request: CommunityPublishRequest,
+        correlation_id: Annotated[str, Depends(_correlation_id)],
+        idempotency_key: Annotated[str, Depends(_idempotency_key)],
+    ) -> Envelope:
+        current = runtime_store.get_community_case(caseId)
+        if current["state"] == "PUBLISHED":
+            current["requestedBy"] = request.requested_by
+            return _envelope(current, correlation_id)
+        if current["state"] != "APPROVED":
+            raise InvalidStateError("only approved drafts can be published")
+        marker = f"<!-- techflow-case:{caseId}:approval:{current['approvalVersion']} -->"
+        publication = flarum_client.publish_reply(current["discussionId"], current["draftAnswer"], marker)
+        result = runtime_store.mark_community_published(caseId, publication, idempotency_key)
+        result["requestedBy"] = request.requested_by
+        return _envelope(result, correlation_id)
 
     @application.post("/v1/evaluations/runs", response_model=Envelope, status_code=status.HTTP_202_ACCEPTED, operation_id="createEvaluationRun")
     def create_evaluation_run(

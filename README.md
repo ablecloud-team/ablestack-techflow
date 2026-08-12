@@ -1,5 +1,12 @@
 # ABLESTACK TechFlow
 
+## Issue #21 Community 질문 답변·승인
+
+Flarum Community의 새 ABLESTACK 질문을 수집해 문서·소스코드·이미지·로그 근거 기반 초안을 만들고, 담당자가 현재 Draft Version을 승인한 경우에만 `AI-Assistant` 계정으로 게시합니다. Activepieces는 질문 수집·승인·게시 순서를 실행하고 AI Gateway가 상태·멱등성·감사와 승인 강제를 소유합니다.
+
+- [Community Assist 설계](docs/plans/issue-21-community-assist-design.md)
+- [Community Assist 운영 Runbook](docs/runbooks/community-assist.md)
+
 ## Issues #56~#58 종합·멀티모달·로그 Assist
 
 TechFlow AI Gateway 0.8.0은 ABLESTACK 질문을 영역별로 계획하고, 승인된 Compatibility Set으로 여러 저장소의 문서·소스코드를 결합하며, PNG/JPEG/WebP 화면과 일반·ZIP·GZIP·TAR.GZ 로그를 함께 분석해 관찰·진단·권장 조치·미확인 사항을 분리한 기술지원 보고서를 생성합니다. 압축 로그는 경로 탈출·압축 폭탄·중첩 압축을 차단하고 비밀정보를 마스킹한 오류 주변 구간만 AI에 전달합니다. Cloud 브랜치나 호환성 범위가 불명확하면 생성 전에 추가 정보를 요청합니다.

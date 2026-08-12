@@ -316,7 +316,7 @@ class ApiContractTest(unittest.TestCase):
         self.assertEqual("HEALTHY", cloud["state"])
         self.assertEqual("a" * 40, cloud["lastHeadCommit"])
 
-    def test_openapi_contains_twenty_seven_operations(self) -> None:
+    def test_openapi_contains_thirty_two_operations(self) -> None:
         schema = self.client.get("/openapi.json").json()
         operations = [
             operation
@@ -324,8 +324,8 @@ class ApiContractTest(unittest.TestCase):
             for method, operation in path.items()
             if method.lower() in {"get", "post", "delete", "put", "patch"}
         ]
-        self.assertEqual(27, len(operations))
-        self.assertEqual(27, len({operation["operationId"] for operation in operations}))
+        self.assertEqual(32, len(operations))
+        self.assertEqual(32, len({operation["operationId"] for operation in operations}))
 
     def test_all_responses_disable_cache_and_echo_correlation(self) -> None:
         response = self.client.get("/v1/jobs/00000000-0000-0000-0000-000000000000", headers={"X-Correlation-Id": CORRELATION})

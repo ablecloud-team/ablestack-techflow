@@ -35,6 +35,18 @@ class SettingsTest(unittest.TestCase):
         with self.assertRaises(ConfigurationError):
             Settings(classification="D1").validate()
 
+    def test_internal_flarum_api_route_keeps_public_https_origin(self) -> None:
+        Settings(
+            flarum_base_url="http://172.16.0.234",
+            flarum_public_url="https://community.ablecloud.io",
+        ).validate()
+
+    def test_unapproved_flarum_routes_are_rejected(self) -> None:
+        with self.assertRaises(ConfigurationError):
+            Settings(flarum_base_url="http://example.invalid").validate()
+        with self.assertRaises(ConfigurationError):
+            Settings(flarum_public_url="http://172.16.0.234").validate()
+
     def test_repr_redacts_dsn(self) -> None:
         value = repr(Settings(database_dsn="postgresql://user:runtime-value@db/name"))
         self.assertNotIn("runtime-value", value)

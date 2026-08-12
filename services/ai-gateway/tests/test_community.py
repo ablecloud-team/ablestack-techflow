@@ -1,0 +1,139 @@
+from __future__ import annotations
+
+import json
+from pathlib import Path
+import tempfile
+import unittest
+from unittest.mock import patch
+from uuid import UUID
+
+from fastapi.testclient import TestClient
+
+from app.community import FlarumClient, format_draft, profiles_for_tags
+from app.config import Settings
+from app.main import create_app
+from app.store import MemoryStore
+
+
+HEADERS = {"X-Correlation-Id": "community-test-0001", "Idempotency-Key": "community-test-idempotency-0001"}
+
+
+class FakeResponse:
+    def __init__(self, payload: dict) -> None:
+        self.payload = payload
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_):
+        return False
+
+    def read(self) -> bytes:
+        return json.dumps(self.payload).encode()
+
+
+class CommunityTests(unittest.TestCase):
+    def payload(self) -> dict:
+        return {
+            "discussionId": "901", "discussionUrl": "https://community.ablecloud.io/d/901",
+            "title": "VM 배포가 실패합니다", "question": "어떤 로그를 확인해야 하나요?",
+            "authorId": "42", "tagSlugs": ["mold"], "artifactIds": [],
+        }
+
+    def test_tag_mapping_is_deterministic(self) -> None:
+        self.assertEqual(["CLOUD_EUROPA", "SHARED_DOCS"], profiles_for_tags(["mold", "cube", "mold"]))
+        self.assertEqual(["SHARED_DOCS"], profiles_for_tags(["unknown-tag"]))
+
+    def test_format_draft_contains_grounding_and_review_notice(self) -> None:
+        draft = format_draft({
+            "state": "ANSWERED", "report": {"summary": "원인을 확인했습니다.", "observedFacts": ["오류가 있습니다."]},
+            "citations": [{"repository": "ablecloud-team/ablestack-docs", "commit": "a" * 40,
+                           "path": "docs/test.md", "startLine": 1, "endLine": 3}],
+        })
+        self.assertIn("AI 답변 초안", draft)
+        self.assertIn("#L1-L3", draft)
+        self.assertIn("검토·승인", draft)
+
+    def test_case_requires_approval_before_publish(self) -> None:
+        client = TestClient(create_app(Settings(), MemoryStore()))
+        created = client.post("/v1/community/cases", headers=HEADERS, json=self.payload())
+        self.assertEqual(201, created.status_code)
+        case = created.json()["data"]
+        self.assertEqual("DRAFT_PENDING", case["state"])
+        by_discussion = client.get("/v1/community/discussions/901/case", headers=HEADERS)
+        self.assertEqual(case["caseId"], by_discussion.json()["data"]["caseId"])
+        publish = client.post(
+            f"/v1/community/cases/{case['caseId']}/publish",
+            headers={**HEADERS, "Idempotency-Key": "community-publish-before-approval"},
+            json={"requestedBy": "dhslove"},
+        )
+        self.assertEqual(409, publish.status_code)
+
+    def test_edited_answer_can_be_approved_but_disabled_publish_fails_closed(self) -> None:
+        client = TestClient(create_app(Settings(), MemoryStore()))
+        case = client.post("/v1/community/cases", headers=HEADERS, json=self.payload()).json()["data"]
+        approved = client.post(
+            f"/v1/community/cases/{case['caseId']}/decision",
+            headers={**HEADERS, "Idempotency-Key": "community-approve-idempotency-0001"},
+            json={"decision": "APPROVE", "reviewer": "dhslove", "expectedDraftVersion": 1,
+                  "editedAnswer": "담당자가 검토한 답변입니다.", "note": "test"},
+        )
+        self.assertEqual("APPROVED", approved.json()["data"]["state"])
+        publish = client.post(
+            f"/v1/community/cases/{case['caseId']}/publish",
+            headers={**HEADERS, "Idempotency-Key": "community-publish-idempotency-0001"},
+            json={"requestedBy": "dhslove"},
+        )
+        self.assertEqual(400, publish.status_code)
+
+    def test_rejected_case_cannot_publish(self) -> None:
+        client = TestClient(create_app(Settings(), MemoryStore()))
+        case = client.post("/v1/community/cases", headers=HEADERS, json=self.payload()).json()["data"]
+        rejected = client.post(
+            f"/v1/community/cases/{case['caseId']}/decision",
+            headers={**HEADERS, "Idempotency-Key": "community-reject-idempotency-0001"},
+            json={"decision": "REJECT", "reviewer": "dhslove", "expectedDraftVersion": 1, "note": "unsafe"},
+        )
+        self.assertEqual("REJECTED", rejected.json()["data"]["state"])
+
+    def test_already_published_case_is_returned_without_reposting(self) -> None:
+        store = MemoryStore()
+        client = TestClient(create_app(Settings(), store))
+        case = client.post("/v1/community/cases", headers=HEADERS, json=self.payload()).json()["data"]
+        client.post(
+            f"/v1/community/cases/{case['caseId']}/decision",
+            headers={**HEADERS, "Idempotency-Key": "community-approve-replay-test"},
+            json={"decision": "APPROVE", "reviewer": "dhslove", "expectedDraftVersion": 1,
+                  "editedAnswer": "검토된 답변", "note": "test"},
+        )
+        store.mark_community_published(
+            UUID(case["caseId"]),
+            {"postId": "311", "postUrl": "https://community.ablecloud.io/d/142/311"},
+            "community-published-replay-test",
+        )
+        repeated = client.post(
+            f"/v1/community/cases/{case['caseId']}/publish",
+            headers={**HEADERS, "Idempotency-Key": "community-publish-replay-test"},
+            json={"requestedBy": "dhslove"},
+        )
+        self.assertEqual(200, repeated.status_code)
+        self.assertEqual("311", repeated.json()["data"]["publishedPostId"])
+
+    def test_flarum_publish_reuses_marker(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            key_file = Path(directory) / "key"
+            key_file.write_text("a" * 40)
+            client = FlarumClient(
+                "http://172.16.0.234", "https://community.ablecloud.io", str(key_file), True
+            )
+            with patch("urllib.request.urlopen", return_value=FakeResponse({
+                "data": [{"id": "77", "attributes": {"contentHtml": "<!-- marker -->"}}]
+            })) as opened:
+                result = client.publish_reply("901", "answer", "<!-- marker -->")
+            self.assertTrue(result["reused"])
+            self.assertTrue(result["postUrl"].startswith("https://community.ablecloud.io/"))
+            self.assertEqual(1, opened.call_count)
+
+
+if __name__ == "__main__":
+    unittest.main()

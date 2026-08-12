@@ -91,6 +91,21 @@ services:
     restart: "no"
     network_mode: none
 
+  community-poller-init:
+    image: techflow/ai-gateway:${TECHFLOW_RAG_RELEASE:-issue-21}
+    build:
+      context: ../../../services/ai-gateway
+    user: "0:0"
+    command: ["sh", "-c", "chown 10001:10001 /var/lib/techflow-community-poller && chmod 0700 /var/lib/techflow-community-poller"]
+    volumes:
+      - techflow_community_poller:/var/lib/techflow-community-poller
+    read_only: true
+    cap_drop: ["ALL"]
+    cap_add: ["CHOWN", "FOWNER"]
+    security_opt: ["no-new-privileges:true"]
+    restart: "no"
+    network_mode: none
+
   gateway:
     image: techflow/ai-gateway:${TECHFLOW_RAG_RELEASE:-issue-46}
     build:
@@ -114,9 +129,14 @@ services:
       TECHFLOW_ARTIFACT_MAX_ARCHIVE_ENTRIES: "100"
       TECHFLOW_ARTIFACT_MAX_COMPRESSION_RATIO: "20"
       TECHFLOW_ARTIFACT_MAX_LOG_EVIDENCE_CHARS: "120000"
+      TECHFLOW_FLARUM_BASE_URL: ${TECHFLOW_FLARUM_BASE_URL:-https://community.ablecloud.io}
+      TECHFLOW_FLARUM_PUBLIC_URL: ${TECHFLOW_FLARUM_PUBLIC_URL:-https://community.ablecloud.io}
+      TECHFLOW_FLARUM_API_KEY_FILE: /run/secrets/flarum_api_key
+      TECHFLOW_COMMUNITY_PUBLISH_ENABLED: ${TECHFLOW_COMMUNITY_PUBLISH_ENABLED:-false}
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8090", "--no-access-log"]
     secrets:
       - app_password
+      - flarum_api_key
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -170,6 +190,35 @@ services:
     security_opt:
       - no-new-privileges:true
 
+  community-poller:
+    image: techflow/ai-gateway:${TECHFLOW_RAG_RELEASE:-issue-21}
+    restart: unless-stopped
+    environment:
+      TECHFLOW_FLARUM_BASE_URL: ${TECHFLOW_FLARUM_BASE_URL:-https://community.ablecloud.io}
+      TECHFLOW_FLARUM_PUBLIC_URL: ${TECHFLOW_FLARUM_PUBLIC_URL:-https://community.ablecloud.io}
+      TECHFLOW_FLARUM_API_KEY_FILE: /run/secrets/flarum_api_key
+      TECHFLOW_COMMUNITY_INGEST_WEBHOOK_FILE: /run/secrets/community_ingest_webhook
+      TECHFLOW_COMMUNITY_POLL_INTERVAL_SECONDS: ${TECHFLOW_COMMUNITY_POLL_INTERVAL_SECONDS:-60}
+      TECHFLOW_GATEWAY_URL: http://gateway:8090
+      TECHFLOW_COMMUNITY_POLLER_STATE: /var/lib/techflow-community-poller/state.json
+    command: ["python", "scripts/poll_flarum.py"]
+    depends_on:
+      community-poller-init:
+        condition: service_completed_successfully
+    secrets:
+      - flarum_api_key
+      - community_ingest_webhook
+    networks:
+      - rag_edge
+      - ap_automation
+    volumes:
+      - techflow_community_poller:/var/lib/techflow-community-poller
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    cap_drop: ["ALL"]
+    security_opt: ["no-new-privileges:true"]
+
 networks:
   rag_internal:
     internal: true
@@ -183,6 +232,7 @@ volumes:
   techflow_rag_database:
   techflow_source_mirrors:
   techflow_artifacts:
+  techflow_community_poller:
 
 secrets:
   bootstrap_password:
@@ -193,3 +243,7 @@ secrets:
     file: ${TECHFLOW_RAG_MIGRATION_PASSWORD_FILE:?set migration password file}
   fetcher_password:
     file: ${TECHFLOW_RAG_FETCHER_PASSWORD_FILE:?set fetcher password file}
+  flarum_api_key:
+    file: ${TECHFLOW_FLARUM_API_KEY_SECRET_FILE:?set Flarum API key file}
+  community_ingest_webhook:
+    file: ${TECHFLOW_COMMUNITY_INGEST_WEBHOOK_SECRET_FILE:?set Community ingest webhook file}
