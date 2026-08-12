@@ -1,14 +1,26 @@
 from __future__ import annotations
 
 import json
+from contextlib import redirect_stdout
+from io import StringIO
+from pathlib import Path
+import tempfile
 import unittest
+from unittest.mock import MagicMock, patch
 from urllib.parse import urlencode
 
 from fastapi.testclient import TestClient
 
-from app.chat_assist import case_card, parse_chat_event, parse_command
+from app.chat_assist import (
+    SynologyBotClient,
+    case_card,
+    case_evidence_text,
+    case_text,
+    parse_chat_event,
+    parse_command,
+)
 from app.config import Settings
-from app.main import create_app
+from app.main import _json_log, create_app
 from app.store import MemoryStore
 
 
@@ -67,9 +79,37 @@ def form(text: str, *, username: str = "ceo", token: str = "runtime-chat-token",
 
 
 class ChatParsingTest(unittest.TestCase):
+    def test_notification_log_is_structured_stdout(self) -> None:
+        output = StringIO()
+        with redirect_stdout(output):
+            _json_log("community_chat_notification_sent", caseId="safe-case", reviewerCount=1)
+        self.assertEqual({
+            "event": "community_chat_notification_sent",
+            "caseId": "safe-case",
+            "reviewerCount": 1,
+        }, json.loads(output.getvalue()))
+
+    def test_proactive_message_uses_chatbot_method(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            token_file = Path(directory, "token")
+            token_file.write_text("runtime-chat-token-value-123456", encoding="utf-8")
+            response = MagicMock()
+            response.__enter__.return_value.read.return_value = b'{"success":true}'
+            with patch("app.chat_assist.urllib.request.urlopen", return_value=response) as send:
+                SynologyBotClient("https://chat.ablecloud.io", str(token_file), True).send(
+                    ["19"], {"text": "new Community review"}
+                )
+            request = send.call_args.args[0]
+            self.assertIn("method=chatbot", request.full_url)
+            self.assertNotIn("method=incoming", request.full_url)
+
     def test_form_event_and_korean_command(self) -> None:
         event = parse_chat_event("application/x-www-form-urlencoded", form("수정 abcdef12 1 최종 답변입니다"))
         self.assertEqual(("edit", ["abcdef12", "1", "최종 답변입니다"]), parse_command(event))
+
+    def test_evidence_command_is_explicit(self) -> None:
+        event = parse_chat_event("application/x-www-form-urlencoded", form("근거 abcdef12"))
+        self.assertEqual(("evidence", ["abcdef12"]), parse_command(event))
 
     def test_interactive_action(self) -> None:
         payload = {
@@ -93,6 +133,29 @@ class ChatParsingTest(unittest.TestCase):
         card = case_card(case)
         names = [item["name"] for item in card["attachments"][0]["actions"]]
         self.assertEqual(["detail", "approve", "reject"], names)
+
+    def test_detail_hides_evidence_and_explicit_evidence_renders_it(self) -> None:
+        store = MemoryStore()
+        case = store.create_community_case(
+            {"discussionId": "903", "discussionUrl": "https://community.ablecloud.io/d/903",
+             "title": "콘솔 질문", "authorId": "1", "tagSlugs": []},
+            {"draftAnswer": "QEMU VNC 상태를 확인합니다.", "answerState": "ANSWERED",
+             "citations": [{"repository": "qemu-project/qemu", "path": "qemu-qmp-ref.html",
+                            "startLine": 1, "endLine": 1, "commit": "a" * 64}],
+             "evidenceLedger": {"coverage": [{"sourceProfileId": "CURATED_PLATFORM_REFERENCE",
+                                                "role": "CURRENT_PLATFORM_REFERENCE",
+                                                "state": "EVIDENCE_FOUND", "evidenceCount": 1}],
+                                "currentAssessment": "CURRENT_RUNTIME_ISSUE",
+                                "previewAssessment": "NOT_APPLICABLE"}},
+            "chat-evidence-idempotency-0001", "chat-evidence-correlation",
+        )
+        detail = case_text(case)
+        self.assertIn("QEMU VNC 상태", detail)
+        self.assertNotIn("Citation", detail)
+        self.assertNotIn("CURATED_PLATFORM_REFERENCE", detail)
+        evidence = case_evidence_text(case)
+        self.assertIn("Citation 1개", evidence)
+        self.assertIn("CURATED_PLATFORM_REFERENCE", evidence)
 
 
 class ChatEndpointTest(unittest.TestCase):
@@ -142,7 +205,9 @@ class ChatEndpointTest(unittest.TestCase):
         )
         self.assertEqual(201, response.status_code)
         self.assertEqual(["7"], self.bot.sent[0][0])
+        self.assertIn("새 Community 글이 등록", self.bot.sent[0][1]["text"])
         self.assertIn("새 Community 질문", self.bot.sent[0][1]["text"])
+        self.assertNotIn("Citation", json.dumps(self.bot.sent[0][1], ensure_ascii=False))
         self.assertEqual(["detail", "reject"], [
             action["name"] for action in self.bot.sent[0][1]["attachments"][0]["actions"]
         ])
@@ -153,6 +218,17 @@ class ChatEndpointTest(unittest.TestCase):
         self.assertEqual(200, response.status_code)
         self.assertIn("PUBLISHED", response.json()["text"])
         self.assertEqual("chat:ceo", self.store.get_community_case(self.case["caseId"])["reviewer"])
+
+    def test_detail_hides_evidence_and_evidence_command_requires_reviewer(self) -> None:
+        reference = str(self.case["caseId"])[:8]
+        detail = self.post(form(f"상세 {reference}"))
+        self.assertEqual(200, detail.status_code)
+        self.assertNotIn("Citation", json.dumps(detail.json(), ensure_ascii=False))
+        evidence = self.post(form(f"근거 {reference}"))
+        self.assertEqual(200, evidence.status_code)
+        self.assertIn("Community 내부 근거", evidence.json()["text"])
+        denied = self.post(form(f"근거 {reference}", username="other"))
+        self.assertEqual(403, denied.status_code)
 
     def test_unauthorized_username_is_denied(self) -> None:
         response = self.post(form("대기", username="other"))

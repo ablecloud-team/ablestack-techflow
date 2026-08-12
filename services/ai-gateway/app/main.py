@@ -60,6 +60,7 @@ from .artifacts import ArtifactStore
 from .comprehensive import plan_query
 from .community import FlarumClient, format_draft, profiles_for_tags
 from .versioned_assist import (
+    CURATED_PLATFORM_PROFILE,
     SOURCE_ROLES,
     VERSIONED_SOURCE_PROFILES,
     coverage_payload,
@@ -69,11 +70,13 @@ from .versioned_assist import (
     select_context_results,
     versioned_plan,
 )
+from .platform_references import curated_platform_results
 from .chat_assist import (
     CASE_REFERENCE,
     CommunityFlowClient,
     SynologyBotClient,
     case_card,
+    case_evidence_text,
     case_reference,
     case_text,
     help_text,
@@ -89,7 +92,7 @@ logger = logging.getLogger("techflow.ai_gateway")
 
 def _json_log(event: str, **fields: object) -> None:
     safe = {"event": event, **fields}
-    logger.info(json.dumps(safe, ensure_ascii=True, separators=(",", ":")))
+    print(json.dumps(safe, ensure_ascii=True, separators=(",", ":")), flush=True)
 
 
 MANUAL_REVIEW_ERROR_CODES = {"CONFLICT", "INVALID_STATE", "SOURCE_HEAD_MOVED"}
@@ -146,6 +149,7 @@ def create_app(
 ) -> FastAPI:
     runtime_settings = settings or Settings.from_env()
     runtime_settings.validate()
+    logger.setLevel(getattr(logging, runtime_settings.log_level, logging.INFO))
     runtime_store = store or _build_store(runtime_settings)
     runtime_embeddings = embeddings_adapter or build_embedding_adapter(runtime_settings)
     runtime_responses = responses_adapter or build_responses_adapter(runtime_settings)
@@ -540,6 +544,9 @@ def create_app(
             results_by_profile: dict[str, list[dict[str, Any]]] = {}
             provider_called = embedding_result.provider == "openai"
             for profile_id in VERSIONED_SOURCE_PROFILES:
+                if profile_id == CURATED_PLATFORM_PROFILE:
+                    results_by_profile[profile_id] = curated_platform_results(request.question)
+                    continue
                 retrieval_request = QueryRequest(
                     queryId=request.query_id, question=retrieval_question, sourceProfileIds=[profile_id],
                     locale=request.locale, classification=request.classification,
@@ -607,14 +614,29 @@ def create_app(
                  "citations": result.get("citations") or [], "evidenceLedger": evidence_ledger(result)}
         result = runtime_store.create_community_case(_model_data(request), draft, idempotency_key, correlation_id)
         if runtime_settings.chat_bot_enabled and result.pop("created", False):
-            try:
-                reviewer_ids = [item["userId"] for item in runtime_store.list_chat_reviewers()]
-                runtime_chat_bot.send(reviewer_ids, case_card(result))
-            except Exception as exc:
+            reviewer_ids = [item["userId"] for item in runtime_store.list_chat_reviewers()]
+            if not reviewer_ids:
                 _json_log(
-                    "community_chat_notification_failed", correlationId=correlation_id,
-                    caseId=str(result["caseId"]), errorType=type(exc).__name__,
+                    "community_chat_notification_skipped", correlationId=correlation_id,
+                    caseId=str(result["caseId"]), reason="no_connected_reviewer",
                 )
+            else:
+                for attempt in range(1, 4):
+                    try:
+                        runtime_chat_bot.send(reviewer_ids, case_card(result, new_notification=True))
+                        _json_log(
+                            "community_chat_notification_sent", correlationId=correlation_id,
+                            caseId=str(result["caseId"]), reviewerCount=len(reviewer_ids), attempt=attempt,
+                        )
+                        break
+                    except Exception as exc:
+                        if attempt == 3:
+                            _json_log(
+                                "community_chat_notification_failed", correlationId=correlation_id,
+                                caseId=str(result["caseId"]), errorType=type(exc).__name__, attempts=attempt,
+                            )
+                        else:
+                            time.sleep(0.2 * attempt)
         else:
             result.pop("created", None)
         return _envelope(result, correlation_id)
@@ -674,7 +696,7 @@ def create_app(
                 f"• {case_reference(item)} · Discussion #{item['discussionId']} · V{item['draftVersion']} · "
                 f"{item.get('answerState') or '-'} · {item['title']}"
             )
-        lines.append("상세 <Case 앞 8자> 명령으로 답변과 Citation을 확인하세요.")
+        lines.append("상세 <Case 앞 8자> 명령으로 답변을 확인하세요. 내부 근거는 근거 <Case 앞 8자> 명령에서만 표시됩니다.")
         return {"text": "\n".join(lines)[:7000]}
 
     async def _wait_for_case(case_id: UUID, desired: set[str], timeout_seconds: float = 15.0) -> dict[str, Any]:
@@ -695,7 +717,7 @@ def create_app(
             runtime_chat_bot.validate(event.token)
             allowed = {item.casefold() for item in runtime_settings.chat_reviewer_usernames}
             command, args = parse_command(event)
-            reviewer_commands = {"connect", "pending", "detail", "history", "approve", "reject", "edit"}
+            reviewer_commands = {"connect", "pending", "detail", "evidence", "history", "approve", "reject", "edit"}
             if command in reviewer_commands and event.username.casefold() not in allowed:
                 return JSONResponse(status_code=403, content={"text": "승인 권한이 없는 Chat 사용자입니다."})
             if command in reviewer_commands:
@@ -711,6 +733,10 @@ def create_app(
                 if len(args) != 1:
                     return JSONResponse(content={"text": "사용법: 상세 <Discussion ID 또는 Case 앞 8자>"})
                 return JSONResponse(content=case_card(_resolve_chat_case(args[0])))
+            if command == "evidence":
+                if len(args) != 1:
+                    return JSONResponse(content={"text": "사용법: 근거 <Discussion ID 또는 Case 앞 8자>"})
+                return JSONResponse(content={"text": case_evidence_text(_resolve_chat_case(args[0]))})
             if command == "history":
                 if not args:
                     cases = runtime_store.list_community_cases(None, 10)

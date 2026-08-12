@@ -2,6 +2,14 @@
 
 TechFlow AI Gateway는 Activepieces와 AI Provider 사이에서 ABLESTACK 지식의 Source Registry, 검역·승인, Parser·Chunk·Embedding, 검색 범위와 인용, 삭제 정책을 소유하는 FastAPI 서비스입니다. 저장소 원문을 실행하지 않으며 Activepieces가 정책·상태·인프라 작업을 대신 소유하지 않습니다.
 
+## v0.11.3 구현 범위
+
+- 승인된 QEMU/libvirt 운영 지식과 공식 문서를 로컬 스냅샷으로 고정해, 외부 네트워크 없이도 플랫폼 런타임 원인과 안전한 CLI 진단 절차를 답변 근거에 포함한다.
+- Mold 콘솔 `연결중` 증상을 ABLESTACK 코드 결함이 아닌 `CURRENT_RUNTIME_ISSUE`로 분류하고, 라이브 마이그레이션 우선·정지 후 시작 대안·후순위 Console Proxy 경로 점검을 구분한다.
+- 사용자 답변에는 저장소·코드 경로·공식 참조 URL을 노출하지 않고, 내부 Evidence Ledger에서만 출처와 승인 이력을 유지한다.
+- Reviewer `상세`에는 답변만 표시하고 `근거 <Case>`에서만 내부 Citation·Coverage를 표시한다.
+- 신규 Community 글은 10초 Poll 후 Synology Chat Bot의 `chatbot` 수신 메서드로 연결 Reviewer에게 선제 알림한다.
+
 ## v0.11.2 구현 범위
 
 - 콘솔이 `연결중`에 머무는 질문은 Console Proxy, noVNC, WebSocket, websockify, VNC 구현 용어를 내부 검색에 확장한다.

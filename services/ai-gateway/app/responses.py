@@ -79,7 +79,7 @@ COMPREHENSIVE_SCHEMA: dict[str, Any] = {
         "artifactEvidence": {"type": "array", "maxItems": 10, "items": {"type": "object", "additionalProperties": False,
             "properties": {"artifactId": {"type": "string"}, "finding": {"type": "string"}, "region": {"type": "string"}},
             "required": ["artifactId", "finding", "region"]}},
-        "currentAssessment": {"type": "string", "enum": ["CURRENT_NORMAL", "CURRENT_CONFIG_ERROR", "CURRENT_DEFECT", "INSUFFICIENT_EVIDENCE"]},
+        "currentAssessment": {"type": "string", "enum": ["CURRENT_NORMAL", "CURRENT_CONFIG_ERROR", "CURRENT_DEFECT", "CURRENT_RUNTIME_ISSUE", "INSUFFICIENT_EVIDENCE"]},
         "previewAssessment": {"type": "string", "enum": ["PREVIEW_IMPROVED", "PREVIEW_PARTIAL", "PREVIEW_NOT_FOUND", "PREVIEW_INSUFFICIENT", "NOT_APPLICABLE"]},
         "previewGuidance": {"type": ["string", "null"]},
         "abstainReason": {"type": ["string", "null"]},
@@ -104,7 +104,11 @@ VERSIONED_REVIEW_POLICY = """
 Source roles are strict. CURRENT_DOCUMENTATION and CURRENT_RELEASED_CLOUD describe the released Diplo product.
 CURRENT_RELATED_PRODUCT sources may explain integrations. UNRELEASED_PREVIEW_CLOUD is Europa and must never be
 used to claim current behavior, current configuration, or a released fix. First classify the released state as
-CURRENT_NORMAL, CURRENT_CONFIG_ERROR, CURRENT_DEFECT, or INSUFFICIENT_EVIDENCE. Compare Europa only after the
+CURRENT_NORMAL, CURRENT_CONFIG_ERROR, CURRENT_DEFECT, CURRENT_RUNTIME_ISSUE, or INSUFFICIENT_EVIDENCE.
+CURRENT_PLATFORM_REFERENCE contains locally pinned, reviewer-approved operational knowledge and official upstream
+documentation. Use OPERATOR_APPROVED_KNOWLEDGE to identify a known operating symptom, but use
+OFFICIAL_EXTERNAL_DOCUMENTATION only to corroborate the platform mechanism; it does not by itself prove that a
+specific incident has that cause. Compare Europa only after the
 current assessment. Use PREVIEW_IMPROVED only when preview evidence directly addresses the same cause;
 PREVIEW_PARTIAL for incomplete overlap; PREVIEW_NOT_FOUND when searched preview evidence does not address it;
 PREVIEW_INSUFFICIENT when comparison evidence is too weak; NOT_APPLICABLE when no comparison is useful.
@@ -113,6 +117,18 @@ When the exact runtime cause cannot be confirmed but the supplied evidence suppo
 troubleshooting sequence, return ANSWERED with currentAssessment INSUFFICIENT_EVIDENCE. State that the root cause is
 not yet confirmed, keep possible causes conditional, and put the missing runtime checks in unknowns. Return ABSTAINED
 only when neither a supported diagnosis nor a supported next-step procedure can be provided.
+For a Mold console that opens but remains at connecting, when the approved QEMU VNC stale-session evidence matches,
+classify CURRENT_RUNTIME_ISSUE rather than a product defect. State that the guest OS and its services can remain
+healthy because the symptom affects the VNC console path. Recommend an ABLESTACK-managed live migration first for
+an in-service workload after compatibility and capacity checks; use stop then start as the fallback and disclose
+its service interruption. Put safe read-only CLI checks from the supplied evidence before state-changing actions.
+Never invent a command. Label commands by privilege and read-only/change impact, use <VM> placeholders, and never
+include secrets. Direct virsh migration of an ABLESTACK-managed VM is not the default because it can bypass product
+state; use Mold or an approved product API. Treat Console Proxy, WebSocket, DNS, and firewall checks as the fallback
+when the QEMU reset actions fail or several VMs are affected simultaneously.
+When CURRENT_RUNTIME_ISSUE is supported and there is no released-product defect to compare, previewAssessment MUST
+be NOT_APPLICABLE and previewGuidance must be null; do not turn absence of a preview comparison into
+PREVIEW_INSUFFICIENT.
 """
 
 

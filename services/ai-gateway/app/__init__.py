@@ -1,3 +1,3 @@
 """TechFlow AI Gateway application package."""
 
-__version__ = "0.11.2"
+__version__ = "0.11.3"

@@ -2,7 +2,7 @@
 
 ## Issue #22 Chat 기반 Community 승인
 
-Community AI 답변 검토를 Synology Chat의 `TechFlowAssist` Bot으로 일원화합니다. 담당자는 Chat에서 새 초안 알림, 질문·Citation·Community 링크를 확인하고 승인·수정 승인·반려할 수 있으며, 처리 이력과 대기 목록도 같은 대화에서 조회합니다. Activepieces는 승인·게시 순서를 실행하고 AI Gateway가 Bot 인증, Reviewer 권한, Draft Version, 상태·멱등성·감사를 강제합니다.
+Community AI 답변 검토를 Synology Chat의 `TechFlowAssist` Bot으로 일원화합니다. 담당자는 신규 글이 등록되면 선제 알림을 받고, `상세`에서 질문과 답변만 확인해 승인·수정 승인·반려할 수 있습니다. 내부 근거가 필요할 때만 `근거 <Case>`를 명시하며, 처리 이력과 대기 목록도 같은 대화에서 조회합니다. Activepieces는 승인·게시 순서를 실행하고 AI Gateway가 Bot 인증, Reviewer 권한, Draft Version, 상태·멱등성·감사를 강제합니다.
 
 일반 Chat 기술 질문과 Community 답변은 공개 문서·Diplo 현재 출시 코드·Wall·Cockpit·Genie·Kickstart·QEMU 도구를 종합 검토합니다. Europa는 미출시 프리뷰로만 비교하며, 현재 동작의 근거로 혼합하지 않습니다. 저장소·브랜치·커밋·파일·라인은 내부 승인 담당자에게만 Evidence Ledger로 제공하고 일반 사용자 답변에서는 제거합니다.
 
@@ -11,6 +11,9 @@ Community AI 답변 검토를 Synology Chat의 `TechFlowAssist` Bot으로 일원
 - [Diplo 현재판·Europa 프리뷰 안전 답변 설계](docs/plans/issues-62-63-versioned-safe-answer-design.md)
 - [Versioned Safe Answer 운영 Runbook](docs/runbooks/versioned-safe-answer.md)
 - [Issue #62·#63 구현·검증 보고서](docs/reports/issues-62-63-versioned-safe-answer-validation.md)
+- [Versioned Safe Answer 보고서 PDF](output/pdf/techflow-versioned-safe-answer-report.pdf)
+- [Versioned Safe Answer 발표자료 PDF](output/pdf/techflow-versioned-safe-answer-presentation.pdf)
+- [Versioned Safe Answer 발표자료 PPTX](output/presentation/techflow-versioned-safe-answer.pptx)
 - [구현·검증 보고서](docs/reports/issue-22-chat-community-approval-validation.md)
 - [보고서 PDF](output/pdf/techflow-chat-community-approval-report.pdf)
 - [발표자료 PDF](output/pdf/techflow-chat-community-approval-presentation.pdf)

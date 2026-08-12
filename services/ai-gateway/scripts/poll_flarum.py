@@ -299,7 +299,7 @@ def run_once(state_path: Path, *, bootstrap_only: bool = False) -> dict:
 def main() -> int:
     state_path = Path(os.getenv("TECHFLOW_COMMUNITY_POLLER_STATE", "/var/lib/techflow-community-poller/state.json"))
     first = not state_path.exists()
-    interval = max(30, int(os.getenv("TECHFLOW_COMMUNITY_POLL_INTERVAL_SECONDS", "60")))
+    interval = max(10, int(os.getenv("TECHFLOW_COMMUNITY_POLL_INTERVAL_SECONDS", "10")))
     once = os.getenv("TECHFLOW_COMMUNITY_POLL_ONCE", "false").lower() == "true"
     while True:
         try:

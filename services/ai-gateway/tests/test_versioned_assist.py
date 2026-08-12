@@ -5,6 +5,7 @@ from pathlib import Path
 import unittest
 
 from app.versioned_assist import (
+    CURATED_PLATFORM_PROFILE,
     CURRENT_SOURCE_PROFILES,
     INTERNAL_REFERENCE_ONLY_PROFILE,
     PREVIEW_SOURCE_PROFILE,
@@ -18,6 +19,7 @@ from app.versioned_assist import (
     select_context_results,
     versioned_plan,
 )
+from app.platform_references import curated_platform_results
 
 
 class VersionedAssistPolicyTest(unittest.TestCase):
@@ -27,6 +29,7 @@ class VersionedAssistPolicyTest(unittest.TestCase):
         self.assertIn("SHARED_DOCS", CURRENT_SOURCE_PROFILES)
         self.assertIn("CLOUD_DIPLO", CURRENT_SOURCE_PROFILES)
         self.assertEqual("CLOUD_EUROPA", PREVIEW_SOURCE_PROFILE)
+        self.assertIn(CURATED_PLATFORM_PROFILE, plan["sourceProfileIds"])
         self.assertNotIn(INTERNAL_REFERENCE_ONLY_PROFILE, plan["sourceProfileIds"])
 
     def test_coverage_records_every_reviewed_profile(self) -> None:
@@ -62,9 +65,59 @@ class VersionedAssistPolicyTest(unittest.TestCase):
         selected = select_context_results(question, {
             "SHARED_DOCS": rows,
             "CLOUD_DIPLO": rows,
+            CURATED_PLATFORM_PROFILE: curated_platform_results(question),
             "CLOUD_EUROPA": rows,
         })
-        self.assertEqual(12, len(selected))
+        self.assertEqual(13, len(selected))
+        self.assertEqual(4, sum(item.get("sourceProfileId") == CURATED_PLATFORM_PROFILE for item in selected))
+
+    def test_console_question_loads_only_local_approved_platform_references(self) -> None:
+        question = "Mold 콘솔 화면이 연결중 상태입니다."
+        results = curated_platform_results(question)
+        self.assertEqual(4, len(results))
+        self.assertTrue(all(item["sourceProfileId"] == CURATED_PLATFORM_PROFILE for item in results))
+        self.assertTrue(any(item["sourceKind"] == "OPERATOR_APPROVED_KNOWLEDGE" for item in results))
+        self.assertTrue(any("query-vnc" in item["content"] for item in results))
+        self.assertTrue(any("라이브 마이그레이션" in item["content"] for item in results))
+        self.assertEqual([], curated_platform_results("사용자 계정 이름을 변경하는 방법"))
+
+    def test_runtime_issue_public_projection_does_not_expose_reference_locator(self) -> None:
+        citation = curated_platform_results("Mold 콘솔 화면이 연결중 상태입니다.")[0]
+        result = {
+            "state": "ANSWERED",
+            "report": {
+                "summary": "콘솔은 연결중이지만 게스트 서비스는 동작합니다.",
+                "observedFacts": [],
+                "diagnoses": [{"title": "QEMU VNC 세션 상태 문제"}],
+                "recommendedActions": ["sudo virsh qemu-monitor-command <VM> --pretty query-vnc로 확인합니다."],
+                "unknowns": [],
+                "currentAssessment": "CURRENT_RUNTIME_ISSUE",
+                "previewAssessment": "NOT_APPLICABLE",
+                "previewGuidance": None,
+            },
+            "citations": [citation],
+        }
+        answer = format_public_answer(result) or ""
+        self.assertIn("가상화 런타임 상태 문제", answer)
+        self.assertNotIn("operator://", answer)
+        self.assertNotIn("sourceLocator", answer)
+        self.assertTrue(projection_is_safe(answer), answer)
+
+    def test_public_projection_removes_all_external_urls(self) -> None:
+        answer = sanitize_public_text(
+            "공식 자료 https://www.qemu.org/docs/master/interop/qemu-qmp-ref.html 를 확인합니다.",
+        )
+        self.assertNotIn("https://", answer)
+        self.assertIn("내부 검토 자료", answer)
+
+    def test_public_projection_removes_inline_citation_tokens_without_placeholder(self) -> None:
+        token = "81e47d5d-d194-5b62-9979-55a767d9a91a"
+        answer = sanitize_public_text(
+            f"QEMU 상태를 확인합니다. [{token}] 다음 조치를 수행합니다. [{token}]",
+            [{"chunkId": token}],
+        )
+        self.assertEqual("QEMU 상태를 확인합니다. 다음 조치를 수행합니다.", answer)
+        self.assertNotIn("내부 근거", answer)
 
     def test_public_projection_removes_internal_lineage(self) -> None:
         citation = {
@@ -124,8 +177,10 @@ class VersionedAssistPolicyTest(unittest.TestCase):
         self.assertIn(("CURRENT_DEFECT", "PREVIEW_IMPROVED"), pairs)
         self.assertIn(("CURRENT_DEFECT", "PREVIEW_NOT_FOUND"), pairs)
         self.assertIn(("CURRENT_CONFIG_ERROR", "NOT_APPLICABLE"), pairs)
+        self.assertIn(("CURRENT_RUNTIME_ISSUE", "NOT_APPLICABLE"), pairs)
         console = next(item for item in payload["cases"] if item["caseKey"] == "MOLD-CONSOLE-CONNECTING-001")
         self.assertEqual("Mold에서 가상머신의 콘솔 보기를 클릭하면 콘솔 화면이 표시되지만 \"연결중\"이라고 표시되고, 더 이상 화면을 보여주지 않습니다. 콘솔을 보려면 어떻게 해야 하나요?", console["question"])
+        self.assertIn("query-vnc", console["requiredPublicGuidance"])
 
 
 if __name__ == "__main__":
