@@ -10,8 +10,12 @@ from app.versioned_assist import (
     PREVIEW_SOURCE_PROFILE,
     VERSIONED_SOURCE_PROFILES,
     coverage_payload,
+    expand_retrieval_question,
     format_public_answer,
     projection_is_safe,
+    relevant_results,
+    sanitize_public_text,
+    select_context_results,
     versioned_plan,
 )
 
@@ -33,6 +37,34 @@ class VersionedAssistPolicyTest(unittest.TestCase):
         self.assertEqual(len(VERSIONED_SOURCE_PROFILES), len(coverage))
         self.assertEqual("EVIDENCE_FOUND", coverage[0]["state"])
         self.assertEqual("NO_RELEVANT_EVIDENCE", coverage[1]["state"])
+
+    def test_console_connecting_question_expands_retrieval_vocabulary(self) -> None:
+        question = "Mold 콘솔 화면이 연결중에서 멈춥니다."
+        expanded = expand_retrieval_question(question)
+        self.assertIn(question, expanded)
+        self.assertIn("consoleproxy", expanded)
+        self.assertIn("websockify", expanded)
+        self.assertIn("VNC".casefold(), expanded.casefold())
+
+    def test_console_connecting_question_prioritizes_console_proxy_evidence(self) -> None:
+        question = "가상머신 콘솔 화면이 연결중이라고 표시됩니다."
+        rows = [
+            {"path": "ui/src/GenericVm.vue", "content": "가상머신 화면 표시"},
+            {"path": "systemvm/agent/noVNC/vnc_lite.html", "content": "Connecting websocket websockify VNC"},
+            {"path": "docs/systemvm.md", "content": "Console Proxy VM and noVNC console"},
+        ]
+        ranked = relevant_results(question, rows)
+        self.assertEqual("systemvm/agent/noVNC/vnc_lite.html", ranked[0]["path"])
+
+    def test_console_context_includes_multiple_docs_and_current_code_chunks(self) -> None:
+        question = "Mold 콘솔 화면이 연결중에서 멈춥니다."
+        rows = [{"path": f"consoleproxy/{index}.java", "content": "noVNC websockify VNC"} for index in range(6)]
+        selected = select_context_results(question, {
+            "SHARED_DOCS": rows,
+            "CLOUD_DIPLO": rows,
+            "CLOUD_EUROPA": rows,
+        })
+        self.assertEqual(12, len(selected))
 
     def test_public_projection_removes_internal_lineage(self) -> None:
         citation = {
@@ -65,6 +97,10 @@ class VersionedAssistPolicyTest(unittest.TestCase):
         self.assertNotIn("Foo.java", answer)
         self.assertNotIn("CLOUD_DIPLO", answer)
 
+    def test_public_projection_does_not_replace_branch_name_inside_normal_word(self) -> None:
+        answer = sanitize_public_text("DNS Domain Name Suffix를 확인합니다.", [{"branch": "main"}])
+        self.assertEqual("DNS Domain Name Suffix를 확인합니다.", answer)
+
     def test_troubleshooting_sections_remain_when_optional_content_is_empty(self) -> None:
         answer = format_public_answer({
             "state": "ANSWERED",
@@ -88,6 +124,8 @@ class VersionedAssistPolicyTest(unittest.TestCase):
         self.assertIn(("CURRENT_DEFECT", "PREVIEW_IMPROVED"), pairs)
         self.assertIn(("CURRENT_DEFECT", "PREVIEW_NOT_FOUND"), pairs)
         self.assertIn(("CURRENT_CONFIG_ERROR", "NOT_APPLICABLE"), pairs)
+        console = next(item for item in payload["cases"] if item["caseKey"] == "MOLD-CONSOLE-CONNECTING-001")
+        self.assertEqual("Mold에서 가상머신의 콘솔 보기를 클릭하면 콘솔 화면이 표시되지만 \"연결중\"이라고 표시되고, 더 이상 화면을 보여주지 않습니다. 콘솔을 보려면 어떻게 해야 하나요?", console["question"])
 
 
 if __name__ == "__main__":

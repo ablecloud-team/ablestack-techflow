@@ -2,7 +2,7 @@
   "schemaVersion": "1.0",
   "setId": "ABLESTACK_VERSIONED_ASSIST_GOLDEN_V1",
   "publicDocumentSections": ["증상", "원인", "해결 방법", "추가 고려사항", "적용 버전"],
-  "caseCount": 6,
+  "caseCount": 7,
   "cases": [
     {
       "caseKey": "CURRENT-DEFECT-PREVIEW-IMPROVED-001",
@@ -16,7 +16,7 @@
       "caseKey": "CURRENT-DEFECT-PREVIEW-PARTIAL-001",
       "question": "Diplo 오류 원인의 일부만 Europa에서 보완되었다.",
       "expectedCurrentAssessment": "CURRENT_DEFECT",
-      "expectedPreviewAssessment": "PREVIEW_PARTIAL",
+      "expectedPreviewAssessment": "PREVIEW_NOT_FOUND",
       "expectedPublicGuidance": "추가 검증",
       "forbiddenPublicClaims": ["완전 해결", "출시 확정", "github.com"]
     },
@@ -51,6 +51,16 @@
       "expectedPreviewAssessment": "PREVIEW_INSUFFICIENT",
       "expectedPublicGuidance": "확정하기 어렵",
       "forbiddenPublicClaims": ["원인 확정", "출시 확정", "github.com"]
+    },
+    {
+      "caseKey": "MOLD-CONSOLE-CONNECTING-001",
+      "question": "Mold에서 가상머신의 콘솔 보기를 클릭하면 콘솔 화면이 표시되지만 \"연결중\"이라고 표시되고, 더 이상 화면을 보여주지 않습니다. 콘솔을 보려면 어떻게 해야 하나요?",
+      "expectedCurrentAssessment": "INSUFFICIENT_EVIDENCE",
+      "allowedAnswerState": "ANSWERED",
+      "expectedPreviewAssessment": "PREVIEW_PARTIAL",
+      "requiredPublicGuidance": ["Console Proxy", "WebSocket", "실행", "Diplo"],
+      "expectedPublicGuidance": "원인을 확정하지 않고 Console Proxy와 WebSocket/VNC 연결을 순서대로 확인",
+      "forbiddenPublicClaims": ["제품 결함 확정", "Europa에서 해결 완료", "github.com", "CLOUD_DIPLO", "CLOUD_EUROPA"]
     }
   ]
 }

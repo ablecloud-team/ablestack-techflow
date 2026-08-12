@@ -79,7 +79,7 @@ Community는 안전 Projection만 Draft로 저장·게시하고 일반 Chat 질�
 
 ## Golden Set
 
-`versioned-assist-golden-v1.json`은 다음 6개 판정 조합을 고정한다.
+`versioned-assist-golden-v1.json`은 다음 7개 판정 조합을 고정한다.
 
 1. 현재 결함·프리뷰 개선
 2. 현재 결함·프리뷰 일부 개선
@@ -87,6 +87,7 @@ Community는 안전 Projection만 Draft로 저장·게시하고 일반 Chat 질�
 4. 현재 설정 오류
 5. 현재 정상
 6. 현재·프리뷰 근거 부족
+7. Mold 콘솔 `연결중`: 정확한 원인은 미확정으로 유지하면서 Console Proxy·WebSocket·VNC 점검 절차 제공
 
 각 Case는 외부 금지 주장도 함께 정의한다. Golden Set은 코드 단위 계약 검증에 사용하고 실서버 E2E는 실제 색인·OpenAI·Community·Chat 경로를 검증한다.
 

@@ -63,6 +63,7 @@ from .versioned_assist import (
     SOURCE_ROLES,
     VERSIONED_SOURCE_PROFILES,
     coverage_payload,
+    expand_retrieval_question,
     evidence_ledger,
     format_public_answer,
     select_context_results,
@@ -534,12 +535,13 @@ def create_app(
         }
         coverage: list[dict[str, object]] = []
         if versioned_review:
-            embedding_result = runtime_embeddings.embed([request.question])
+            retrieval_question = expand_retrieval_question(request.question)
+            embedding_result = runtime_embeddings.embed([retrieval_question])
             results_by_profile: dict[str, list[dict[str, Any]]] = {}
             provider_called = embedding_result.provider == "openai"
             for profile_id in VERSIONED_SOURCE_PROFILES:
                 retrieval_request = QueryRequest(
-                    queryId=request.query_id, question=request.question, sourceProfileIds=[profile_id],
+                    queryId=request.query_id, question=retrieval_question, sourceProfileIds=[profile_id],
                     locale=request.locale, classification=request.classification,
                 )
                 item = runtime_store.retrieve(_model_data(retrieval_request), embedding_result, correlation_id)

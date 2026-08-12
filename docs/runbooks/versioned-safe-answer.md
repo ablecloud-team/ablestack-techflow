@@ -25,7 +25,7 @@ docker compose --env-file .env \
 
 ## 확인
 
-1. `/healthz`에서 Version `0.11.1`, Database·Vector `ready`, Provider `openai`를 확인한다.
+1. `/healthz`에서 Version `0.11.2`, Database·Vector `ready`, Provider `openai`를 확인한다.
 2. 일반 Assist 질문이 Coverage 8개와 현재판·프리뷰 구조화 판정을 반환하는지 확인한다.
 3. 일반 Chat 사용자의 기술 질문이 Reviewer 권한 없이 응답되며 내부 계보가 없는지 확인한다.
 4. Community 질문이 `DRAFT_PENDING` Case를 생성하고 `ANSWERED` 또는 올바른 보류 판정을 갖는지 확인한다.
