@@ -8,13 +8,14 @@
 
 ## 1. 완료 요약
 
-Community AI 답변 검토 과정을 Synology Chat의 `TechFlowAssist` Bot으로 일원화했다. 담당자는 Chat에서 자신의 계정을 연결하고, 새 초안 알림과 대기 목록을 받아 질문·Citation·Community 링크를 확인한 뒤 승인·수정 승인·반려할 수 있다. 실제 결정은 기존 Activepieces Flow를 거치며 TechFlow AI Gateway가 Bot 인증, Reviewer 권한, Draft Version, 상태, 감사와 게시 멱등성을 강제한다.
+Community AI 답변 검토 과정을 Synology Chat의 `TechFlowAssist` Bot으로 일원화했다. 담당자는 Chat에서 자신의 계정을 연결하면 `대기` 명령 없이 새 글 선제 알림을 받고, `상세`에서 질문과 답변만 확인해 승인·수정 승인·반려할 수 있다. 내부 Citation과 Source Coverage는 `근거 <Case>`를 명시한 경우에만 표시한다. 실제 결정은 기존 Activepieces Flow를 거치며 TechFlow AI Gateway가 Bot 인증, Reviewer 권한, Draft Version, 상태, 감사와 게시 멱등성을 강제한다.
 
 | 완료 Gate | 결과 |
 |---|---:|
 | 담당자 Chat 연결 | PASS |
-| 새 Case 담당자 알림 계약 | PASS |
-| 질문·초안·Citation·링크 표시 | PASS |
+| 신규 글 담당자 선제 알림 | PASS |
+| 알림·상세의 질문·답변 전용 표시 | PASS |
+| 명시적 `근거` 명령의 내부 근거 표시 | PASS |
 | Chat 버튼 승인·게시 | PASS |
 | Chat 텍스트 수정 승인·게시 | PASS |
 | Chat 텍스트 반려·게시 차단 | PASS |
@@ -22,7 +23,7 @@ Community AI 답변 검토 과정을 Synology Chat의 `TechFlowAssist` Bot으로
 | 삭제 원본 Case 정리 | PASS |
 | 위조 Token·미허용 사용자 차단 | PASS |
 | GitHub→Chat 보호 가드 | PASS |
-| 서버 이미지 회귀 테스트 | 152/152 PASS |
+| 서버 이미지 회귀 테스트 | 172/172 PASS |
 
 ## 2. 구현 구조
 
@@ -36,7 +37,7 @@ sequenceDiagram
 
     F->>AP: 새 질문
     AP->>G: Case 초안 생성
-    G->>C: Reviewer에게 질문·Citation·링크·버튼
+    G->>C: Reviewer에게 새 글·질문·답변·링크·버튼
     R->>C: 승인 / 수정 / 반려
     C->>G: Token + Chat identity + command
     G->>G: allowlist + Case + Version 검사
@@ -102,7 +103,9 @@ Chat 계정 `ceo`/`ceo@ablecloud.io`를 승인 담당자로 연결했다. 화면
 
 - `대기`: 최종 처리 후 “현재 승인 대기 중인 Community 답변이 없습니다.”
 - `이력`: #145·#146 `PUBLISHED`, #147·#143 `REJECTED`
-- `상세`: 질문 URL, AI 판정, 4~6개 Citation, Draft Version과 액션 버튼
+- 신규 글 선제 알림: Discussion #155를 10초 Poll로 감지한 뒤 `대기` 명령 없이 Chat 수신
+- `상세`: 질문 URL과 답변만 표시하며 Citation·Coverage·내부 판정은 숨김
+- `근거`: 명시적으로 요청했을 때만 9개 근거 영역 Coverage와 Citation 표시
 
 ### 5.2 승인 게시 — Discussion #145
 

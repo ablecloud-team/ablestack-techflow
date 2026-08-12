@@ -17,7 +17,8 @@ CURRENT_SOURCE_PROFILES: tuple[str, ...] = (
 )
 PREVIEW_SOURCE_PROFILE = "CLOUD_EUROPA"
 INTERNAL_REFERENCE_ONLY_PROFILE = "CLOUD_MAIN"
-VERSIONED_SOURCE_PROFILES = CURRENT_SOURCE_PROFILES + (PREVIEW_SOURCE_PROFILE,)
+CURATED_PLATFORM_PROFILE = "CURATED_PLATFORM_REFERENCE"
+VERSIONED_SOURCE_PROFILES = CURRENT_SOURCE_PROFILES + (CURATED_PLATFORM_PROFILE, PREVIEW_SOURCE_PROFILE)
 
 SOURCE_ROLES = {
     "SHARED_DOCS": "CURRENT_DOCUMENTATION",
@@ -27,6 +28,7 @@ SOURCE_ROLES = {
     "GENIE_MASTER": "CURRENT_RELATED_PRODUCT",
     "KICKSTART_MASTER": "CURRENT_RELATED_PRODUCT",
     "QEMU_EXEC_TOOLS_MAIN": "CURRENT_RELATED_PRODUCT",
+    "CURATED_PLATFORM_REFERENCE": "CURRENT_PLATFORM_REFERENCE",
     "CLOUD_EUROPA": "UNRELEASED_PREVIEW_CLOUD",
 }
 
@@ -38,6 +40,12 @@ CONSOLE_CONNECTION_MARKERS: tuple[str, ...] = (
     "websocket",
     "websockify",
     "vnc",
+    "query-vnc",
+    "libvirt",
+    "qemu",
+    "live migration",
+    "라이브 마이그레이션",
+    "정지 후 시작",
     "createconsoleendpoint",
     "콘솔 프록시",
 )
@@ -51,6 +59,7 @@ def versioned_plan(question: str) -> dict[str, object]:
         "subquestions": [
             "공개 문서와 Diplo 현재 출시 코드에서 현재 동작과 원인을 확인한다.",
             "Wall, Cockpit, Genie, Kickstart, QEMU 도구에서 연관 근거를 확인한다.",
+            "승인된 QEMU/libvirt 플랫폼 지식과 공식 문서 스냅샷에서 런타임 원인과 진단 명령을 확인한다.",
             "Europa 미출시 코드에서 동일 문제의 개선 여부만 별도로 확인한다.",
         ],
         "questionsNeeded": [],
@@ -131,7 +140,15 @@ def select_context_results(question: str, results_by_profile: dict[str, list[dic
     """Keep every source reviewed while bounding a provider request to twenty chunks."""
     selected: list[dict[str, Any]] = []
     for profile_id in VERSIONED_SOURCE_PROFILES:
-        limit = 4 if profile_id in {"SHARED_DOCS", "CLOUD_DIPLO", "CLOUD_EUROPA"} else 1
+        if _is_console_connection_question(question):
+            limit = {
+                "SHARED_DOCS": 3,
+                "CLOUD_DIPLO": 3,
+                CURATED_PLATFORM_PROFILE: 4,
+                "CLOUD_EUROPA": 3,
+            }.get(profile_id, 1)
+        else:
+            limit = 4 if profile_id in {"SHARED_DOCS", "CLOUD_DIPLO", "CLOUD_EUROPA"} else 1
         selected.extend(relevant_results(question, results_by_profile.get(profile_id) or [])[:limit])
     return selected[:20]
 
@@ -162,6 +179,15 @@ def _projection_replacements(citations: Iterable[dict[str, Any]]) -> set[str]:
 
 def sanitize_public_text(value: object, citations: Iterable[dict[str, Any]] = ()) -> str:
     text = str(value or "").strip()
+    citation_tokens: set[str] = set()
+    for item in citations:
+        for key in ("citationId", "chunkId", "sourceVersionId"):
+            token = str(item.get(key) or "").strip()
+            if token:
+                citation_tokens.add(token)
+    for token in sorted(citation_tokens, key=len, reverse=True):
+        text = re.sub(rf"\s*\[{re.escape(token)}\]", "", text)
+        text = text.replace(token, "")
     for secret in sorted(_projection_replacements(citations), key=len, reverse=True):
         if re.fullmatch(r"[A-Za-z0-9_.-]+", secret):
             text = re.sub(
@@ -172,6 +198,7 @@ def sanitize_public_text(value: object, citations: Iterable[dict[str, Any]] = ()
         else:
             text = text.replace(secret, "제품 내부 구현")
     text = re.sub(r"(?:https?://)?(?:www\.)?github\.com/\S+", "제품 내부 근거", text, flags=re.IGNORECASE)
+    text = re.sub(r"https?://\S+", "내부 검토 자료", text, flags=re.IGNORECASE)
     text = re.sub(r"\b[0-9a-f]{40}\b", "제품 버전", text, flags=re.IGNORECASE)
     text = re.sub(r"(?:[\w.-]+/){2,}[\w.@-]+(?::\d+(?:-\d+)?)?", "제품 내부 경로", text)
     text = re.sub(r"\b(?:citation|chunk|evidence)[-_]?[A-Za-z0-9-]+\b", "내부 근거", text, flags=re.IGNORECASE)
@@ -206,6 +233,7 @@ def format_public_answer(result: dict[str, Any]) -> str | None:
             "CURRENT_NORMAL": "현재 출시 버전에서 정상 동작으로 판단됩니다.",
             "CURRENT_CONFIG_ERROR": "현재 출시 버전의 설정 또는 환경 문제 가능성이 높습니다.",
             "CURRENT_DEFECT": "현재 출시 버전의 제품 결함 가능성이 확인됩니다.",
+            "CURRENT_RUNTIME_ISSUE": "현재 출시판 코드 결함이 아니라 가상화 런타임 상태 문제로 판단됩니다.",
             "INSUFFICIENT_EVIDENCE": "현재 정보만으로는 출시 버전의 상태를 확정하기 어렵습니다.",
         }
         current_label = labels.get(current, sanitize_public_text(current, citations))
@@ -243,7 +271,7 @@ def format_public_answer(result: dict[str, Any]) -> str | None:
 
 def projection_is_safe(text: str) -> bool:
     forbidden = (
-        r"github\.com/", r"\b[0-9a-f]{40}\b", r"CLOUD_(?:DIPLO|EUROPA|MAIN)",
+        r"https?://", r"github\.com/", r"\b[0-9a-f]{40}\b", r"CLOUD_(?:DIPLO|EUROPA|MAIN)",
         r"ablecloud-team/", r"#L\d+", r"(?:\.java|\.py|\.ts|\.md):\d+",
     )
     return not any(re.search(pattern, text, flags=re.IGNORECASE) for pattern in forbidden)

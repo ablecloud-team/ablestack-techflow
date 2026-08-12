@@ -2,9 +2,9 @@
 
 ## 결과 요약
 
-Diplo 현재 출시판과 Europa 미출시 프리뷰의 역할을 분리한 전 Source 기술지원 경로와 내부·외부 답변 분리를 구현했다. 일반 Chat 질문과 Community Draft는 사용자용 안전 Projection만 제공하고 승인 담당자의 Chat 상세에는 8개 Source Coverage와 코드 Citation을 제공한다.
+Diplo 현재 출시판과 Europa 미출시 프리뷰의 역할을 분리한 전 Source 기술지원 경로에 승인된 QEMU/libvirt 플랫폼 참조를 추가했다. 일반 Chat 질문과 Community Draft는 사용자용 안전 Projection만 제공한다. 승인 담당자의 Chat `상세`도 답변만 표시하며, 명시적인 `근거 <Case>` 명령에서만 9개 근거 영역 Coverage와 Citation을 제공한다.
 
-AI Gateway `0.11.2`는 공개 답변을 `증상·원인·해결 방법·추가 고려사항·적용 버전` 순서의 트러블슈팅 문서로 표준화한다. 콘솔이 `연결중`에 머무는 질문에는 Console Proxy·noVNC·WebSocket·VNC 구현 용어를 내부 검색에 확장한다. Ubuntu 24.04 시험 서버 검증에서도 내부 Evidence Ledger와 외부 문서 분리, 8개 Source Coverage, Diplo 현재판과 Europa Preview 격리 원칙을 그대로 유지한다.
+AI Gateway `0.11.3`은 공개 답변을 `증상·원인·해결 방법·추가 고려사항·적용 버전` 순서의 트러블슈팅 문서로 표준화한다. 콘솔이 `연결중`에 머무는 단일 VM 사례는 ABLESTACK 코드 결함이 아니라 QEMU VNC 세션/소켓의 런타임 상태 문제인 `CURRENT_RUNTIME_ISSUE`로 분류한다. 읽기 전용 CLI 확인, 운영 VM의 라이브 마이그레이션 우선, 정지 후 시작 대안과 서비스 영향을 함께 안내한다.
 
 ## 구현 자산
 
@@ -12,34 +12,40 @@ AI Gateway `0.11.2`는 공개 답변을 `증상·원인·해결 방법·추가 �
 - `app/responses.py`: 현재판·프리뷰 구조화 Schema와 엄격한 프리뷰 정책
 - `app/main.py`: 전 Source Assist, Community Draft, 일반 Chat Q&A
 - `app/data/versioned-assist-golden-v1.json`: 7개 판정 Golden Case
+- `app/data/curated-platform-references-v1.json`: 승인된 운영 지식과 QEMU/libvirt 공식 문서 로컬 스냅샷
+- `app/platform_references.py`: 승인 상태·질문 관련성·Content Digest 기반 참조 로더
 - `tests/test_versioned_assist.py`: 역할·Coverage·Projection·Golden 계약 시험
+- `app/chat_assist.py`: 상세/근거 출력 분리와 Reviewer 전용 `근거` 명령
+- `scripts/poll_flarum.py`: 신규 글 Poll 기본·최소 간격 10초
 
 ## 최종 아키텍처
 
 ```mermaid
 flowchart TB
-    U["사용자 질문"] --> G["TechFlow AI Gateway 0.11.2"]
+    U["사용자 질문"] --> G["TechFlow AI Gateway 0.11.3"]
     G --> D["Docs"]
     G --> C["Diplo Current"]
     G --> O["5 Related Products"]
+    G --> Q["Approved QEMU/libvirt Snapshot"]
     G --> E["Europa Preview"]
     D --> X["Relevant Evidence Synthesis"]
     C --> X
     O --> X
+    Q --> X
     E --> X
     X --> R["OpenAI Structured Assessment"]
     R --> P["Safe Public Projection"]
     R --> L["Internal Evidence Ledger"]
     P --> CH["General Chat"]
     P --> CO["Community Draft"]
-    L --> RV["Reviewer Chat Detail"]
+    L --> RV["Reviewer Chat 근거 명령"]
 ```
 
 ## 자동 시험
 
 | 항목 | 결과 |
 |---|---:|
-| Python Unit/Contract Test | 163 PASS |
+| Python Unit/Contract Test | 172 PASS |
 | OpenAPI Operation | 33 |
 | Versioned Golden Case | 7 |
 | 현재 오류·프리뷰 개선 Case | 포함 |
@@ -53,13 +59,13 @@ flowchart TB
 |---|---|
 | OS | Ubuntu 24.04 |
 | Root Volume | 1005 GiB, 사용 28 GiB, 여유 936 GiB |
-| AI Gateway Image | `techflow/ai-gateway:issue-63-console-golden` |
-| Gateway Image ID | `sha256:d44ce0a6729ac24c5a67e96cb7fcaf45c3fb2d09cb4d302b8c9ee759ba98ca77` |
-| Gateway Version | `0.11.2` |
+| AI Gateway Image | `techflow/ai-gateway:issue-63-chatbot-proactive` |
+| Gateway Image ID | `sha256:55782ca7adf56954440b12bc5bcc3c6e660e805487b7e43734528fd49afbbe65` |
+| Gateway Version | `0.11.3` |
 | Database / Vector | ready / ready |
 | Provider | OpenAI |
 | Gateway / Community Poller | healthy / running |
-| 최종 백업 | `/home/ablecloud/techflow-ai-gateway-backups/console-golden-predeploy-20260812T112934Z` |
+| 최종 백업 | `/home/ablecloud/techflow-ai-gateway-backups/chatbot-proactive-predeploy-20260812T121158Z` |
 
 기존 0.11.0 배포 전 백업도 `/home/ablecloud/techflow-ai-gateway-backups/issue62-predeploy-20260812T095938Z`에 보존되어 있다.
 
@@ -108,7 +114,7 @@ Secret 파일과 값은 복사·출력·문서화하지 않았다. Database Migr
 - 자동 게시: 수행하지 않음. 담당자 승인 대기
 - 판정: PASS
 
-### E2E 4: Reviewer Chat 상세
+### E2E 4: Reviewer Chat 상세·근거 분리
 
 | Profile | 역할 | 최종 관련 근거 |
 |---|---|---:|
@@ -119,9 +125,26 @@ Secret 파일과 값은 복사·출력·문서화하지 않았다. Database Migr
 | GENIE_MASTER | 현재 연관 제품 | 0 |
 | KICKSTART_MASTER | 현재 연관 제품 | 0 |
 | QEMU_EXEC_TOOLS_MAIN | 현재 연관 제품 | 0 |
+| CURATED_PLATFORM_REFERENCE | 승인 플랫폼 참조 | 4 |
 | CLOUD_EUROPA | 미출시 프리뷰 | 2 |
 
-Reviewer 상세에는 Commit·파일·라인 Citation 4개와 `CURRENT_NORMAL / PREVIEW_NOT_FOUND`가 표시됐다. 일반 사용자 답변에는 같은 계보가 표시되지 않았다.
+Reviewer `상세 <Case>`에는 질문과 답변만 표시되고 Citation·Source Profile·Coverage·판정 코드는 표시되지 않는다. `근거 <Case>`를 명시했을 때만 Commit·파일·라인 또는 공식 참조 URL과 전체 Coverage, 구조화 판정이 표시된다. Reviewer가 아닌 Chat 사용자의 `근거` 명령은 `403`으로 거부한다.
+
+신규 미답변 Discussion은 10초 Poll로 감지한 뒤 최초 Case 생성 시 연결된 Reviewer에게 자동 Chat 알림을 보낸다. 알림 전송은 최대 3회 재시도하고 성공·실패·Reviewer 미연결 상태를 구조화 로그로 구분한다. 따라서 담당자는 `대기`를 먼저 실행하지 않아도 검토 대상 발생을 인지한다.
+
+### E2E 4-1: 신규 글 선제 알림
+
+- Discussion: [#155](https://community.ablecloud.io/d/155)
+- Case: `dc5f14bb...`, `DRAFT_PENDING / ANSWERED`
+- Poll: 10초 주기에서 신규 글 감지
+- 수신 대상: 연결 Reviewer `user_id=19`
+- Chat 표시: `새 Community 글이 등록되어 검토가 필요합니다`와 Discussion 제목 확인
+- 발송 계약: `SYNO.Chat.External method=chatbot version=2`
+- 관측성: 구조화 표준 출력 Unit Test와 `request_completed` 런타임 로그 확인
+- 자동 승인·게시: 수행하지 않음
+- 판정: PASS
+
+초기 구현은 정상적인 Chat Bot Token을 Incoming Webhook용 `method=incoming`에 보내 `404 bot type error`가 발생했다. Chat 통합 설정의 실제 받는 URL과 Synology 공식 Bot 계약을 대조해 `method=chatbot`으로 교정했다. 기존 Bot Token, Outgoing URL과 Reviewer 연결은 유지했으며 별도 Incoming Webhook Token은 만들지 않았다.
 
 ## 구현 중 발견과 개선
 
@@ -136,11 +159,11 @@ Reviewer 상세에는 Commit·파일·라인 Citation 4개와 `CURRENT_NORMAL / 
 | 검증 항목 | 실제 결과 | 판정 |
 |---|---|---:|
 | 일반 Chat | `ANSWERED` | PASS |
-| 현재판 판정 | `INSUFFICIENT_EVIDENCE`, 원인 미확정 명시 | PASS |
-| Source Coverage | 문서·Diplo·연관 제품·Europa 등 8개 Profile | PASS |
-| 내부 Citation | Console Proxy 구조, noVNC WebSocket 처리, SSL/DNS, VNC 중계 | PASS |
-| Community | [Discussion #152](https://community.ablecloud.io/d/152), `DRAFT_PENDING / ANSWERED` | PASS |
-| Community Draft | 2,518자, 필수 Section 5개, 내부 Citation 8개 | PASS |
+| 현재판 판정 | `CURRENT_RUNTIME_ISSUE`, ABLESTACK 코드 결함 아님 | PASS |
+| Source Coverage | 8개 제품 Profile + 승인 플랫폼 참조 등 9개 영역 | PASS |
+| 내부 Citation | 승인 운영 지식, QEMU QMP VNC 상태, libvirt VNC 엔드포인트, QEMU 마이그레이션 | PASS |
+| Community | 신규 검증 Discussion, `DRAFT_PENDING / ANSWERED` | PASS |
+| Community Draft | 필수 Section 5개와 안전 CLI 포함 | PASS |
 | 사용자 답변 내부 계보 노출 | 저장소·브랜치·Commit·경로·라인 0건 | PASS |
 | 자동 승인·게시 | 수행하지 않음 | PASS |
 
@@ -148,36 +171,44 @@ Reviewer 상세에는 Commit·파일·라인 Citation 4개와 `CURRENT_NORMAL / 
 
 #### 증상
 
-- 콘솔 뷰어는 열렸지만 `연결중`에서 멈췄으며, 브라우저에서 Console Proxy VM을 거쳐 하이퍼바이저 VNC로 이어지는 연결이 완료되지 않은 상태다.
-- 실행 로그와 브라우저 네트워크 오류가 없으므로 어느 구간이 실패했는지는 확정하지 않는다.
+- Mold에서 콘솔 화면은 열리지만 `연결중`에서 멈추고 더 이상 화면이 표시되지 않는다.
+- 이 현상은 VNC 콘솔 연결에만 영향을 주며 게스트 운영체제와 그 안의 서비스는 정상 동작할 수 있다.
 
 #### 원인
 
-- 브라우저와 Console Proxy VM 사이 WebSocket 연결 실패 가능성
-- Console Proxy VM 비정상 또는 Console Proxy VM에서 하이퍼바이저 VNC 포트까지의 연결 실패 가능성
-- NAT·리버스 프록시 환경의 세션 원본 IP 불일치 가능성
-- 사용자 정의 콘솔 도메인의 DNS·SSL 인증서 불일치 가능성
+- 이전 콘솔 접속이 네트워크 단절이나 브라우저 강제 종료로 정상 종료되지 않아, 가상머신 QEMU 프로세스 내부의 VNC 통신 소켓 또는 기존 VNC 세션이 비정상 상태로 남을 수 있다.
+- 이 상태에서는 새 콘솔 접속 요청이 정상 처리되지 않아 화면이 `연결중`에서 계속 대기한다.
 
 #### 해결 방법
 
-1. Mold 시스템 VM 목록에서 Console Proxy VM이 실행 중이고 에이전트가 정상 연결 상태인지 확인한다.
-2. 브라우저 개발자 도구의 `Network/WS`에서 콘솔 WebSocket 요청의 Upgrade 성공 여부와 오류를 확인한다.
-3. 방화벽·로드밸런서·리버스 프록시가 콘솔 포트와 WebSocket `Upgrade/Connection` 헤더를 허용하는지 확인한다.
-4. 사용자 정의 콘솔 도메인·SSL을 사용하면 생성 호스트명의 DNS 해석, 인증서 도메인·유효기간·신뢰 체인을 확인한다.
-5. WebSocket은 성공하지만 화면이 나오지 않으면 Console Proxy VM에서 대상 하이퍼바이저 VNC 포트까지의 통신을 확인한다.
-6. Console Proxy 로그에서 뷰어 생성 실패, 원본 IP 거부, 잘못된 포트 등의 오류를 확인하고 원인 구간을 수정한 뒤 새 콘솔 세션을 연다.
+1. 호스트 관리자 권한으로 `sudo virsh domstate <VM>`, `sudo virsh domdisplay <VM> --type vnc`, `sudo virsh qemu-monitor-command <VM> --pretty '{"execute":"query-vnc"}'`를 실행해 VM 상태, VNC 엔드포인트와 연결 Client를 읽기 전용으로 확인한다.
+2. 필요하면 `sudo virsh dumpxml <VM> | sed -n '/<graphics/,/<\/graphics>/p'`와 `sudo journalctl -u libvirtd -u virtqemud --since '-15 min' --no-pager | grep -Ei 'vnc|console|websocket|qemu|error'`로 그래픽 정의와 최근 오류를 확인한다.
+3. 운영 중인 서비스는 호스트 호환성·스토리지·네트워크·여유 자원을 확인한 뒤 Mold에서 라이브 마이그레이션한다. 목적지 호스트의 QEMU 프로세스와 VNC 엔드포인트가 새로 구성되며 서비스 중단을 최소화할 수 있어 우선 권장한다.
+4. 라이브 마이그레이션이 불가능하면 가상머신을 정지 후 시작한다. 기존 QEMU 프로세스가 종료되고 VNC 소켓이 초기화되지만 게스트 서비스 중단이 발생한다.
+5. ABLESTACK 관리 가상머신에 직접 `virsh migrate`를 실행하지 않는다. 상태 변경은 Mold 또는 승인된 제품 API로 수행한다.
 
 #### 추가 고려사항
 
-- 모든 VM에서 같으면 Console Proxy·DNS·WebSocket 구간을 우선 확인하고, 특정 VM에서만 발생하면 해당 호스트의 VNC 경로와 VM 상태를 우선 확인한다.
-- 원본 IP 검사를 임의로 해제하는 대신 NAT·프록시와 Mold가 인식하는 클라이언트 주소를 일치시킨다.
+- 라이브 마이그레이션 또는 정지 후 시작 뒤에도 지속되거나 같은 호스트의 여러 VM에서 동시에 발생하면 Console Proxy·WebSocket·DNS·방화벽 경로를 후순위로 점검한다.
+- CLI 출력에 비밀번호·토큰을 포함하지 않고, 실행 전 VM 식별자와 변경 영향을 확인한다.
 
 #### 적용 버전
 
 - 현재 적용 기준은 ABLESTACK Cloud Diplo다. 최신 Diplo Head `10973eeb...`와 활성 인덱스 `2a0564fa...` 사이의 콘솔 관련 파일 변경이 없음을 별도 대조했다.
-- Europa 최신 Head에는 noVNC 갱신과 콘솔 UI 관련 변경이 있으나 이 `연결중` 증상의 동일 원인을 직접 해결한다는 근거는 없어 현재 해결책으로 안내하지 않는다.
+- 이 사례는 제품 코드 버전 결함이 아니라 QEMU/libvirt 런타임 상태 문제이므로 Europa 비교는 `NOT_APPLICABLE`이다.
 
-최초 0.11.1 기준선은 같은 질문을 `ABSTAINED`로 처리해 해결 절차를 제공하지 못했다. 0.11.2는 정확한 원인은 확정하지 않으면서도 근거가 있는 점검 순서를 제공한다. 또한 브랜치명 `main`이 일반 단어 `Domain` 내부에서 잘못 마스킹되던 문제를 단어 경계 치환으로 수정했다.
+0.11.2는 제품 내부 Console Proxy 경로를 우선해 실제 알려진 원인과 조치 우선순위가 달랐다. 0.11.3은 Source Reviewer가 승인한 운영 지식과 공식 QEMU/libvirt 문서 스냅샷을 결합해 QEMU VNC 런타임 문제를 우선하고, CLI 조회·라이브 마이그레이션·정지 후 시작·후순위 프록시 점검 순서로 교정했다.
+
+## 외부 플랫폼 참조 검증
+
+| 참조 | 내부 사용 범위 | 사용자 노출 |
+|---|---|---:|
+| ABLESTACK 승인 운영 지식 | 알려진 증상·원인·조치 우선순위 | 내용만 안전 Projection |
+| QEMU QMP Reference | `query-vnc` 서버·Client 상태 확인 | URL·ID 미노출 |
+| libvirt Domain XML / virsh | VNC 엔드포인트·읽기 전용 진단 | URL·ID 미노출 |
+| QEMU Migration Compatibility | 소스·대상 QEMU 프로세스 동작 보강 | URL·ID 미노출 |
+
+답변 생성 중 실시간 웹 요청은 0건이다. 로컬 JSON은 Content Digest와 Reviewer·승인일을 가지며, 30일 주기로 원문 변경 여부를 확인하되 승인 전에는 활성 스냅샷을 교체하지 않는다.
 
 ## 기존 서비스 보호
 

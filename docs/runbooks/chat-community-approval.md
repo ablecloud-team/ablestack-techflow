@@ -38,13 +38,13 @@ Flarum 서버 간 전송은 시험망의 사설 경로 `http://172.16.0.234`, �
 
 ## 3. Synology Chat Bot 설정
 
-1. Chat 관리 화면에서 Bot 이름과 설명을 생성한다.
+1. `프로필 → 통합 → 봇`에서 Bot 이름과 설명을 생성한다. 단순 Incoming/Outgoing Webhook 유형으로 대체하지 않는다.
 2. Outgoing URL을 `https://techflow.ablecloud.io/techflow/chat/assist`로 설정한다.
 3. 생성된 Token을 GitHub Secret과 서버 보호 파일에 주입한다.
 4. 담당자는 Bot 대화에서 `연결`을 한 번 실행한다.
-5. `대기`, `상세`, `이력`으로 연결과 권한을 확인한다.
+5. `대기`, `상세`, `근거`, `이력`으로 연결과 권한을 확인한다.
 
-Bot Token은 URL·문서에 직접 복사하지 않는다. Synology Chat의 outgoing/interactive callback 필드와 incoming Bot 메시지·버튼 계약을 사용한다.
+Bot Token은 URL·문서에 직접 복사하지 않는다. 사용자가 보낸 명령은 Outgoing URL에서 검증하고, Gateway가 먼저 보내는 알림은 Bot 설정의 받는 URL과 동일한 `SYNO.Chat.External method=chatbot version=2` 계약을 사용한다. `method=incoming`은 Incoming Webhook 전용이므로 Bot Token과 함께 사용하지 않는다.
 
 ## 4. 사전 백업
 
@@ -82,13 +82,16 @@ curl -sS -o /dev/null -w '%{http_code}' \
 ## 6. 담당자 운영 절차
 
 1. `대기`로 검토 대상 Case를 찾는다.
-2. `상세 <Case>` 또는 알림 버튼으로 질문, AI 판정, 초안과 Citation을 확인한다.
-3. 초안이 그대로 적합하면 `승인 <Case> <Version>`을 실행한다.
-4. 수정이 필요하면 `수정 <Case> <Version> <최종 답변>`을 실행한다.
-5. 근거가 부족하거나 부적합하면 `반려 <Case> <Version> <사유>`를 실행한다.
-6. `이력` 또는 `이력 <Case>`로 최종 상태와 Reviewer를 확인한다.
+2. `상세 <Case>` 또는 알림 버튼으로 질문과 답변 초안만 확인한다. 기본 상세에는 Citation과 Source Coverage가 표시되지 않는다.
+3. 내부 근거 검토가 필요한 경우에만 `근거 <Case>`를 명시적으로 실행해 Citation, 전체 Coverage, 현재판·프리뷰 판정을 확인한다.
+4. 초안이 그대로 적합하면 `승인 <Case> <Version>`을 실행한다.
+5. 수정이 필요하면 `수정 <Case> <Version> <최종 답변>`을 실행한다.
+6. 근거가 부족하거나 부적합하면 `반려 <Case> <Version> <사유>`를 실행한다.
+7. `이력` 또는 `이력 <Case>`로 최종 상태와 Reviewer를 확인한다.
 
 Chat에 표시된 최종 상태가 `PUBLISHED`인 경우에만 Community 게시 완료로 판정한다. 단순 Webhook HTTP 200은 성공 판정 기준이 아니다.
+
+신규 미답변 Discussion은 Poller가 10초 간격으로 확인하며, 최초 Case 생성 시 연결된 담당자에게 “새 Community 글이 등록되어 검토가 필요합니다” 알림을 자동 전송한다. 전송은 최대 3회 재시도되고 같은 Discussion의 중복 Event에는 다시 알리지 않는다. 알림이 오지 않으면 Poller의 `community_poll_completed`, Gateway의 `community_chat_notification_sent|failed|skipped` 구조화 로그와 Reviewer 연결 상태를 확인한다. `bot type error`가 기록되면 Bot 발송 메서드가 `chatbot`인지 우선 확인한다.
 
 ## 7. 영구 삭제된 원본 정리
 

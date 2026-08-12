@@ -86,6 +86,7 @@ def parse_command(event: ChatEvent) -> tuple[str, list[str]]:
     aliases = {
         "도움말": "help", "help": "help", "연결": "connect", "connect": "connect",
         "대기": "pending", "pending": "pending", "상세": "detail", "detail": "detail",
+        "근거": "evidence", "evidence": "evidence",
         "승인": "approve", "approve": "approve", "반려": "reject", "reject": "reject",
         "수정": "edit", "edit": "edit", "이력": "history", "history": "history",
     }
@@ -98,6 +99,7 @@ def help_text() -> str:
         "• 연결 - 현재 Chat 계정을 승인 담당자로 연결\n"
         "• 대기 - 승인 대기 목록\n"
         "• 상세 <Discussion ID 또는 Case 앞 8자>\n"
+        "• 근거 <Discussion ID 또는 Case 앞 8자> - 내부 검토 근거 표시\n"
         "• 승인 <Case> <Version>\n"
         "• 수정 <Case> <Version> <최종 답변>\n"
         "• 반려 <Case> <Version> <사유>\n"
@@ -110,7 +112,6 @@ def case_reference(value: dict[str, Any]) -> str:
 
 
 def case_text(value: dict[str, Any], *, include_answer: bool = True) -> str:
-    citations = value.get("citations") or []
     lines = [
         f"[Community 검토] {value['title']}",
         f"Case {case_reference(value)} · Discussion #{value['discussionId']} · Version {value['draftVersion']}",
@@ -120,12 +121,24 @@ def case_text(value: dict[str, Any], *, include_answer: bool = True) -> str:
     if include_answer:
         answer = (value.get("draftAnswer") or "근거 기준을 충족한 답변 초안이 없습니다.").strip()
         lines.extend(["", "초안:", answer[:3500]])
+    return "\n".join(lines)[:7000]
+
+
+def case_evidence_text(value: dict[str, Any]) -> str:
+    """Render reviewer-only evidence only after an explicit Chat command."""
+    citations = value.get("citations") or []
+    lines = [
+        f"[Community 내부 근거] {value['title']}",
+        f"Case {case_reference(value)} · Discussion #{value['discussionId']} · Version {value['draftVersion']}",
+    ]
     if citations:
         lines.extend(["", f"Citation {len(citations)}개:"])
         for item in citations[:5]:
             lines.append(
                 f"- {item['repository']} · {item['path']}:{item['startLine']}-{item['endLine']} @ {item['commit'][:12]}"
             )
+    else:
+        lines.extend(["", "Citation이 없습니다."])
     ledger = value.get("evidenceLedger") or {}
     coverage = ledger.get("coverage") or []
     if coverage:
@@ -143,14 +156,17 @@ def case_text(value: dict[str, Any], *, include_answer: bool = True) -> str:
     return "\n".join(lines)[:7000]
 
 
-def case_card(value: dict[str, Any]) -> dict[str, Any]:
+def case_card(value: dict[str, Any], *, new_notification: bool = False) -> dict[str, Any]:
     reference, version = case_reference(value), value["draftVersion"]
     actions = [{"type": "button", "name": "detail", "value": f"detail:{reference}", "text": "상세", "style": "blue"}]
     if value.get("draftAnswer"):
         actions.append({"type": "button", "name": "approve", "value": f"approve:{reference}:{version}", "text": "승인·게시", "style": "green"})
     actions.append({"type": "button", "name": "reject", "value": f"reject:{reference}:{version}", "text": "반려", "style": "red"})
+    text = case_text(value, include_answer=False)
+    if new_notification:
+        text = "새 Community 글이 등록되어 검토가 필요합니다.\n\n" + text
     return {
-        "text": case_text(value, include_answer=False),
+        "text": text,
         "attachments": [{
             "callback_id": f"community:{value['caseId']}:{version}",
             "text": (value.get("draftAnswer") or "답변 초안 없음")[:1200],
@@ -182,7 +198,7 @@ class SynologyBotClient:
             return
         token = self._token()
         query = urllib.parse.urlencode({
-            "api": "SYNO.Chat.External", "method": "incoming", "version": "2", "token": json.dumps(token),
+            "api": "SYNO.Chat.External", "method": "chatbot", "version": "2", "token": json.dumps(token),
         })
         body = {**payload, "user_ids": [int(item) if item.isdigit() else item for item in user_ids]}
         request = urllib.request.Request(

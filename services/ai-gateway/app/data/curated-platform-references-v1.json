@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0",
+  "setId": "ABLESTACK_CURATED_PLATFORM_REFERENCES_V1",
+  "reviewStatus": "APPROVED",
+  "reviewedBy": "dhslove",
+  "reviewedAt": "2026-08-12",
+  "refreshPolicy": {
+    "mode": "LOCAL_SNAPSHOT_WITH_APPROVAL",
+    "checkIntervalDays": 30,
+    "activationRequiresReviewerApproval": true,
+    "liveWebLookupDuringAnswer": false
+  },
+  "entries": [
+    {
+      "entryId": "ABLESTACK-KNOWN-ISSUE-QEMU-VNC-STALE-001",
+      "authority": "OPERATOR_APPROVED_KNOWLEDGE",
+      "title": "Mold 콘솔 연결중 상태의 QEMU VNC 세션 복구",
+      "sourceLocator": "operator://ablestack/support/qemu-vnc-stale-session/1",
+      "matchTerms": ["mold", "콘솔", "연결중", "연결 중", "vnc", "qemu"],
+      "content": "Mold 콘솔 창이 열리지만 연결중 상태에서 더 진행되지 않는 알려진 운영 증상은 가상머신 QEMU 프로세스 내부의 VNC 통신 소켓 또는 이전 VNC 세션이 비정상 상태로 남은 경우 발생할 수 있다. 네트워크 단절이나 브라우저 강제 종료 뒤 이전 세션이 정상 해제되지 않으면 새 콘솔 접속을 처리하지 못할 수 있다. 이 현상은 VNC 콘솔 연결에만 영향을 주며 게스트 운영체제와 그 안의 서비스는 정상 동작할 수 있다. 운영 중인 서비스에서는 ABLESTACK 관리 화면에서 지원 조건을 확인한 뒤 라이브 마이그레이션을 우선 권장한다. 목적지 호스트에서 QEMU 프로세스와 VNC 엔드포인트가 새로 구성되며 게스트 서비스 중단을 최소화할 수 있다. 라이브 마이그레이션이 불가능하면 가상머신을 정지 후 시작하여 QEMU 프로세스와 VNC 소켓을 초기화한다. 정지 후 시작은 서비스 중단을 수반한다. 직접 virsh migrate를 실행하면 관리 계층 상태와 불일치할 수 있으므로 ABLESTACK가 관리하는 가상머신의 변경 작업은 Mold 또는 승인된 제품 API로 수행한다. 조치 전 읽기 전용 확인 명령: sudo virsh domstate <VM>; sudo virsh domdisplay <VM> --type vnc; sudo virsh qemu-monitor-command <VM> --pretty '{\"execute\":\"query-vnc\"}'; sudo virsh dumpxml <VM> | sed -n '/<graphics/,/<\\/graphics>/p'. 로그 확인 명령: sudo journalctl -u libvirtd -u virtqemud --since '-15 min' --no-pager | grep -Ei 'vnc|console|websocket|qemu|error'. query-vnc 결과에서 VNC 서버 enabled, host, service, clients를 확인하고 조치 전후 결과를 비교한다. 명령 실행에는 호스트 관리자 권한이 필요하며 비밀번호나 토큰을 출력 또는 첨부하지 않는다. 동일 호스트의 여러 가상머신에서 동시에 발생하거나 마이그레이션 또는 정지 후 시작 뒤에도 지속되면 Console Proxy, WebSocket, DNS, 방화벽 경로를 후순위로 점검한다."
+    },
+    {
+      "entryId": "QEMU-QMP-VNC-001",
+      "authority": "OFFICIAL_EXTERNAL_DOCUMENTATION",
+      "title": "QEMU QMP VNC 서버와 클라이언트 상태 조회",
+      "sourceLocator": "https://www.qemu.org/docs/master/interop/qemu-qmp-ref.html",
+      "matchTerms": ["콘솔", "연결중", "연결 중", "vnc", "qemu"],
+      "content": "QEMU QMP의 query-vnc 명령은 현재 VNC 서버의 enabled, host, service, authentication과 연결된 clients 정보를 반환한다. VNC_CONNECTED와 VNC_DISCONNECTED 이벤트는 VNC 클라이언트 연결 생명주기를 나타낸다. 따라서 콘솔 연결 장애를 조사할 때 query-vnc를 이용해 서버와 잔존 클라이언트 상태를 읽기 전용으로 확인할 수 있다. 공식 문서는 특정 현상의 원인을 단독으로 확정하지 않으며 실제 런타임 상태와 승인된 운영 지식을 함께 판단해야 한다."
+    },
+    {
+      "entryId": "LIBVIRT-VNC-GRAPHICS-001",
+      "authority": "OFFICIAL_EXTERNAL_DOCUMENTATION",
+      "title": "libvirt VNC 그래픽 엔드포인트와 진단 명령",
+      "sourceLocator": "https://libvirt.org/formatdomain.html",
+      "matchTerms": ["콘솔", "연결중", "연결 중", "vnc", "libvirt", "qemu"],
+      "content": "libvirt 도메인 XML의 graphics type vnc는 QEMU 가상머신의 VNC 그래픽 서버와 listen 주소 또는 UNIX socket 엔드포인트를 정의한다. virsh domdisplay <VM> --type vnc는 그래픽 접속 URI를 조회하고 virsh dumpxml <VM>의 graphics 구간은 현재 정의를 확인하는 읽기 전용 진단에 사용할 수 있다. 엔드포인트 조회 결과만으로 게스트 운영체제 장애를 의미하지는 않는다."
+    },
+    {
+      "entryId": "QEMU-LIVE-MIGRATION-001",
+      "authority": "OFFICIAL_EXTERNAL_DOCUMENTATION",
+      "title": "QEMU 라이브 마이그레이션의 소스·대상 프로세스",
+      "sourceLocator": "https://www.qemu.org/docs/master/devel/migration/compatibility.html",
+      "matchTerms": ["콘솔", "연결중", "연결 중", "vnc", "qemu", "라이브 마이그레이션", "마이그레이션"],
+      "content": "QEMU 공식 마이그레이션 문서는 마이그레이션 중 소스와 대상의 두 QEMU 프로세스가 존재한다고 설명한다. libvirt virsh 문서에서 migrate --live는 도메인을 다른 호스트로 라이브 마이그레이션하는 기능이다. ABLESTACK 관리 가상머신은 Mold 또는 승인된 제품 API로 실행해야 하며, 직접 virsh migrate 명령은 운영 표준에서 명시적으로 승인된 경우에만 사용한다. 라이브 마이그레이션 전 호스트 호환성, 공유 스토리지 또는 스토리지 마이그레이션 조건, 네트워크, 여유 자원과 현재 작업 상태를 확인하고 진행 상태는 제품 화면 또는 sudo virsh domjobinfo <VM>으로 확인한다."
+    }
+  ]
+}

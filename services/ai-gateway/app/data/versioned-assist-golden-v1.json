@@ -55,12 +55,12 @@
     {
       "caseKey": "MOLD-CONSOLE-CONNECTING-001",
       "question": "Mold에서 가상머신의 콘솔 보기를 클릭하면 콘솔 화면이 표시되지만 \"연결중\"이라고 표시되고, 더 이상 화면을 보여주지 않습니다. 콘솔을 보려면 어떻게 해야 하나요?",
-      "expectedCurrentAssessment": "INSUFFICIENT_EVIDENCE",
+      "expectedCurrentAssessment": "CURRENT_RUNTIME_ISSUE",
       "allowedAnswerState": "ANSWERED",
-      "expectedPreviewAssessment": "PREVIEW_PARTIAL",
-      "requiredPublicGuidance": ["Console Proxy", "WebSocket", "실행", "Diplo"],
-      "expectedPublicGuidance": "원인을 확정하지 않고 Console Proxy와 WebSocket/VNC 연결을 순서대로 확인",
-      "forbiddenPublicClaims": ["제품 결함 확정", "Europa에서 해결 완료", "github.com", "CLOUD_DIPLO", "CLOUD_EUROPA"]
+      "expectedPreviewAssessment": "NOT_APPLICABLE",
+      "requiredPublicGuidance": ["QEMU", "VNC", "라이브 마이그레이션", "정지 후 시작", "운영체제", "query-vnc"],
+      "expectedPublicGuidance": "QEMU VNC 세션 상태를 확인하고 운영 중에는 라이브 마이그레이션을 우선 적용하며 정지 후 시작을 대안으로 안내",
+      "forbiddenPublicClaims": ["ABLESTACK 제품 결함", "Europa에서 해결 완료", "github.com", "CLOUD_DIPLO", "CLOUD_EUROPA"]
     }
   ]
 }
