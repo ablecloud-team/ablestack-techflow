@@ -279,6 +279,15 @@ def _archive_total_allowed(compressed_bytes: int, max_extracted_bytes: int, max_
     return min(max_extracted_bytes, max(compressed_bytes, 1) * max_ratio)
 
 
+def _is_ignored_archive_metadata(name: str) -> bool:
+    """Ignore platform metadata that is never useful as technical-support evidence."""
+    parts = [part for part in name.replace("\\", "/").split("/") if part]
+    if not parts:
+        return False
+    basename = parts[-1]
+    return "__MACOSX" in parts or basename == ".DS_Store" or basename.startswith("._")
+
+
 def _scan_zip_path(
     path: Path, *, max_entries: int, max_extracted_bytes: int, max_ratio: int, max_evidence_chars: int,
 ) -> tuple[list[_EntryScan], int]:
@@ -286,7 +295,10 @@ def _scan_zip_path(
     allowed = _archive_total_allowed(compressed_bytes, max_extracted_bytes, max_ratio)
     try:
         with zipfile.ZipFile(path) as archive:
-            infos = [item for item in archive.infolist() if not item.is_dir()]
+            infos = [
+                item for item in archive.infolist()
+                if not item.is_dir() and not _is_ignored_archive_metadata(item.filename)
+            ]
             if not infos or len(infos) > max_entries:
                 raise InvalidBoundaryError("archive entry count is outside the permitted boundary")
             declared_total = 0
@@ -343,7 +355,7 @@ def _scan_tar_gz_path(
     try:
         with tarfile.open(path, mode="r|gz") as archive:
             for member in archive:
-                if member.isdir():
+                if member.isdir() or _is_ignored_archive_metadata(member.name):
                     continue
                 if not member.isfile():
                     raise InvalidBoundaryError("archive links and special files are not permitted")
