@@ -1,0 +1,83 @@
+{
+  "schema_version": "1.0",
+  "issue": 71,
+  "validated_at": "2026-08-14",
+  "decision": "CONDITIONAL_GO",
+  "production_changed": false,
+  "staging": {
+    "platform": "WSL Ubuntu 24.04",
+    "url": "http://localhost:18080",
+    "initial_core": "1.8.10",
+    "target_core": "1.8.18",
+    "final_core": "1.8.18",
+    "debug": false,
+    "services": {
+      "nginx": "active",
+      "php8.3-fpm": "active",
+      "mariadb": "active"
+    },
+    "http_status": 200
+  },
+  "validated_package_set": {
+    "flarum/core": "1.8.18",
+    "flarum/nicknames": "1.8.3",
+    "symfony/mailer": "6.1.11"
+  },
+  "repeatable_cycles": [
+    {
+      "id": "validated-cycle-01",
+      "upgrade": "PASS",
+      "rollback": "PASS"
+    },
+    {
+      "id": "validated-cycle-03",
+      "upgrade": "PASS",
+      "rollback": "PASS"
+    }
+  ],
+  "integrity": {
+    "users": 39,
+    "discussions": 117,
+    "posts": 305,
+    "upload_files": 114,
+    "upload_bytes": 25939695,
+    "upload_sha256": "19cdf52600535380969a176d81bf66678b200a4247694641d00b470b8637a97c",
+    "rollback_business_data_equal": true,
+    "excluded_volatile_table": "access_tokens",
+    "exclusion_reason": "Flarum purges expired access tokens during normal boot; all business tables were equal after restore."
+  },
+  "functional_validation": {
+    "korean_raw_translation_keys": 0,
+    "login": "PASS",
+    "admin": "PASS",
+    "discussion": "PASS",
+    "reply": "PASS",
+    "search": "PASS",
+    "best_answer": "PASS",
+    "image_upload": "PASS",
+    "text_upload": "EXPECTED_REJECT_CURRENT_POLICY",
+    "staging_test_discussion": 166,
+    "staging_test_data_removed_by_rollback": true,
+    "techflow_unittest_count": 216,
+    "techflow_unittest_result": "PASS"
+  },
+  "security": {
+    "nicknames_advisory_removed": true,
+    "accepted_residual": {
+      "package": "symfony/mailer",
+      "version": "6.1.11",
+      "cve": "CVE-2026-45068",
+      "affected_transport": "sendmail",
+      "current_mail_driver": "smtp",
+      "constraint": "Flarum 1.8 dependency set cannot install Symfony Mailer 6.4 with its required Symfony MIME version.",
+      "go_condition": "Keep the production mail driver on smtp; do not switch to sendmail. Track replacement under Issue #74."
+    }
+  },
+  "scope_boundaries": {
+    "large_log_archive_uploads": "Issue #72",
+    "community_ui_modernization": "Issue #73",
+    "backup_monitoring_security": "Issue #74",
+    "protected_github_chat_webhook_changed": false,
+    "production_rollout_requires_explicit_approval": true
+  }
+}
