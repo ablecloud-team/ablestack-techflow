@@ -1,8 +1,8 @@
 {
   "schemaVersion": "1.0",
   "issue": 71,
-  "generatedAt": "2026-08-13T16:48:26.187285+00:00",
-  "artifactCount": 13,
+  "generatedAt": "2026-08-14T13:36:33.094522+00:00",
+  "artifactCount": 14,
   "artifacts": [
     {
       "path": "deploy/flarum/rehearse-1.8.18.sh",
@@ -11,63 +11,68 @@
     },
     {
       "path": "docs/evidence/issue-71/flarum-1.8.18-validation.json",
-      "bytes": 2508,
-      "sha256": "15ab774ed6ddb37973544da2c71b834164cb28fd59ad777b1f3e81b55b4a48f1"
+      "bytes": 4932,
+      "sha256": "7b33ddbaaca5ac21aab8846326c8188526afa4f0a8d658a7aac08bad85c57642"
+    },
+    {
+      "path": "docs/evidence/issue-71/flarum-1.8.18-production-rollout.json",
+      "bytes": 2979,
+      "sha256": "3428d6e88e106ceeaf85ba4546d32840e947c84e60aff8e8bf3014a2d16b4906"
     },
     {
       "path": "docs/runbooks/flarum-1.8.18-upgrade-rollback.md",
-      "bytes": 6676,
-      "sha256": "810642ef6be499890b415cf46a50aeda38bc5ceb29dc516e4985ebf2359c9823"
+      "bytes": 8193,
+      "sha256": "2ed214f0ea11eef618c076330a8e5c9898d52be7d67c8be885773e09b4179e73"
     },
     {
       "path": "docs/reports/issue-71-flarum-1.8.18-validation.md",
-      "bytes": 5652,
-      "sha256": "e1195011ee2f4bec910f15bd48f10f023555f7df64ed579d1681a54ed825c49e"
+      "bytes": 5107,
+      "sha256": "496d34347eed4e630675645e768f961103d0dfefb038a78254ec03f9d6ad4d53"
     },
     {
       "path": "output/pdf/techflow-flarum-1.8.18-upgrade-report.pdf",
-      "bytes": 115435,
-      "sha256": "d3a80ed56bfee9f58fa7dff05a07a9d24de7def106d51d71cc7f9ead237b0a98"
+      "bytes": 118387,
+      "sha256": "bfa27a15c92cde314936f2174893a51fd898bb73f6f777f862c5abe1a96148be"
     },
     {
       "path": "output/presentation/techflow-flarum-1.8.18-upgrade.pptx",
-      "bytes": 35983,
-      "sha256": "605096a0f753a6a0a7c56edc5d3936b7ab81af76b048b6c2c3c76b54d1674c40"
+      "bytes": 35895,
+      "sha256": "dfc9971208c75e9c148bebe0ad24608f777177ab90bcc24a3f188a6e43f2a5f4"
     },
     {
       "path": "output/pdf/techflow-flarum-1.8.18-upgrade-presentation.pdf",
-      "bytes": 519772,
-      "sha256": "18f7b3f564d23137a6b4da309472b5ffb6dd11cc5489abd8c8b1b119e641dfc3"
+      "bytes": 548936,
+      "sha256": "f84a581e4eea6f9c35b08e795374c04b5ca6a8db23fc4bfdf53e2e24c26410ec"
     },
     {
       "path": "tools/artifacts/issue-71/README.md",
-      "bytes": 803,
-      "sha256": "5b8cd29e725ebbcc0b907992aa3a1ec2395370ddecd3420b2ba65db25350ca39"
+      "bytes": 825,
+      "sha256": "172e8c7f1a3b46c9d1a43e9d6f00adbb862b05514b6d62842322c7b207d7be79"
     },
     {
       "path": "tools/artifacts/issue-71/build_report.py",
-      "bytes": 12357,
-      "sha256": "74a454b1ae52e4af5cc58c18c389a319b75e96d73a0a6ddfac4fcf11709ba0b8"
+      "bytes": 13406,
+      "sha256": "020b69bbc79fed8261c7c0ce9382c766502c6cc8a2a12f5f1acb5a2f4ce72a67"
     },
     {
       "path": "tools/artifacts/issue-71/build_presentation.mjs",
-      "bytes": 10886,
-      "sha256": "bbf2f9234952bd4cef6ad4203c38244ac1e0583708ec3f529f6bc6720d54ac59"
+      "bytes": 11239,
+      "sha256": "0498a58c262e03667a95c8a55f4cddceb43844dfb2c2146a5aa5d567936c2737"
     },
     {
       "path": "tools/artifacts/issue-71/build_presentation_pdf.py",
-      "bytes": 1115,
-      "sha256": "6c6a83340fb5176e5747d4f89302212a9b0df474c4759577fd09df4314fae3ca"
+      "bytes": 1109,
+      "sha256": "9365045f87a318f37bb5ea2775d30da970194ad88fc8955bea78c275004296c9"
     },
     {
       "path": "tools/artifacts/issue-71/build_manifest.py",
-      "bytes": 1602,
-      "sha256": "6baecf9c73f70fcefdb0b739e4dfdf9364880b3fb03161567a5ff6ff3f0d0e9e"
+      "bytes": 1670,
+      "sha256": "4b504f707235ab8f1d4d82384b490808229b048f04d525b38ae6535e7ee8d683"
     },
     {
       "path": "tools/artifacts/issue-71/validate_artifacts.py",
-      "bytes": 1653,
-      "sha256": "60dbe71c556ccee85a642a917d44bd1389e5988d07a5e95ad57bae6735544a28"
+      "bytes": 2010,
+      "sha256": "2a83e1966d5604fc7442ecea2aec01b1c1dd935687ed2d8c963754a3f6545524"
     }
   ]
 }

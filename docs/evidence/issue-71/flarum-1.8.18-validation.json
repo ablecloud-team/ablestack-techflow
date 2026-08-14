@@ -2,8 +2,8 @@
   "schema_version": "1.0",
   "issue": 71,
   "validated_at": "2026-08-14",
-  "decision": "CONDITIONAL_GO",
-  "production_changed": false,
+  "decision": "GO_COMPLETED",
+  "production_changed": true,
   "staging": {
     "platform": "WSL Ubuntu 24.04",
     "url": "http://localhost:18080",
@@ -22,6 +22,71 @@
     "flarum/core": "1.8.18",
     "flarum/nicknames": "1.8.3",
     "symfony/mailer": "6.1.11"
+  },
+  "production_rollout": {
+    "host": "172.16.0.234",
+    "application_root": "/var/www/html",
+    "url": "https://community.ablecloud.io",
+    "completed_at": "2026-08-14",
+    "baseline": {
+      "flarum_core": "1.8.10",
+      "flarum_nicknames": "1.8.2",
+      "symfony_mailer": "6.1.11",
+      "mail_driver": "smtp",
+      "debug": false
+    },
+    "attempts": [
+      {
+        "change_id": "issue-71-20260814T132041Z",
+        "result": "AUTO_ROLLBACK_PASS",
+        "reason": "The server cannot reach its own public URL through hairpin NAT. The deployment health check timed out and the script restored the baseline automatically.",
+        "rollback_diff_empty": true
+      },
+      {
+        "change_id": "issue-71-20260814T132424Z",
+        "result": "UPGRADE_SUCCESS",
+        "health_check": "HTTP request to 127.0.0.1 with Host and X-Forwarded-Proto headers",
+        "backup_root": "/var/backups/techflow-flarum/issue-71-20260814T132424Z",
+        "backup_database_sha256": "PASS",
+        "backup_application_bytes": 237062765,
+        "backup_database_gzip_bytes": 167262
+      }
+    ],
+    "final": {
+      "flarum_core": "1.8.18",
+      "flarum_nicknames": "1.8.3",
+      "symfony_mailer": "6.1.11",
+      "mail_driver": "smtp",
+      "debug": false,
+      "services": {
+        "nginx": "active",
+        "php8.3-fpm": "active",
+        "mariadb": "active"
+      },
+      "external_http_status": 200,
+      "users": 39,
+      "discussions": 120,
+      "posts": 320,
+      "upload_files": 115,
+      "upload_bytes": 26060120,
+      "upload_sha256": "35cbac9f2d28a995ae4beda4bad819237d5c5e1d3594111ada30697a1d97ff50"
+    },
+    "browser_validation": {
+      "home": "PASS",
+      "discussion_detail": "PASS",
+      "korean_raw_translation_keys": 0,
+      "browser_console_errors": 0,
+      "admin_external_status": 403,
+      "admin_note": "The admin path is restricted by the existing external access policy; Flarum CLI and public user paths were used for the production version and function checks."
+    },
+    "techflow_integration": {
+      "community_poller_recovered": true,
+      "poller_failed_count": 0,
+      "ai_gateway_healthy": true,
+      "activepieces_healthy": true,
+      "protected_github_chat_guard": "PASS",
+      "protected_github_chat_changed": false
+    }
   },
   "repeatable_cycles": [
     {
@@ -78,6 +143,7 @@
     "community_ui_modernization": "Issue #73",
     "backup_monitoring_security": "Issue #74",
     "protected_github_chat_webhook_changed": false,
-    "production_rollout_requires_explicit_approval": true
+    "production_rollout_requires_explicit_approval": false,
+    "production_rollout_approval_received": true
   }
 }

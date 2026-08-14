@@ -4,7 +4,7 @@
 
 이 Runbook은 ABLESTACK Community의 Flarum 1.8.10을 1.8.18로 업데이트하고, 이상이 있으면 같은 점검 창 안에서 1.8.10으로 복원하는 절차를 정의한다. WSL Ubuntu 24.04 스테이징에서 검증한 명령만 포함한다.
 
-운영 서버 반영은 담당자의 명시적 승인 후에만 수행한다. 비밀번호, 토큰, 쿠키, DB Dump, 원본 첨부파일은 GitHub에 저장하지 않는다.
+2026-08-14 승인에 따라 운영 반영을 완료했다. 비밀번호, 토큰, 쿠키, DB Dump, 원본 첨부파일은 GitHub에 저장하지 않는다.
 
 ## 검증된 변경 집합
 
@@ -65,8 +65,8 @@ flowchart LR
 아래 예시는 운영 경로와 DB명을 환경변수로 명시한다. 실제 값은 작업 직전에 확인하고 셸 세션에서만 설정한다.
 
 ```bash
-export FLARUM_APP_ROOT=/var/www/community
-export FLARUM_STAGE_ROOT=/var/backups/techflow-flarum-change
+export FLARUM_APP_ROOT=/var/www/html
+export FLARUM_STAGE_ROOT=/var/backups/techflow-flarum
 export FLARUM_DB_NAME=flarum
 ```
 
@@ -87,6 +87,17 @@ php flarum cache:clear
 6. PHP-FPM과 Nginx를 재시작한다.
 7. 자동 점검과 사용자 시나리오 점검이 모두 통과한 뒤 유지보수 모드를 종료한다.
 
+운영 서버는 자신의 공개 URL에 대한 NAT loopback을 지원하지 않는다. 서버 내부 배포 점검에서 공개 URL을 직접 사용하면 서비스가 정상이어도 요청이 시간 초과될 수 있다. 다음처럼 로컬 Nginx에 실제 가상 호스트와 HTTPS 전달 헤더를 지정한다.
+
+```bash
+curl --fail --silent --show-error \
+  -H 'Host: community.ablecloud.io' \
+  -H 'X-Forwarded-Proto: https' \
+  http://127.0.0.1/
+```
+
+외부 상태 확인은 별도의 외부 실행 지점에서 `https://community.ablecloud.io`를 확인한다.
+
 ## 배포 후 검증
 
 ### 자동 점검
@@ -94,11 +105,13 @@ php flarum cache:clear
 - `composer show flarum/core`가 1.8.18이다.
 - `composer show flarum/nicknames`가 1.8.3이다.
 - Nginx, PHP-FPM, MariaDB가 active이다.
-- Community 첫 화면과 관리자 화면이 HTTP 200이다.
+- Community 첫 화면과 토론 상세 화면이 HTTP 200이다.
 - `forum-ko.js`가 비어 있지 않고 `core.forum.header.search_placeholder`를 포함한다.
 - 내부 번역 키가 화면에 노출되지 않는다.
 - 사용자, 토론, 게시물, 첨부파일 수와 첨부 해시가 기준선과 일치한다.
 - Composer audit에는 승인되지 않은 새 보안 권고가 없다.
+
+Admin 경로가 기존 외부 접근 정책으로 HTTP 403인 경우, 이를 Flarum 장애로 판정하지 않는다. Flarum CLI의 버전·확장 로딩, 공개 사용자 경로와 정책 내부의 관리자 접근 경로를 각각 확인한다.
 
 ### 사용자 시나리오
 
@@ -147,7 +160,17 @@ php flarum cache:clear
 ## 증적과 후속 작업
 
 - 구조화 증적: `docs/evidence/issue-71/flarum-1.8.18-validation.json`
+- 운영 실행 증적: `docs/evidence/issue-71/flarum-1.8.18-production-rollout.json`
 - 검증 보고서: `docs/reports/issue-71-flarum-1.8.18-validation.md`
 - 대용량 업로드: Issue #72
 - UI 현대화: Issue #73
 - 백업·모니터링·보안: Issue #74
+
+## 2026-08-14 운영 실행 기록
+
+| 실행 | 변경 ID | 결과 | 비고 |
+|---|---|---|---|
+| 1차 | `issue-71-20260814T132041Z` | 자동 롤백 PASS | 공개 URL 자체 점검이 NAT loopback 제약으로 시간 초과 |
+| 2차 | `issue-71-20260814T132424Z` | 업데이트 PASS | 로컬 Nginx와 Host/HTTPS 전달 헤더로 점검 |
+
+최종 운영 상태는 Core 1.8.18, Nicknames 1.8.3, SMTP, Debug Off다. 두 실행의 백업은 `/var/backups/techflow-flarum/` 아래에 보존한다.

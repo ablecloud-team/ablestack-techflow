@@ -99,6 +99,8 @@ def footer(canvas, doc) -> None:
 data = json.loads(SOURCE.read_text(encoding="utf-8"))
 staging = data["staging"]
 integrity = data["integrity"]
+production = data["production_rollout"]
+final = production["final"]
 functional = data["functional_validation"]
 residual = data["security"]["accepted_residual"]
 
@@ -118,12 +120,12 @@ doc.addPageTemplates([PageTemplate(
 story = [
     Spacer(1, 19 * mm),
     para("ABLESTACK TECHFLOW · ISSUE #71", "meta"), Spacer(1, 8 * mm),
-    para("Flarum 1.8.18 업데이트 및\n롤백 검증 보고서", "title"), Spacer(1, 6 * mm),
-    para("운영 변경 전에 WSL Ubuntu 24.04에서 반복 업데이트, 데이터 정합성, 한글 UI, Community 기능과 TechFlow 회귀를 검증한 결과입니다.", "subtitle"),
+    para("Flarum 1.8.18 업데이트 및\n운영 반영 보고서", "title"), Spacer(1, 6 * mm),
+    para("WSL 반복 리허설을 거쳐 운영 Community를 업데이트하고 데이터 정합성, 브라우저 기능과 TechFlow 통합을 확인한 결과입니다.", "subtitle"),
     Spacer(1, 17 * mm),
-    callout("조건부 Go - 검증된 절차로 운영 업데이트가 가능하지만, 명시적 승인과 SMTP 유지 확인 후에만 실행합니다."),
+    callout("Go 완료 - 운영 Community는 Flarum 1.8.18이며 데이터와 첨부가 변경 전후 정확히 일치합니다."),
     Spacer(1, 8 * mm),
-    para("검증일 2026-08-14 · 운영 서버 변경 없음 · PR #65 Draft 유지", "meta"),
+    para("운영 반영일 2026-08-14 · PR #75 병합 · PR #65 분리 유지", "meta"),
     PageBreak(),
     para("1. 판단 요약", "h1"),
     table([
@@ -133,10 +135,10 @@ story = [
         ["한글 UI", "0건", "내부 번역 키 노출 없음"],
         ["Community 기능", "PASS", "로그인·글·답글·검색·이미지·Best Answer"],
         ["TechFlow 회귀", "216/216 PASS", "AI 답변·Chat·대화·KB 계약 유지"],
-        ["운영 반영", "대기", "담당자 명시 승인 전에는 변경하지 않음"],
+        ["운영 반영", "완료", "두 번째 실행 성공, 첫 실행은 자동 롤백 검증"],
     ], [46 * mm, 35 * mm, 93 * mm]),
     Spacer(1, 7 * mm),
-    callout("WSL 최종 상태: Flarum 1.8.18 / Nicknames 1.8.3 / Debug Off / HTTP 200", BLUE),
+    callout("운영 최종 상태: Flarum 1.8.18 / Nicknames 1.8.3 / SMTP / Debug Off / HTTP 200", BLUE),
     PageBreak(),
     para("2. 검증된 패키지와 호환성", "h1"),
     table([
@@ -185,7 +187,7 @@ story = [
         ["TechFlow 자동 테스트", "PASS", f'{functional["techflow_unittest_count"]}건'],
     ], [58 * mm, 35 * mm, 81 * mm]),
     Spacer(1, 6 * mm),
-    para("시험 토론 #166에 답글과 이미지, Best Answer를 만들고 확인했습니다. 시험 데이터는 최종 롤백으로 제거했습니다. 실제 외부 Chat 전송은 스테이징에서 수행하지 않았으며 운영 배포 후 E2E 관문으로 다시 확인합니다."),
+    para("스테이징 시험 토론 #166의 기능 검증을 마친 뒤 롤백으로 제거했습니다. 운영 반영 후 Community 첫 화면과 토론 상세, Community poller 회복, AI Gateway·Activepieces 상태와 보호 GitHub→Chat 가드를 확인했습니다."),
     PageBreak(),
     para("5. 보안 판단", "h1"),
     callout("Nicknames CVE-2026-30913은 1.8.3 업데이트로 제거했습니다.", GREEN),
@@ -196,7 +198,25 @@ story = [
     para("운영 조건", "h2"),
     para("1. SMTP 유지  2. Sendmail 전환 금지  3. 호환 가능한 의존성 집합이 나오면 Issue #74에서 교체  4. 승인되지 않은 Composer 변경이 보이면 No-Go"),
     PageBreak(),
-    para("6. 운영 Go/No-Go", "h1"),
+    para("6. 운영 실행 결과", "h1"),
+    table([
+        ["실행", "변경 ID", "결과", "판정"],
+        ["1차", "issue-71-20260814T132041Z", "자동 롤백", "NAT loopback 점검 경로 보정"],
+        ["2차", "issue-71-20260814T132424Z", "업데이트 성공", "운영 유지"],
+    ], [22 * mm, 58 * mm, 38 * mm, 56 * mm]),
+    Spacer(1, 6 * mm),
+    table([
+        ["운영 지표", "변경 전", "변경 후", "결과"],
+        ["사용자", final["users"], final["users"], "일치"],
+        ["토론", final["discussions"], final["discussions"], "일치"],
+        ["게시물", final["posts"], final["posts"], "일치"],
+        ["첨부파일", final["upload_files"], final["upload_files"], "일치"],
+        ["첨부 용량", f'{final["upload_bytes"]:,} B', f'{final["upload_bytes"]:,} B', "일치"],
+    ], [48 * mm, 42 * mm, 42 * mm, 42 * mm]),
+    Spacer(1, 6 * mm),
+    callout("백업: /var/backups/techflow-flarum/issue-71-20260814T132424Z · DB gzip SHA-256 PASS", GREEN),
+    PageBreak(),
+    para("7. 운영 Go/No-Go 기준", "h1"),
     table([
         ["Go", "No-Go / 즉시 롤백"],
         ["앱·설정·DB·업로드 동시 백업", "백업 또는 복원 시험 실패"],
@@ -208,19 +228,17 @@ story = [
         ["Community·TechFlow E2E 통과", "AI 답변·Chat·KB 회귀 실패"],
     ], [87 * mm, 87 * mm]),
     Spacer(1, 7 * mm),
-    callout("운영 작업은 승인자가 Go를 선언한 뒤 시작하며, 하나라도 No-Go이면 같은 점검 창에서 기준선으로 복원합니다.", BLUE),
+    callout("이번 운영 작업은 모든 Go 기준을 충족했습니다. 향후 재실행에서도 하나라도 No-Go이면 같은 점검 창에서 기준선으로 복원합니다.", BLUE),
     PageBreak(),
-    para("7. 다음 실행", "h1"),
-    para("1. Issue #71 PR 검토와 운영 작업 승인"),
-    para("2. Runbook으로 운영 업데이트 및 배포 후 E2E"),
-    para("3. Issue #72 대용량 로그·압축 업로드 개선"),
-    para("4. Issue #73 Community UI 현대화"),
-    para("5. Issue #74 백업·모니터링·잔여 보안 항목 강화"),
+    para("8. 후속 작업", "h1"),
+    para("1. Issue #72 대용량 로그·압축 업로드 개선"),
+    para("2. Issue #73 Community UI 현대화"),
+    para("3. Issue #74 백업·모니터링·잔여 보안 항목 강화"),
     Spacer(1, 8 * mm),
-    callout("현재 WSL은 1.8.18 검증 상태로 유지되어 #72와 #73 후속 작업에 바로 사용할 수 있습니다."),
+    callout("운영은 1.8.18로 전환됐고 WSL 검증 환경도 유지되어 #72와 #73 후속 작업에 사용할 수 있습니다."),
     Spacer(1, 8 * mm),
     para("근거 자산", "h2"),
-    para("Runbook: docs/runbooks/flarum-1.8.18-upgrade-rollback.md\n검증 보고서: docs/reports/issue-71-flarum-1.8.18-validation.md\n구조화 증적: docs/evidence/issue-71/flarum-1.8.18-validation.json", "small"),
+    para("Runbook: docs/runbooks/flarum-1.8.18-upgrade-rollback.md\n검증 보고서: docs/reports/issue-71-flarum-1.8.18-validation.md\n구조화 증적: docs/evidence/issue-71/flarum-1.8.18-validation.json\n운영 증적: docs/evidence/issue-71/flarum-1.8.18-production-rollout.json", "small"),
 ]
 
 doc.build(story)
