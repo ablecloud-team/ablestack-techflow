@@ -1,0 +1,90 @@
+{
+  "schema_version": "1.0",
+  "issue": 71,
+  "executed_at": "2026-08-14",
+  "target": {
+    "host": "172.16.0.234",
+    "application_root": "/var/www/html",
+    "url": "https://community.ablecloud.io"
+  },
+  "approval": {
+    "pr_75": "APPROVED_AND_MERGED",
+    "production_update": "APPROVED"
+  },
+  "pr_75": {
+    "url": "https://github.com/ablecloud-team/ablestack-techflow/pull/75",
+    "merge_commit": "ae242b8c436d7632ff2ad3f17d012820d003da6c",
+    "merged_at": "2026-08-14T13:17:38Z"
+  },
+  "attempts": [
+    {
+      "change_id": "issue-71-20260814T132041Z",
+      "result": "AUTO_ROLLBACK_PASS",
+      "backup_root": "/var/backups/techflow-flarum/issue-71-20260814T132041Z",
+      "trigger": "Public URL self-check timed out because the production network does not provide hairpin NAT.",
+      "rollback": {
+        "flarum_core": "1.8.10",
+        "flarum_nicknames": "1.8.2",
+        "counts": { "users": 39, "discussions": 120, "posts": 320, "upload_files": 115 },
+        "rollback_diff_empty": true
+      }
+    },
+    {
+      "change_id": "issue-71-20260814T132424Z",
+      "result": "UPGRADE_SUCCESS",
+      "backup_root": "/var/backups/techflow-flarum/issue-71-20260814T132424Z",
+      "health_check": "curl to http://127.0.0.1/ with Host community.ablecloud.io and X-Forwarded-Proto https",
+      "backup": {
+        "database_gzip_sha256": "PASS",
+        "application_bytes": 237062765,
+        "database_gzip_bytes": 167262
+      }
+    }
+  ],
+  "before": {
+    "flarum_core": "1.8.10",
+    "flarum_nicknames": "1.8.2",
+    "symfony_mailer": "6.1.11",
+    "mail_driver": "smtp",
+    "debug": false,
+    "users": 39,
+    "discussions": 120,
+    "posts": 320,
+    "upload_files": 115,
+    "upload_bytes": 26060120,
+    "upload_sha256": "35cbac9f2d28a995ae4beda4bad819237d5c5e1d3594111ada30697a1d97ff50"
+  },
+  "after": {
+    "flarum_core": "1.8.18",
+    "flarum_nicknames": "1.8.3",
+    "symfony_mailer": "6.1.11",
+    "mail_driver": "smtp",
+    "debug": false,
+    "services": { "nginx": "active", "php8.3-fpm": "active", "mariadb": "active" },
+    "external_http_status": 200,
+    "users": 39,
+    "discussions": 120,
+    "posts": 320,
+    "upload_files": 115,
+    "upload_bytes": 26060120,
+    "upload_sha256": "35cbac9f2d28a995ae4beda4bad819237d5c5e1d3594111ada30697a1d97ff50"
+  },
+  "validation": {
+    "data_and_attachment_integrity": "PASS",
+    "browser_home": "PASS",
+    "browser_discussion_detail": "PASS",
+    "korean_raw_translation_keys": 0,
+    "browser_console_errors": 0,
+    "community_poller_recovered": true,
+    "community_poller_failed_count": 0,
+    "ai_gateway": "HEALTHY",
+    "activepieces": "HEALTHY",
+    "protected_github_chat_guard": "PASS",
+    "protected_github_chat_changed": false
+  },
+  "security": {
+    "flarum_nicknames_advisory_removed": true,
+    "accepted_residual": "symfony/mailer 6.1.11 CVE-2026-45068 affects sendmail; production remains on smtp and Issue #74 tracks replacement."
+  },
+  "decision": "GO_COMPLETED"
+}

@@ -14,6 +14,7 @@ OUTPUT = ROOT / "output/issue-71-flarum-upgrade-artifact-manifest.json"
 ARTIFACTS = [
     "deploy/flarum/rehearse-1.8.18.sh",
     "docs/evidence/issue-71/flarum-1.8.18-validation.json",
+    "docs/evidence/issue-71/flarum-1.8.18-production-rollout.json",
     "docs/runbooks/flarum-1.8.18-upgrade-rollback.md",
     "docs/reports/issue-71-flarum-1.8.18-validation.md",
     "output/pdf/techflow-flarum-1.8.18-upgrade-report.pdf",

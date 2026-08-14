@@ -18,7 +18,7 @@ with Image.open(images[0]) as first:
     width, height = first.size
 OUTPUT.parent.mkdir(parents=True, exist_ok=True)
 pdf = canvas.Canvas(str(OUTPUT), pagesize=(width, height))
-pdf.setTitle("TechFlow Flarum 1.8.18 업데이트 검증 발표자료")
+pdf.setTitle("TechFlow Flarum 1.8.18 운영 반영 발표자료")
 pdf.setAuthor("ABLESTACK TechFlow")
 for image in images:
     with Image.open(image) as current:
