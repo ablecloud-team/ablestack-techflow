@@ -13,6 +13,7 @@ class SettingsTest(unittest.TestCase):
         settings.validate()
         self.assertEqual("memory", settings.store_backend)
         self.assertEqual("mock", settings.provider_mode)
+        self.assertFalse(settings.official_web_search_enabled)
         self.assertEqual(128, settings.embedding_batch_size)
         self.assertEqual(1024 * 1024 * 1024, settings.artifact_max_bytes)
         self.assertEqual(10 * 1024 * 1024 * 1024, settings.artifact_max_archive_bytes)
@@ -47,6 +48,16 @@ class SettingsTest(unittest.TestCase):
     def test_openai_mode_accepts_runtime_secret_file_reference(self) -> None:
         Settings(
             provider_mode="openai",
+            openai_api_key_file="/run/secrets/openai_api_key",
+            openai_project_id_file="/run/secrets/openai_project_id",
+            safety_identifier_salt_file="/run/secrets/safety_identifier_salt",
+        ).validate()
+
+    def test_official_web_search_requires_openai_mode(self) -> None:
+        with self.assertRaises(ConfigurationError):
+            Settings(official_web_search_enabled=True).validate()
+        Settings(
+            provider_mode="openai", official_web_search_enabled=True,
             openai_api_key_file="/run/secrets/openai_api_key",
             openai_project_id_file="/run/secrets/openai_project_id",
             safety_identifier_salt_file="/run/secrets/safety_identifier_salt",
