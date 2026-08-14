@@ -7,10 +7,19 @@ from html.parser import HTMLParser
 import json
 import os
 from pathlib import Path
+import re
 import time
 import urllib.parse
+import urllib.error
 import urllib.request
 from uuid import uuid4
+
+
+DEFAULT_ATTACHMENT_MAX_BYTES = 50 * 1024 * 1024
+DEFAULT_ATTACHMENT_TIMEOUT_SECONDS = 120
+DEFAULT_ATTACHMENT_RETRIES = 2
+DOWNLOAD_CHUNK_BYTES = 1024 * 1024
+TRANSIENT_HTTP_STATUSES = {408, 425, 429, 500, 502, 503, 504}
 
 
 class ContentParser(HTMLParser):
@@ -43,6 +52,82 @@ def request_json(url: str, *, token: str | None = None, data: dict | None = None
         headers["Content-Type"] = "application/json"
     with urllib.request.urlopen(urllib.request.Request(url, data=body, headers=headers), timeout=30) as response:
         return json.loads(response.read().decode("utf-8"))
+
+
+def _bounded_env_int(name: str, default: int, minimum: int, maximum: int) -> int:
+    try:
+        value = int(os.getenv(name, str(default)))
+    except ValueError as exc:
+        raise RuntimeError(f"{name} must be an integer") from exc
+    if not minimum <= value <= maximum:
+        raise RuntimeError(f"{name} must be between {minimum} and {maximum}")
+    return value
+
+
+def _attachment_policy() -> tuple[int, int, int]:
+    return (
+        _bounded_env_int(
+            "TECHFLOW_COMMUNITY_ATTACHMENT_MAX_BYTES", DEFAULT_ATTACHMENT_MAX_BYTES,
+            1024, DEFAULT_ATTACHMENT_MAX_BYTES,
+        ),
+        _bounded_env_int(
+            "TECHFLOW_COMMUNITY_ATTACHMENT_TIMEOUT_SECONDS", DEFAULT_ATTACHMENT_TIMEOUT_SECONDS,
+            5, 300,
+        ),
+        _bounded_env_int("TECHFLOW_COMMUNITY_ATTACHMENT_RETRIES", DEFAULT_ATTACHMENT_RETRIES, 0, 3),
+    )
+
+
+def _attachment_filename(content_disposition: str, path: str) -> str:
+    encoded = re.search(r"filename\*=UTF-8''([^;]+)", content_disposition, re.IGNORECASE)
+    quoted = re.search(r'filename="([^"]+)"', content_disposition, re.IGNORECASE)
+    value = urllib.parse.unquote(encoded.group(1)) if encoded else (quoted.group(1) if quoted else Path(path).name)
+    return Path(value.replace("\\", "/")).name[:128] or "community-artifact"
+
+
+def _warning(filename: str, reason: str) -> str:
+    safe_name = Path(filename.replace("\\", "/")).name[:80] or "첨부파일"
+    messages = {
+        "size": f"첨부파일 {safe_name}은 50MB를 초과해 분석하지 않았습니다. 필요한 로그만 압축해 다시 올려 주세요.",
+        "unsafe": f"첨부파일 {safe_name}은 지원하지 않거나 안전 검사를 통과하지 못해 분석에서 제외했습니다.",
+        "fetch": f"첨부파일 {safe_name}을 가져오지 못했습니다. 잠시 후 다시 첨부해 주세요.",
+        "origin": f"첨부파일 {safe_name}은 Community 외부 주소이므로 분석하지 않았습니다.",
+    }
+    return messages[reason]
+
+
+def _read_attachment(request: urllib.request.Request, *, max_bytes: int, timeout: int, retries: int) -> tuple[bytes, str, str]:
+    last_error: Exception | None = None
+    for attempt in range(retries + 1):
+        try:
+            with urllib.request.urlopen(request, timeout=timeout) as response:
+                content_length = response.headers.get("Content-Length")
+                if content_length and int(content_length) > max_bytes:
+                    raise ValueError("size")
+                content = bytearray()
+                while True:
+                    chunk = response.read(min(DOWNLOAD_CHUNK_BYTES, max_bytes + 1 - len(content)))
+                    if not chunk:
+                        break
+                    content.extend(chunk)
+                    if len(content) > max_bytes:
+                        raise ValueError("size")
+                return (
+                    bytes(content), response.headers.get_content_type(),
+                    response.headers.get("Content-Disposition") or "",
+                )
+        except urllib.error.HTTPError as exc:
+            last_error = exc
+            if exc.code not in TRANSIENT_HTTP_STATUSES or attempt >= retries:
+                raise
+        except urllib.error.URLError as exc:
+            last_error = exc
+            if attempt >= retries:
+                raise
+        if attempt < retries:
+            time.sleep(min(2 ** attempt, 2))
+    assert last_error is not None
+    raise last_error
 
 
 def normalize(payload: dict, base_url: str) -> list[dict]:
@@ -79,29 +164,49 @@ def normalize(payload: dict, base_url: str) -> list[dict]:
 def upload_artifacts(
     event: dict, gateway_url: str, base_url: str, public_url: str, token: str, correlation: str
 ) -> list[str]:
-    ids = []
+    ids: list[str] = []
+    warnings: list[str] = list(event.get("artifactWarnings") or [])
+    max_bytes, timeout, retries = _attachment_policy()
     for raw_url in event.pop("attachmentUrls", []):
         public_attachment_url = urllib.parse.urljoin(public_url + "/", raw_url)
         parsed = urllib.parse.urlparse(public_attachment_url)
         if parsed.scheme != "https" or parsed.netloc != urllib.parse.urlparse(public_url).netloc:
+            warnings.append(_warning(Path(parsed.path).name, "origin"))
             continue
         internal_url = urllib.parse.urljoin(base_url + "/", parsed.path.lstrip("/"))
         if parsed.query:
             internal_url = f"{internal_url}?{parsed.query}"
         req = urllib.request.Request(internal_url, headers={"Authorization": f"Token {token}"})
-        with urllib.request.urlopen(req, timeout=30) as response:
-            content = response.read(10 * 1024 * 1024 + 1)
-            media_type = response.headers.get_content_type()
-        if len(content) > 10 * 1024 * 1024:
-            continue
         filename = Path(parsed.path).name or "community-artifact"
+        try:
+            content, media_type, disposition = _read_attachment(
+                req, max_bytes=max_bytes, timeout=timeout, retries=retries,
+            )
+            filename = _attachment_filename(disposition, parsed.path)
+        except ValueError as exc:
+            if str(exc) == "size":
+                warnings.append(_warning(filename, "size"))
+                continue
+            raise
+        except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError):
+            warnings.append(_warning(filename, "fetch"))
+            continue
         upload = urllib.request.Request(
             gateway_url.rstrip("/") + "/v1/artifacts", data=content, method="POST",
             headers={"Content-Type": media_type, "X-Artifact-Filename": filename,
                      "X-Artifact-Classification": "D0", "X-Correlation-Id": correlation},
         )
-        with urllib.request.urlopen(upload, timeout=30) as response:
-            ids.append(str(json.loads(response.read().decode("utf-8"))["data"]["artifactId"]))
+        try:
+            with urllib.request.urlopen(upload, timeout=timeout) as response:
+                ids.append(str(json.loads(response.read().decode("utf-8"))["data"]["artifactId"]))
+        except urllib.error.HTTPError as exc:
+            if exc.code in TRANSIENT_HTTP_STATUSES:
+                warnings.append(_warning(filename, "fetch"))
+            else:
+                warnings.append(_warning(filename, "unsafe"))
+        except (urllib.error.URLError, TimeoutError):
+            warnings.append(_warning(filename, "fetch"))
+    event["artifactWarnings"] = warnings
     return ids
 
 
