@@ -1,0 +1,73 @@
+{
+  "schemaVersion": "1.0",
+  "issue": 72,
+  "generatedAt": "2026-08-14T18:04:01.821213+00:00",
+  "artifactCount": 13,
+  "artifacts": [
+    {
+      "path": "deploy/flarum/issue72-large-upload-policy.sh",
+      "bytes": 5162,
+      "sha256": "dd69929df026743965fb99ec1d7c056fd809bbc9b5c63c71d508c3e4478968f5"
+    },
+    {
+      "path": "docs/evidence/issue-72/large-upload-production-validation.json",
+      "bytes": 2307,
+      "sha256": "be95bf98e171e5d06880fc8db34960403024e716ec6aa34378d9494068e38b30"
+    },
+    {
+      "path": "docs/runbooks/community-large-uploads.md",
+      "bytes": 5240,
+      "sha256": "93da4da98385da51421b7a5e142faec4c8697cc1dd7fcb91fc8aa14373a9d78e"
+    },
+    {
+      "path": "docs/reports/issue-72-community-large-upload-validation.md",
+      "bytes": 5619,
+      "sha256": "354c435aaa809583e66244be716d7889b793a4f5b53ff4dcb0b0d67c5d4ec371"
+    },
+    {
+      "path": "output/pdf/techflow-issue-72-large-upload-report.pdf",
+      "bytes": 101252,
+      "sha256": "0941e05dbab5bc9a120490b06d0c8bc21ffd5bb0811ffaabc6c78fcf83e5e569"
+    },
+    {
+      "path": "output/presentation/techflow-issue-72-large-upload.pptx",
+      "bytes": 28643,
+      "sha256": "231a1e38db3ed048e407ad4a600b9d0a7cc8445a607afc825f787a00f51c031f"
+    },
+    {
+      "path": "output/pdf/techflow-issue-72-large-upload-presentation.pdf",
+      "bytes": 200231,
+      "sha256": "a536808d699b0c8f5ea25e48c93aa7d3eb24dbda9ec79fdb236b326a38adb051"
+    },
+    {
+      "path": "tools/artifacts/issue-72/README.md",
+      "bytes": 773,
+      "sha256": "341c22e635cd6d92dc8f3fb55a3aa2ecf3ff6a0fcbc369d392401f1e9b0147a7"
+    },
+    {
+      "path": "tools/artifacts/issue-72/build_report.py",
+      "bytes": 9445,
+      "sha256": "a52d86963961d6ae3a7eaa3ac0624f9ef0b7a769acc3829eb5ec794c77643e0f"
+    },
+    {
+      "path": "tools/artifacts/issue-72/build_presentation.mjs",
+      "bytes": 7036,
+      "sha256": "0fa71ae7f7335578629cfcbfa6291698746c7aca4dfcca78c701bca09011f988"
+    },
+    {
+      "path": "tools/artifacts/issue-72/build_presentation_pdf.py",
+      "bytes": 956,
+      "sha256": "dfff24f0d119f5c8be7af713cdb072bf02a8518118b03827faf9c2df374487c8"
+    },
+    {
+      "path": "tools/artifacts/issue-72/build_manifest.py",
+      "bytes": 1393,
+      "sha256": "10000e54e1b0fc9289aab5b4b84857ab721ddf6c233ea8442cbc9d81032d3e49"
+    },
+    {
+      "path": "tools/artifacts/issue-72/validate_artifacts.py",
+      "bytes": 1531,
+      "sha256": "dce9d92e43ab34a7fd8c8b6e94e2efc76db2b613fadd0aad66cb1b4c169445a8"
+    }
+  ]
+}

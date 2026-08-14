@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "issue": 72,
+  "validatedAt": "2026-08-15T03:02:00+09:00",
+  "environments": {
+    "flarum": {
+      "host": "172.16.0.234",
+      "flarum": "1.8.18",
+      "fofUpload": "1.8.5",
+      "rootSizeGiB": 1006,
+      "rootFreeGiB": 955
+    },
+    "techflow": {
+      "host": "172.16.0.231",
+      "release": "issue-72-large-uploads",
+      "rootSizeGiB": 1005,
+      "rootFreeGiB": 917
+    }
+  },
+  "policy": {
+    "fileMaxBytes": 52428800,
+    "extractedMaxBytes": 104857600,
+    "archiveEntriesMax": 100,
+    "compressionRatioMax": 20,
+    "downloadTimeoutSeconds": 120,
+    "downloadRetries": 2,
+    "retentionHours": 24,
+    "maintenanceIntervalSeconds": 900,
+    "diskWarnPercent": 70,
+    "diskCriticalPercent": 85
+  },
+  "tests": {
+    "runtimeRegression": {"total": 259, "passed": 259},
+    "flarumBoundary": [
+      {"case": "50 MiB", "status": 200, "result": "PASS"},
+      {"case": "50 MiB + 1 byte", "status": 422, "result": "PASS"}
+    ],
+    "gatewayBoundary": [
+      {"case": "50 MiB", "status": 201, "result": "PASS"},
+      {"case": "50 MiB + 1 byte", "status": 400, "result": "PASS"}
+    ],
+    "security": [
+      {"case": "path traversal", "status": 400, "result": "PASS"},
+      {"case": "nested archive", "status": 400, "result": "PASS"},
+      {"case": "compression bomb", "status": 400, "result": "PASS"},
+      {"case": "executable member", "status": 400, "result": "PASS"},
+      {"case": "image MIME mismatch", "status": 400, "result": "PASS"}
+    ],
+    "communityE2E": {
+      "temporaryDiscussionId": 172,
+      "formats": ["plain log", "ZIP", "GZIP", "TAR.GZ"],
+      "artifactsAdded": 4,
+      "answerPublished": true,
+      "testDiscussionPermanentlyDeleted": true,
+      "testUploadsDeleted": 33,
+      "residualDatabaseRows": 0
+    },
+    "artifactMaintenance": {
+      "expiredRemovedOnFirstRun": 28,
+      "level": "ok",
+      "diskUsedPercent": 5
+    },
+    "protectedService": {
+      "service": "github-chat-v1",
+      "state": "frozen",
+      "guard": "passed"
+    }
+  },
+  "rollback": {
+    "flarumBackup": "/var/backups/techflow-flarum/issue72-20260814T174252Z",
+    "techflowBackup": "/home/ablecloud/techflow-ai-gateway/backups/issue72-predeploy-20260814T174430Z",
+    "stagingRollbackRehearsed": true,
+    "databaseMigration": false
+  }
+}
