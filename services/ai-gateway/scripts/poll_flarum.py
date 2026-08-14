@@ -31,6 +31,7 @@ class ContentParser(HTMLParser):
         super().__init__()
         self.text: list[str] = []
         self.links: list[str] = []
+        self.attachment_reference_count = 0
 
     def handle_data(self, data: str) -> None:
         if data.strip():
@@ -41,6 +42,10 @@ class ContentParser(HTMLParser):
         href = attributes.get("href") if tag == "a" else None
         source = attributes.get("src") if tag == "img" else None
         upload_uuid = attributes.get("data-fof-upload-download-uuid")
+        if tag == "img":
+            self.attachment_reference_count += 1
+        if upload_uuid:
+            self.attachment_reference_count += 1
         candidates = [href, source]
         if upload_uuid:
             candidates.append(f"/api/fof/download/{urllib.parse.quote(upload_uuid, safe='')}")
@@ -250,6 +255,9 @@ def normalize_posts(discussion: dict, payload: dict, assistant_user_id: str | No
             "turnRole": role, "responseRequested": role != "ASSISTANT",
             "resolutionOnly": False, "tagSlugs": discussion["tagSlugs"],
             "attachmentUrls": parser.links[:5],
+            # Internal poller-only evidence. upload_artifacts removes this key
+            # before the event crosses the Activepieces boundary.
+            "_attachmentReferenceCount": parser.attachment_reference_count,
         })
     events.sort(key=lambda item: (item["postNumber"], int(item["postId"])))
     return events
@@ -296,16 +304,25 @@ def upload_artifacts(
 ) -> tuple[list[str], list[str]]:
     ids: list[str] = []
     warnings: list[str] = list(event.get("artifactWarnings") or [])
+    initial_warning_count = len(warnings)
+    raw_urls = event.pop("attachmentUrls", [])
+    reference_count = max(int(event.pop("_attachmentReferenceCount", 0) or 0), len(raw_urls))
+    public_origin = urllib.parse.urlparse(public_url)
     max_bytes, max_archive_bytes, timeout, retries = _attachment_policy()
     temp_root = Path(os.getenv(
         "TECHFLOW_COMMUNITY_ATTACHMENT_TMP_DIR", str(Path(tempfile.gettempdir()) / "techflow-community-poller")
     ))
     temp_root.mkdir(parents=True, exist_ok=True, mode=0o700)
-    for raw_url in event.pop("attachmentUrls", []):
+    for raw_url in raw_urls:
         public_attachment_url = urllib.parse.urljoin(public_url + "/", raw_url)
         parsed = urllib.parse.urlparse(public_attachment_url)
-        if parsed.scheme != "https" or parsed.netloc != urllib.parse.urlparse(public_url).netloc:
-            warnings.append(_warning(Path(parsed.path).name, "origin"))
+        if (
+            parsed.scheme.casefold() != "https"
+            or not parsed.hostname
+            or parsed.hostname.casefold() != (public_origin.hostname or "").casefold()
+            or parsed.port != public_origin.port
+        ):
+            warnings.append("첨부 주소를 안전하게 확인하지 못했습니다. 파일을 다시 첨부해 주세요.")
             continue
         internal_url = urllib.parse.urljoin(base_url + "/", parsed.path.lstrip("/"))
         if parsed.query:
@@ -342,6 +359,12 @@ def upload_artifacts(
                 warnings.append(_warning(filename, "fetch"))
         finally:
             temporary.unlink(missing_ok=True)
+    accounted = len(ids) + len(warnings) - initial_warning_count
+    if reference_count > accounted:
+        warnings.append(
+            "첨부자료가 본문에 있지만 분석 대상으로 가져오지 못했습니다. 파일을 다시 첨부해 주세요."
+        )
+    event["artifactWarnings"] = warnings
     return ids, warnings
 
 
