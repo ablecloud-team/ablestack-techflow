@@ -101,6 +101,11 @@ class CommunityPollerTests(unittest.TestCase):
         self.assertEqual([], ids)
         self.assertIn("Community 외부 주소", event["artifactWarnings"][0])
 
+    def test_archive_media_type_is_normalized_from_download_filename(self) -> None:
+        self.assertEqual("application/zip", poll_flarum._normalized_attachment_media_type("support.zip", "application/force-download"))
+        self.assertEqual("application/gzip", poll_flarum._normalized_attachment_media_type("support.tar.gz", "application/octet-stream"))
+        self.assertEqual("application/gzip", poll_flarum._normalized_attachment_media_type("agent.log.gz", "application/octet-stream"))
+
 
 if __name__ == "__main__":
     unittest.main()
