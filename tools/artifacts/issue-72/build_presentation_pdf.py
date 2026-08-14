@@ -17,4 +17,3 @@ for image in images:
         if current.size!=(width,height): raise ValueError(f"inconsistent slide size: {image}")
     pdf.drawImage(ImageReader(str(image)),0,0,width=width,height=height); pdf.showPage()
 pdf.save(); print(OUTPUT)
-

@@ -117,4 +117,3 @@ story=[
     para("근거 자산","h2"), para("Runbook: docs/runbooks/community-large-uploads.md\n완료 보고서: docs/reports/issue-72-community-large-upload-validation.md\n구조화 증적: docs/evidence/issue-72/large-upload-production-validation.json","small")
 ]
 doc.build(story); print(OUTPUT)
-

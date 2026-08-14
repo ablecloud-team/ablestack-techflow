@@ -16,4 +16,3 @@ Issue #72 Community 대용량 첨부 개선 보고서와 발표자료를 재생�
 - `output/issue-72-large-upload-artifact-manifest.json`
 
 실행 환경은 Codex bundled Python/Node와 Presentation artifact-tool을 사용한다. 빌드 후 `validate_artifacts.py`로 페이지 수, 파일 크기, 구조화 증적, 비밀정보 미포함을 검증한다.
-

@@ -19,4 +19,3 @@ for relative in ARTIFACTS:
     body=path.read_bytes(); items.append({"path":relative,"bytes":len(body),"sha256":hashlib.sha256(body).hexdigest()})
 OUTPUT.write_text(json.dumps({"schemaVersion":"1.0","issue":72,"generatedAt":datetime.now(timezone.utc).isoformat(),"artifactCount":len(items),"artifacts":items},ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
 print(OUTPUT)
-

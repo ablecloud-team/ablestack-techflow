@@ -111,4 +111,3 @@ TechFlow는 배포 전 `runtime-files.tar.gz`와 `.env`를 복원하고 이전 �
 | 압축 안전 거부 | 파일명, 항목 수, 압축비 | 원본 로그만 다시 압축하도록 안내 |
 | Maintainer 재시작 | 모듈 경로, 볼륨 권한 | 이미지 버전과 `/var/lib/techflow-artifacts` 0700/10001 확인 |
 | 디스크 warning/critical | `df -h`, 유지관리 로그 | 만료 정리 확인 후 고아 파일 조사, 필요 시 업로드 일시 제한 |
-

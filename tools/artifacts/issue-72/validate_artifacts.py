@@ -22,4 +22,3 @@ manifest=json.loads(MANIFEST.read_text(encoding="utf-8")); assert manifest["issu
 texts="\n".join((ROOT/p).read_text(encoding="utf-8") for p in ["docs/reports/issue-72-community-large-upload-validation.md","docs/runbooks/community-large-uploads.md"])
 assert not any(token in texts for token in ["Ablecloud1!","Pdh1974","sk-proj-"])
 print("Issue #72 artifacts: PASS")
-

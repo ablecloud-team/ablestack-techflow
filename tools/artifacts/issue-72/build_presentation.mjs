@@ -83,4 +83,3 @@ for (const [index,slide] of deck.slides.items.entries()) {
   const layout=await slide.export({format:"layout"}); await fs.writeFile(path.join(renderDir,`slide-${String(index+1).padStart(2,"0")}.layout.json`),await layout.text());
 }
 const pptx=await PresentationFile.exportPptx(deck); await pptx.save(output); console.log(output);
-
