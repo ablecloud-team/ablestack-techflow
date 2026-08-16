@@ -218,7 +218,9 @@ def upload_artifacts(
     ids: list[str] = []
     warnings: list[str] = list(event.get("artifactWarnings") or [])
     max_bytes, max_archive_bytes, timeout, retries = _attachment_policy()
-    temp_root = Path(os.getenv("TECHFLOW_COMMUNITY_ATTACHMENT_TMP_DIR", "/var/lib/techflow-community-poller/tmp"))
+    temp_root = Path(os.getenv(
+        "TECHFLOW_COMMUNITY_ATTACHMENT_TMP_DIR", str(Path(tempfile.gettempdir()) / "techflow-community-poller")
+    ))
     temp_root.mkdir(parents=True, exist_ok=True, mode=0o700)
     for raw_url in event.pop("attachmentUrls", []):
         public_attachment_url = urllib.parse.urljoin(public_url + "/", raw_url)
