@@ -77,7 +77,7 @@ PR #65 기반 런타임 오버레이에서 263건 전부 통과했다. 일반/�
 - Flarum 1.8.18 / FoF Upload 1.8.5 / 업로드 정책 검증 통과
 - Gateway `techflow/ai-gateway:issue-72-large-uploads-1g10g`: healthy
 - Community Poller: 반복 처리 `failed=0`
-- Artifact Maintainer: `level=ok`, 디스크 사용 11%, 약 916.8 GB 여유
+- Artifact Maintainer: `level=ok`, 디스크 사용 5%, 약 983.2 GB 여유
 - Flarum 루트: 1006 GiB 중 955 GiB 여유
 - GitHub→Chat 보호 서비스: 배포 전후 `frozen`, guard passed
 - Activepieces app/worker/event-gateway/ingress/Redis/Postgres 컨테이너 ID 불변

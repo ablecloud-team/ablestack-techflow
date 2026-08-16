@@ -21,7 +21,7 @@
       "host": "172.16.0.231",
       "release": "issue-72-large-uploads-1g10g",
       "gatewayHealth": "healthy",
-      "rootFreeBytes": 916826116096
+      "rootFreeBytes": 983218327552
     }
   },
   "policy": {
@@ -72,8 +72,8 @@
     },
     "artifactMaintenance": {
       "level": "ok",
-      "diskUsedPercent": 11,
-      "freeBytes": 916826116096
+      "diskUsedPercent": 5,
+      "freeBytes": 983218327552
     },
     "protectedService": {
       "service": "github-chat-v1",

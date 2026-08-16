@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0",
   "issue": 72,
-  "generatedAt": "2026-08-16T01:28:31.074233+00:00",
+  "generatedAt": "2026-08-16T01:33:18.483764+00:00",
   "artifactCount": 13,
   "artifacts": [
     {
@@ -11,8 +11,8 @@
     },
     {
       "path": "docs/evidence/issue-72/large-upload-production-validation.json",
-      "bytes": 3348,
-      "sha256": "b1f0d6bb22507ca052996345a295c80be3e59d6574aee1093bc7f7b0d9f0fcda"
+      "bytes": 3347,
+      "sha256": "46319a0ecb7a6fc6b889db70c9d4817ac2d20ef3f848542aa88f579276f6efda"
     },
     {
       "path": "docs/runbooks/community-large-uploads.md",
@@ -21,13 +21,13 @@
     },
     {
       "path": "docs/reports/issue-72-community-large-upload-validation.md",
-      "bytes": 6429,
-      "sha256": "32492c4890fe14cd3a6761050cb1d86cb24bc2f60983afc822bd1fac0c2463d8"
+      "bytes": 6428,
+      "sha256": "10302837c332eda773addf302de242d13720c0832ae2c7a21b534853f9192d55"
     },
     {
       "path": "output/pdf/techflow-issue-72-large-upload-report.pdf",
-      "bytes": 102252,
-      "sha256": "41a63e6c5e222b024c5c313711440536bb4c2b49bb579b71d0bfa66c3b32fd00"
+      "bytes": 102255,
+      "sha256": "7ff48ce4887a042ecd62eda7070137ae541e864829ce17eafc84a00fc502a0ee"
     },
     {
       "path": "output/presentation/techflow-issue-72-large-upload.pptx",
@@ -46,8 +46,8 @@
     },
     {
       "path": "tools/artifacts/issue-72/build_report.py",
-      "bytes": 9319,
-      "sha256": "9ea946589c8ba0d63a9ca8a58a0cca08e3dd8fec37b93f539c3b0496f115641a"
+      "bytes": 9318,
+      "sha256": "39dabe021fe8fdd7b40dab63e07f72572f72ddea2f29940ffebaa9928c48cb3d"
     },
     {
       "path": "tools/artifacts/issue-72/build_presentation.mjs",
