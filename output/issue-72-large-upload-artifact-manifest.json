@@ -1,73 +1,73 @@
 {
   "schemaVersion": "1.0",
   "issue": 72,
-  "generatedAt": "2026-08-14T18:04:01.821213+00:00",
+  "generatedAt": "2026-08-16T01:28:31.074233+00:00",
   "artifactCount": 13,
   "artifacts": [
     {
       "path": "deploy/flarum/issue72-large-upload-policy.sh",
-      "bytes": 5162,
-      "sha256": "dd69929df026743965fb99ec1d7c056fd809bbc9b5c63c71d508c3e4478968f5"
+      "bytes": 9822,
+      "sha256": "b8794b38c55722bf46e7297422d7c9d364dc5652aec9f5603723e151c415312a"
     },
     {
       "path": "docs/evidence/issue-72/large-upload-production-validation.json",
-      "bytes": 2307,
-      "sha256": "be95bf98e171e5d06880fc8db34960403024e716ec6aa34378d9494068e38b30"
+      "bytes": 3348,
+      "sha256": "b1f0d6bb22507ca052996345a295c80be3e59d6574aee1093bc7f7b0d9f0fcda"
     },
     {
       "path": "docs/runbooks/community-large-uploads.md",
-      "bytes": 5240,
-      "sha256": "93da4da98385da51421b7a5e142faec4c8697cc1dd7fcb91fc8aa14373a9d78e"
+      "bytes": 6924,
+      "sha256": "486f95e17d2bd69b920d6b2af8334b4a90917984247aa1ce5500801c99f6e197"
     },
     {
       "path": "docs/reports/issue-72-community-large-upload-validation.md",
-      "bytes": 5619,
-      "sha256": "354c435aaa809583e66244be716d7889b793a4f5b53ff4dcb0b0d67c5d4ec371"
+      "bytes": 6429,
+      "sha256": "32492c4890fe14cd3a6761050cb1d86cb24bc2f60983afc822bd1fac0c2463d8"
     },
     {
       "path": "output/pdf/techflow-issue-72-large-upload-report.pdf",
-      "bytes": 101252,
-      "sha256": "0941e05dbab5bc9a120490b06d0c8bc21ffd5bb0811ffaabc6c78fcf83e5e569"
+      "bytes": 102252,
+      "sha256": "41a63e6c5e222b024c5c313711440536bb4c2b49bb579b71d0bfa66c3b32fd00"
     },
     {
       "path": "output/presentation/techflow-issue-72-large-upload.pptx",
-      "bytes": 28643,
-      "sha256": "231a1e38db3ed048e407ad4a600b9d0a7cc8445a607afc825f787a00f51c031f"
+      "bytes": 28607,
+      "sha256": "1bc2299df1374c31ae3f8674ad28c19a0ee185c8766c86410e14c90815f2f4c8"
     },
     {
       "path": "output/pdf/techflow-issue-72-large-upload-presentation.pdf",
-      "bytes": 200231,
-      "sha256": "a536808d699b0c8f5ea25e48c93aa7d3eb24dbda9ec79fdb236b326a38adb051"
+      "bytes": 201443,
+      "sha256": "dbd9f7166b41c9b82bfde65a3bfd9fd4cbc1b9b8752fcbec7f56a44a9b398aa8"
     },
     {
       "path": "tools/artifacts/issue-72/README.md",
-      "bytes": 773,
-      "sha256": "341c22e635cd6d92dc8f3fb55a3aa2ecf3ff6a0fcbc369d392401f1e9b0147a7"
+      "bytes": 772,
+      "sha256": "c9adfcd5583d57749c23e0fab19ee738da9fb3ea82c2606b4197b89cf9cc4a42"
     },
     {
       "path": "tools/artifacts/issue-72/build_report.py",
-      "bytes": 9445,
-      "sha256": "a52d86963961d6ae3a7eaa3ac0624f9ef0b7a769acc3829eb5ec794c77643e0f"
+      "bytes": 9319,
+      "sha256": "9ea946589c8ba0d63a9ca8a58a0cca08e3dd8fec37b93f539c3b0496f115641a"
     },
     {
       "path": "tools/artifacts/issue-72/build_presentation.mjs",
       "bytes": 7036,
-      "sha256": "0fa71ae7f7335578629cfcbfa6291698746c7aca4dfcca78c701bca09011f988"
+      "sha256": "3223003b538e0691387b4e53848545c5a572eb24de14006acae2a130e0f46ff7"
     },
     {
       "path": "tools/artifacts/issue-72/build_presentation_pdf.py",
-      "bytes": 956,
-      "sha256": "dfff24f0d119f5c8be7af713cdb072bf02a8518118b03827faf9c2df374487c8"
+      "bytes": 955,
+      "sha256": "c3f6ef0d6f859c393db8badac856b0d3007e6a374bc84d05ef84e1c23f0153a0"
     },
     {
       "path": "tools/artifacts/issue-72/build_manifest.py",
-      "bytes": 1393,
-      "sha256": "10000e54e1b0fc9289aab5b4b84857ab721ddf6c233ea8442cbc9d81032d3e49"
+      "bytes": 1392,
+      "sha256": "0835ae666c6e8814de5a8cb64d3870ac37e9d3238f06d0a2d5d9e6bb146b2baa"
     },
     {
       "path": "tools/artifacts/issue-72/validate_artifacts.py",
-      "bytes": 1531,
-      "sha256": "dce9d92e43ab34a7fd8c8b6e94e2efc76db2b613fadd0aad66cb1b4c169445a8"
+      "bytes": 1750,
+      "sha256": "779c8effc1128f9346cd3f7e1e10f9e37c40485465d6643709e60740b8d9a1d0"
     }
   ]
 }

@@ -10,10 +10,14 @@ PRESENTATION=ROOT/"output/pdf/techflow-issue-72-large-upload-presentation.pdf"
 PPTX=ROOT/"output/presentation/techflow-issue-72-large-upload.pptx"
 MANIFEST=ROOT/"output/issue-72-large-upload-artifact-manifest.json"
 data=json.loads(EVIDENCE.read_text(encoding="utf-8")); tests=data["tests"]
-assert data["issue"]==72 and data["policy"]["fileMaxBytes"]==52428800
-assert tests["runtimeRegression"]=={"total":259,"passed":259}
-assert tests["communityE2E"]["artifactsAdded"]==4 and tests["communityE2E"]["answerPublished"] is True
-assert tests["communityE2E"]["residualDatabaseRows"]==0
+assert data["issue"]==72
+assert data["policy"]["regularMaxBytes"]==1073741824
+assert data["policy"]["archiveMaxBytes"]==10737418240
+assert data["policy"]["extractedMaxBytes"]==107374182400
+assert tests["runtimeRegression"]=={"total":263,"passed":263}
+assert [item["status"] for item in tests["flarumBoundary"]]==[200,422,200,413]
+assert [item["status"] for item in tests["gatewayBoundary"]]==[201,400,201,400]
+assert tests["cleanup"]["flarumUploadRows"]==0 and tests["cleanup"]["temporaryFilesDeleted"] is True
 assert all(item["result"]=="PASS" for item in tests["security"])
 assert tests["protectedService"]["guard"]=="passed"
 assert len(PdfReader(str(REPORT)).pages)>=7 and len(PdfReader(str(PRESENTATION)).pages)==6

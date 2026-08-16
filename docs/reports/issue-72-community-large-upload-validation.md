@@ -2,99 +2,102 @@
 
 ## 결론
 
-Issue #72의 구현과 운영 적용을 완료했다. Community는 이미지, 일반 로그, ZIP, GZIP, TAR.GZ를 파일당 50 MiB까지 받으며, TechFlow는 같은 상한으로 다운로드한 뒤 압축 해제 100 MiB, 100개 항목, 20배 압축비 안에서만 분석한다.
+Issue #72의 대용량 첨부 정책을 일반 파일 1 GiB 이하, 지원 압축 파일 10 GiB 이하로 확대하고 운영 Flarum과 TechFlow AI Gateway에 적용했다. 정확한 경계 크기의 실파일을 사용한 운영 시험에서 일반 파일 1 GiB와 ZIP 10 GiB는 수용됐고, 각각 1바이트 초과 파일은 거부됐다.
 
-운영 시험에서 50 MiB는 Flarum HTTP 200과 Gateway HTTP 201로 통과했고, 50 MiB+1바이트는 각각 422와 400으로 거부됐다. 실제 임시 Discussion #172에 네 종류 로그를 붙인 E2E에서 Artifact 4개가 수집되고 AI 답변이 자동 게시됐다. 시험 글과 업로드는 모두 영구 삭제했다.
+대용량 파일은 Poller와 Gateway가 디스크 기반으로 스트리밍하며, AI에는 원본 전체가 아니라 업로드 시 생성한 비밀정보 제거·요약 근거만 전달한다. 10 GiB 압축파일을 실제로 Gateway에서 분석했을 때 프로세스 최대 상주 메모리는 약 60.3 MiB였다. 시험 첨부, Artifact, 컨테이너, 볼륨과 임시 파일은 모두 삭제했고 운영 DB 잔존은 0건이다.
 
-## 범위와 결과
+## 완료 범위
 
-| 완료 조건 | 결과 | 증적 |
-|---|---|---|
-| 현재값/목표값 매트릭스 | 완료 | 본 문서와 운영 Runbook |
-| 이미지/텍스트/ZIP/GZIP/TAR.GZ E2E | 완료 | Discussion #172, Artifact +4, 답변 게시 |
-| 이해 가능한 거부 안내 | 완료 | 크기, 외부 URL, fetch, unsafe 분리 |
-| 압축 폭탄/경로/실행/MIME 차단 | 완료 | 모두 HTTP 400 |
-| 보관/삭제/디스크 경보 | 완료 | 24시간, 15분, 70%/85% |
-| 자동 Golden Case | 완료 | 전체 회귀 259/259 |
-| 운영 적용과 롤백 | 완료 | WSL 적용-원복-재적용, 운영 백업 2종 |
+| 완료 조건 | 결과 |
+|---|---|
+| 일반 파일 최대 1 GiB | Flarum 200, Gateway 201 |
+| 지원 압축 파일 최대 10 GiB | Flarum 200, Gateway 201 |
+| 각 상한 +1바이트 거부 | Flarum 422/413, Gateway 400/400 |
+| 디스크 기반 스트리밍 | Poller 임시 볼륨, Gateway `.part` 파일 |
+| 압축 안전 정책 | 최대 해제 100 GiB, 100개 항목, 20배 압축비 |
+| 자동 회귀 | 263/263 통과 |
+| 운영 적용·롤백 자산 | 적용/검증/롤백 스크립트와 백업 확보 |
+| 보호 서비스 불변 | `github-chat-v1 state=frozen guard=passed` |
 
-## 현재값에서 목표값으로
+## 계층별 운영값
 
 | 계층 | 적용 전 | 적용 후 |
 |---|---:|---:|
-| FoF Upload | 10 MiB | 50 MiB |
-| PHP-FPM 파일/요청 | 120/120 MiB | 64/64 MiB |
-| PHP-FPM 시간/메모리 | 30초, 60초, 128 MiB | 300초, 300초, 256 MiB |
-| Poller | 10 MiB, 30초, 재시도 없음 | 50 MiB, 120초, 2회 |
-| Gateway 원본/해제 | 10/20 MiB | 50/100 MiB |
-| 유지관리 | 수동 | 15분 주기, 24시간 만료 |
-| 디스크 알림 | 없음 | 70% warning, 85% critical |
+| Nginx 요청 | 120 MiB | 11 GiB, 7,200초 |
+| PHP-FPM 파일/요청 | 120/120 MiB | 10/11 GiB |
+| PHP-FPM 시간/메모리 | 30/60초, 128 MiB | 7,200/7,200초, 512 MiB |
+| FoF Upload | 50 MiB | 전역 10 GiB |
+| Flarum 유형 정책 | 50 MiB | 일반 1 GiB / 압축 10 GiB |
+| Poller | 50 MiB, 120초 | 일반 1 GiB / 압축 10 GiB, 7,200초 |
+| Gateway 원본/해제 | 50/100 MiB | 일반 1 GiB / 압축 10 GiB / 해제 100 GiB |
 
-Nginx 요청 상한 120 MiB는 유지했다. 50 MiB 멀티파트 요청을 충분히 감싸면서 PHP/FoF가 실효 경계를 담당한다.
+구현 판정은 1 GiB=`1,073,741,824`바이트, 10 GiB=`10,737,418,240`바이트를 사용한다. 사용자 안내에서는 이해하기 쉽게 1GB·10GB라고 표시할 수 있으나 경계 시험과 코드 상수는 이진 단위로 고정했다.
 
-## 구현
+## 구현 내용
 
-- Poller가 Content-Length를 먼저 확인하고 1 MiB 단위로 읽어 상한을 넘는 본문을 메모리에 계속 받지 않는다.
-- Community 외부 URL은 다운로드하지 않는다.
-- 일시적 HTTP/네트워크 오류는 최대 2회 재시도하고, 안전 거부는 재시도하지 않는다.
-- Flarum이 `application/octet-stream` 또는 `application/force-download`로 전달한 ZIP/GZIP/TAR.GZ는 파일명 기준으로 안전한 허용 MIME으로 정규화한다.
-- 각 첨부는 독립 처리된다. 한 파일이 거부돼도 다른 파일과 질문 처리는 계속된다.
-- 유지관리 컨테이너가 만료 Artifact를 삭제하고 디스크 수준을 JSON 로그로 남긴다.
-- Flarum 적용 스크립트는 설정/파일을 백업하고 apply, verify, rollback을 제공한다.
+- Poller는 Flarum 첨부를 1 MiB 단위로 전용 임시 볼륨에 내려받고 Gateway로 다시 스트리밍한다.
+- Gateway는 요청을 `.part` 파일에 순차 기록하면서 SHA-256을 계산한다. 알려진 Content-Length가 상한을 넘으면 본문 전송 전에 거부한다.
+- ZIP, GZIP, TAR.GZ는 메모리에 한 번에 펼치지 않고 순차 검사한다. 경로 이탈, 링크·특수 파일, 실행 파일, 중첩 압축과 압축 폭탄을 거부한다.
+- 대용량 원본은 AI 질의 때 다시 파싱하지 않는다. 업로드 때 만든 정규화 근거 파일의 해시를 확인한 뒤 필요한 내용만 전달한다.
+- 이미지 입력의 기존 크기·해상도 정책은 유지한다. 일반 파일 1 GiB 상한이 이미지 디코딩 상한을 확대하지 않는다.
+- Flarum 배포 스크립트는 실제 Nginx `server_name`이 운영 도메인과 다르더라도 단일 활성 사이트인 경우 안전하게 해당 사이트를 선택한다.
 
 ## 시험 결과
 
-### 자동 회귀
+### 운영 Flarum 실파일 경계
 
-운영 코드와 동일한 PR #65 기반 런타임 오버레이에서 259건 전부 통과했다. 설정 상한, 정확한 경계, Content-Length 선차단, 재시도, 외부 URL, 압축 안전 정책, Community 대화 및 기존 답변 품질 계약이 포함된다.
+| 시험 | 바이트 | HTTP | 경과 | 저장 결과 |
+|---|---:|---:|---:|---|
+| 일반 파일 정확히 1 GiB | 1,073,741,824 | 200 | 16초 | 생성 후 204 삭제 |
+| 일반 파일 1 GiB+1 | 1,073,741,825 | 422 | 12초 | 생성 0건 |
+| ZIP 정확히 10 GiB | 10,737,418,240 | 200 | 410초 | 생성 후 204 삭제 |
+| ZIP 10 GiB+1 | 10,737,418,241 | 413 | 227초 | 생성 0건 |
 
-### 운영 경계와 보안
+Flarum DB의 시험 업로드 ID 150·151은 삭제 후 0건이며, `public/assets/files`에도 시험 파일이 남아 있지 않다. 업로드 임시 영역과 루트 파일시스템에는 955 GiB가 남아 있다.
 
-| 시험 | 기대 | 실제 |
-|---|---|---|
-| Flarum 50 MiB | 허용 | 200 |
-| Flarum 50 MiB+1 | 거부 | 422 |
-| Gateway 50 MiB | 허용 | 201 |
-| Gateway 50 MiB+1 | 거부 | 400 |
-| 경로 이탈 ZIP | 거부 | 400 |
-| 중첩 압축 | 거부 | 400 |
-| 압축 폭탄 | 거부 | 400 |
-| 실행 파일 포함 ZIP | 거부 | 400 |
-| PNG MIME 위장 | 거부 | 400 |
+### Gateway 독립 경계
 
-Gateway의 50 MiB 일반 로그 정규화는 약 18.5초로 120초 경계 안에서 끝났다.
+| 시험 | HTTP | 경과 | 판정 |
+|---|---:|---:|---|
+| 일반 파일 정확히 1 GiB | 201 | 27.751초 | PASS |
+| 일반 파일 1 GiB+1 선언 | 400 | 선차단 | PASS |
+| ZIP 정확히 10 GiB | 201 | 294.814초 | PASS |
+| ZIP 10 GiB+1 선언 | 400 | 선차단 | PASS |
 
-### 실제 대화 E2E
+성공 Artifact 두 건은 HTTP 200으로 삭제했다. 10 GiB 분석 중 프로세스 `VmHWM`은 61,732 KiB로 약 60.3 MiB였다.
 
-임시 Discussion #172에 일반 로그, ZIP, GZIP, TAR.GZ를 게시했다. Poller가 네 파일을 모두 수집했고 AI 답변이 자동 게시됐다. 이후 Discussion #170~#172와 FoF 시험 업로드 33개를 관리자 권한으로 영구 삭제했다. DB 재확인 결과 시험 Discussion과 업로드 행은 0건이었다.
+### 자동 회귀와 보안
+
+PR #65 기반 런타임 오버레이에서 263건 전부 통과했다. 일반/압축 상한, 스트리밍 수신, Content-Length 선차단, 재시도, 외부 URL 차단, 압축 안전 정책, Community 대화와 기존 답변 품질 계약을 포함한다.
+
+경로 이탈 ZIP, 중첩 압축, 압축 폭탄, 실행 파일 포함 ZIP, 이미지 MIME 위장은 모두 HTTP 400으로 차단된다.
 
 ## 운영 상태
 
-- Flarum 1.8.18 / FoF Upload 1.8.5
-- Gateway `techflow/ai-gateway:issue-72-large-uploads`: healthy
-- Community Poller: running
-- Artifact Maintainer: running, restart 0
-- 최초 유지관리: 만료 Artifact 28개 삭제, 디스크 5%, level=ok
+- Flarum 1.8.18 / FoF Upload 1.8.5 / 업로드 정책 검증 통과
+- Gateway `techflow/ai-gateway:issue-72-large-uploads-1g10g`: healthy
+- Community Poller: 반복 처리 `failed=0`
+- Artifact Maintainer: `level=ok`, 디스크 사용 11%, 약 916.8 GB 여유
 - Flarum 루트: 1006 GiB 중 955 GiB 여유
-- TechFlow 루트: 1005 GiB 중 917 GiB 여유
-- GitHub→Chat 보호 서비스: `frozen`, guard passed
+- GitHub→Chat 보호 서비스: 배포 전후 `frozen`, guard passed
+- Activepieces app/worker/event-gateway/ingress/Redis/Postgres 컨테이너 ID 불변
 
-## 이탈과 보완
+초기 Poller는 새 Gateway가 준비되기 전에 두 번 `URLError`를 기록했지만, Gateway가 healthy가 된 뒤 반복 처리에서 `failed=0`으로 정상화됐다.
 
-1. 운영 Flarum의 `config.php`가 framework helper를 사용해 배포 스크립트의 autoload가 필요했다. 설정 변경 전 실패했고, autoload를 추가해 재검증했다.
-2. Flarum 서버에서 공용 HTTPS 주소로 자기 자신을 확인할 때 hairpin timeout이 발생했다. 서비스 검증을 로컬 Nginx와 Host 헤더로 고정했다.
-3. Maintainer 스크립트 실행 시 Python 모듈 경로가 빠져 최초 컨테이너가 재시작했다. 실행 경로를 고정하고 새 이미지로 교체해 restart 0을 확인했다.
-4. 전체 소스 압축을 기존 배포 디렉터리에 푸는 과정에서 root 소유의 비대상 도구 디렉터리에서 권한 오류가 발생했다. 실행 중 컨테이너는 변경되지 않았고, 이후 대상 파일만 교체하는 최소 범위 배포로 완료했다.
+## 배포와 롤백
 
-## 롤백
+Flarum 정책 적용 전 백업은 `/var/backups/techflow-flarum/issue72-20260816T010617Z`에 있다. TechFlow 배포 전 백업은 `/home/ablecloud/techflow-ai-gateway/backups/issue72-1g10g-predeploy-20260816T010000Z`에 있으며 런타임 파일과 권한 0600의 환경 파일을 포함한다.
 
-- Flarum: `/var/backups/techflow-flarum/issue72-20260814T174252Z`
-- TechFlow: `/home/ablecloud/techflow-ai-gateway/backups/issue72-predeploy-20260814T174430Z`
-- DB 스키마 변경: 없음
-- WSL: 적용, 검증, 원복, 재적용 통과
+TechFlow는 Gateway, Community Poller, Artifact Maintainer만 재생성했다. Activepieces와 GitHub→Chat 구성은 배포 대상에 포함하지 않았다. DB 스키마 변경은 없다.
 
-상세 명령과 장애 대응은 `docs/runbooks/community-large-uploads.md`를 따른다.
+## 정리 결과
+
+- Flarum 시험 첨부 2건 삭제, 초과 파일 저장 0건
+- Gateway 시험 Artifact 2건 삭제
+- TechFlow 경계 시험 컨테이너 6개와 볼륨 7개 삭제
+- 1 GiB/10 GiB 실파일과 임시 소스·작업 디렉터리 삭제
+- 운영 백업은 롤백 자산으로 유지
 
 ## 판정
 
-Issue #72 완료 조건을 모두 충족했다. 운영 배포 상태는 **GO**다.
+일반 파일 1 GiB와 지원 압축 파일 10 GiB 요구사항, 초과 거부, 스트리밍 처리, 운영 배포, 보호 서비스 불변과 정리 기준을 모두 충족했다. 운영 판정은 **GO**다.
