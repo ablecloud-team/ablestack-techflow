@@ -1,0 +1,53 @@
+{
+  "issue": 73,
+  "runId": "issue73-20260818-final-verified",
+  "environment": "WSL Ubuntu 24.04 staging",
+  "productionChanged": false,
+  "checks": {
+    "flarumCore": "1.8.18",
+    "themeEnable": "PASS",
+    "koreanLocale": "PASS",
+    "responsiveContract": "PASS",
+    "accessibilityContract": "PASS",
+    "functionSmoke": "PASS",
+    "disableRollback": "PASS",
+    "contentIntegrity": "PASS"
+  },
+  "browser": {
+    "desktop": "1440x900",
+    "mobile": "390x844",
+    "rawTranslationKeys": 0,
+    "search": "PASS",
+    "loginDialog": "PASS"
+  },
+  "baseline": {
+    "theme_enabled": false,
+    "users": 39,
+    "discussions": 117,
+    "posts": 305,
+    "content_sha256": "83b236aaf2f0598dced357bddc03d9c54a4895091141d4f64a2ded6fd81548a8",
+    "uploads_sha256": "19cdf52600535380969a176d81bf66678b200a4247694641d00b470b8637a97c",
+    "http_status": 200
+  },
+  "enabled": {
+    "theme_enabled": true,
+    "users": 39,
+    "discussions": 117,
+    "posts": 305,
+    "content_sha256": "83b236aaf2f0598dced357bddc03d9c54a4895091141d4f64a2ded6fd81548a8",
+    "uploads_sha256": "19cdf52600535380969a176d81bf66678b200a4247694641d00b470b8637a97c",
+    "http_status": 200
+  },
+  "disabledRollback": {
+    "theme_enabled": false,
+    "content_sha256": "83b236aaf2f0598dced357bddc03d9c54a4895091141d4f64a2ded6fd81548a8",
+    "uploads_sha256": "19cdf52600535380969a176d81bf66678b200a4247694641d00b470b8637a97c",
+    "http_status": 200
+  },
+  "finalStaging": {
+    "theme_enabled": true,
+    "content_sha256": "83b236aaf2f0598dced357bddc03d9c54a4895091141d4f64a2ded6fd81548a8",
+    "uploads_sha256": "19cdf52600535380969a176d81bf66678b200a4247694641d00b470b8637a97c",
+    "http_status": 200
+  }
+}

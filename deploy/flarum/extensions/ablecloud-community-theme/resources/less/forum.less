@@ -1,0 +1,507 @@
+/* ABLESTACK Community Theme - Issue #73 */
+
+:root {
+  --ablecloud-brand-primary: #155eef;
+  --ablecloud-brand-primary-hover: #004eeb;
+  --ablecloud-brand-ink: #15253e;
+  --ablecloud-brand-muted: #52647d;
+  --ablecloud-brand-surface: #ffffff;
+  --ablecloud-brand-canvas: #f5f7fb;
+  --ablecloud-brand-border: #d8e0ec;
+  --ablecloud-brand-assistant: #eaf2ff;
+  --ablecloud-brand-solution: #eafaf2;
+  --ablecloud-brand-warning: #fff6df;
+  --ablecloud-focus-ring: #0b66e4;
+  --ablecloud-radius: 14px;
+  --ablecloud-shadow: 0 10px 30px rgba(25, 48, 83, 0.08);
+}
+
+body {
+  background: var(--ablecloud-brand-canvas);
+  color: var(--ablecloud-brand-ink);
+  font-family: Pretendard, "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  font-size: 15px;
+  line-height: 1.65;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+body {
+  .App-header {
+    min-height: 64px;
+    background: rgba(255, 255, 255, 0.97);
+    border-bottom: 1px solid var(--ablecloud-brand-border);
+    box-shadow: 0 4px 18px rgba(25, 48, 83, 0.04);
+  }
+
+  .Header-title img {
+    max-height: 34px;
+  }
+
+  .Search-input input,
+  .FormControl {
+    min-height: 44px;
+    border: 1px solid var(--ablecloud-brand-border);
+    border-radius: 10px;
+    background: #f8fafc;
+    color: var(--ablecloud-brand-ink);
+    font-size: 16px;
+  }
+
+  .Search-input input:focus,
+  .FormControl:focus {
+    border-color: var(--ablecloud-brand-primary);
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(21, 94, 239, 0.16);
+  }
+
+  .Search-input input::placeholder,
+  .FormControl::placeholder {
+    color: #667891;
+    opacity: 1;
+  }
+
+  :focus-visible {
+    outline: 3px solid var(--ablecloud-focus-ring) !important;
+    outline-offset: 2px;
+  }
+
+  .Button {
+    min-height: 40px;
+    border-radius: 10px;
+    font-weight: 650;
+  }
+
+  .Button--primary {
+    background: var(--ablecloud-brand-primary);
+    color: #fff;
+  }
+
+  .Button--primary:hover,
+  .Button--primary:focus {
+    background: var(--ablecloud-brand-primary-hover);
+  }
+
+  .Hero,
+  .DiscussionHero {
+    background: linear-gradient(120deg, #edf4ff 0%, #f7fbff 58%, #eefbf8 100%) !important;
+    color: var(--ablecloud-brand-ink) !important;
+    border-bottom: 1px solid var(--ablecloud-brand-border);
+  }
+
+  .WelcomeHero {
+    padding: 34px 0;
+  }
+
+  .WelcomeHero h1,
+  .DiscussionHero-title {
+    color: var(--ablecloud-brand-ink) !important;
+    font-size: clamp(24px, 3vw, 34px);
+    font-weight: 750;
+    letter-spacing: -0.025em;
+    line-height: 1.35;
+  }
+
+  .WelcomeHero .Hero-subtitle {
+    color: var(--ablecloud-brand-muted);
+    font-size: 16px;
+    line-height: 1.75;
+  }
+
+  .DiscussionHero .container {
+    padding-top: 32px;
+    padding-bottom: 32px;
+  }
+
+  .sideNav > ul,
+  .IndexPage-nav .Dropdown-menu {
+    padding: 8px;
+    border: 1px solid var(--ablecloud-brand-border);
+    border-radius: var(--ablecloud-radius);
+    background: var(--ablecloud-brand-surface);
+  }
+
+  .sideNav .Dropdown-menu > li > a,
+  .sideNav .Dropdown-menu > li > button {
+    min-height: 42px;
+    border-radius: 9px;
+    color: #3b4c65;
+  }
+
+  .sideNav .Dropdown-menu > li.active > a,
+  .sideNav .Dropdown-menu > li.active > button {
+    background: #eaf2ff;
+    color: #0f4fba;
+    font-weight: 700;
+  }
+
+  .IndexPage-toolbar {
+    margin-bottom: 14px;
+  }
+
+  .DiscussionList {
+    background: transparent;
+  }
+
+  .DiscussionListItem {
+    margin-bottom: 10px;
+    border: 1px solid var(--ablecloud-brand-border);
+    border-radius: var(--ablecloud-radius);
+    background: var(--ablecloud-brand-surface);
+    box-shadow: 0 4px 16px rgba(25, 48, 83, 0.035);
+    transition: border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+  }
+
+  .DiscussionListItem:hover {
+    border-color: #9bb7e5;
+    box-shadow: var(--ablecloud-shadow);
+    transform: translateY(-1px);
+  }
+
+  .DiscussionListItem-content {
+    padding-top: 17px;
+    padding-bottom: 17px;
+  }
+
+  .DiscussionListItem-title {
+    color: var(--ablecloud-brand-ink);
+    font-size: 16px;
+    font-weight: 720;
+    line-height: 1.45;
+  }
+
+  .DiscussionListItem-info {
+    color: var(--ablecloud-brand-muted);
+  }
+
+  .Badge--answered {
+    background: #078248;
+    color: #fff;
+  }
+
+  .DiscussionPage-discussion > .container,
+  .PostStream {
+    max-width: 1180px;
+  }
+
+  .PostStream-item {
+    margin: 18px 0;
+  }
+
+  article.Post > div {
+    border: 1px solid var(--ablecloud-brand-border);
+    border-radius: var(--ablecloud-radius);
+    background: var(--ablecloud-brand-surface);
+    box-shadow: 0 5px 20px rgba(25, 48, 83, 0.045);
+  }
+
+  .Post-body {
+    color: #26364d;
+    font-size: 16px;
+    line-height: 1.82;
+  }
+
+  .Post-body p,
+  .Post-body li {
+    max-width: 82ch;
+  }
+
+  .Post-body h2,
+  .Post-body h3 {
+    margin-top: 1.65em;
+    margin-bottom: 0.65em;
+    color: var(--ablecloud-brand-ink);
+    font-weight: 750;
+    letter-spacing: -0.018em;
+  }
+
+  .Post-body code {
+    border: 1px solid #d8e0ec;
+    border-radius: 6px;
+    background: #f3f6fa;
+    color: #17426f;
+    font-size: 0.91em;
+  }
+
+  .Post-body img {
+    max-width: 100%;
+    height: auto;
+    border: 1px solid var(--ablecloud-brand-border);
+    border-radius: 12px;
+  }
+
+  article.TechFlowPost--assistant > div,
+  article.Post:has(> div > .Post-header .PostUser-name a[href="/u/TechFlow-Assistant"]) > div {
+    border-color: #a8c5f2;
+    background: linear-gradient(180deg, #ffffff 0%, var(--ablecloud-brand-assistant) 135%);
+  }
+
+  article.TechFlowPost--knowledge-base > div,
+  article.Post.Post--bestAnswer:has(> div > .Post-header .PostUser-name a[href="/u/TechFlow-Assistant"]) > div {
+    border-color: #86d2aa;
+    border-left: 5px solid #078248;
+    background: linear-gradient(180deg, #ffffff 0%, var(--ablecloud-brand-solution) 140%);
+  }
+
+  article.TechFlowPost--needs-information > div {
+    border-color: #e4b955;
+    background: linear-gradient(180deg, #ffffff 0%, var(--ablecloud-brand-warning) 145%);
+  }
+
+  .TechFlowPost-label {
+    display: inline-flex !important;
+    align-items: center;
+    min-height: 26px;
+    margin-left: 8px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: #d9e7ff;
+    color: #164a9c;
+    font-size: 12px;
+    font-weight: 750;
+    line-height: 1.3;
+  }
+
+  .TechFlowPost-label[data-kind="knowledge-base"] {
+    background: #d9f5e6;
+    color: #056038;
+  }
+
+  .TechFlowPost-label[data-kind="needs-information"] {
+    background: #fff0bd;
+    color: #7a4d00;
+  }
+
+  article.Post:has(> div > .Post-header .PostUser-name a[href="/u/TechFlow-Assistant"]) > div > .Post-header .PostUser-name::after {
+    display: inline-flex;
+    align-items: center;
+    min-height: 26px;
+    margin-left: 8px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: #d9e7ff;
+    color: #164a9c;
+    content: "AI 기술지원";
+    font-size: 12px;
+    font-weight: 750;
+    line-height: 1.3;
+  }
+
+  article.Post.Post--bestAnswer:has(> div > .Post-header .PostUser-name a[href="/u/TechFlow-Assistant"]) > div > .Post-header .PostUser-name::after {
+    background: #d9f5e6;
+    color: #056038;
+    content: "최종 해결 가이드";
+  }
+
+  article.Post[data-techflow-kind="needs-information"] > div > .Post-header .PostUser-name::after,
+  article.TechFlowPost--needs-information > div > .Post-header .PostUser-name::after {
+    background: #fff0bd;
+    color: #7a4d00;
+    content: "추가 확인 필요";
+  }
+
+  .TechFlowSection--needs-information {
+    padding-left: 12px;
+    border-left: 4px solid #d39a18;
+  }
+
+  .Post--BestAnswer {
+    color: #056038;
+    font-weight: 750;
+  }
+
+  .Badge--answered .Badge-label,
+  .item-bestAnswer .Button-label,
+  .Post--BestAnswer > span:first-child {
+    font-size: 0;
+  }
+
+  .Badge--answered .Badge-label::after {
+    content: "해결됨";
+    font-size: 12px;
+  }
+
+  .item-bestAnswer .Button--link .Button-label::after {
+    content: "해결 답변으로 선택";
+    font-size: 14px;
+  }
+
+  .item-bestAnswer .Button--primary .Button-label::after {
+    content: "해결 답변 선택 취소";
+    font-size: 14px;
+  }
+
+  .Post--BestAnswer > span:first-child::after {
+    content: "해결된 답변";
+    font-size: 13px;
+  }
+
+  .Post--BestAnswer > span:first-child .icon {
+    font-size: 13px;
+  }
+
+  .BestAnswer--User {
+    display: none;
+  }
+
+  .item-bestAnswerPost > .CommentPost {
+    max-height: 430px;
+    overflow: hidden;
+    border: 1px solid #86d2aa;
+    border-radius: 12px;
+    background: #f4fcf7;
+  }
+
+  .Modal-content,
+  .Composer {
+    border: 1px solid var(--ablecloud-brand-border);
+    border-radius: var(--ablecloud-radius);
+    background: var(--ablecloud-brand-surface);
+    box-shadow: 0 24px 60px rgba(25, 48, 83, 0.18);
+  }
+
+  .Composer-header,
+  .Modal-header {
+    border-bottom: 1px solid var(--ablecloud-brand-border);
+  }
+
+  .TextEditor-editor {
+    min-height: 180px;
+    color: var(--ablecloud-brand-ink);
+    font-size: 16px;
+    line-height: 1.7;
+  }
+
+  .FoFUpload-uploadButton,
+  .item-fof-upload {
+    min-height: 44px;
+  }
+
+  .Dropdown-menu {
+    border: 1px solid var(--ablecloud-brand-border);
+    border-radius: 12px;
+    box-shadow: var(--ablecloud-shadow);
+  }
+}
+
+@media (max-width: 767px) {
+  body {
+    font-size: 15px;
+  }
+
+  body {
+    .App-header {
+      min-height: 54px;
+    }
+
+    .WelcomeHero {
+      padding: 24px 15px;
+    }
+
+    .WelcomeHero h1,
+    .DiscussionHero-title {
+      font-size: 23px;
+      line-height: 1.4;
+    }
+
+    .WelcomeHero .Hero-subtitle {
+      font-size: 15px;
+    }
+
+    .DiscussionHero .container {
+      padding: 24px 15px;
+    }
+
+    .DiscussionListItem {
+      margin: 8px 10px;
+      border-radius: 12px;
+    }
+
+    .DiscussionListItem-content {
+      min-height: 82px;
+      padding: 14px 44px 14px 58px !important;
+    }
+
+    .DiscussionListItem-title {
+      display: -webkit-box;
+      overflow: hidden;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      font-size: 15px;
+    }
+
+    .DiscussionListItem-main {
+      min-width: 0;
+      width: 100% !important;
+      margin-right: 0 !important;
+      display: block;
+    }
+
+    .IndexPage .DiscussionListItem-title,
+    .DiscussionListItem-title {
+      width: auto !important;
+      margin-right: 0 !important;
+    }
+
+    .DiscussionListItem-info > .item-tags {
+      display: block;
+      max-width: 100%;
+      overflow: hidden;
+    }
+
+    .DiscussionPage-discussion > .container,
+    .PostStream {
+      padding-right: 10px;
+      padding-left: 10px;
+    }
+
+    .PostStream-item {
+      margin: 12px 0;
+    }
+
+    article.Post > div {
+      border-radius: 12px;
+    }
+
+    .Post-body {
+      font-size: 15px;
+      line-height: 1.75;
+    }
+
+    .Post-body ol,
+    .Post-body ul {
+      padding-left: 22px;
+    }
+
+    .TechFlowPost-label {
+      margin-top: 6px;
+      margin-left: 0;
+    }
+
+    .Button,
+    .Dropdown-toggle,
+    .Search-input input,
+    .FormControl {
+      min-height: 44px;
+    }
+
+    .Composer {
+      border-radius: 14px 14px 0 0;
+    }
+
+    .Modal-content {
+      border-radius: 14px;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body *,
+  body *::before,
+  body *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

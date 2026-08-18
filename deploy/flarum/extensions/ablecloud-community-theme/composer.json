@@ -1,0 +1,27 @@
+{
+  "name": "ablecloud/community-theme",
+  "description": "ABLESTACK Community visual theme and Korean UX refinements for Flarum 1.8",
+  "type": "flarum-extension",
+  "license": "proprietary",
+  "require": {
+    "flarum/core": "^1.8"
+  },
+  "autoload": {
+    "psr-4": {
+      "Ablecloud\\CommunityTheme\\": "src/"
+    }
+  },
+  "extra": {
+    "flarum-extension": {
+      "title": "ABLESTACK Community Theme",
+      "category": "theme",
+      "icon": {
+        "name": "fas fa-cloud",
+        "backgroundColor": "#155EEF",
+        "color": "#FFFFFF"
+      }
+    }
+  },
+  "minimum-stability": "stable",
+  "prefer-stable": true
+}
