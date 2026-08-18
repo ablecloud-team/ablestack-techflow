@@ -1,6 +1,6 @@
 {
   "issue": 73,
-  "runId": "issue73-20260818-final-verified",
+  "runId": "issue73-20260818-design-refined",
   "environment": "WSL Ubuntu 24.04 staging",
   "productionChanged": false,
   "checks": {
@@ -17,6 +17,9 @@
     "desktop": "1440x900",
     "mobile": "390x844",
     "rawTranslationKeys": 0,
+    "englishBestAnswerSearchLabels": 0,
+    "postCardPaddingDesktop": "21px 25px 23px",
+    "postCardPaddingMobile": "18px 16px 20px",
     "search": "PASS",
     "loginDialog": "PASS"
   },

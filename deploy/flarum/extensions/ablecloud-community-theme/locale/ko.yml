@@ -1,0 +1,5 @@
+fof-best-answer:
+  forum:
+    search:
+      discussions_solutions_heading: 해결된 토론
+      all_discussions_solutions_button: '"{query}"에 대한 해결된 토론 검색'

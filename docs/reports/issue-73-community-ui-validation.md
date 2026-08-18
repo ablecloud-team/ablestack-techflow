@@ -34,7 +34,9 @@ Flarum Core, Vendor 원본, DB Schema와 Community 콘텐츠는 수정하지 않
 - 구현: LESS, Composer Extension, 한글 Locale warm-up
 - 미포함: Core Patch, Vendor 원본 수정, DB Migration, 별도 프런트엔드 Framework
 
-ABLESTACK Primary `#155EEF`, Ink `#15253E`, Canvas `#F5F7FB`를 기준으로 헤더, Hero, 탐색, 토의 카드, 게시물, 검색, 로그인, 작성기와 첨부 버튼을 통일했다.
+ABLESTACK Primary `#155EEF`, Ink `#15253E`, Canvas `#F3F7FC`를 기준으로 헤더, Hero, 탐색, 토의 카드, 게시물, 검색, 로그인, 작성기와 첨부 버튼을 블루 계열로 통일했다. 배경에는 옅은 블루 Gradient를 사용하고 카드에는 14~16px Radius, 블루 계열 경계와 낮은 그림자를 적용했다.
+
+브라우저 계산값으로 상세 게시물 카드는 데스크톱 `21px 25px 23px`, 모바일 `18px 16px 20px`의 내부 여백을 확보했다. 목록 카드의 세로 여백도 데스크톱 20px, 모바일 17px로 늘려 보더와 내용이 붙어 보이지 않도록 조정했다.
 
 ### 답변 상태
 
@@ -57,7 +59,7 @@ ABLESTACK Primary `#155EEF`, Ink `#15253E`, Canvas `#F5F7FB`를 기준으로 헤
 
 ## WSL 검증 결과
 
-최종 실행 ID는 `issue73-20260818-final-verified`다.
+최종 실행 ID는 `issue73-20260818-design-refined`다.
 
 | 단계 | Theme | HTTP | 사용자/토의/게시물 | 콘텐츠 해시 | 첨부 해시 |
 |---|---|---:|---:|---|---|
@@ -79,7 +81,7 @@ ABLESTACK Primary `#155EEF`, Ink `#15253E`, Canvas `#F5F7FB`를 기준으로 헤
 
 검증 중 스테이징에서 Symfony Locale Catalogue가 빈 상태로 남아 `core.forum.*` 키가 화면에 노출되는 기존 결함을 재현했다. `php flarum cache:clear` 이후 빈 Catalogue를 제거하고 첫 웹 요청 전에 한국어 Catalogue를 명시적으로 warm-up하는 절차를 테마 자산에 포함했다.
 
-최종 브라우저 검사에서 원문 `core.*` 키는 0건, `forum-ko.js`는 Core 검색 번역을 포함했고 화면 제목은 `ABLESTACK Users Forum`으로 정상 표시됐다.
+최종 브라우저 검사에서 원문 `core.*` 키는 0건, `forum-ko.js`는 Core 검색 번역과 FoF Best Answer 검색 상태의 `해결된 토론`, `해결된 토론 검색`을 포함했다. 화면 제목은 `ABLESTACK Users Forum`으로 정상 표시됐다.
 
 ## 화면 검증
 
@@ -87,7 +89,7 @@ ABLESTACK Primary `#155EEF`, Ink `#15253E`, Canvas `#F5F7FB`를 기준으로 헤
 |---|---|---|
 | 홈 Desktop | 브랜드 Hero, 좌측 탐색, 카드 목록 | PASS |
 | 홈 Mobile | 390px, 2줄 제목, 태그 절삭, 44px 조작 | PASS |
-| 검색 | `가상머신` 입력, 기존 검색 경로 유지 | PASS |
+| 검색 | `콘솔` 입력, 해결된 토론 검색 한글화, 기존 검색 경로 유지 | PASS |
 | 로그인 | 한글 사용자명·이메일, 비밀번호, 기억하기, 로그인 | PASS |
 | 상세·AI 상태 | 실제 운영 DOM 구조 기반 Selector와 자동 계약 | PASS |
 | 글쓰기·첨부 | Composer·FoF Upload 스타일 계약, Issue #72 정책 불변 | PASS |

@@ -26,6 +26,7 @@ class CommunityThemeContractTests(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.composer = json.loads((THEME / "composer.json").read_text(encoding="utf-8"))
         cls.less = (THEME / "resources" / "less" / "forum.less").read_text(encoding="utf-8")
+        cls.korean = (THEME / "locale" / "ko.yml").read_text(encoding="utf-8")
         cls.rehearsal = (ROOT / "deploy" / "flarum" / "rehearse-community-theme.sh").read_text(encoding="utf-8")
 
     def test_is_isolated_flarum_extension(self) -> None:
@@ -58,6 +59,8 @@ class CommunityThemeContractTests(unittest.TestCase):
     def test_korean_best_answer_labels(self) -> None:
         for text in ("해결됨", "해결 답변으로 선택", "해결 답변 선택 취소", "해결된 답변"):
             self.assertIn(text, self.less)
+        self.assertIn("discussions_solutions_heading: 해결된 토론", self.korean)
+        self.assertIn("해결된 토론 검색", self.korean)
 
     def test_accessibility_contract(self) -> None:
         self.assertIn(":focus-visible", self.less)

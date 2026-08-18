@@ -3,21 +3,27 @@
 :root {
   --ablecloud-brand-primary: #155eef;
   --ablecloud-brand-primary-hover: #004eeb;
+  --ablecloud-brand-primary-deep: #0b3b91;
+  --ablecloud-brand-primary-soft: #eaf2ff;
+  --ablecloud-brand-primary-faint: #f4f8ff;
   --ablecloud-brand-ink: #15253e;
   --ablecloud-brand-muted: #52647d;
   --ablecloud-brand-surface: #ffffff;
-  --ablecloud-brand-canvas: #f5f7fb;
-  --ablecloud-brand-border: #d8e0ec;
+  --ablecloud-brand-canvas: #f3f7fc;
+  --ablecloud-brand-border: #d5e1f1;
   --ablecloud-brand-assistant: #eaf2ff;
   --ablecloud-brand-solution: #eafaf2;
   --ablecloud-brand-warning: #fff6df;
   --ablecloud-focus-ring: #0b66e4;
-  --ablecloud-radius: 14px;
-  --ablecloud-shadow: 0 10px 30px rgba(25, 48, 83, 0.08);
+  --ablecloud-radius: 16px;
+  --ablecloud-shadow: 0 14px 34px rgba(24, 71, 142, 0.1);
+  --ablecloud-shadow-soft: 0 5px 18px rgba(24, 71, 142, 0.06);
 }
 
 body {
-  background: var(--ablecloud-brand-canvas);
+  background:
+    radial-gradient(circle at 10% -10%, rgba(21, 94, 239, 0.09), transparent 32%),
+    linear-gradient(180deg, #f8fbff 0%, var(--ablecloud-brand-canvas) 42%, #f7f9fc 100%);
   color: var(--ablecloud-brand-ink);
   font-family: Pretendard, "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
   font-size: 15px;
@@ -28,10 +34,11 @@ body {
 
 body {
   .App-header {
-    min-height: 64px;
-    background: rgba(255, 255, 255, 0.97);
+    min-height: 68px;
+    background: rgba(255, 255, 255, 0.94);
     border-bottom: 1px solid var(--ablecloud-brand-border);
-    box-shadow: 0 4px 18px rgba(25, 48, 83, 0.04);
+    box-shadow: 0 5px 22px rgba(24, 71, 142, 0.065);
+    backdrop-filter: blur(14px);
   }
 
   .Header-title img {
@@ -43,7 +50,7 @@ body {
     min-height: 44px;
     border: 1px solid var(--ablecloud-brand-border);
     border-radius: 10px;
-    background: #f8fafc;
+    background: var(--ablecloud-brand-primary-faint);
     color: var(--ablecloud-brand-ink);
     font-size: 16px;
   }
@@ -68,36 +75,42 @@ body {
 
   .Button {
     min-height: 40px;
-    border-radius: 10px;
+    border-radius: 11px;
     font-weight: 650;
+    transition: background-color 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
   }
 
   .Button--primary {
     background: var(--ablecloud-brand-primary);
     color: #fff;
+    box-shadow: 0 7px 16px rgba(21, 94, 239, 0.2);
   }
 
   .Button--primary:hover,
   .Button--primary:focus {
     background: var(--ablecloud-brand-primary-hover);
+    box-shadow: 0 9px 20px rgba(21, 94, 239, 0.25);
+    transform: translateY(-1px);
   }
 
   .Hero,
   .DiscussionHero {
-    background: linear-gradient(120deg, #edf4ff 0%, #f7fbff 58%, #eefbf8 100%) !important;
+    background:
+      radial-gradient(circle at 82% 8%, rgba(54, 162, 235, 0.18), transparent 28%),
+      linear-gradient(120deg, #e8f1ff 0%, #f4f8ff 56%, #edf6ff 100%) !important;
     color: var(--ablecloud-brand-ink) !important;
     border-bottom: 1px solid var(--ablecloud-brand-border);
   }
 
   .WelcomeHero {
-    padding: 34px 0;
+    padding: 44px 0 46px;
   }
 
   .WelcomeHero h1,
   .DiscussionHero-title {
     color: var(--ablecloud-brand-ink) !important;
     font-size: clamp(24px, 3vw, 34px);
-    font-weight: 750;
+    font-weight: 780;
     letter-spacing: -0.025em;
     line-height: 1.35;
   }
@@ -108,6 +121,13 @@ body {
     line-height: 1.75;
   }
 
+  .WelcomeHero .Hero-subtitle,
+  .WelcomeHero h1 {
+    max-width: 780px;
+    margin-right: auto;
+    margin-left: auto;
+  }
+
   .DiscussionHero .container {
     padding-top: 32px;
     padding-bottom: 32px;
@@ -115,16 +135,19 @@ body {
 
   .sideNav > ul,
   .IndexPage-nav .Dropdown-menu {
-    padding: 8px;
+    padding: 12px;
     border: 1px solid var(--ablecloud-brand-border);
     border-radius: var(--ablecloud-radius);
     background: var(--ablecloud-brand-surface);
+    box-shadow: var(--ablecloud-shadow-soft);
   }
 
   .sideNav .Dropdown-menu > li > a,
   .sideNav .Dropdown-menu > li > button {
-    min-height: 42px;
-    border-radius: 9px;
+    min-height: 44px;
+    padding-right: 13px;
+    padding-left: 13px;
+    border-radius: 10px;
     color: #3b4c65;
   }
 
@@ -136,7 +159,13 @@ body {
   }
 
   .IndexPage-toolbar {
-    margin-bottom: 14px;
+    margin-bottom: 18px;
+  }
+
+  .IndexPage-toolbar .Button {
+    border: 1px solid var(--ablecloud-brand-border);
+    background: #edf4ff;
+    color: var(--ablecloud-brand-primary-deep);
   }
 
   .DiscussionList {
@@ -144,29 +173,29 @@ body {
   }
 
   .DiscussionListItem {
-    margin-bottom: 10px;
+    margin-bottom: 13px;
     border: 1px solid var(--ablecloud-brand-border);
     border-radius: var(--ablecloud-radius);
     background: var(--ablecloud-brand-surface);
-    box-shadow: 0 4px 16px rgba(25, 48, 83, 0.035);
+    box-shadow: var(--ablecloud-shadow-soft);
     transition: border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
   }
 
   .DiscussionListItem:hover {
-    border-color: #9bb7e5;
+    border-color: #8cb0ec;
     box-shadow: var(--ablecloud-shadow);
-    transform: translateY(-1px);
+    transform: translateY(-2px);
   }
 
   .DiscussionListItem-content {
-    padding-top: 17px;
-    padding-bottom: 17px;
+    padding-top: 20px;
+    padding-bottom: 20px;
   }
 
   .DiscussionListItem-title {
     color: var(--ablecloud-brand-ink);
     font-size: 16px;
-    font-weight: 720;
+    font-weight: 740;
     line-height: 1.45;
   }
 
@@ -185,20 +214,43 @@ body {
   }
 
   .PostStream-item {
-    margin: 18px 0;
+    margin: 22px 0;
   }
 
   article.Post > div {
     border: 1px solid var(--ablecloud-brand-border);
     border-radius: var(--ablecloud-radius);
     background: var(--ablecloud-brand-surface);
-    box-shadow: 0 5px 20px rgba(25, 48, 83, 0.045);
+    box-shadow: var(--ablecloud-shadow-soft);
+    padding: 21px 25px 23px;
+    transition: border-color 0.16s ease, box-shadow 0.16s ease;
+  }
+
+  article.Post > div:hover {
+    border-color: #b4c9e8;
+    box-shadow: 0 12px 28px rgba(24, 71, 142, 0.085);
+  }
+
+  .Post-header {
+    margin-bottom: 14px;
   }
 
   .Post-body {
     color: #26364d;
     font-size: 16px;
     line-height: 1.82;
+  }
+
+  .Post-body > :first-child {
+    margin-top: 0;
+  }
+
+  .Post-body > :last-child {
+    margin-bottom: 0;
+  }
+
+  .Post-body p {
+    margin-bottom: 1em;
   }
 
   .Post-body p,
@@ -357,7 +409,7 @@ body {
     border: 1px solid var(--ablecloud-brand-border);
     border-radius: var(--ablecloud-radius);
     background: var(--ablecloud-brand-surface);
-    box-shadow: 0 24px 60px rgba(25, 48, 83, 0.18);
+    box-shadow: 0 26px 64px rgba(24, 71, 142, 0.2);
   }
 
   .Composer-header,
@@ -382,6 +434,17 @@ body {
     border-radius: 12px;
     box-shadow: var(--ablecloud-shadow);
   }
+
+  .App-content {
+    padding-bottom: 72px;
+  }
+
+  .App-footer {
+    border-top: 1px solid rgba(213, 225, 241, 0.9);
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: 0 -5px 18px rgba(24, 71, 142, 0.055);
+    backdrop-filter: blur(12px);
+  }
 }
 
 @media (max-width: 767px) {
@@ -395,7 +458,7 @@ body {
     }
 
     .WelcomeHero {
-      padding: 24px 15px;
+      padding: 30px 20px 32px;
     }
 
     .WelcomeHero h1,
@@ -413,13 +476,13 @@ body {
     }
 
     .DiscussionListItem {
-      margin: 8px 10px;
-      border-radius: 12px;
+      margin: 10px 10px 12px;
+      border-radius: 14px;
     }
 
     .DiscussionListItem-content {
-      min-height: 82px;
-      padding: 14px 44px 14px 58px !important;
+      min-height: 88px;
+      padding: 17px 44px 17px 60px !important;
     }
 
     .DiscussionListItem-title {
@@ -460,7 +523,8 @@ body {
     }
 
     article.Post > div {
-      border-radius: 12px;
+      border-radius: 14px;
+      padding: 18px 16px 20px;
     }
 
     .Post-body {

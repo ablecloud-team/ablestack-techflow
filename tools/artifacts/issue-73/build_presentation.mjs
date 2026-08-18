@@ -14,7 +14,7 @@ await fs.mkdir(path.dirname(output), { recursive: true });
 
 const deck = Presentation.create({ slideSize: { width: 1280, height: 720 } });
 const C = {
-  ink: "#15253E", gray: "#52647D", canvas: "#F5F7FB", line: "#D8E0EC",
+  ink: "#15253E", gray: "#52647D", canvas: "#F3F7FC", line: "#D5E1F1",
   pale: "#EAF2FF", blue: "#155EEF", green: "#078248", paleGreen: "#EAFAF2",
   yellow: "#FFF6DF", amber: "#9A6700", white: "#FFFFFF", dark: "#243B64",
 };
@@ -65,7 +65,7 @@ const mobile = await bytes(mobileImage);
   addImage(s, "before-screen", before, 48, 166, 540, 338, "contain");
   addImage(s, "after-screen", after, 668, 166, 540, 338, "contain");
   text(s, "before-copy", "좁은 행 간격 · 약한 상태 구분 · 모바일 겹침", 48, 532, 540, 52, 22, false, C.gray, "center");
-  text(s, "after-copy", "브랜드 Hero · 카드 목록 · 한글 상태 · 44px 조작", 668, 532, 540, 52, 22, true, C.ink, "center");
+  text(s, "after-copy", "블루 Hero · 넉넉한 카드 여백 · 한글 상태 · 44px 조작", 668, 532, 540, 52, 21, true, C.ink, "center");
   notes(s);
 }
 {

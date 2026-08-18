@@ -70,13 +70,15 @@ flowchart LR
 |---|---|---|
 | Primary | `#155EEF` | 주요 버튼·포커스·브랜드 강조 |
 | Ink | `#15253E` | 제목·본문 핵심 글자 |
-| Canvas | `#F5F7FB` | 전체 배경 |
-| Border | `#D8E0EC` | 카드·입력 경계 |
+| Canvas | `#F3F7FC` | 전체 배경과 블루 계열 공간감 |
+| Border | `#D5E1F1` | 카드·입력 경계 |
 | Assistant | `#EAF2FF` | AI 진행 답변 |
 | Solution | `#EAFAF2` | 최종 해결 가이드 |
 | Needs information | `#FFF6DF` | 추가 확인 요청 |
 
 본문은 Pretendard, Noto Sans KR, Apple SD Gothic Neo, 맑은 고딕 순으로 사용한다. 한글은 `word-break: keep-all`과 문맥 단위 줄바꿈을 적용하고 긴 기술 문자열은 안전하게 줄바꿈한다.
+
+카드와 입력 영역은 14~16px Radius, 블루 계열의 옅은 경계와 낮은 그림자를 사용한다. 게시물 본문은 데스크톱에서 `21px 25px 23px`, 모바일에서 `18px 16px 20px`의 내부 여백을 확보해 글자가 보더에 붙지 않도록 한다.
 
 ## 5. 구현 경계
 

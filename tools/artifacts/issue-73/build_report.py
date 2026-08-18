@@ -158,7 +158,7 @@ story = [
         ["첨부 SHA-256", "19cdf526...97c"],
         ["한글 원문 키", "0건"],
     ], [70 * mm, 104 * mm]),
-    Spacer(1, 6 * mm), callout("최종 Run ID: issue73-20260818-final-verified", GREEN, PALE_GREEN), PageBreak(),
+    Spacer(1, 6 * mm), callout("최종 Run ID: issue73-20260818-design-refined", GREEN, PALE_GREEN), PageBreak(),
 
     para("6. 롤백과 운영 결정", "h1"),
     make_table([
