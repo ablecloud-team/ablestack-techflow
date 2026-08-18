@@ -76,6 +76,13 @@ class CommunityThemeContractTests(unittest.TestCase):
         self.assertIn('"Noto Sans KR"', self.less)
         self.assertIn("font-size: 16px", self.less)
 
+    def test_compact_hero_and_navigation_width_contract(self) -> None:
+        self.assertIn(".WelcomeHero .container", self.less)
+        self.assertIn("font-size: 28px", self.less)
+        self.assertIn("width: 240px", self.less)
+        self.assertIn(".TagsPage-nav > ul", self.less)
+        self.assertIn("width: 100%", self.less)
+
     def test_rehearsal_is_staging_only_and_preserves_content(self) -> None:
         self.assertIn('APP_ROOT" == "/srv/techflow-flarum-staging/app"', self.rehearsal)
         self.assertIn("productionChanged", self.rehearsal)

@@ -103,27 +103,33 @@ body {
   }
 
   .WelcomeHero {
-    padding: 44px 0 46px;
+    padding: 0;
+  }
+
+  .WelcomeHero .container {
+    padding-top: 18px;
+    padding-bottom: 20px;
   }
 
   .WelcomeHero h1,
   .DiscussionHero-title {
     color: var(--ablecloud-brand-ink) !important;
-    font-size: clamp(24px, 3vw, 34px);
+    font-size: 28px;
     font-weight: 780;
     letter-spacing: -0.025em;
-    line-height: 1.35;
+    line-height: 1.3;
   }
 
   .WelcomeHero .Hero-subtitle {
     color: var(--ablecloud-brand-muted);
-    font-size: 16px;
-    line-height: 1.75;
+    margin-top: 6px;
+    font-size: 15px;
+    line-height: 1.55;
   }
 
   .WelcomeHero .Hero-subtitle,
   .WelcomeHero h1 {
-    max-width: 780px;
+    max-width: 900px;
     margin-right: auto;
     margin-left: auto;
   }
@@ -140,6 +146,31 @@ body {
     border-radius: var(--ablecloud-radius);
     background: var(--ablecloud-brand-surface);
     box-shadow: var(--ablecloud-shadow-soft);
+  }
+
+  .sideNavContainer > .IndexPage-nav {
+    width: 240px;
+    margin-right: 32px;
+  }
+
+  .sideNavContainer > .IndexPage-nav > ul {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .TagsPage-nav {
+    margin-right: 0;
+    overflow: visible;
+  }
+
+  .TagsPage-nav > ul {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .TagsPage-nav .item-newDiscussion,
+  .TagsPage-nav .IndexPage-newDiscussion {
+    max-width: 100%;
   }
 
   .sideNav .Dropdown-menu > li > a,
@@ -458,17 +489,22 @@ body {
     }
 
     .WelcomeHero {
-      padding: 30px 20px 32px;
+      padding: 0;
+    }
+
+    .WelcomeHero .container {
+      padding: 16px 15px 18px;
     }
 
     .WelcomeHero h1,
     .DiscussionHero-title {
-      font-size: 23px;
-      line-height: 1.4;
+      font-size: 22px;
+      line-height: 1.35;
     }
 
     .WelcomeHero .Hero-subtitle {
-      font-size: 15px;
+      font-size: 14px;
+      line-height: 1.55;
     }
 
     .DiscussionHero .container {

@@ -65,7 +65,7 @@ const mobile = await bytes(mobileImage);
   addImage(s, "before-screen", before, 48, 166, 540, 338, "contain");
   addImage(s, "after-screen", after, 668, 166, 540, 338, "contain");
   text(s, "before-copy", "좁은 행 간격 · 약한 상태 구분 · 모바일 겹침", 48, 532, 540, 52, 22, false, C.gray, "center");
-  text(s, "after-copy", "블루 Hero · 넉넉한 카드 여백 · 한글 상태 · 44px 조작", 668, 532, 540, 52, 21, true, C.ink, "center");
+  text(s, "after-copy", "128px Hero · 28px 타이틀 · 240px 탐색 · 버튼 넘침 0px", 668, 532, 540, 52, 19, true, C.ink, "center");
   notes(s);
 }
 {
@@ -106,7 +106,7 @@ const mobile = await bytes(mobileImage);
     text(s, `phase-http-${i}`, "HTTP 200", left + 20, 350, 188, 30, 18, false, C.gray, "center");
   });
   text(s, "integrity-count", "39 users · 117 discussions · 305 posts", 90, 478, 1100, 58, 32, true, C.ink, "center");
-  text(s, "integrity-hash", "콘텐츠 SHA-256 동일 · 첨부 SHA-256 동일 · 정적 계약 7/7", 90, 550, 1100, 48, 24, false, C.green, "center");
+  text(s, "integrity-hash", "콘텐츠 SHA-256 동일 · 첨부 SHA-256 동일 · 정적 계약 8/8", 90, 550, 1100, 48, 24, false, C.green, "center");
   notes(s);
 }
 {

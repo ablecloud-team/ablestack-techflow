@@ -116,7 +116,7 @@ story = [
         ["전용 테마", "ablecloud/community-theme", "PASS"],
         ["반응형", "1440x900 / 390x844", "PASS"],
         ["한글", "원문 core.* 키 0건", "PASS"],
-        ["기능", "홈·목록·검색·로그인", "PASS"],
+        ["기능", "홈·목록·태그·검색·로그인", "PASS"],
         ["롤백", "비활성화 후 HTTP 200", "PASS"],
         ["무결성", "39 / 117 / 305, 해시 동일", "PASS"],
     ], [52 * mm, 86 * mm, 36 * mm]),
@@ -128,7 +128,7 @@ story = [
 
     para("3. 현대화 결과", "h1"),
     screenshot(AFTER, 174 * mm, 105.5 * mm), Spacer(1, 5 * mm),
-    para("브랜드 Hero, 명확한 탐색, 카드형 토의 목록, 14px Radius와 고대비 Primary를 적용했습니다. 제품 기능과 데이터 경로는 그대로 유지합니다."), PageBreak(),
+    para("Hero는 361px에서 약 128px로 줄이고 타이틀은 로고보다 작은 28px로 조정했습니다. 왼쪽 탐색은 240px로 넓혔으며 태그 페이지의 토의 시작 버튼은 도구 모음 안에 유지됩니다. 제품 기능과 데이터 경로는 그대로입니다."), PageBreak(),
 
     para("4. 모바일과 답변 상태", "h1"),
     make_table([
@@ -152,13 +152,13 @@ story = [
     Spacer(1, 6 * mm),
     make_table([
         ["검증", "결과"],
-        ["정적 계약", "7/7"],
+        ["정적 계약", "8/8"],
         ["사용자 / 토의 / 게시물", "39 / 117 / 305"],
         ["콘텐츠 SHA-256", "83b236aa...48a8"],
         ["첨부 SHA-256", "19cdf526...97c"],
         ["한글 원문 키", "0건"],
     ], [70 * mm, 104 * mm]),
-    Spacer(1, 6 * mm), callout("최종 Run ID: issue73-20260818-design-refined", GREEN, PALE_GREEN), PageBreak(),
+    Spacer(1, 6 * mm), callout("최종 Run ID: issue73-20260818-compact-hero-nav", GREEN, PALE_GREEN), PageBreak(),
 
     para("6. 롤백과 운영 결정", "h1"),
     make_table([
