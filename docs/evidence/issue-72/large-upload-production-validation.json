@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 2,
+  "issue": 72,
+  "validatedAt": "2026-08-16T10:23:12+09:00",
+  "units": {
+    "advertised": "GB",
+    "enforced": "GiB",
+    "regularBoundaryBytes": 1073741824,
+    "archiveBoundaryBytes": 10737418240
+  },
+  "environments": {
+    "flarum": {
+      "host": "172.16.0.234",
+      "flarum": "1.8.18",
+      "fofUpload": "1.8.5",
+      "rootSizeGiB": 1006,
+      "rootFreeGiB": 955,
+      "policyVerify": "passed"
+    },
+    "techflow": {
+      "host": "172.16.0.231",
+      "release": "issue-72-large-uploads-1g10g",
+      "gatewayHealth": "healthy",
+      "rootFreeBytes": 983218327552
+    }
+  },
+  "policy": {
+    "regularMaxBytes": 1073741824,
+    "archiveMaxBytes": 10737418240,
+    "extractedMaxBytes": 107374182400,
+    "archiveEntriesMax": 100,
+    "compressionRatioMax": 20,
+    "downloadTimeoutSeconds": 7200,
+    "downloadRetries": 2,
+    "retentionHours": 24,
+    "maintenanceIntervalSeconds": 900,
+    "diskWarnPercent": 70,
+    "diskCriticalPercent": 85
+  },
+  "tests": {
+    "runtimeRegression": {"total": 263, "passed": 263},
+    "flarumBoundary": [
+      {"case": "regular exact 1 GiB", "bytes": 1073741824, "status": 200, "elapsedSeconds": 16, "cleanupStatus": 204, "result": "PASS"},
+      {"case": "regular 1 GiB + 1 byte", "bytes": 1073741825, "status": 422, "residualRecords": 0, "elapsedSeconds": 12, "result": "PASS"},
+      {"case": "ZIP exact 10 GiB", "bytes": 10737418240, "status": 200, "elapsedSeconds": 410, "cleanupStatus": 204, "result": "PASS"},
+      {"case": "ZIP 10 GiB + 1 byte", "bytes": 10737418241, "status": 413, "residualRecords": 0, "elapsedSeconds": 227, "result": "PASS"}
+    ],
+    "gatewayBoundary": [
+      {"case": "regular exact 1 GiB", "bytes": 1073741824, "status": 201, "elapsedSeconds": 27.751, "result": "PASS"},
+      {"case": "regular 1 GiB + 1 byte declared", "bytes": 1073741825, "status": 400, "result": "PASS"},
+      {"case": "ZIP exact 10 GiB", "bytes": 10737418240, "status": 201, "elapsedSeconds": 294.814, "result": "PASS"},
+      {"case": "ZIP 10 GiB + 1 byte declared", "bytes": 10737418241, "status": 400, "result": "PASS"}
+    ],
+    "memory": {
+      "gatewayVmHwmKiB": 61732,
+      "gatewayVmHwmMiB": 60.3
+    },
+    "security": [
+      {"case": "path traversal", "status": 400, "result": "PASS"},
+      {"case": "nested archive", "status": 400, "result": "PASS"},
+      {"case": "compression bomb", "status": 400, "result": "PASS"},
+      {"case": "executable member", "status": 400, "result": "PASS"},
+      {"case": "image MIME mismatch", "status": 400, "result": "PASS"}
+    ],
+    "cleanup": {
+      "flarumUploadRows": 0,
+      "flarumUploadFiles": 0,
+      "gatewayArtifactsDeleted": 2,
+      "testContainersDeleted": 6,
+      "testVolumesDeleted": 7,
+      "temporaryFilesDeleted": true
+    },
+    "artifactMaintenance": {
+      "level": "ok",
+      "diskUsedPercent": 5,
+      "freeBytes": 983218327552
+    },
+    "protectedService": {
+      "service": "github-chat-v1",
+      "state": "frozen",
+      "guard": "passed",
+      "containerIdsUnchanged": true
+    }
+  },
+  "rollback": {
+    "flarumBackup": "/var/backups/techflow-flarum/issue72-20260816T010617Z",
+    "techflowBackup": "/home/ablecloud/techflow-ai-gateway/backups/issue72-1g10g-predeploy-20260816T010000Z",
+    "stagingRollbackRehearsed": true,
+    "databaseMigration": false
+  }
+}
