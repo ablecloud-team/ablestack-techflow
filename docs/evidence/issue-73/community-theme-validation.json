@@ -1,6 +1,6 @@
 {
   "issue": 73,
-  "runId": "issue73-20260818-compact-hero-nav",
+  "runId": "issue73-20260818-solution-row-final",
   "environment": "WSL Ubuntu 24.04 staging",
   "productionChanged": false,
   "checks": {
@@ -25,6 +25,11 @@
     "heroHeightDesktop": "127.89px",
     "categoryNavigationWidthDesktop": "240px",
     "tagsNewDiscussionOverflowDesktop": "0px",
+    "discussionRowHeightDesktop": "62px",
+    "discussionRowLayoutDesktop": "title-tags-count-single-line",
+    "bestAnswerCard": "PASS",
+    "bestAnswerSetByVisible": false,
+    "bestAnswerPreviewHeader": "선택된 해결 답변",
     "search": "PASS",
     "loginDialog": "PASS"
   },

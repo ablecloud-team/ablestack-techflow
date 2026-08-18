@@ -320,10 +320,11 @@ body {
   }
 
   article.TechFlowPost--knowledge-base > div,
+  article.Post.Post--bestAnswer > div,
   article.Post.Post--bestAnswer:has(> div > .Post-header .PostUser-name a[href="/u/TechFlow-Assistant"]) > div {
     border-color: #86d2aa;
     border-left: 5px solid #078248;
-    background: linear-gradient(180deg, #ffffff 0%, var(--ablecloud-brand-solution) 140%);
+    background: linear-gradient(135deg, #ffffff 0%, var(--ablecloud-brand-solution) 100%);
   }
 
   article.TechFlowPost--needs-information > div {
@@ -389,8 +390,18 @@ body {
   }
 
   .Post--BestAnswer {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 28px;
+    padding: 4px 10px;
+    border: 1px solid #86d2aa;
+    border-radius: 999px;
+    background: #d9f5e6;
     color: #056038;
     font-weight: 750;
+    line-height: 1.25;
+    box-shadow: none;
   }
 
   .Badge--answered .Badge-label,
@@ -419,20 +430,45 @@ body {
     font-size: 13px;
   }
 
+  .Post--BestAnswer > span:first-child {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+
   .Post--BestAnswer > span:first-child .icon {
     font-size: 13px;
   }
 
   .BestAnswer--User {
-    display: none;
+    display: none !important;
   }
 
   .item-bestAnswerPost > .CommentPost {
     max-height: 430px;
     overflow: hidden;
     border: 1px solid #86d2aa;
+    border-left: 4px solid #078248;
     border-radius: 12px;
     background: #f4fcf7;
+    padding: 15px 18px 17px;
+  }
+
+  .item-bestAnswerPost > .CommentPost::before {
+    display: block;
+    margin-bottom: 8px;
+    color: #056038;
+    content: "✓ 선택된 해결 답변";
+    font-size: 14px;
+    font-weight: 750;
+  }
+
+  .item-bestAnswerPost > .CommentPost .Post-header {
+    display: none;
+  }
+
+  .item-bestAnswerPost > .CommentPost .Post-body {
+    margin: 0;
   }
 
   .Modal-content,
@@ -475,6 +511,71 @@ body {
     background: rgba(255, 255, 255, 0.94);
     box-shadow: 0 -5px 18px rgba(24, 71, 142, 0.055);
     backdrop-filter: blur(12px);
+  }
+}
+
+@media (min-width: 768px) {
+  body {
+    .DiscussionListItem {
+      margin-bottom: 9px;
+    }
+
+    .DiscussionListItem-content {
+      min-height: 62px;
+      padding: 11px 64px 11px 52px;
+    }
+
+    .DiscussionListItem-main {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 0;
+      min-height: 38px;
+      height: auto;
+      margin-right: 0 !important;
+      padding: 0 !important;
+    }
+
+    .DiscussionListItem-title {
+      flex: 1 1 auto;
+      min-width: 180px;
+      margin: 0 !important;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .DiscussionListItem-info {
+      display: flex;
+      flex: 0 1 280px;
+      align-items: center;
+      height: auto !important;
+      min-width: 0;
+      margin: 0;
+    }
+
+    .DiscussionListItem-info > .item-tags {
+      position: static !important;
+      display: flex;
+      align-items: center;
+      height: auto;
+      max-width: 100%;
+      overflow: hidden;
+      inset: auto !important;
+      white-space: nowrap;
+    }
+
+    .DiscussionListItem-info > .item-terminalPost {
+      display: none;
+    }
+
+    .DiscussionListItem-count {
+      position: absolute;
+      top: 50%;
+      right: 20px;
+      margin: 0 !important;
+      transform: translateY(-50%);
+    }
   }
 }
 
@@ -546,6 +647,10 @@ body {
       display: block;
       max-width: 100%;
       overflow: hidden;
+    }
+
+    .DiscussionListItem-info > .item-terminalPost {
+      display: inline;
     }
 
     .DiscussionPage-discussion > .container,

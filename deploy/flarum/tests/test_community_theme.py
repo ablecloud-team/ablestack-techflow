@@ -82,6 +82,11 @@ class CommunityThemeContractTests(unittest.TestCase):
         self.assertIn("width: 240px", self.less)
         self.assertIn(".TagsPage-nav > ul", self.less)
         self.assertIn("width: 100%", self.less)
+        self.assertIn("article.Post.Post--bestAnswer > div", self.less)
+        self.assertIn("✓ 선택된 해결 답변", self.less)
+        self.assertIn("@media (min-width: 768px)", self.less)
+        self.assertIn("white-space: nowrap", self.less)
+        self.assertIn("padding: 11px 64px 11px 52px", self.less)
 
     def test_rehearsal_is_staging_only_and_preserves_content(self) -> None:
         self.assertIn('APP_ROOT" == "/srv/techflow-flarum-staging/app"', self.rehearsal)

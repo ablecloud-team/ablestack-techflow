@@ -65,16 +65,16 @@ const mobile = await bytes(mobileImage);
   addImage(s, "before-screen", before, 48, 166, 540, 338, "contain");
   addImage(s, "after-screen", after, 668, 166, 540, 338, "contain");
   text(s, "before-copy", "좁은 행 간격 · 약한 상태 구분 · 모바일 겹침", 48, 532, 540, 52, 22, false, C.gray, "center");
-  text(s, "after-copy", "128px Hero · 28px 타이틀 · 240px 탐색 · 버튼 넘침 0px", 668, 532, 540, 52, 19, true, C.ink, "center");
+  text(s, "after-copy", "62px 단일 행 · 제목·태그·댓글 수 한 줄 · 240px 탐색", 668, 532, 540, 52, 19, true, C.ink, "center");
   notes(s);
 }
 {
-  const s = deck.slides.add(); s.background.fill = C.white; title(s, "AI 진행 답변과 최종 해결 가이드를 한눈에 구분합니다", 3);
+  const s = deck.slides.add(); s.background.fill = C.white; title(s, "진행 답변과 선택된 해결 답변을 간결하게 구분합니다", 3);
   const states = [
     { y: 158, fill: C.white, line: C.line, label: "사용자 질문", detail: "증상과 첨부파일", color: C.ink },
     { y: 270, fill: C.pale, line: "#A8C5F2", label: "AI 기술지원", detail: "진행 중인 전문 엔지니어 답변", color: C.blue },
     { y: 382, fill: C.yellow, line: "#E4B955", label: "추가 확인 필요", detail: "로그·화면·환경 정보 요청", color: C.amber },
-    { y: 494, fill: C.paleGreen, line: "#86D2AA", label: "최종 해결 가이드", detail: "질문자가 선택한 Knowledge Base", color: C.green },
+    { y: 494, fill: C.paleGreen, line: "#86D2AA", label: "해결된 답변", detail: "작은 배지 · 녹색 강조선 · 중복 작성자 정보 제거", color: C.green },
   ];
   states.forEach((state, index) => {
     box(s, `state-${index}`, 94, state.y, 1092, 86, state.fill, state.line);

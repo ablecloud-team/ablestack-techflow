@@ -20,6 +20,7 @@ OUTPUT = ROOT / "output/pdf/techflow-community-ui-modernization-report.pdf"
 BEFORE = ROOT / "docs/evidence/issue-73/screenshots/before/home-desktop.png"
 AFTER = ROOT / "docs/evidence/issue-73/screenshots/after/home-desktop.png"
 MOBILE = ROOT / "docs/evidence/issue-73/screenshots/after/home-mobile.png"
+SOLUTION = ROOT / "docs/evidence/issue-73/screenshots/after/solution-desktop.png"
 FONT, BOLD = "MalgunGothic", "MalgunGothicBold"
 pdfmetrics.registerFont(TTFont(FONT, "C:/Windows/Fonts/malgun.ttf"))
 pdfmetrics.registerFont(TTFont(BOLD, "C:/Windows/Fonts/malgunbd.ttf"))
@@ -116,7 +117,7 @@ story = [
         ["전용 테마", "ablecloud/community-theme", "PASS"],
         ["반응형", "1440x900 / 390x844", "PASS"],
         ["한글", "원문 core.* 키 0건", "PASS"],
-        ["기능", "홈·목록·태그·검색·로그인", "PASS"],
+        ["기능", "홈·목록·태그·검색·로그인·해결 답변", "PASS"],
         ["롤백", "비활성화 후 HTTP 200", "PASS"],
         ["무결성", "39 / 117 / 305, 해시 동일", "PASS"],
     ], [52 * mm, 86 * mm, 36 * mm]),
@@ -128,7 +129,7 @@ story = [
 
     para("3. 현대화 결과", "h1"),
     screenshot(AFTER, 174 * mm, 105.5 * mm), Spacer(1, 5 * mm),
-    para("Hero는 361px에서 약 128px로 줄이고 타이틀은 로고보다 작은 28px로 조정했습니다. 왼쪽 탐색은 240px로 넓혔으며 태그 페이지의 토의 시작 버튼은 도구 모음 안에 유지됩니다. 제품 기능과 데이터 경로는 그대로입니다."), PageBreak(),
+    para("Hero는 361px에서 약 128px로 줄이고 타이틀은 로고보다 작은 28px로 조정했습니다. 왼쪽 탐색은 240px로 넓혔습니다. 토론 행은 제목·카테고리·댓글 수를 한 줄에 배치해 약 110px에서 62px로 줄였습니다. 제품 기능과 데이터 경로는 그대로입니다."), PageBreak(),
 
     para("4. 모바일과 답변 상태", "h1"),
     make_table([
@@ -139,7 +140,8 @@ story = [
         ["최종 해결 가이드", "Green", "선택된 Knowledge Base"],
     ], [48 * mm, 34 * mm, 92 * mm]),
     Spacer(1, 5 * mm),
-    Table([[screenshot(MOBILE, 72 * mm, 158 * mm), para("390px에서 제목을 두 줄로 유지하고 태그는 넘침 없이 절삭합니다.\n\n입력 글자 16px, 주요 조작 44px, 3px 포커스 링, 모션 축소를 적용했습니다.\n\n사용자 화면에는 내부 근거 ID와 검토 경로를 노출하지 않습니다.")]], colWidths=[78 * mm, 96 * mm], style=TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP")])), PageBreak(),
+    Table([[screenshot(MOBILE, 58 * mm, 127 * mm), para("390px에서는 제목 2줄과 마지막 응답 정보를 유지합니다. 입력 글자 16px, 주요 조작 44px, 3px 포커스 링을 적용했습니다.\n\n선택 답변은 연한 녹색 카드와 작은 배지로 표시하고, 원 질문의 미리보기는 작성자·날짜·중복 배지를 숨깁니다.\n\n사용자 화면에는 내부 근거 ID와 검토 경로를 노출하지 않습니다.")]], colWidths=[64 * mm, 110 * mm], style=TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP")])),
+    Spacer(1, 4 * mm), screenshot(SOLUTION, 112 * mm, 70 * mm), PageBreak(),
 
     para("5. WSL 전체 주기", "h1"),
     make_table([
@@ -158,7 +160,7 @@ story = [
         ["첨부 SHA-256", "19cdf526...97c"],
         ["한글 원문 키", "0건"],
     ], [70 * mm, 104 * mm]),
-    Spacer(1, 6 * mm), callout("최종 Run ID: issue73-20260818-compact-hero-nav", GREEN, PALE_GREEN), PageBreak(),
+    Spacer(1, 6 * mm), callout("최종 Run ID: issue73-20260818-solution-row-final", GREEN, PALE_GREEN), PageBreak(),
 
     para("6. 롤백과 운영 결정", "h1"),
     make_table([
