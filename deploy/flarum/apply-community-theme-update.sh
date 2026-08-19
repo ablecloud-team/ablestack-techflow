@@ -47,6 +47,12 @@ if [[ -d "$app_root/storage/locale" ]]; then
 fi
 
 rsync -a --delete "$source_root/" "$extension_root/"
+# SCP staging directories can be intentionally private (0700). Normalize the
+# deployed path so Composer and PHP-FPM can traverse the path repository.
+chown -R www-data:www-data "$extension_root"
+find "$extension_root" -type d -exec chmod 0755 {} +
+find "$extension_root" -type f -exec chmod 0644 {} +
+chmod 0755 "$extension_root/tools/warm-korean-locale.php"
 cd "$app_root"
 sudo -u www-data env COMPOSER_HOME=/tmp/techflow-composer \
     composer require ablecloud/community-theme:@dev --with-dependencies --no-interaction

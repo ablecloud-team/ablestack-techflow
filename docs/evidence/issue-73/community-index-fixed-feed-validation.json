@@ -1,0 +1,68 @@
+{
+  "schema_version": "1.0",
+  "executed_at": "2026-08-19T11:31:00Z",
+  "scope": "Flarum desktop index fixed navigation and continuous discussion feed",
+  "design_reference": "https://www.reddit.com/new/?feed=home",
+  "change": {
+    "document_scroll": "disabled on desktop index",
+    "fixed_regions": ["welcome hero", "discussion toolbar", "left navigation", "footer"],
+    "scroll_region": ".DiscussionList",
+    "feed": "one shared surface with row separators",
+    "individual_row_card": false,
+    "row_height_px": 58,
+    "left_navigation_width_px": 280
+  },
+  "wsl": {
+    "environment": "WSL Ubuntu 24.04",
+    "url": "http://localhost:18080/",
+    "theme_sha256": "348fdb7469bc63651ca8a4e298d5be395dd68a1ac81538e2df943c1b01a238b6",
+    "browser": {
+      "viewport": { "width": 1280, "height": 720 },
+      "document_scroll_y": 0,
+      "document_scroll_height": 720,
+      "discussion_list_client_height": 396,
+      "discussion_list_scroll_height": 1231,
+      "discussion_list_scrollable": true,
+      "menu_y_before_after": [179.890625, 179.890625],
+      "toolbar_y_before_after": [209.890625, 209.890625]
+    },
+    "compiled_css_contains_feed_rule": true
+  },
+  "production": {
+    "host": "172.16.0.234",
+    "url": "https://community.ablecloud.io/",
+    "backup_root": "/var/backups/techflow-flarum/theme-index-fixed-feed-20260819T1128Z",
+    "theme_sha256": "348fdb7469bc63651ca8a4e298d5be395dd68a1ac81538e2df943c1b01a238b6",
+    "services": {
+      "nginx": "active",
+      "php8.3-fpm": "active",
+      "mariadb": "active"
+    },
+    "external_https_status": 200,
+    "browser": {
+      "viewport": { "width": 1150, "height": 881 },
+      "document_scroll_y_before_after": [0, 0],
+      "discussion_list_scroll_top_before_after": [0, 420],
+      "menu_y_before_after": [179.890625, 179.890625],
+      "toolbar_y_before_after": [209.890625, 209.890625],
+      "discussion_list_client_height": 557,
+      "discussion_list_scroll_height": 1231,
+      "discussion_list_scrollable": true
+    },
+    "compiled_css_contains_feed_rule": true
+  },
+  "validation": {
+    "theme_contract_tests": { "passed": 11, "failed": 0 },
+    "deployment_script_normalizes_permissions": true,
+    "deployment_script_shell_syntax": "PASS",
+    "git_diff_check": "PASS",
+    "temporary_remote_assets_removed": true
+  },
+  "protected_scope": {
+    "database_schema_changed": false,
+    "community_content_changed": false,
+    "techflow_ai_services_changed": false,
+    "github_chat_webhook_changed": false
+  },
+  "decision": "PASS"
+}

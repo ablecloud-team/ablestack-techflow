@@ -72,6 +72,13 @@ sudo bash deploy/flarum/apply-community-theme-update.sh \
 - `public/assets/forum.css`에 `--ablecloud-brand-primary`가 있어야 한다.
 - `public/assets/forum-ko.js`가 비어 있지 않고 `core.forum.header.search_placeholder`를 포함해야 한다.
 - 데스크톱과 모바일에서 홈, 목록, 상세, 검색, 로그인, 글쓰기, 첨부를 확인한다.
+- 데스크톱 첫 화면에서 문서 전체의 `scrollY`가 `0`으로 유지되는지 확인한다.
+  Welcome Hero, 좌측 메뉴, 목록 도구막대와 Footer는 고정되어야 하며
+  `.DiscussionList`의 `scrollTop`만 변해야 한다. 높이가 짧아 좌측 태그가 모두
+  보이지 않을 때만 좌측 메뉴 자체의 얇은 보조 스크롤을 허용한다.
+- 토론 목록은 개별 행마다 카드 테두리·그림자를 중첩하지 않는다. 하나의 피드
+  표면 안에서 얇은 구분선으로 행을 나누고, 제목·태그·댓글 수·더보기 기능과
+  파란색 Hover/Focus 상태가 유지되는지 확인한다.
 - 사용자 프로필·설정 화면을 1,150px 폭에서 스크롤했을 때 고정 메뉴 폭이
   280px로 유지되고 메뉴 오른쪽 끝이 본문 왼쪽보다 작거나 같은지 확인한다.
 - `Answered`, `Best Answer`, `Select Best Answer` 원문 노출이 없어야 한다.
@@ -96,4 +103,6 @@ sudo systemctl restart php8.3-fpm nginx
 
 - GO: HTTP 200, 한글 원문 키 0건, 핵심 기능 정상, 콘텐츠·첨부 불변.
 - ROLLBACK: 화면·번역·로그인·작성·첨부 중 하나라도 실패.
-- 운영 적용 전 현재 상태: Conditional GO, 승인 대기.
+- 2026-08-19 운영 적용 완료: 사용자 메뉴 겹침 보완과 첫 화면 고정 피드가
+  WSL 및 운영에 반영되었으며, 운영 백업은
+  `/var/backups/techflow-flarum/theme-index-fixed-feed-20260819T1128Z`에 보존한다.

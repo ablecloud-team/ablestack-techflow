@@ -166,3 +166,20 @@ Hero의 위·아래 패딩은 데스크톱 `19px`, 모바일 `17px`로 대칭화
 ## 판정
 
 Issue #73의 설계·구현·WSL 기능 검증·롤백·문서화 조건을 충족했다. 운영 적용은 별도 승인 전까지 수행하지 않는다. 검토자가 운영 반영을 승인하면 Runbook에 따라 테마 확장만 적용하고 같은 검증을 반복한다.
+
+## 2026-08-19 운영 후속 적용
+
+운영 승인 후 사용자 프로필·설정 메뉴 겹침 보완과 첫 화면 고정 피드를 WSL과
+운영 Community에 적용했다. 데스크톱 첫 화면은 Welcome Hero, 280px 좌측 메뉴,
+목록 도구막대와 Footer를 고정하고 토론 목록만 스크롤한다. Reddit의 Card/Compact
+전환에서 확인되는 연속 피드 구조를 참고하되 ABLESTACK의 블루 색상, 태그와
+댓글 수, 더보기 기능을 유지했다. 개별 행의 카드 테두리·그림자·들뜸은 제거하고
+한 개의 흰색 피드 표면, 1px 구분선, 파란 Hover/Focus 표시로 단순화했다.
+
+WSL 1280x720과 운영 1150x881에서 문서 `scrollY=0`을 유지한 채 목록
+`scrollTop`만 각각 변화했다. 운영 목록을 `420px` 스크롤한 뒤에도 메뉴 Y좌표
+`179.890625`, 도구막대 Y좌표 `209.890625`가 동일했다. 행 높이는 `58px`,
+외부 HTTPS는 `200`, Nginx·PHP-FPM·MariaDB는 모두 `active`다. 운영 적용 전
+백업은 `/var/backups/techflow-flarum/theme-index-fixed-feed-20260819T1128Z`에
+보존했다. 상세 증적은
+`docs/evidence/issue-73/community-index-fixed-feed-validation.json`에 기록했다.

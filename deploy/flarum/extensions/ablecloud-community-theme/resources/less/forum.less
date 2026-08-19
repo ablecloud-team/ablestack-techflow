@@ -1931,7 +1931,165 @@ body {
 }
 
 @media (min-width: 768px) {
+  html:has(body > .App--index),
+  body:has(> .App--index) {
+    height: 100%;
+    overflow: hidden;
+  }
+
   body {
+    // Keep the desktop index shell anchored between the fixed header and
+    // footer. Only the discussion list scrolls during normal navigation.
+    .App--index {
+      height: 100%;
+      min-height: 0;
+      padding-bottom: 0;
+      overflow: hidden;
+    }
+
+    .App--index > .App-content {
+      position: fixed;
+      top: 52px;
+      right: 0;
+      bottom: 56px;
+      left: 0;
+      height: auto;
+      box-sizing: border-box;
+      padding-bottom: 0;
+      overflow: hidden;
+    }
+
+    .App--index .IndexPage {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      height: auto;
+      min-height: 0;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .App--index .WelcomeHero {
+      flex: 0 0 auto;
+    }
+
+    .App--index .IndexPage > .container {
+      flex: 1 1 auto;
+      min-height: 0;
+      padding-bottom: 0;
+      overflow: hidden;
+    }
+
+    .App--index .IndexPage > .container > .sideNavContainer {
+      height: 100%;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .App--index .IndexPage-nav {
+      height: 100%;
+      min-height: 0;
+      box-sizing: border-box;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      scrollbar-color: #91a9c9 transparent;
+      scrollbar-width: thin;
+    }
+
+    .App--index .IndexPage-results {
+      display: flex;
+      height: auto;
+      min-height: 0;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .App--index .IndexPage-toolbar {
+      flex: 0 0 auto;
+    }
+
+    .App--index .IndexPage-results .DiscussionList {
+      flex: 1 1 auto;
+      min-height: 0;
+      box-sizing: border-box;
+      padding-right: 6px;
+      overflow-x: hidden;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      scrollbar-color: #91a9c9 transparent;
+      scrollbar-width: thin;
+    }
+
+    // Present discussions as one continuous, compact feed. The row keeps the
+    // existing title, tags, reply count and control menu, while individual
+    // nested cards are replaced by quiet separators and a single hover state.
+    .App--index .IndexPage-results .DiscussionList-discussions {
+      margin: 0;
+      border: 1px solid var(--ablecloud-brand-border);
+      border-radius: 16px;
+      background: var(--ablecloud-brand-surface);
+      box-shadow: 0 8px 24px rgba(24, 71, 142, 0.05);
+    }
+
+    .App--index .IndexPage-results .DiscussionList-discussions > li:not(:last-child) {
+      border-bottom: 1px solid #e2eaf5;
+    }
+
+    .App--index .IndexPage-results .DiscussionListItem {
+      margin: 0;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+      transform: none;
+    }
+
+    .App--index .IndexPage-results .DiscussionList-discussions > li:first-child .DiscussionListItem {
+      border-radius: 15px 15px 0 0;
+    }
+
+    .App--index .IndexPage-results .DiscussionList-discussions > li:last-child .DiscussionListItem {
+      border-radius: 0 0 15px 15px;
+    }
+
+    .App--index .IndexPage-results .DiscussionListItem:hover,
+    .App--index .IndexPage-results .DiscussionListItem:focus-within,
+    .App--index .IndexPage-results .DiscussionListItem:has(.DiscussionListItem-controls.open) {
+      border-color: transparent;
+      background: #f3f7ff;
+      box-shadow: inset 3px 0 0 var(--ablecloud-brand-primary);
+      transform: none;
+    }
+
+    .App--index .IndexPage-results .DiscussionListItem-content {
+      min-height: 58px;
+      padding-top: 9px;
+      padding-bottom: 9px;
+    }
+
+    .App--index .IndexPage-nav::-webkit-scrollbar,
+    .App--index .IndexPage-results .DiscussionList::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .App--index .IndexPage-nav::-webkit-scrollbar-track,
+    .App--index .IndexPage-results .DiscussionList::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .App--index .IndexPage-nav::-webkit-scrollbar-button,
+    .App--index .IndexPage-results .DiscussionList::-webkit-scrollbar-button {
+      display: none;
+      width: 0;
+      height: 0;
+    }
+
+    .App--index .IndexPage-nav::-webkit-scrollbar-thumb,
+    .App--index .IndexPage-results .DiscussionList::-webkit-scrollbar-thumb {
+      border-radius: 999px;
+      background: #91a9c9;
+    }
+
     // Flarum adds .affix to this list while the user page scrolls. Once the
     // list becomes position: fixed, percentage width resolves against the
     // viewport instead of the 280px navigation column and covers the content.
