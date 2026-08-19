@@ -10,6 +10,7 @@ const beforeImage = path.join(ROOT, "docs", "evidence", "issue-73", "screenshots
 const afterImage = path.join(ROOT, "docs", "evidence", "issue-73", "screenshots", "after", "home-desktop.png");
 const actionImage = path.join(ROOT, "docs", "evidence", "issue-73", "screenshots", "after", "post-actions-mobile.png");
 const modalImage = path.join(ROOT, "docs", "evidence", "issue-73", "screenshots", "after", "tag-selection-modal-desktop.png");
+const profileImage = path.join(ROOT, "docs", "evidence", "issue-73", "screenshots", "after", "profile-desktop.png");
 await fs.mkdir(renderDir, { recursive: true });
 await fs.mkdir(path.dirname(output), { recursive: true });
 
@@ -49,6 +50,7 @@ const before = await bytes(beforeImage);
 const after = await bytes(afterImage);
 const action = await bytes(actionImage);
 const modal = await bytes(modalImage);
+const profile = await bytes(profileImage);
 
 {
   const s = deck.slides.add(); s.background.fill = C.white;
@@ -96,7 +98,19 @@ const modal = await bytes(modalImage);
   notes(s);
 }
 {
-  const s = deck.slides.add(); s.background.fill = C.white; title(s, "활성화와 롤백에도 콘텐츠는 그대로였습니다", 5);
+  const s = deck.slides.add(); s.background.fill = C.white; title(s, "데스크톱 버튼을 정리하고 프로필을 통일했습니다", 5);
+  addImage(s, "profile-screen", profile, 48, 138, 760, 475, "contain");
+  box(s, "profile-result", 850, 156, 350, 188, C.pale, C.blue);
+  text(s, "profile-title", "프로필 화면", 880, 184, 290, 38, 27, true, C.blue, "center");
+  text(s, "profile-copy", "165px 블루 Hero\n96px 아바타\n240px 메뉴 · 780px 콘텐츠", 880, 236, 290, 88, 20, false, C.ink, "center");
+  box(s, "navigation-result", 850, 378, 350, 188, C.paleGreen, "#86D2AA");
+  text(s, "navigation-title", "홈 탐색", 880, 406, 290, 38, 27, true, C.green, "center");
+  text(s, "navigation-copy", "Desktop 중복 버튼 제거\nMobile 40x46px 버튼\n270px 서랍 동작 유지", 880, 458, 290, 88, 20, false, C.ink, "center");
+  text(s, "profile-locale", "좋아요 · 내 미디어 · 보안 · 해결 답변", 50, 626, 1120, 34, 20, true, C.blue, "center");
+  notes(s);
+}
+{
+  const s = deck.slides.add(); s.background.fill = C.white; title(s, "활성화와 롤백에도 콘텐츠는 그대로였습니다", 6);
   const labels = ["기준선\nDisabled", "활성화\nEnabled", "롤백\nDisabled", "최종\nEnabled"];
   labels.forEach((label, i) => {
     const left = 70 + i * 295;
@@ -110,7 +124,7 @@ const modal = await bytes(modalImage);
   notes(s);
 }
 {
-  const s = deck.slides.add(); s.background.fill = C.white; title(s, "Flarum Core를 건드리지 않아 롤백은 확장 하나로 끝납니다", 6);
+  const s = deck.slides.add(); s.background.fill = C.white; title(s, "Flarum Core를 건드리지 않아 롤백은 확장 하나로 끝납니다", 7);
   text(s, "flow-arrow-1", "→", 404, 286, 80, 50, 36, true, C.gray, "center");
   text(s, "flow-arrow-2", "→", 796, 286, 80, 50, 36, true, C.gray, "center");
   box(s, "flarum-core", 70, 218, 330, 190, C.canvas, C.line);
@@ -130,7 +144,7 @@ const modal = await bytes(modalImage);
   const s = deck.slides.add(); s.background.fill = C.white;
   text(s, "close-kicker", "ISSUE #73 · IMPLEMENTATION COMPLETE", 48, 42, 650, 36, 20, true, C.gray);
   text(s, "close-title", "운영 적용만\n승인하면 됩니다", 48, 168, 700, 180, 64, true);
-  text(s, "close-detail", "WSL 전체 주기 PASS · 한글 원문 키·태그창 직접 영문 0건\nCore·Vendor·DB·운영 Community 변경 없음", 48, 422, 800, 92, 26, false, C.gray);
+  text(s, "close-detail", "WSL 전체 주기 PASS · 태그·프로필 직접 영문 0건\nCore·Vendor·DB·운영 Community 변경 없음", 48, 422, 800, 92, 26, false, C.gray);
   box(s, "close-status", 900, 174, 310, 310, C.pale, C.blue);
   text(s, "close-go", "GO", 934, 242, 242, 94, 68, true, C.blue, "center");
   text(s, "close-condition", "운영 반영 승인 대기", 932, 356, 246, 56, 22, true, C.ink, "center");

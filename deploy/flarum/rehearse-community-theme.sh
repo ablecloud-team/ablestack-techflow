@@ -85,12 +85,14 @@ record_state() {
 }
 
 clear_runtime() {
+    local theme_expected="false"
+    extension_enabled && theme_expected="true"
     (cd "$APP_ROOT" && as_web php flarum cache:clear)
     # Flarum can leave an empty Symfony catalogue after a CLI asset flush.
     # Remove it after the flush so the first web request rebuilds the complete
     # Korean catalogue and the matching forum-ko.js bundle.
     rm -f "$APP_ROOT/storage/locale/"*
-    as_web php "$SOURCE_ROOT/tools/warm-korean-locale.php" "$APP_ROOT"
+    as_web env TECHFLOW_THEME_EXPECTED="$theme_expected" php "$SOURCE_ROOT/tools/warm-korean-locale.php" "$APP_ROOT"
     systemctl restart "$PHP_FPM_SERVICE" nginx
 }
 

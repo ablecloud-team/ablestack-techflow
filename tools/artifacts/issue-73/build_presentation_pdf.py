@@ -10,8 +10,8 @@ ROOT = Path(__file__).resolve().parents[3]
 SLIDES = ROOT / "tmp/issue73-presentation/renders"
 OUTPUT = ROOT / "output/pdf/techflow-community-ui-modernization-presentation.pdf"
 images = sorted(SLIDES.glob("slide-*.png"))
-if len(images) != 7:
-    raise RuntimeError(f"expected 7 slides, found {len(images)}")
+if len(images) != 8:
+    raise RuntimeError(f"expected 8 slides, found {len(images)}")
 with Image.open(images[0]) as first:
     width, height = first.size
 OUTPUT.parent.mkdir(parents=True, exist_ok=True)

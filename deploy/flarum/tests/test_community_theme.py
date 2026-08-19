@@ -45,6 +45,8 @@ class CommunityThemeContractTests(unittest.TestCase):
             ".FoFUpload-uploadButton",
             ".Search-input input",
             ".Modal-content",
+            ".UserHero",
+            ".UserPage-content",
         )
         for selector in selectors:
             with self.subTest(selector=selector):
@@ -109,7 +111,17 @@ class CommunityThemeContractTests(unittest.TestCase):
         self.assertIn('[aria-disabled="true"]', self.less)
         self.assertIn(":has(.Header-secondary .item-logIn)", self.less)
         self.assertIn(".App--index > .App-navigation", self.less)
-        self.assertIn(".Navigation-drawer", self.less)
+        self.assertIn("display: none !important", self.less)
+        self.assertNotIn(".App--index > .App-navigation .Navigation-drawer", self.less)
+        self.assertIn(".UserHero .UserCard-profile", self.less)
+        self.assertIn(".UserPage .UserPage-nav", self.less)
+        self.assertIn(".UserPage .UserPage-content", self.less)
+        self.assertIn(".UserHero .UserCard-avatar", self.less)
+        self.assertIn("position: absolute", self.less)
+        self.assertIn("likes_link: 좋아요", self.korean)
+        self.assertIn("media: 내 미디어", self.korean)
+        self.assertIn("security_link: 보안", self.korean)
+        self.assertIn("아직 작성한 게시물이 없습니다.", self.korean)
         self.assertIn(".Composer.active", self.less)
         self.assertIn(".Modal .FormControl:focus-visible", self.less)
         self.assertIn(".Modal .Button--primary", self.less)
@@ -133,6 +145,11 @@ class CommunityThemeContractTests(unittest.TestCase):
         self.assertIn("storage/locale", self.rehearsal)
         self.assertIn("core.forum.header.search_placeholder", self.rehearsal)
         self.assertIn("warm-korean-locale.php", self.rehearsal)
+        self.assertIn('TECHFLOW_THEME_EXPECTED="$theme_expected"', self.rehearsal)
+        locale_warmer = (THEME / "tools" / "warm-korean-locale.php").read_text(encoding="utf-8")
+        self.assertIn("core.forum.user.security_link", locale_warmer)
+        self.assertIn("flarum-likes.forum.user.likes_link", locale_warmer)
+        self.assertIn("fof-upload.forum.buttons.media", locale_warmer)
 
 
 if __name__ == "__main__":

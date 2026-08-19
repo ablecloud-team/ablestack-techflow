@@ -1,8 +1,28 @@
 fof-best-answer:
   forum:
+    user:
+      best-answer-count: "{count, plural, one {{count}개의 해결 답변} other {{count}개의 해결 답변}}"
     search:
       discussions_solutions_heading: 해결된 토론
       all_discussions_solutions_button: '"{query}"에 대한 해결된 토론 검색'
+
+flarum-likes:
+  forum:
+    user:
+      likes_link: 좋아요
+
+fof-upload:
+  forum:
+    buttons:
+      media: 내 미디어
+
+core:
+  forum:
+    user:
+      posts_empty_text: 아직 작성한 게시물이 없습니다.
+      security_link: 보안
+  ref:
+    security: 보안
 
 flarum-tags:
   lib:
