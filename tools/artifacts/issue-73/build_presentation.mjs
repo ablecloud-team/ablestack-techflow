@@ -180,7 +180,7 @@ const tags = await bytes(tagsImage);
   const s = deck.slides.add(); s.background.fill = C.white;
   text(s, "close-kicker", "ISSUE #73 · IMPLEMENTATION COMPLETE", 48, 42, 650, 36, 20, true, C.gray);
   text(s, "close-title", "운영 적용만\n승인하면 됩니다", 48, 168, 700, 180, 64, true);
-  text(s, "close-detail", "WSL 전체 주기 PASS · 280px 메뉴 · Header 겹침 0px\n45+ SVG 아이콘·검색 포커스·첫 게시물 진입 검증", 48, 422, 800, 92, 26, false, C.gray);
+  text(s, "close-detail", "WSL 전체 주기 PASS · 280px 메뉴 · Header 겹침 0px\n180px 드롭다운·45+ SVG 아이콘·첫 게시물 진입 검증", 48, 422, 800, 92, 26, false, C.gray);
   box(s, "close-status", 900, 174, 310, 310, C.pale, C.blue);
   text(s, "close-go", "GO", 934, 242, 242, 94, 68, true, C.blue, "center");
   text(s, "close-condition", "운영 반영 승인 대기", 932, 356, 246, 56, 22, true, C.ink, "center");

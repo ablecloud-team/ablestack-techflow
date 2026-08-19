@@ -219,6 +219,7 @@ body {
 
   .Header-secondary .Dropdown-menu > li > a,
   .Header-secondary .Dropdown-menu > li > button {
+    position: relative;
     display: flex;
     width: 100%;
     min-height: 40px;
@@ -241,10 +242,31 @@ body {
   }
 
   .Header-secondary .Dropdown-menu .Button-icon {
+    position: static;
+    display: inline-flex;
     width: 19px;
-    margin-right: 0;
+    height: 19px;
+    flex: 0 0 19px;
+    align-items: center;
+    justify-content: center;
+    float: none;
+    margin: 0;
     color: #5275a7;
+    line-height: 1;
     text-align: center;
+  }
+
+  .Header-secondary .Dropdown-menu .Button-label {
+    min-width: 0;
+    flex: 1 1 auto;
+    line-height: 1.35;
+    text-align: left;
+  }
+
+  .Header-secondary .item-locale .Dropdown-menu,
+  .Header-secondary .item-session .Dropdown-menu {
+    min-width: 180px;
+    padding: 8px;
   }
 
   .Header-secondary .Dropdown-menu .Button-icon:not([class*="fa-"]) {
