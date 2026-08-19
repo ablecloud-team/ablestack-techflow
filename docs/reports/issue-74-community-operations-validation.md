@@ -73,6 +73,15 @@ Monitor는 Nginx, PHP-FPM, MariaDB, Community Local/Public Route, TechFlow AI Or
 
 WSL Mock Chat에서 AI Health 장애→동일 장애→복구 순서로 실행했을 때 전송은 장애 1회와 복구 1회뿐이었다. Payload는 `text`, `url`만 포함했다. 운영 Chat 시험 전송은 HTTP 200이었다. 첫 운영 Monitor가 첫 Backup과 겹쳐 일시 경보를 만든 사실을 확인하고 Backup·Monitor 공통 Lock을 추가했다. 이후 Backup 중 Monitor는 `monitor=skipped reason=backup-in-progress`로 종료하고 정상 상태를 유지한다.
 
+2026-08-19 후속 보완에서 정상 상태의 주기 알림을 완전히 제거했다. 최초 정상과
+정상 유지에는 메시지를 보내지 않고, 장애가 새로 발생하거나 장애 내용이 바뀔 때
+경보한다. 같은 장애가 지속되면 쿨다운 전에는 억제하고 쿨다운 후에만 다시 알리며,
+장애 상태에서 정상으로 바뀐 경우에만 복구 메시지를 한 번 보낸다. 이후 정상
+유지에는 다시 알리지 않는다. 정책 단위시험 7건과 WSL·운영 실제 정상 Monitor를
+검증했으며 두 환경 모두 상태 파일 시각이 실행 전후 동일해 정상 메시지 미전송을
+확인했다. 운영 적용 전 파일은
+`/var/backups/techflow-flarum/alert-policy-20260819T1128Z`에 보존했다.
+
 ## 보안 검증
 
 | 항목 | 결과 |

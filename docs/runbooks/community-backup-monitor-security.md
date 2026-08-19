@@ -83,7 +83,10 @@ WSL `ops.env`에 GPG Homedir, Passphrase File과 `TECHFLOW_RESTORE_SOCKET_USER=w
 | `capacity:filesystem` | `df -h`, `df -i`, 업로드 보존 | 만료·고아 파일 정리 후 업로드 제한 검토 |
 | `security:mail-driver` | Flarum Mail Driver | 즉시 smtp로 복귀, Sendmail 사용 금지 |
 
-같은 Fingerprint는 1시간 동안 다시 보내지 않는다. 상태가 정상으로 바뀌면 복구 알림을 한 번 보낸다.
+정상 상태의 최초 점검과 정상 유지 상태는 Chat으로 보내지 않는다. 신규 장애와
+장애 내용 변경은 즉시 알리고, 같은 장애가 계속되면 1시간 뒤에만 재알림한다.
+활성 장애가 모두 해제되어 정상으로 바뀌면 복구 알림을 한 번 보내며, 이후 정상
+상태가 계속되는 동안에는 주기 알림을 보내지 않는다.
 
 ## 보안 점검
 

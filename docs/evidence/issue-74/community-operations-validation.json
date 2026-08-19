@@ -2,6 +2,7 @@
   "schemaVersion": 1,
   "issue": 74,
   "validatedAt": "2026-08-19T18:54:00+09:00",
+  "notificationPolicyRevalidatedAt": "2026-08-19T20:31:00+09:00",
   "result": "GO",
   "production": {
     "host": "172.16.0.234",
@@ -83,7 +84,33 @@
     "activeAlerts": 0,
     "backupMonitorLock": "PASS",
     "mockChatCallsForFailureDuplicateRecovery": 2,
-    "productionChatHttp": 200
+    "productionChatHttp": 200,
+    "notificationPolicy": {
+      "initialHealthy": "none",
+      "steadyHealthy": "none",
+      "newFailure": "alert",
+      "unchangedFailureBeforeCooldown": "none",
+      "unchangedFailureAfterCooldown": "alert",
+      "recoveryAfterFailure": "one recovery",
+      "steadyRecovered": "none"
+    },
+    "wslHealthyRun": {
+      "result": "PASS",
+      "monitorExitCode": 0,
+      "alertStateMtimeBefore": 1787137928,
+      "alertStateMtimeAfter": 1787137928,
+      "notificationSent": false,
+      "timer": "active"
+    },
+    "productionHealthyRun": {
+      "result": "PASS",
+      "monitorExitCode": 0,
+      "alertStateMtimeBefore": 1787138037,
+      "alertStateMtimeAfter": 1787138037,
+      "notificationSent": false,
+      "timer": "active",
+      "backupRoot": "/var/backups/techflow-flarum/alert-policy-20260819T1128Z"
+    }
   },
   "security": {
     "headers": [

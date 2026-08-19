@@ -9,7 +9,7 @@ site_path=${TECHFLOW_NGINX_SITE_PATH:-/etc/nginx/sites-available/flarum}
 
 install_assets() {
   install -d -m 0750 /usr/local/libexec/techflow-community-ops
-  for name in community-ops-common.sh community-backup.sh community-verify-backup.sh community-restore.sh community-monitor.sh community-offsite-export.sh; do
+  for name in community-ops-common.sh community-backup.sh community-verify-backup.sh community-restore.sh community-monitor.sh community-offsite-export.sh alert_policy.py; do
     install -m 0750 "$SCRIPT_DIR/$name" "/usr/local/libexec/techflow-community-ops/$name"
   done
   install -d -m 0700 /etc/techflow-community-ops /var/lib/techflow-community-ops/gnupg /var/backups/techflow-flarum/managed

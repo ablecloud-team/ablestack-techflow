@@ -1,11 +1,17 @@
 from __future__ import annotations
 
+import hashlib
+import importlib.util
 import unittest
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[3]
 OPS = ROOT / "deploy" / "flarum" / "operations"
+POLICY_SPEC = importlib.util.spec_from_file_location("community_alert_policy", OPS / "alert_policy.py")
+assert POLICY_SPEC and POLICY_SPEC.loader
+POLICY = importlib.util.module_from_spec(POLICY_SPEC)
+POLICY_SPEC.loader.exec_module(POLICY)
 
 
 class CommunityOperationsContractTests(unittest.TestCase):
@@ -52,8 +58,84 @@ class CommunityOperationsContractTests(unittest.TestCase):
         self.assertIn("backup-in-progress", self.monitor)
         self.assertIn("ALERT_COOLDOWN_SECONDS", self.monitor)
         self.assertIn("TECHFLOW_CHAT_WEBHOOK_URL", self.monitor)
+        self.assertIn('notification=$(python3 "$SCRIPT_DIR/alert_policy.py"', self.monitor)
+        self.assertIn('[[ "$notification" == recovery ]]', self.monitor)
+        self.assertIn('[[ "$notification" == none || "$notification_sent" == 1 ]]', self.monitor)
         self.assertIn("mail-driver", self.monitor)
         self.assertNotIn("token=", self.monitor)
+
+    def test_alert_policy_suppresses_healthy_heartbeats(self) -> None:
+        empty = hashlib.sha256(b"").hexdigest()
+        decide = POLICY.decide_notification
+        common = {
+            "current_count": 0,
+            "current_fingerprint": empty,
+            "last_sent_epoch": 0,
+            "current_epoch": 7200,
+            "cooldown_seconds": 3600,
+        }
+        self.assertEqual("none", decide(previous_fingerprint="", **common))
+        self.assertEqual("none", decide(previous_fingerprint=empty, **common))
+
+    def test_alert_policy_notifies_failure_and_single_recovery(self) -> None:
+        empty = hashlib.sha256(b"").hexdigest()
+        failure = hashlib.sha256(b"CRITICAL:http:community-public:000\n").hexdigest()
+        decide = POLICY.decide_notification
+        self.assertEqual(
+            "alert",
+            decide(
+                current_count=1,
+                current_fingerprint=failure,
+                previous_fingerprint=empty,
+                last_sent_epoch=100,
+                current_epoch=200,
+                cooldown_seconds=3600,
+            ),
+        )
+        self.assertEqual(
+            "none",
+            decide(
+                current_count=1,
+                current_fingerprint=failure,
+                previous_fingerprint=failure,
+                last_sent_epoch=100,
+                current_epoch=200,
+                cooldown_seconds=3600,
+            ),
+        )
+        self.assertEqual(
+            "alert",
+            decide(
+                current_count=1,
+                current_fingerprint=failure,
+                previous_fingerprint=failure,
+                last_sent_epoch=100,
+                current_epoch=3800,
+                cooldown_seconds=3600,
+            ),
+        )
+        self.assertEqual(
+            "recovery",
+            decide(
+                current_count=0,
+                current_fingerprint=empty,
+                previous_fingerprint=failure,
+                last_sent_epoch=3800,
+                current_epoch=3900,
+                cooldown_seconds=3600,
+            ),
+        )
+        self.assertEqual(
+            "none",
+            decide(
+                current_count=0,
+                current_fingerprint=empty,
+                previous_fingerprint=empty,
+                last_sent_epoch=3900,
+                current_epoch=8000,
+                cooldown_seconds=3600,
+            ),
+        )
 
     def test_security_policy_and_reversible_install(self) -> None:
         self.assertIn("rate=12r/m", self.zone)

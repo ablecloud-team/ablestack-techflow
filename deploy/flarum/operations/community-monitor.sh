@@ -148,22 +148,37 @@ fingerprint=$(sha256sum "$alerts_tmp" | awk '{print $1}')
 last_fingerprint=$(cat "$STATE_ROOT/last-alert.fingerprint" 2>/dev/null || true)
 last_sent=$(cat "$STATE_ROOT/last-alert.epoch" 2>/dev/null || echo 0)
 current_epoch=$(date +%s)
+notification=$(python3 "$SCRIPT_DIR/alert_policy.py" \
+  --current-count "${#alerts[@]}" \
+  --current-fingerprint "$fingerprint" \
+  --previous-fingerprint "$last_fingerprint" \
+  --last-sent-epoch "$last_sent" \
+  --current-epoch "$current_epoch" \
+  --cooldown-seconds "$ALERT_COOLDOWN_SECONDS")
+notification_sent=0
 
-if [[ "$fingerprint" != "$last_fingerprint" || $((current_epoch - last_sent)) -ge $ALERT_COOLDOWN_SECONDS ]]; then
+if [[ "$notification" != none ]]; then
   if [[ -r /etc/techflow-community-ops/alert.env ]]; then
     # shellcheck disable=SC1091
     source /etc/techflow-community-ops/alert.env
   fi
   if [[ -n ${TECHFLOW_CHAT_WEBHOOK_URL:-} ]]; then
-    if ((${#alerts[@]} == 0)); then
+    if [[ "$notification" == recovery ]]; then
       text="[Community 운영] 모든 점검 항목이 정상으로 복구되었습니다."
     else
       text="[Community 운영 경보] ${#alerts[@]}건 - $(IFS=', '; echo "${alerts[*]}")"
     fi
     payload=$(TEXT="$text" URL="$FLARUM_PUBLIC_URL" python3 -c 'import json,os; print(json.dumps({"text":os.environ["TEXT"],"url":os.environ["URL"]}, ensure_ascii=False))')
-    curl -fsS --max-time 15 -X POST --data-urlencode "payload=$payload" "$TECHFLOW_CHAT_WEBHOOK_URL" >/dev/null || true
+    if curl -fsS --max-time 15 -X POST --data-urlencode "payload=$payload" "$TECHFLOW_CHAT_WEBHOOK_URL" >/dev/null; then
+      notification_sent=1
+    fi
   fi
+fi
+
+if [[ "$notification" == none || "$notification_sent" == 1 ]]; then
   printf '%s' "$fingerprint" >"$STATE_ROOT/last-alert.fingerprint"
+fi
+if [[ "$notification_sent" == 1 ]]; then
   printf '%s' "$current_epoch" >"$STATE_ROOT/last-alert.epoch"
 fi
 
