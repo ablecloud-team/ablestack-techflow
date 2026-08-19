@@ -26,6 +26,7 @@ PROFILE = ROOT / "docs/evidence/issue-73/screenshots/after/profile-desktop.png"
 DISCUSSION_MENU = ROOT / "docs/evidence/issue-73/screenshots/settings-security-v2/discussion-menu-desktop.png"
 SETTINGS = ROOT / "docs/evidence/issue-73/screenshots/settings-security-v2/settings-desktop.png"
 SECURITY = ROOT / "docs/evidence/issue-73/screenshots/settings-security-v2/security-desktop.png"
+TAGS = ROOT / "docs/evidence/issue-73/screenshots/tags-card-v3/tags-desktop-full.png"
 FONT, BOLD = "MalgunGothic", "MalgunGothicBold"
 pdfmetrics.registerFont(TTFont(FONT, "C:/Windows/Fonts/malgun.ttf"))
 pdfmetrics.registerFont(TTFont(BOLD, "C:/Windows/Fonts/malgunbd.ttf"))
@@ -165,7 +166,11 @@ story = [
     Spacer(1, 5 * mm), screenshot(SECURITY, 145 * mm, 71 * mm), Spacer(1, 3 * mm),
     para("보안 화면의 토큰·활성 세션·전역 로그아웃도 같은 카드·버튼 규칙을 사용합니다. New Token은 새 토큰으로 표시합니다. 모바일 설정 표는 302px, 설정·보안 카드는 336px이며 페이지 가로 넘침은 0px입니다."), PageBreak(),
 
-    para("8. WSL 전체 주기", "h1"),
+    para("8. 태그 정보 구조·날짜·아이콘", "h1"),
+    screenshot(TAGS, 174 * mm, 151 * mm), Spacer(1, 4 * mm),
+    para("주요 태그는 3열·18px 카드, 보조 태그 7건은 설명과 함께 별도 4열·12px 구역으로 분리했습니다. 모바일은 각각 한 열로 전환하며 가로 넘침은 0px입니다. 절대 날짜는 00년 0월 0일, 상대 날짜는 기존 표현을 유지합니다. 웹폰트 전용 문자를 시스템 단색 기호로 치환해 깨진 아이콘은 0건입니다."), PageBreak(),
+
+    para("9. WSL 전체 주기", "h1"),
     make_table([
         ["단계", "Theme", "HTTP", "콘텐츠/첨부"],
         ["기준선", "Disabled", "200", "기준 해시"],
@@ -176,15 +181,15 @@ story = [
     Spacer(1, 6 * mm),
     make_table([
         ["검증", "결과"],
-        ["정적 계약", "8/8"],
+        ["정적 계약", "10/10"],
         ["사용자 / 토의 / 게시물", "39 / 117 / 305"],
-        ["콘텐츠 SHA-256", "dbef43c7...075d4"],
+        ["콘텐츠 SHA-256", "7dde04ca...60a8"],
         ["첨부 SHA-256", "19cdf526...97c"],
         ["한글 원문 키 / 태그·프로필·설정·보안 영문", "0건 / 0건"],
     ], [70 * mm, 104 * mm]),
-    Spacer(1, 6 * mm), callout("최종 Run ID: issue73-20260819-settings-security-v1", GREEN, PALE_GREEN), PageBreak(),
+    Spacer(1, 6 * mm), callout("최종 Run ID: issue73-20260819-tags-complete-v1", GREEN, PALE_GREEN), PageBreak(),
 
-    para("9. 롤백과 운영 결정", "h1"),
+    para("10. 롤백과 운영 결정", "h1"),
     make_table([
         ["구분", "변경 여부"],
         ["Flarum Core / Vendor", "변경 없음"],

@@ -1,6 +1,6 @@
 {
   "issue": 73,
-  "runId": "issue73-20260819-settings-security-v1",
+  "runId": "issue73-20260819-tags-complete-v1",
   "environment": "WSL Ubuntu 24.04 staging",
   "productionChanged": false,
   "checks": {
@@ -28,6 +28,28 @@
     "heroVerticalGapDifferenceDesktop": "1px",
     "categoryNavigationWidthDesktop": "240px",
     "tagsNewDiscussionOverflowDesktop": "0px",
+    "tagGridDesktop": "3-columns",
+    "tagGridGapDesktop": "18px",
+    "tagCardWidthDesktop": "344.66px",
+    "tagCardRadiusDesktop": "16px",
+    "tagRecentDiscussionPanelHeight": "76px",
+    "tagRecentDiscussionLabel": "최근 토론",
+    "secondaryTagSection": "PASS",
+    "secondaryTagHeading": "보조 태그 · 제품과 기능별 세부 토론",
+    "secondaryTagGridDesktop": "4-columns",
+    "secondaryTagGridGapDesktop": "12px",
+    "secondaryTagCount": 7,
+    "secondaryTagDescriptionsVisible": true,
+    "secondaryTagGridMobile": "1-column",
+    "secondaryTagGridGapMobile": "10px",
+    "absoluteTagDateFormat": "00년 0월 0일",
+    "relativeTagDatesPreserved": true,
+    "privateUseIconGlyphsVisible": 0,
+    "iconFallback": "system-symbols",
+    "tagGridMobile": "1-column",
+    "tagGridGapMobile": "14px",
+    "tagCardWidthMobile": "336px",
+    "tagPageHorizontalOverflowMobile": "0px",
     "discussionRowHeightDesktop": "62px",
     "discussionRowLayoutDesktop": "title-tags-count-single-line",
     "discussionAvatarTitleCenterDifferenceDesktop": "0px",
@@ -99,7 +121,7 @@
     "users": 39,
     "discussions": 117,
     "posts": 305,
-    "content_sha256": "dbef43c7a98941de7e863218f278bc5da5bbf98c691fd2da68dfaf07c98075d4",
+    "content_sha256": "7dde04ca2fa773249a30115a13018f979d65f2b341707c7cc153b8af112660a8",
     "uploads_sha256": "19cdf52600535380969a176d81bf66678b200a4247694641d00b470b8637a97c",
     "http_status": 200
   },
@@ -108,19 +130,19 @@
     "users": 39,
     "discussions": 117,
     "posts": 305,
-    "content_sha256": "dbef43c7a98941de7e863218f278bc5da5bbf98c691fd2da68dfaf07c98075d4",
+    "content_sha256": "7dde04ca2fa773249a30115a13018f979d65f2b341707c7cc153b8af112660a8",
     "uploads_sha256": "19cdf52600535380969a176d81bf66678b200a4247694641d00b470b8637a97c",
     "http_status": 200
   },
   "disabledRollback": {
     "theme_enabled": false,
-    "content_sha256": "dbef43c7a98941de7e863218f278bc5da5bbf98c691fd2da68dfaf07c98075d4",
+    "content_sha256": "7dde04ca2fa773249a30115a13018f979d65f2b341707c7cc153b8af112660a8",
     "uploads_sha256": "19cdf52600535380969a176d81bf66678b200a4247694641d00b470b8637a97c",
     "http_status": 200
   },
   "finalStaging": {
     "theme_enabled": true,
-    "content_sha256": "dbef43c7a98941de7e863218f278bc5da5bbf98c691fd2da68dfaf07c98075d4",
+    "content_sha256": "7dde04ca2fa773249a30115a13018f979d65f2b341707c7cc153b8af112660a8",
     "uploads_sha256": "19cdf52600535380969a176d81bf66678b200a4247694641d00b470b8637a97c",
     "http_status": 200
   }

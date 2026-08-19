@@ -27,6 +27,8 @@ class CommunityThemeContractTests(unittest.TestCase):
         cls.composer = json.loads((THEME / "composer.json").read_text(encoding="utf-8"))
         cls.less = (THEME / "resources" / "less" / "forum.less").read_text(encoding="utf-8")
         cls.korean = (THEME / "locale" / "ko.yml").read_text(encoding="utf-8")
+        cls.forum_js = (THEME / "js" / "dist" / "forum.js").read_text(encoding="utf-8")
+        cls.extend_php = (THEME / "extend.php").read_text(encoding="utf-8")
         cls.rehearsal = (ROOT / "deploy" / "flarum" / "rehearse-community-theme.sh").read_text(encoding="utf-8")
 
     def test_is_isolated_flarum_extension(self) -> None:
@@ -71,6 +73,12 @@ class CommunityThemeContractTests(unittest.TestCase):
     def test_accessibility_contract(self) -> None:
         self.assertIn(":focus-visible", self.less)
         self.assertIn("prefers-reduced-motion", self.less)
+
+    def test_icon_font_fallback_contract(self) -> None:
+        self.assertIn('font-family: "Segoe UI Symbol"', self.less)
+        self.assertIn('.fa-search::before { content: "⌕"', self.less)
+        self.assertIn('.fa-newspaper::before { content: "▤"', self.less)
+        self.assertIn('.fa-ellipsis-v::before { content: "•••"', self.less)
         self.assertGreaterEqual(len(re.findall(r"min-height:\s*44px", self.less)), 3)
         self.assertGreaterEqual(contrast("#155eef", "#ffffff"), 4.5)
         self.assertGreaterEqual(contrast("#15253e", "#ffffff"), 12.0)
@@ -82,11 +90,34 @@ class CommunityThemeContractTests(unittest.TestCase):
         self.assertIn('"Noto Sans KR"', self.less)
         self.assertIn("font-size: 16px", self.less)
 
+    def test_tag_date_format_contract(self) -> None:
+        self.assertIn("->js(__DIR__.'/js/dist/forum.js')", self.extend_php)
+        self.assertIn("flarum.core.compat['forum/app']", self.forum_js)
+        self.assertIn("module.exports = {}", self.forum_js)
+        self.assertIn(".TagTile-lastPostedDiscussion time[datetime]", self.forum_js)
+        self.assertIn("relativeDatePattern", self.forum_js)
+        self.assertIn("matched[1].slice(-2) + '년 '", self.forum_js)
+        self.assertIn("Number(matched[2]) + '월 '", self.forum_js)
+        self.assertIn("Number(matched[3]) + '일'", self.forum_js)
+
     def test_compact_hero_and_navigation_width_contract(self) -> None:
         self.assertIn(".WelcomeHero .container", self.less)
         self.assertIn("font-size: 28px", self.less)
         self.assertIn("width: 240px", self.less)
         self.assertIn(".TagsPage-nav > ul", self.less)
+        self.assertIn(".TagTiles", self.less)
+        self.assertIn("grid-template-columns: repeat(3, minmax(0, 1fr))", self.less)
+        self.assertIn("gap: 18px", self.less)
+        self.assertIn(".TagTile-lastPostedDiscussion::before", self.less)
+        self.assertIn('content: "최근 토론"', self.less)
+        self.assertIn("border-top: 4px solid var(--tag-bg)", self.less)
+        self.assertIn(".TagsPage-content > .TagCloud", self.less)
+        self.assertIn("grid-column-start: 1", self.less)
+        self.assertIn("grid-column-end: -1", self.less)
+        self.assertIn("grid-template-columns: repeat(4, minmax(0, 1fr))", self.less)
+        self.assertIn('content: "보조 태그 · 제품과 기능별 세부 토론"', self.less)
+        self.assertIn("content: attr(title)", self.less)
+        self.assertIn("border-left: 4px solid var(--tag-bg)", self.less)
         self.assertIn("width: 100%", self.less)
         self.assertIn("article.Post.Post--bestAnswer > div", self.less)
         self.assertIn("✓ 선택된 해결 답변", self.less)
@@ -111,7 +142,7 @@ class CommunityThemeContractTests(unittest.TestCase):
         self.assertIn(".item-like .Button-label::before", self.less)
         self.assertIn(".item-bestAnswer .Button-label::before", self.less)
         self.assertIn('content: "더 보기"', self.less)
-        self.assertIn('content: "\\f3e5"', self.less)
+        self.assertIn('content: "↶"', self.less)
         self.assertIn('[aria-disabled="true"]', self.less)
         self.assertIn(":has(.Header-secondary .item-logIn)", self.less)
         self.assertIn(".App--index > .App-navigation", self.less)
@@ -151,9 +182,9 @@ class CommunityThemeContractTests(unittest.TestCase):
         self.assertIn("태그 필수 조건 무시", self.korean)
         self.assertIn("#console-nav-footer", self.less)
         self.assertIn("#footer-content .feedback-menu-left", self.less)
-        self.assertIn('content: "\\f015"', self.less)
-        self.assertIn('content: "\\f303"', self.less)
-        self.assertIn('content: "\\f518"', self.less)
+        self.assertIn('content: "⌂"', self.less)
+        self.assertIn('content: "✎"', self.less)
+        self.assertIn('content: "▤"', self.less)
 
     def test_rehearsal_is_staging_only_and_preserves_content(self) -> None:
         self.assertIn('APP_ROOT" == "/srv/techflow-flarum-staging/app"', self.rehearsal)

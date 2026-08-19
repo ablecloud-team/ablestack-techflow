@@ -1,5 +1,59 @@
 /* ABLESTACK Community Theme - Issue #73 */
 
+/*
+ * 아이콘은 외부 웹폰트 로딩 여부에 기대지 않는다. Flarum의 의미 클래스는
+ * 유지하고, 운영체제 기본 글꼴의 단색 기호로 치환해 깨진 사각형을 막는다.
+ */
+.icon.fa,
+.icon.fas,
+.icon.far,
+.icon.fab {
+  font-family: "Segoe UI Symbol", "Apple Symbols", "Noto Sans Symbols 2", sans-serif !important;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.icon::before { content: "•" !important; }
+.fa-chevron-left::before { content: "‹" !important; }
+.fa-chevron-right::before { content: "›" !important; }
+.fa-search::before { content: "⌕" !important; }
+.fa-sort::before { content: "↕" !important; }
+.fa-check::before { content: "✓" !important; }
+.fa-times::before { content: "×" !important; }
+.fa-edit::before,
+.fa-pencil-alt::before { content: "✎" !important; }
+.fa-comments::before { content: "◌" !important; }
+.fa-th-large::before { content: "▦" !important; }
+.fa-star::before { content: "★" !important; }
+.fa-tag::before { content: "◇" !important; }
+.fa-newspaper::before { content: "▤" !important; }
+.fa-layer-group::before { content: "▱" !important; }
+.fa-server::before { content: "▥" !important; }
+.fa-door-closed::before { content: "▯" !important; }
+.fa-wrench::before { content: "⚒" !important; }
+.fa-bug::before { content: "※" !important; }
+.fa-pen-nib::before { content: "✦" !important; }
+.fa-cloud::before { content: "☁" !important; }
+.fa-laptop::before { content: "▰" !important; }
+.fa-cube::before { content: "◆" !important; }
+.fa-warehouse::before { content: "▥" !important; }
+.fa-chart-area::before { content: "↗" !important; }
+.fa-box-open::before { content: "◇" !important; }
+.fa-ethernet::before { content: "⌁" !important; }
+.fa-minus::before { content: "−" !important; }
+.fa-expand::before { content: "⛶" !important; }
+.fa-home::before { content: "⌂" !important; }
+.fa-book-open::before { content: "▤" !important; }
+.fa-reply::before { content: "↶" !important; }
+.fa-thumbs-up::before { content: "+" !important; }
+.fa-ellipsis-h::before,
+.fa-ellipsis-v::before { content: "•••" !important; }
+
+.Search-input::before {
+  font-family: "Segoe UI Symbol", "Apple Symbols", "Noto Sans Symbols 2", sans-serif !important;
+  content: "⌕" !important;
+}
+
 :root {
   --ablecloud-brand-primary: #155eef;
   --ablecloud-brand-primary-hover: #004eeb;
@@ -532,6 +586,257 @@ body {
     max-width: 100%;
   }
 
+  .TagsPage-content {
+    margin-top: 24px;
+  }
+
+  .TagTiles {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+    overflow: visible;
+  }
+
+  .TagTile,
+  .TagTile.colored {
+    display: flex;
+    float: none;
+    width: auto;
+    min-width: 0;
+    min-height: 218px;
+    flex-direction: column;
+    margin: 0;
+    overflow: hidden;
+    border: 1px solid var(--ablecloud-brand-border);
+    border-top: 4px solid var(--tag-bg);
+    border-radius: var(--ablecloud-radius);
+    background: var(--ablecloud-brand-surface);
+    color: var(--ablecloud-brand-ink);
+    box-shadow: var(--ablecloud-shadow-soft);
+    transition: border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+  }
+
+  .TagTile:hover,
+  .TagTile:focus-within {
+    border-color: #9db9e4;
+    border-top-color: var(--tag-bg);
+    box-shadow: var(--ablecloud-shadow);
+    transform: translateY(-2px);
+  }
+
+  .TagTile-info {
+    position: static;
+    display: block;
+    width: auto;
+    height: auto;
+    min-height: 0;
+    flex: 1 1 auto;
+    box-sizing: border-box;
+    overflow: visible;
+    padding: 19px 20px 14px;
+    color: var(--ablecloud-brand-ink) !important;
+  }
+
+  .TagTile-info:hover,
+  .TagTile-info:focus {
+    color: var(--ablecloud-brand-ink) !important;
+    text-decoration: none;
+  }
+
+  .TagTile-info > .icon {
+    display: inline-flex;
+    width: 36px;
+    height: 36px;
+    align-items: center;
+    justify-content: center;
+    margin: 0 10px 0 0;
+    border-radius: 10px;
+    background: var(--ablecloud-brand-primary-soft);
+    color: var(--ablecloud-brand-primary-deep);
+    font-size: 17px;
+    vertical-align: middle;
+  }
+
+  .TagTile-name {
+    display: inline;
+    margin: 0;
+    color: var(--ablecloud-brand-ink);
+    font-size: 18px;
+    font-weight: 750;
+    line-height: 1.45;
+    vertical-align: middle;
+  }
+
+  .TagTile-description {
+    display: -webkit-box;
+    min-height: 46px;
+    margin: 14px 0 0;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    color: var(--ablecloud-brand-muted);
+    font-size: 14px;
+    line-height: 1.65;
+  }
+
+  .TagTile-children {
+    margin-top: 10px;
+  }
+
+  .TagTile-lastPostedDiscussion {
+    position: static;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 4px 10px;
+    height: auto;
+    min-height: 76px;
+    min-width: 0;
+    box-sizing: border-box;
+    margin: 0 16px 16px;
+    padding: 11px 12px;
+    border: 1px solid #d9e5f5;
+    border-radius: 11px;
+    background: #f6f9fe;
+    color: var(--ablecloud-brand-ink) !important;
+    line-height: 1.4;
+    text-align: left;
+  }
+
+  .TagTile-lastPostedDiscussion::before {
+    grid-column: 1 / -1;
+    color: var(--ablecloud-brand-primary-deep);
+    content: "최근 토론";
+    font-size: 12px;
+    font-weight: 750;
+    letter-spacing: -0.01em;
+  }
+
+  .TagTile-lastPostedDiscussion:hover,
+  .TagTile-lastPostedDiscussion:focus {
+    border-color: #9db9e4;
+    background: #edf4ff;
+    color: var(--ablecloud-brand-primary-deep) !important;
+    text-decoration: none;
+  }
+
+  .TagTile-lastPostedDiscussion-title {
+    display: -webkit-box;
+    min-width: 0;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    color: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.45;
+    white-space: normal;
+  }
+
+  .TagTile-lastPostedDiscussion time {
+    float: none;
+    margin: 0;
+    color: var(--ablecloud-brand-muted);
+    font-size: 12px;
+    font-weight: 650;
+    white-space: nowrap;
+  }
+
+  .TagsPage-content > .TagCloud {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 28px;
+    padding: 20px;
+    border: 1px solid var(--ablecloud-brand-border);
+    border-radius: var(--ablecloud-radius);
+    background: rgba(234, 242, 255, 0.58);
+    box-shadow: var(--ablecloud-shadow-soft);
+  }
+
+  .TagsPage-content > .TagCloud::before {
+    grid-column-start: 1;
+    grid-column-end: -1;
+    margin-bottom: 2px;
+    color: var(--ablecloud-brand-ink);
+    content: "보조 태그 · 제품과 기능별 세부 토론";
+    font-size: 17px;
+    font-weight: 750;
+    line-height: 1.5;
+    text-align: left;
+  }
+
+  .TagsPage-content > .TagCloud > .TagLabel,
+  .TagsPage-content > .TagCloud > .TagLabel.colored {
+    display: flex;
+    min-width: 0;
+    min-height: 96px;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 13px 14px;
+    border: 1px solid #d9e5f5;
+    border-left: 4px solid var(--tag-bg);
+    border-radius: 12px;
+    background: #fff;
+    color: var(--ablecloud-brand-ink) !important;
+    box-shadow: 0 3px 10px rgba(24, 71, 142, 0.045);
+    text-align: left;
+    white-space: normal;
+  }
+
+  .TagsPage-content > .TagCloud > .TagLabel:hover,
+  .TagsPage-content > .TagCloud > .TagLabel:focus {
+    border-color: #9db9e4;
+    border-left-color: var(--tag-bg);
+    background: #fafdff;
+    color: var(--ablecloud-brand-primary-deep) !important;
+    text-decoration: none;
+    transform: translateY(-1px);
+  }
+
+  .TagsPage-content > .TagCloud .TagLabel-text {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 9px;
+  }
+
+  .TagsPage-content > .TagCloud .TagLabel-icon {
+    display: inline-flex;
+    width: 32px;
+    height: 32px;
+    flex: 0 0 32px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9px;
+    background: var(--ablecloud-brand-primary-soft);
+    color: var(--ablecloud-brand-primary-deep);
+    font-size: 15px;
+  }
+
+  .TagsPage-content > .TagCloud .TagLabel-name {
+    min-width: 0;
+    overflow: hidden;
+    font-size: 15px;
+    font-weight: 750;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .TagsPage-content > .TagCloud > .TagLabel::after {
+    display: -webkit-box;
+    margin-top: 8px;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    color: var(--ablecloud-brand-muted);
+    content: attr(title);
+    font-size: 12.5px;
+    line-height: 1.5;
+  }
+
   .sideNav .Dropdown-menu > li > a,
   .sideNav .Dropdown-menu > li > button {
     min-height: 44px;
@@ -745,22 +1050,22 @@ body {
   .Post-actions .item-reply .Button-label::before,
   .Post-actions .item-like .Button-label::before,
   .Post-actions .item-bestAnswer .Button-label::before {
-    font-family: "Font Awesome 5 Free";
+    font-family: "Segoe UI Symbol", "Apple Symbols", "Noto Sans Symbols 2", sans-serif;
     font-size: 14px;
     font-weight: 900;
     line-height: 1;
   }
 
   .Post-actions .item-reply .Button-label::before {
-    content: "\f3e5";
+    content: "↶";
   }
 
   .Post-actions .item-like .Button-label::before {
-    content: "\f164";
+    content: "+";
   }
 
   .Post-actions .item-bestAnswer .Button-label::before {
-    content: "\f058";
+    content: "✓";
   }
 
   .Post-actions .Post-controls > .Dropdown-toggle .Button-label::after {
@@ -849,22 +1154,22 @@ body {
 
   #footer-content .feedback-menu-left::before,
   #footer-content .feedback-menu-right::before {
-    font-family: "Font Awesome 5 Free";
+    font-family: "Segoe UI Symbol", "Apple Symbols", "Noto Sans Symbols 2", sans-serif;
     font-size: 16px;
     font-weight: 900;
     line-height: 1;
   }
 
   #footer-content .feedback-menu-left::before {
-    content: "\f015";
+    content: "⌂";
   }
 
   #floatright .feedback-menu-right:first-of-type::before {
-    content: "\f303";
+    content: "✎";
   }
 
   #floatright .feedback-menu-right:last-of-type::before {
-    content: "\f518";
+    content: "▤";
   }
 
   article.TechFlowPost--assistant > div,
@@ -1449,6 +1754,66 @@ body {
 
     .WelcomeHero .container {
       padding: 17px 15px;
+    }
+
+    .TagsPage-content {
+      margin-top: 18px;
+      padding: 0 12px;
+    }
+
+    .TagTiles {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 14px;
+    }
+
+    .TagTile,
+    .TagTile.colored {
+      min-height: 0;
+      border-radius: 14px;
+    }
+
+    .TagTile-info {
+      padding: 17px 16px 12px;
+    }
+
+    .TagTile-info > .icon {
+      width: 34px;
+      height: 34px;
+      margin-right: 8px;
+      font-size: 16px;
+    }
+
+    .TagTile-name {
+      font-size: 17px;
+    }
+
+    .TagTile-description {
+      min-height: 0;
+      margin-top: 12px;
+      font-size: 13px;
+    }
+
+    .TagTile-lastPostedDiscussion {
+      margin: 0 12px 12px;
+      padding: 10px 11px;
+    }
+
+    .TagsPage-content > .TagCloud {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 10px;
+      margin-top: 20px;
+      padding: 14px;
+      border-radius: 14px;
+    }
+
+    .TagsPage-content > .TagCloud::before {
+      font-size: 16px;
+    }
+
+    .TagsPage-content > .TagCloud > .TagLabel,
+    .TagsPage-content > .TagCloud > .TagLabel.colored {
+      min-height: 88px;
+      padding: 12px 13px;
     }
 
     .WelcomeHero h1,
