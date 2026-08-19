@@ -73,11 +73,16 @@ sudo bash deploy/flarum/apply-community-theme-update.sh \
 - `public/assets/forum-ko.js`가 비어 있지 않고 `core.forum.header.search_placeholder`를 포함해야 한다.
 - 데스크톱과 모바일에서 홈, 목록, 상세, 검색, 로그인, 글쓰기, 첨부를 확인한다.
 - 데스크톱 첫 화면에서 문서 전체의 `scrollY`가 `0`으로 유지되는지 확인한다.
-  Welcome Hero, 좌측 메뉴와 Footer는 고정하고 `.IndexPage-results` 전체가
-  스크롤되어야 한다. `최신` 선택 콤보를 포함한 `.IndexPage-toolbar`와 토론
-  행이 함께 이동해야 하며 `.DiscussionList` 자체의 `scrollTop`은 `0`을
-  유지해야 한다. 우측 영역도 `scrollbar-width: none`과 WebKit 규칙으로
-  스크롤바를 표시하지 않는다.
+  Welcome Hero와 좌측 메뉴는 고정하고 `.IndexPage-results` 전체가 스크롤되어야
+  한다. `최신` 선택 콤보를 포함한 `.IndexPage-toolbar`와 토론 행이 함께
+  이동해야 하며 `.DiscussionList` 자체의 `scrollTop`은 `0`을 유지해야 한다.
+  우측 영역도 `scrollbar-width: none`과 WebKit 규칙으로 스크롤바를 표시하지
+  않는다. 화면 하단에는 Footer가 없어야 한다.
+- 기존 Footer의 `ABLECLOUD Home`, `Blog`, `Online Docs` 링크는 콘텐츠 오른쪽의
+  세로형 원형 퀵 링크로 보여야 한다. 데스크톱에서는 48px 폭, 모바일에서는
+  44px 폭이며 토론 목록을 스크롤해도 화면상 Y 좌표가 변하지 않아야 한다.
+- 데스크톱 첫 화면의 콘텐츠 컨테이너는 최대 1320px이며, 오른쪽에 80px의
+  안전 여백을 두어 목록과 퀵 링크가 겹치지 않아야 한다.
 - 좌측 메뉴는 사용자 설정 화면과 같이 고정한다. 높이가 짧아 태그가 모두 보이지
   않을 때 내부 스크롤은 허용하지만 `scrollbar-width: none`과 WebKit 규칙으로
   스크롤바는 표시하지 않는다.
@@ -116,6 +121,6 @@ sudo systemctl restart php8.3-fpm nginx
 - GO: HTTP 200, 한글 원문 키 0건, 핵심 기능 정상, 콘텐츠·첨부 불변.
 - ROLLBACK: 화면·번역·로그인·작성·첨부 중 하나라도 실패.
 - 2026-08-19 운영 적용 완료: 사용자 메뉴 겹침 보완과 Reddit형 평면 피드·게시물
-  정보 계층·이미지 썸네일이
-  WSL 및 운영에 반영되었으며, 운영 백업은
-  `/var/backups/techflow-flarum/theme-reddit-post-thumbnail-20260819T122946Z`에 보존한다.
+  정보 계층·이미지 썸네일, 하단 Footer 제거와 우측 고정 퀵 링크가 WSL 및
+  운영에 반영되었으며, 최신 운영 백업은
+  `/var/backups/techflow-flarum/theme-vertical-quick-links-20260819T124728Z`에 보존한다.
