@@ -83,7 +83,14 @@ sudo bash deploy/flarum/apply-community-theme-update.sh \
   스크롤바는 표시하지 않는다.
 - 토론 목록 바깥 Container와 개별 행에 Card Border·Background·Shadow를
   만들지 않는다. 투명한 평면 피드에서 1px 구분선으로만 행을 나누고,
-  제목·태그·댓글 수·더보기 기능과 파란색 Hover/Focus 상태를 유지한다.
+  작성 정보·제목·첫 글 요약·태그·댓글 수·더보기 기능과 파란색 Hover/Focus
+  상태를 유지한다.
+- 해결 배지와 대표 카테고리·작성자·작성 시각은 같은 헤더 행에서 서로 겹치지
+  않아야 한다. 사용자 아바타는 해결 여부와 관계없이 행 좌측 상단의 본문 경계
+  안에 있어야 한다.
+- 첫 게시물에 이미지가 있으면 첫 이미지를 데스크톱 124×92px, 모바일 88×72px
+  우측 썸네일로 표시한다. 이미지가 없는 글에는 빈 썸네일 영역을 만들지 않으며,
+  썸네일은 기존 Store 데이터에서 생성하고 지연 로딩해야 한다.
 - 사용자 프로필·설정 화면을 1,150px 폭에서 스크롤했을 때 고정 메뉴 폭이
   280px로 유지되고 메뉴 오른쪽 끝이 본문 왼쪽보다 작거나 같은지 확인한다.
 - `Answered`, `Best Answer`, `Select Best Answer` 원문 노출이 없어야 한다.
@@ -108,6 +115,7 @@ sudo systemctl restart php8.3-fpm nginx
 
 - GO: HTTP 200, 한글 원문 키 0건, 핵심 기능 정상, 콘텐츠·첨부 불변.
 - ROLLBACK: 화면·번역·로그인·작성·첨부 중 하나라도 실패.
-- 2026-08-19 운영 적용 완료: 사용자 메뉴 겹침 보완과 Reddit형 평면 피드가
+- 2026-08-19 운영 적용 완료: 사용자 메뉴 겹침 보완과 Reddit형 평면 피드·게시물
+  정보 계층·이미지 썸네일이
   WSL 및 운영에 반영되었으며, 운영 백업은
-  `/var/backups/techflow-flarum/theme-reddit-flat-feed-hidden-scroll-20260819T115539Z`에 보존한다.
+  `/var/backups/techflow-flarum/theme-reddit-post-thumbnail-20260819T122946Z`에 보존한다.

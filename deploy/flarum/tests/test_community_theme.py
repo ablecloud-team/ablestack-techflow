@@ -137,6 +137,45 @@ class CommunityThemeContractTests(unittest.TestCase):
         self.assertIn("window.location.assign(href)", self.forum_js)
         self.assertIn("document.addEventListener('click', openDiscussionFromTop, true)", self.forum_js)
 
+    def test_reddit_style_discussion_item_structure_contract(self) -> None:
+        for script_contract in (
+            "enhanceDiscussionListItems",
+            "forumApp.store.getById('discussions'",
+            "discussion.firstPost()",
+            "firstPost.contentPlain()",
+            "ablecloud-DiscussionMeta",
+            "ablecloud-DiscussionSummary",
+            "formatDiscussionCreatedAt",
+            "data-ablecloud-post-structure",
+            "meta.setAttribute('aria-label', '토론 작성 정보')",
+            "badges.setAttribute('aria-label', '해결된 토론')",
+            "findDiscussionThumbnail",
+            "firstPost.contentHtml()",
+            "template.content.querySelector('img[src]')",
+            "thumbnailImage.loading = 'lazy'",
+            "ablecloud-DiscussionMain--withThumbnail",
+            "ablecloud-DiscussionThumbnail",
+        ):
+            with self.subTest(script_contract=script_contract):
+                self.assertIn(script_contract, self.forum_js)
+
+        for style_contract in (
+            ".ablecloud-DiscussionMeta",
+            ".ablecloud-DiscussionMeta-category",
+            ".ablecloud-DiscussionSummary",
+            "-webkit-line-clamp: 2",
+            ".App--index .IndexPage-results .DiscussionListItem-badges .Badge--bestAnswer::after",
+            'content: "해결됨"',
+            "min-height: 136px",
+            "font-size: 18px",
+            ".ablecloud-DiscussionThumbnail",
+            "object-fit: cover",
+            "grid-template-columns: minmax(0, 1fr) 124px",
+            "grid-template-columns: minmax(0, 1fr) 88px",
+        ):
+            with self.subTest(style_contract=style_contract):
+                self.assertIn(style_contract, self.less)
+
     def test_compact_hero_and_navigation_width_contract(self) -> None:
         self.assertIn(".WelcomeHero .container", self.less)
         self.assertIn("font-size: 28px", self.less)
