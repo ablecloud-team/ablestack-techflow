@@ -87,6 +87,15 @@ class CommunityThemeContractTests(unittest.TestCase):
         self.assertIn("@media (min-width: 768px)", self.less)
         self.assertIn("white-space: nowrap", self.less)
         self.assertIn("padding: 11px 64px 11px 52px", self.less)
+        self.assertIn("padding-top: 19px", self.less)
+        self.assertIn("padding-bottom: 19px", self.less)
+        self.assertIn("padding: 17px 15px", self.less)
+        self.assertIn(".DiscussionListItem-author", self.less)
+        self.assertIn("margin-top: 1px !important", self.less)
+        self.assertIn(".Post-actions", self.less)
+        self.assertIn('content: "\\f3e5"', self.less)
+        self.assertIn('[aria-disabled="true"]', self.less)
+        self.assertIn(":has(.Header-secondary .item-logIn)", self.less)
 
     def test_rehearsal_is_staging_only_and_preserves_content(self) -> None:
         self.assertIn('APP_ROOT" == "/srv/techflow-flarum-staging/app"', self.rehearsal)

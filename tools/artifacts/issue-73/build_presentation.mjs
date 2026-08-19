@@ -8,7 +8,7 @@ const renderDir = path.join(ROOT, "tmp", "issue73-presentation", "renders");
 const output = path.join(ROOT, "output", "presentation", "techflow-community-ui-modernization.pptx");
 const beforeImage = path.join(ROOT, "docs", "evidence", "issue-73", "screenshots", "before", "home-desktop.png");
 const afterImage = path.join(ROOT, "docs", "evidence", "issue-73", "screenshots", "after", "home-desktop.png");
-const mobileImage = path.join(ROOT, "docs", "evidence", "issue-73", "screenshots", "after", "home-mobile.png");
+const actionImage = path.join(ROOT, "docs", "evidence", "issue-73", "screenshots", "after", "post-actions-mobile.png");
 await fs.mkdir(renderDir, { recursive: true });
 await fs.mkdir(path.dirname(output), { recursive: true });
 
@@ -46,7 +46,7 @@ function notes(slide) {
 
 const before = await bytes(beforeImage);
 const after = await bytes(afterImage);
-const mobile = await bytes(mobileImage);
+const action = await bytes(actionImage);
 
 {
   const s = deck.slides.add(); s.background.fill = C.white;
@@ -84,15 +84,15 @@ const mobile = await bytes(mobileImage);
   notes(s);
 }
 {
-  const s = deck.slides.add(); s.background.fill = C.white; title(s, "390px 모바일과 한글 화면을 검증했습니다", 4);
-  addImage(s, "mobile-screen", mobile, 76, 136, 330, 520, "contain");
-  text(s, "mobile-fact-1", "2줄", 520, 178, 210, 70, 52, true, C.blue);
-  text(s, "mobile-desc-1", "토의 제목", 748, 194, 340, 44, 24, false, C.gray);
-  text(s, "mobile-fact-2", "44px", 520, 300, 210, 70, 52, true, C.blue);
-  text(s, "mobile-desc-2", "주요 조작 영역", 748, 316, 340, 44, 24, false, C.gray);
-  text(s, "mobile-fact-3", "0건", 520, 422, 210, 70, 52, true, C.green);
-  text(s, "mobile-desc-3", "원문 core.* 키 노출", 748, 438, 390, 44, 24, false, C.gray);
-  text(s, "mobile-foot", "검색 · 로그인 · 홈 · 목록 실제 브라우저 Smoke 통과", 520, 566, 610, 52, 24, true, C.ink);
+  const s = deck.slides.add(); s.background.fill = C.white; title(s, "정렬과 작업 버튼도 읽기 흐름에 맞췄습니다", 4);
+  addImage(s, "mobile-actions", action, 76, 136, 330, 520, "contain");
+  text(s, "mobile-fact-1", "19/17px", 500, 178, 245, 70, 48, true, C.blue);
+  text(s, "mobile-desc-1", "Desktop/Mobile 대칭 여백", 748, 194, 430, 44, 22, false, C.gray);
+  text(s, "mobile-fact-2", "0px", 520, 300, 210, 70, 52, true, C.blue);
+  text(s, "mobile-desc-2", "아바타·제목 중심 차이", 748, 316, 390, 44, 24, false, C.gray);
+  text(s, "mobile-fact-3", "40px", 520, 422, 210, 70, 52, true, C.green);
+  text(s, "mobile-desc-3", "상시 답장 아이콘", 748, 438, 390, 44, 24, false, C.gray);
+  text(s, "mobile-foot", "비로그인 상태는 회색 비활성 · Desktop/Mobile 실제 검증", 500, 566, 680, 52, 23, true, C.ink);
   notes(s);
 }
 {

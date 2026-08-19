@@ -107,8 +107,8 @@ body {
   }
 
   .WelcomeHero .container {
-    padding-top: 18px;
-    padding-bottom: 20px;
+    padding-top: 19px;
+    padding-bottom: 19px;
   }
 
   .WelcomeHero h1,
@@ -311,6 +311,58 @@ body {
     height: auto;
     border: 1px solid var(--ablecloud-brand-border);
     border-radius: 12px;
+  }
+
+  .Post-actions {
+    opacity: 1 !important;
+  }
+
+  .Post-actions .Button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    min-width: 40px;
+    padding: 0;
+    border: 1px solid var(--ablecloud-brand-border);
+    background: var(--ablecloud-brand-primary-faint) !important;
+    color: var(--ablecloud-brand-primary-deep) !important;
+  }
+
+  .Post-actions .Button:hover,
+  .Post-actions .Button:focus-visible {
+    border-color: #8cb0ec;
+    background: #e7f0ff !important;
+    color: var(--ablecloud-brand-primary) !important;
+  }
+
+  .Post-actions .item-reply .Button-label {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0;
+  }
+
+  .Post-actions .item-reply .Button-label::before {
+    content: "\f3e5";
+    font-family: "Font Awesome 5 Free";
+    font-size: 15px;
+    font-weight: 900;
+    line-height: 1;
+  }
+
+  .Post-actions .Button:disabled,
+  .Post-actions .Button[disabled],
+  .Post-actions .Button[aria-disabled="true"],
+  .Post-actions .Button.disabled,
+  &:has(.Header-secondary .item-logIn) .Post-actions .item-reply .Button {
+    border-color: #d8e0ec;
+    background: #edf1f6 !important;
+    color: #7d8ba0 !important;
+    box-shadow: none;
+    cursor: not-allowed;
+    opacity: 0.45;
+    pointer-events: none;
   }
 
   article.TechFlowPost--assistant > div,
@@ -536,6 +588,10 @@ body {
       padding: 0 !important;
     }
 
+    .DiscussionListItem-author {
+      margin-top: 1px !important;
+    }
+
     .DiscussionListItem-title {
       flex: 1 1 auto;
       min-width: 180px;
@@ -594,7 +650,7 @@ body {
     }
 
     .WelcomeHero .container {
-      padding: 16px 15px 18px;
+      padding: 17px 15px;
     }
 
     .WelcomeHero h1,
