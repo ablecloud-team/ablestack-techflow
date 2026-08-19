@@ -1,0 +1,61 @@
+{
+  "schema_version": "1.0",
+  "executed_at": "2026-08-19T10:49:00Z",
+  "scope": "Flarum user profile and settings navigation scroll overlap",
+  "root_cause": "When Flarum adds the affix class, the fixed list resolved width: 100% against the viewport instead of the 280px navigation column.",
+  "change": {
+    "selector": ".UserPage .UserPage-nav > ul.affix",
+    "width_px": 280,
+    "max_width_px": 280
+  },
+  "wsl": {
+    "environment": "WSL Ubuntu 24.04",
+    "url": "http://localhost:18080/u/pdh1974",
+    "rehearsal_result": "/srv/techflow-flarum-staging/rehearsals/issue-73/issue73-user-nav-affix/result.json",
+    "cycle": "PASS",
+    "browser": {
+      "viewport": { "width": 1280, "height": 720 },
+      "scroll_y": 520,
+      "menu_width_px": 280,
+      "menu_right_px": 377.5,
+      "content_left_px": 427.5,
+      "overlap": false
+    }
+  },
+  "production": {
+    "host": "172.16.0.234",
+    "url": "https://community.ablecloud.io/u/pdh1974",
+    "backup_root": "/var/backups/techflow-flarum/theme-nav-affix-20260819T104516Z",
+    "services": {
+      "nginx": "active",
+      "php8.3-fpm": "active",
+      "mariadb": "active"
+    },
+    "local_http_status": 200,
+    "external_https_status": 200,
+    "theme_sha256": "376eefd1d1e00898ed8438566824df11ceb137f970b2ee91297f3b131cb8f08d",
+    "vendor_sha256_matches": true,
+    "compiled_css_contains_affix_rule": true,
+    "browser": {
+      "viewport": { "width": 1150, "height": 881 },
+      "scroll_y": 520,
+      "menu_width_px": 280,
+      "menu_right_px": 312.5,
+      "content_left_px": 362.5,
+      "overlap": false
+    }
+  },
+  "validation": {
+    "theme_contract_tests": { "passed": 11, "failed": 0 },
+    "deployment_script_shell_syntax": "PASS",
+    "git_diff_check": "PASS",
+    "temporary_remote_assets_removed": true
+  },
+  "protected_scope": {
+    "database_schema_changed": false,
+    "community_content_changed": false,
+    "techflow_ai_services_changed": false,
+    "github_chat_webhook_changed": false
+  },
+  "decision": "PASS"
+}
