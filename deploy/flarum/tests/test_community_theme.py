@@ -74,16 +74,41 @@ class CommunityThemeContractTests(unittest.TestCase):
         self.assertIn(":focus-visible", self.less)
         self.assertIn("prefers-reduced-motion", self.less)
 
-    def test_icon_font_fallback_contract(self) -> None:
-        self.assertIn('font-family: "Segoe UI Symbol"', self.less)
-        self.assertIn('.fa-search::before { content: "⌕"', self.less)
-        self.assertIn('.fa-newspaper::before { content: "▤"', self.less)
-        self.assertIn('.fa-ellipsis-v::before { content: "•••"', self.less)
-        self.assertIn(".fa-flag::before", self.less)
-        self.assertIn(".fa-bell::before", self.less)
-        self.assertIn("mask-image: url", self.less)
+    def test_embedded_svg_icon_and_navigation_contract(self) -> None:
+        self.assertIn("--ablecloud-icon", self.less)
+        self.assertIn("mask-image: var(--ablecloud-icon, none)", self.less)
+        for icon in (
+            ".fa-bars",
+            ".fa-flag",
+            ".fa-bell",
+            ".fa-user",
+            ".fa-cog",
+            ".fa-sign-out-alt",
+            ".fa-sync",
+            ".fa-comment",
+            ".fa-thumbs-up",
+            ".fa-file-upload",
+            ".fa-at",
+            ".fa-shield-alt",
+            ".fa-book",
+            ".fa-angle-double-up",
+            ".fa-angle-double-down",
+            ".fa-envelope",
+            ".fa-stopwatch",
+            ".fa-paper-plane",
+            ".fa-photo-video",
+            ".fa-smile",
+        ):
+            with self.subTest(icon=icon):
+                self.assertIn(icon, self.less)
+        self.assertIn(".sideNav .Dropdown-menu > li > a:hover", self.less)
+        self.assertIn(".UserPage .UserPage-nav .Dropdown-menu > li > a:hover", self.less)
+        self.assertIn("transform: translateX(2px)", self.less)
+        self.assertIn("font-size: 18px", self.less)
         self.assertIn(".Header-secondary > ul", self.less)
         self.assertIn("height: 44px", self.less)
+        self.assertIn("max-width: 1100px", self.less)
+        self.assertIn("--ablecloud-footer-icon", self.less)
         self.assertGreaterEqual(len(re.findall(r"min-height:\s*44px", self.less)), 3)
         self.assertGreaterEqual(contrast("#155eef", "#ffffff"), 4.5)
         self.assertGreaterEqual(contrast("#15253e", "#ffffff"), 12.0)
@@ -104,12 +129,22 @@ class CommunityThemeContractTests(unittest.TestCase):
         self.assertIn("matched[1].slice(-2) + '년 '", self.forum_js)
         self.assertIn("Number(matched[2]) + '월 '", self.forum_js)
         self.assertIn("Number(matched[3]) + '일'", self.forum_js)
+        self.assertIn("normalizeDiscussionListTargets", self.forum_js)
+        self.assertIn(".DiscussionListItem-main[href]", self.forum_js)
+        self.assertIn("data-ablecloud-start-from-top", self.forum_js)
+        self.assertIn("/(\\/d\\/[^/]+)\\/\\d+\\/?$/", self.forum_js)
+        self.assertIn("openDiscussionFromTop", self.forum_js)
+        self.assertIn("window.location.assign(href)", self.forum_js)
+        self.assertIn("document.addEventListener('click', openDiscussionFromTop, true)", self.forum_js)
 
     def test_compact_hero_and_navigation_width_contract(self) -> None:
         self.assertIn(".WelcomeHero .container", self.less)
         self.assertIn("font-size: 28px", self.less)
-        self.assertIn("width: 240px", self.less)
+        self.assertIn("width: 280px", self.less)
         self.assertIn(".TagsPage-nav > ul", self.less)
+        self.assertIn(".TagsPage-nav .Dropdown-menu", self.less)
+        self.assertIn("justify-content: center", self.less)
+        self.assertIn("bottom: 4px", self.less)
         self.assertIn(".TagTiles", self.less)
         self.assertIn("grid-template-columns: repeat(3, minmax(0, 1fr))", self.less)
         self.assertIn("gap: 18px", self.less)
@@ -136,6 +171,25 @@ class CommunityThemeContractTests(unittest.TestCase):
         self.assertIn(".PostStream-item:not(:last-child)", self.less)
         self.assertIn(".DiscussionListItem-author", self.less)
         self.assertIn("margin-top: 1px !important", self.less)
+        self.assertIn(".DiscussionListItem-controls > .Dropdown-toggle", self.less)
+        self.assertIn("border: 0", self.less)
+        self.assertIn("background: transparent", self.less)
+        self.assertIn("box-shadow: none", self.less)
+        self.assertIn('.IndexPage-toolbar .Dropdown-menu .Button-icon:not([class*="fa-"])', self.less)
+        self.assertIn("visibility: hidden", self.less)
+        self.assertIn(".fa-bolt", self.less)
+        self.assertIn(".DiscussionPage-list", self.less)
+        self.assertIn("height: calc(100vh - 68px)", self.less)
+        self.assertIn("scrollbar-width: thin", self.less)
+        self.assertIn(".Search-input input:focus-visible", self.less)
+        self.assertIn("outline: none !important", self.less)
+        self.assertIn('.Header-secondary .Dropdown-menu .Button-icon:not([class*="fa-"])', self.less)
+        self.assertIn("padding: 10px 12px", self.less)
+        self.assertIn("transform: none", self.less)
+        self.assertIn('.Search-input input[type="search"]::-webkit-search-cancel-button', self.less)
+        self.assertIn("-webkit-appearance: none", self.less)
+        self.assertIn(".DiscussionListItem-count::before", self.less)
+        self.assertIn(".DiscussionListItem.unread .DiscussionListItem-count:hover::before", self.less)
         self.assertIn(".Post-actions", self.less)
         self.assertIn("right: 0", self.less)
         self.assertIn(".Post-actions > ul > li", self.less)
@@ -147,7 +201,7 @@ class CommunityThemeContractTests(unittest.TestCase):
         self.assertIn(".item-like .Button-label::before", self.less)
         self.assertIn(".item-bestAnswer .Button-label::before", self.less)
         self.assertIn('content: "더 보기"', self.less)
-        self.assertIn('content: "↶"', self.less)
+        self.assertIn(".fa-reply { --ablecloud-icon", self.less)
         self.assertIn('[aria-disabled="true"]', self.less)
         self.assertIn(":has(.Header-secondary .item-logIn)", self.less)
         self.assertIn(".App--index > .App-navigation", self.less)
@@ -187,9 +241,10 @@ class CommunityThemeContractTests(unittest.TestCase):
         self.assertIn("태그 필수 조건 무시", self.korean)
         self.assertIn("#console-nav-footer", self.less)
         self.assertIn("#footer-content .feedback-menu-left", self.less)
-        self.assertIn('content: "⌂"', self.less)
-        self.assertIn('content: "✎"', self.less)
-        self.assertIn('content: "▤"', self.less)
+        self.assertIn("#footer-content .feedback-menu-left", self.less)
+        self.assertIn("#floatright .feedback-menu-right:first-of-type", self.less)
+        self.assertIn("#floatright .feedback-menu-right:last-of-type", self.less)
+        self.assertIn("mask-image: var(--ablecloud-footer-icon)", self.less)
 
     def test_rehearsal_is_staging_only_and_preserves_content(self) -> None:
         self.assertIn('APP_ROOT" == "/srv/techflow-flarum-staging/app"', self.rehearsal)

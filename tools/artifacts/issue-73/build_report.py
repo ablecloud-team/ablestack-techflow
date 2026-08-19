@@ -135,7 +135,7 @@ story = [
 
     para("3. 현대화 결과", "h1"),
     screenshot(AFTER, 174 * mm, 105.5 * mm), Spacer(1, 5 * mm),
-    para("Hero는 361px에서 약 128px로 줄이고 타이틀은 로고보다 작은 28px로 조정했습니다. 로그인 헤더의 검색·언어·신고·알림·프로필은 모두 44px·동일 Y축으로 정렬하고, 신고·알림은 웹폰트와 무관한 내장 SVG 아이콘으로 표시합니다. 왼쪽 탐색은 240px로 넓혔고 토론 행은 약 110px에서 62px로 줄였습니다."), PageBreak(),
+    para("Hero는 361px에서 약 128px로 줄이고 타이틀은 로고보다 작은 28px로 조정했습니다. 로그인 헤더의 검색·언어·신고·알림·프로필은 모두 44px·동일 Y축으로 정렬하고, 신고·알림은 웹폰트와 무관한 내장 SVG 아이콘으로 표시합니다. 언어 드롭다운의 빈 아이콘 사각형과 Hover 이동도 제거했습니다. 왼쪽 탐색은 280px로 넓혔고 토론 행은 약 110px에서 62px로 줄였습니다. 목록에서 토론을 열면 게시물 번호를 제거해 scrollY 0의 첫 게시물부터 표시합니다. 태그 도구 모음은 좌우 16px 균등 여백과 아이콘·글자 10px 간격을 사용하며 선택선은 콘텐츠와 겹치지 않는 하단에 표시합니다."), PageBreak(),
 
     para("4. 모바일과 답변 상태", "h1"),
     make_table([
@@ -151,24 +151,24 @@ story = [
 
     para("5. 공통 대화상자와 한글", "h1"),
     screenshot(TAG_MODAL, 174 * mm, 98 * mm), Spacer(1, 5 * mm),
-    para("작성·태그·검색·로그인과 확장 기능 대화상자는 같은 헤더, 입력 경계, 원형 닫기, 주요 확인 버튼과 2px의 부드러운 블루 포커스 링을 사용합니다. 태그 선택창의 Choose, OK, Bypass tag requirements는 주 태그를 선택하세요, 확인, 태그 필수 조건 무시로 표시합니다."),
+    para("작성·태그·검색·로그인과 확장 기능 대화상자는 같은 헤더, 입력 경계, 원형 닫기, 주요 확인 버튼과 2px의 부드러운 블루 포커스 링을 사용합니다. 검색 입력은 중복 외곽선을 제거해 모서리의 파란 꼭지점 없이 단일 링만 표시합니다. 태그 선택창의 Choose, OK, Bypass tag requirements는 주 태그를 선택하세요, 확인, 태그 필수 조건 무시로 표시합니다."),
     Spacer(1, 5 * mm), callout("공통 Modal 규칙 적용 · 태그 선택창 직접 노출 영문 0건", BLUE, PALE), PageBreak(),
 
     para("6. 프로필 화면 통일", "h1"),
     screenshot(PROFILE, 174 * mm, 105.5 * mm), Spacer(1, 5 * mm),
-    para("프로필 Hero는 165px 블루 Gradient와 96px 아바타로 정리했습니다. 데스크톱 메뉴는 240px, 콘텐츠는 780px이며 빈 화면도 독립 카드로 표시합니다. 모바일은 한 열로 전환합니다. Likes, My media, Security, best answers는 좋아요, 내 미디어, 보안, 해결 답변으로 한글화했고 Locale warm-up에서 실제 번역값을 검증합니다."), PageBreak(),
+    para("프로필 Hero는 165px 블루 Gradient와 96px 아바타로 정리했습니다. 데스크톱 메뉴는 280px, 콘텐츠는 780px이며 빈 화면도 독립 카드로 표시합니다. 모바일은 한 열로 전환합니다. Likes, My media, Security, best answers는 좋아요, 내 미디어, 보안, 해결 답변으로 한글화했고 Locale warm-up에서 실제 번역값을 검증합니다."), PageBreak(),
 
     para("7. 토론 메뉴와 설정·보안 통일", "h1"),
     Table([
         [screenshot(DISCUSSION_MENU, 83 * mm, 50 * mm), screenshot(SETTINGS, 83 * mm, 50 * mm)],
-        [para("더보기 버튼은 항상 보이며 세로 중심 오차 0px입니다. 열린 메뉴는 z-index 1080으로 뒤쪽 토론 행보다 위에 표시됩니다.", "small"), para("설정의 계정·알림 표는 16px 카드와 공통 버튼으로 통일했습니다. 직접 노출 영문은 0건입니다.", "small")],
+        [para("더보기는 테두리 없는 이클립스 아이콘만 보입니다. 상세 목록 패널은 Header 아래 68px에서 시작하며 400px 카드 목록·6px 스크롤바를 사용합니다.", "small"), para("설정의 계정·알림 표는 16px 카드와 공통 버튼으로 통일했습니다. 직접 노출 영문은 0건입니다.", "small")],
     ], colWidths=[87 * mm, 87 * mm], style=TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("LEFTPADDING", (0, 0), (-1, -1), 2), ("RIGHTPADDING", (0, 0), (-1, -1), 2)])),
     Spacer(1, 5 * mm), screenshot(SECURITY, 145 * mm, 71 * mm), Spacer(1, 3 * mm),
-    para("보안 화면의 토큰·활성 세션·전역 로그아웃도 같은 카드·버튼 규칙을 사용합니다. New Token은 새 토큰으로 표시합니다. 모바일 설정 표는 302px, 설정·보안 카드는 336px이며 페이지 가로 넘침은 0px입니다."), PageBreak(),
+    para("보안 화면의 토큰·활성 세션·전역 로그아웃도 같은 카드·버튼 규칙을 사용합니다. New Token은 새 토큰으로 표시합니다. 모바일 설정 표는 302px, 설정·보안 카드는 336px이며 페이지 가로 넘침은 0px입니다. 관리자·기술지원·연구소 멤버 배지는 렌치·번개·책 SVG로 표시합니다."), PageBreak(),
 
     para("8. 태그 정보 구조·날짜·아이콘", "h1"),
     screenshot(TAGS, 174 * mm, 151 * mm), Spacer(1, 4 * mm),
-    para("주요 태그는 3열·18px 카드, 보조 태그 7건은 설명과 함께 별도 4열·12px 구역으로 분리했습니다. 모바일은 각각 한 열로 전환하며 가로 넘침은 0px입니다. 절대 날짜는 00년 0월 0일, 상대 날짜는 기존 표현을 유지합니다. 웹폰트 전용 문자를 시스템 단색 기호로 치환해 깨진 아이콘은 0건입니다."), PageBreak(),
+    para("주요 태그는 3열·18px 카드, 보조 태그 7건은 설명과 함께 별도 4열·12px 구역으로 분리했습니다. 모바일은 각각 한 열로 전환하며 가로 넘침은 0px입니다. 절대 날짜는 00년 0월 0일, 상대 날짜는 기존 표현을 유지합니다. 배지·토론 타임라인·댓글 수·설정 알림·작성기·검색 초기화를 포함한 45개 이상 의미 Class를 공통 내장 SVG Mask로 표시해 깨진 아이콘은 0건입니다."), PageBreak(),
 
     para("9. WSL 전체 주기", "h1"),
     make_table([
@@ -183,11 +183,11 @@ story = [
         ["검증", "결과"],
         ["정적 계약", "10/10"],
         ["사용자 / 토의 / 게시물", "39 / 117 / 305"],
-        ["콘텐츠 SHA-256", "5c5d0cf9...d662"],
+        ["콘텐츠 SHA-256", "d221addb...1623"],
         ["첨부 SHA-256", "19cdf526...97c"],
         ["한글 원문 키 / 태그·프로필·설정·보안 영문", "0건 / 0건"],
     ], [70 * mm, 104 * mm]),
-    Spacer(1, 6 * mm), callout("최종 Run ID: issue73-20260819-header-v1", GREEN, PALE_GREEN), PageBreak(),
+    Spacer(1, 6 * mm), callout("최종 Run ID: issue73-icons-complete-final-v5", GREEN, PALE_GREEN), PageBreak(),
 
     para("10. 롤백과 운영 결정", "h1"),
     make_table([

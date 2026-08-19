@@ -1,6 +1,11 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { Presentation, PresentationFile } from "@oai/artifact-tool";
+import { pathToFileURL } from "node:url";
+
+const runtimeModules = process.env.RUNTIME_NODE_MODULES;
+if (!runtimeModules) throw new Error("RUNTIME_NODE_MODULES is required");
+const artifactToolUrl = pathToFileURL(path.join(runtimeModules, "@oai", "artifact-tool", "dist", "artifact_tool.mjs")).href;
+const { Presentation, PresentationFile } = await import(artifactToolUrl);
 
 const ROOT = process.env.TECHFLOW_ROOT;
 if (!ROOT) throw new Error("TECHFLOW_ROOT is required");
@@ -11,6 +16,8 @@ const afterImage = path.join(ROOT, "docs", "evidence", "issue-73", "screenshots"
 const actionImage = path.join(ROOT, "docs", "evidence", "issue-73", "screenshots", "after", "post-actions-mobile.png");
 const modalImage = path.join(ROOT, "docs", "evidence", "issue-73", "screenshots", "after", "tag-selection-modal-desktop.png");
 const profileImage = path.join(ROOT, "docs", "evidence", "issue-73", "screenshots", "after", "profile-desktop.png");
+const discussionImage = path.join(ROOT, "docs", "evidence", "issue-73", "screenshots", "after", "discussion-desktop.png");
+const tagsImage = path.join(ROOT, "docs", "evidence", "issue-73", "screenshots", "after", "tags-desktop.png");
 await fs.mkdir(renderDir, { recursive: true });
 await fs.mkdir(path.dirname(output), { recursive: true });
 
@@ -51,6 +58,8 @@ const after = await bytes(afterImage);
 const action = await bytes(actionImage);
 const modal = await bytes(modalImage);
 const profile = await bytes(profileImage);
+const discussion = await bytes(discussionImage);
+const tags = await bytes(tagsImage);
 
 {
   const s = deck.slides.add(); s.background.fill = C.white;
@@ -69,7 +78,7 @@ const profile = await bytes(profileImage);
   addImage(s, "before-screen", before, 48, 166, 540, 338, "contain");
   addImage(s, "after-screen", after, 668, 166, 540, 338, "contain");
   text(s, "before-copy", "좁은 행 간격 · 약한 상태 구분 · 모바일 겹침", 48, 532, 540, 52, 22, false, C.gray, "center");
-  text(s, "after-copy", "62px 단일 행 · 제목·태그·댓글 수 한 줄 · 240px 탐색", 668, 532, 540, 52, 19, true, C.ink, "center");
+  text(s, "after-copy", "62px 단일 행 · 제목·태그·댓글 수 한 줄 · 280px 탐색", 668, 532, 540, 52, 19, true, C.ink, "center");
   notes(s);
 }
 {
@@ -93,7 +102,7 @@ const profile = await bytes(profileImage);
   addImage(s, "tag-modal", modal, 346, 140, 842, 350, "contain");
   text(s, "action-caption", "카드-버튼 8px · 편차 0px", 42, 594, 280, 36, 19, true, C.blue, "center");
   box(s, "dialog-result", 346, 520, 842, 106, C.pale, C.blue);
-  text(s, "dialog-result-main", "공통 Modal 규칙 · 부드러운 2px 포커스 · 직접 노출 영문 0건", 378, 540, 778, 38, 22, true, C.ink, "center");
+  text(s, "dialog-result-main", "공통 Modal 규칙 · 검색 2px 단일 포커스 · 직접 노출 영문 0건", 378, 540, 778, 38, 22, true, C.ink, "center");
   text(s, "dialog-result-sub", "주 태그를 선택하세요 · 확인 · 태그 필수 조건 무시", 378, 580, 778, 30, 19, false, C.blue, "center");
   notes(s);
 }
@@ -102,7 +111,7 @@ const profile = await bytes(profileImage);
   addImage(s, "profile-screen", profile, 48, 138, 760, 475, "contain");
   box(s, "profile-result", 850, 156, 350, 188, C.pale, C.blue);
   text(s, "profile-title", "프로필 화면", 880, 184, 290, 38, 27, true, C.blue, "center");
-  text(s, "profile-copy", "165px 블루 Hero\n96px 아바타\n240px 메뉴 · 780px 콘텐츠", 880, 236, 290, 88, 20, false, C.ink, "center");
+  text(s, "profile-copy", "165px 블루 Hero\n96px 아바타\n280px 메뉴 · 780px 콘텐츠", 880, 236, 290, 88, 20, false, C.ink, "center");
   box(s, "navigation-result", 850, 378, 350, 188, C.paleGreen, "#86D2AA");
   text(s, "navigation-title", "홈 탐색", 880, 406, 290, 38, 27, true, C.green, "center");
   text(s, "navigation-copy", "Desktop 중복 버튼 제거\nMobile 40x46px 버튼\n270px 서랍 동작 유지", 880, 458, 290, 88, 20, false, C.ink, "center");
@@ -110,7 +119,34 @@ const profile = await bytes(profileImage);
   notes(s);
 }
 {
-  const s = deck.slides.add(); s.background.fill = C.white; title(s, "활성화와 롤백에도 콘텐츠는 그대로였습니다", 6);
+  const s = deck.slides.add(); s.background.fill = C.white; title(s, "목록과 아이콘을 웹폰트 없이 안정화했습니다", 6);
+  addImage(s, "discussion-screen", discussion, 48, 138, 700, 450, "contain");
+  box(s, "pane-result", 790, 142, 410, 116, C.pale, C.blue);
+  text(s, "pane-title", "상세 목록 패널", 820, 162, 350, 32, 24, true, C.blue, "center");
+  text(s, "pane-copy", "Header 겹침 0px · 400px 목록\n6px 스크롤바 · 카드 간격 8px", 820, 202, 350, 46, 18, false, C.ink, "center");
+  box(s, "icon-result", 790, 278, 410, 140, C.paleGreen, "#86D2AA");
+  text(s, "icon-title", "45+ 내장 SVG", 820, 298, 350, 32, 24, true, C.green, "center");
+  text(s, "icon-copy", "배지 · 타임라인 · 댓글 수\n설정 · 작성기 · 검색 초기화", 820, 338, 350, 58, 18, false, C.ink, "center");
+  box(s, "entry-result", 790, 438, 410, 116, C.yellow, "#E4B955");
+  text(s, "entry-title", "첫 게시물 진입", 820, 458, 350, 32, 24, true, C.amber, "center");
+  text(s, "entry-copy", "게시물 번호 제거 · scrollY 0\n알림의 특정 답변 링크는 유지", 820, 498, 350, 46, 18, false, C.ink, "center");
+  text(s, "icon-result-strip", "점 · 더하기 · 깨진 사각형 대체 아이콘 0건", 90, 622, 1100, 36, 22, true, C.blue, "center");
+  notes(s);
+}
+{
+  const s = deck.slides.add(); s.background.fill = C.white; title(s, "태그와 보조 태그를 읽기 쉬운 구조로 나눴습니다", 7);
+  addImage(s, "tags-screen", tags, 48, 132, 760, 480, "contain");
+  box(s, "primary-tags", 850, 150, 350, 178, C.pale, C.blue);
+  text(s, "primary-tags-title", "주요 태그", 880, 176, 290, 36, 26, true, C.blue, "center");
+  text(s, "primary-tags-copy", "3열 카드 · 간격 18px\n최근 토론 독립 패널\n날짜 00년 0월 0일", 880, 226, 290, 76, 19, false, C.ink, "center");
+  box(s, "secondary-tags", 850, 364, 350, 178, C.paleGreen, "#86D2AA");
+  text(s, "secondary-tags-title", "보조 태그", 880, 390, 290, 36, 26, true, C.green, "center");
+  text(s, "secondary-tags-copy", "별도 4열 구역 · 설명 7건\n모바일 한 열 · 넘침 0px\n도구 모음 균등 여백", 880, 440, 290, 76, 19, false, C.ink, "center");
+  text(s, "tag-result-strip", "태그 고유색은 강조선으로만 유지 · 본문 가독성 우선", 70, 622, 1140, 36, 22, true, C.blue, "center");
+  notes(s);
+}
+{
+  const s = deck.slides.add(); s.background.fill = C.white; title(s, "활성화와 롤백에도 콘텐츠는 그대로였습니다", 8);
   const labels = ["기준선\nDisabled", "활성화\nEnabled", "롤백\nDisabled", "최종\nEnabled"];
   labels.forEach((label, i) => {
     const left = 70 + i * 295;
@@ -120,11 +156,11 @@ const profile = await bytes(profileImage);
     text(s, `phase-http-${i}`, "HTTP 200", left + 20, 350, 188, 30, 18, false, C.gray, "center");
   });
   text(s, "integrity-count", "39 users · 117 discussions · 305 posts", 90, 478, 1100, 58, 32, true, C.ink, "center");
-  text(s, "integrity-hash", "콘텐츠 SHA-256 동일 · 첨부 SHA-256 동일 · 정적 계약 8/8", 90, 550, 1100, 48, 24, false, C.green, "center");
+  text(s, "integrity-hash", "콘텐츠 SHA-256 동일 · 첨부 SHA-256 동일 · 정적 계약 10/10", 90, 550, 1100, 48, 24, false, C.green, "center");
   notes(s);
 }
 {
-  const s = deck.slides.add(); s.background.fill = C.white; title(s, "Flarum Core를 건드리지 않아 롤백은 확장 하나로 끝납니다", 7);
+  const s = deck.slides.add(); s.background.fill = C.white; title(s, "Flarum Core를 건드리지 않아 롤백은 확장 하나로 끝납니다", 9);
   text(s, "flow-arrow-1", "→", 404, 286, 80, 50, 36, true, C.gray, "center");
   text(s, "flow-arrow-2", "→", 796, 286, 80, 50, 36, true, C.gray, "center");
   box(s, "flarum-core", 70, 218, 330, 190, C.canvas, C.line);
@@ -144,7 +180,7 @@ const profile = await bytes(profileImage);
   const s = deck.slides.add(); s.background.fill = C.white;
   text(s, "close-kicker", "ISSUE #73 · IMPLEMENTATION COMPLETE", 48, 42, 650, 36, 20, true, C.gray);
   text(s, "close-title", "운영 적용만\n승인하면 됩니다", 48, 168, 700, 180, 64, true);
-  text(s, "close-detail", "WSL 전체 주기 PASS · 태그·프로필 직접 영문 0건\nCore·Vendor·DB·운영 Community 변경 없음", 48, 422, 800, 92, 26, false, C.gray);
+  text(s, "close-detail", "WSL 전체 주기 PASS · 280px 메뉴 · Header 겹침 0px\n45+ SVG 아이콘·검색 포커스·첫 게시물 진입 검증", 48, 422, 800, 92, 26, false, C.gray);
   box(s, "close-status", 900, 174, 310, 310, C.pale, C.blue);
   text(s, "close-go", "GO", 934, 242, 242, 94, 68, true, C.blue, "center");
   text(s, "close-condition", "운영 반영 승인 대기", 932, 356, 246, 56, 22, true, C.ink, "center");

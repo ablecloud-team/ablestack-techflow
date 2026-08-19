@@ -28,12 +28,42 @@
     });
   }
 
+  function normalizeDiscussionListTargets(root) {
+    root.querySelectorAll('.DiscussionListItem-main[href]').forEach(function (link) {
+      var url = new URL(link.getAttribute('href'), window.location.origin);
+      var canonicalPath = url.pathname.replace(/(\/d\/[^/]+)\/\d+\/?$/, '$1');
+
+      if (canonicalPath === url.pathname) {
+        return;
+      }
+
+      link.setAttribute('href', canonicalPath + url.search);
+      link.setAttribute('data-ablecloud-start-from-top', 'true');
+    });
+  }
+
+  function openDiscussionFromTop(event) {
+    var link = event.target.closest && event.target.closest('.DiscussionListItem-main[data-ablecloud-start-from-top="true"]');
+
+    if (!link || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+      return;
+    }
+
+    var href = link.getAttribute('href');
+
+    event.preventDefault();
+    event.stopImmediatePropagation();
+
+    window.location.assign(href);
+  }
+
   forumApp.initializers.add('ablecloud-community-theme-tag-date', function () {
     var pendingFrame = 0;
     var schedule = function () {
       window.cancelAnimationFrame(pendingFrame);
       pendingFrame = window.requestAnimationFrame(function () {
         formatTagDiscussionDates(document);
+        normalizeDiscussionListTargets(document);
       });
     };
 
@@ -44,6 +74,8 @@
       characterData: true,
       subtree: true,
     });
+
+    document.addEventListener('click', openDiscussionFromTop, true);
   });
 
   module.exports = {};
