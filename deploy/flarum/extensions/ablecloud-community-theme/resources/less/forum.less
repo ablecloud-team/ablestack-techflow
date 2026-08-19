@@ -294,6 +294,210 @@ body {
     font-size: 16px;
   }
 
+  .SettingsPage,
+  .UserSecurityPage {
+    width: 100%;
+    margin-top: 0;
+  }
+
+  .SettingsPage > ul,
+  .UserSecurityPage > ul {
+    display: grid;
+    gap: 18px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .SettingsPage > ul > li,
+  .UserSecurityPage > ul > li {
+    margin: 0;
+  }
+
+  .SettingsPage fieldset,
+  .UserSecurityPage fieldset {
+    min-width: 0;
+    margin: 0;
+    padding: 22px 24px 24px;
+    border: 1px solid var(--ablecloud-brand-border);
+    border-radius: var(--ablecloud-radius);
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: var(--ablecloud-shadow-soft);
+  }
+
+  .SettingsPage fieldset > legend,
+  .UserSecurityPage fieldset > legend {
+    width: auto;
+    margin: 0 0 14px;
+    padding: 0 8px;
+    color: var(--ablecloud-brand-ink);
+    font-size: 16px;
+    font-weight: 760;
+    letter-spacing: -0.015em;
+  }
+
+  .SettingsPage fieldset > ul,
+  .UserSecurityPage fieldset > ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .Settings-account > ul,
+  .UserSecurityPage-developerTokens > ul,
+  .UserSecurityPage-sessions > ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .Settings-account > ul > li,
+  .UserSecurityPage-developerTokens > ul > li,
+  .UserSecurityPage-sessions > ul > li {
+    margin: 0;
+  }
+
+  .SettingsPage fieldset .Button,
+  .UserSecurityPage fieldset .Button {
+    border: 1px solid #bfd1eb;
+    background: #edf4ff;
+    color: var(--ablecloud-brand-primary-deep);
+    box-shadow: 0 4px 10px rgba(21, 94, 239, 0.07);
+  }
+
+  .SettingsPage fieldset .Button:hover,
+  .SettingsPage fieldset .Button:focus-visible,
+  .UserSecurityPage fieldset .Button:hover,
+  .UserSecurityPage fieldset .Button:focus-visible {
+    border-color: #8db0e8;
+    background: #e2edff;
+  }
+
+  .SettingsPage fieldset .Button:disabled,
+  .UserSecurityPage fieldset .Button:disabled {
+    border-color: #dce5f1;
+    background: #f3f6fa;
+    color: #8b9ab0;
+    box-shadow: none;
+    opacity: 1;
+  }
+
+  .NotificationGrid {
+    width: 100%;
+    border: 1px solid var(--ablecloud-brand-border);
+    border-spacing: 0;
+    border-collapse: separate;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #fff;
+  }
+
+  .NotificationGrid th,
+  .NotificationGrid td {
+    padding: 12px 14px;
+    border: 0;
+    border-bottom: 1px solid #dfe8f4;
+    background: #fff;
+    color: var(--ablecloud-brand-muted);
+    vertical-align: middle;
+  }
+
+  .NotificationGrid thead th,
+  .NotificationGrid thead td {
+    background: #eaf2ff;
+    color: var(--ablecloud-brand-primary-deep);
+    font-weight: 750;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  .NotificationGrid tbody tr:last-child td {
+    border-bottom: 0;
+  }
+
+  .NotificationGrid tbody td:first-child {
+    color: #38516f;
+    font-weight: 570;
+  }
+
+  .NotificationGrid .NotificationGrid-groupToggle:hover,
+  .NotificationGrid .highlighted {
+    background: #f2f7ff;
+  }
+
+  .NotificationGrid-checkbox {
+    width: 88px;
+    text-align: center;
+  }
+
+  .NotificationGrid .Checkbox {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .SettingsPage .Switch {
+    color: #38516f;
+  }
+
+  .AccessTokensList {
+    flex: 1 1 100%;
+    gap: 10px;
+    border-radius: 12px;
+    overflow: visible;
+  }
+
+  .AccessTokensList-item,
+  .AccessTokensList--empty {
+    border: 1px solid var(--ablecloud-brand-border);
+    border-radius: 12px;
+    background: #f8fbff;
+    color: var(--ablecloud-brand-muted);
+  }
+
+  .AccessTokensList-item {
+    padding: 16px;
+  }
+
+  .AccessTokensList--empty {
+    min-height: 54px;
+    box-sizing: border-box;
+    padding: 15px 16px;
+  }
+
+  .AccessTokensList-item-icon {
+    width: 52px;
+    color: var(--ablecloud-brand-primary);
+  }
+
+  .AccessTokensList-item-title {
+    color: var(--ablecloud-brand-ink);
+  }
+
+  .AccessTokensList-item-info {
+    min-width: 0;
+  }
+
+  .AccessTokensList-item-actions {
+    gap: 8px;
+  }
+
+  .AccessTokensList-item-actions > *:not(:first-child) {
+    margin-left: 0;
+  }
+
+  .UserSecurityPage .helpText {
+    display: block;
+    margin: 0 0 14px;
+    color: var(--ablecloud-brand-muted);
+    line-height: 1.7;
+  }
+
+  .UserSecurityPage-globalLogout .Button .Button-icon {
+    margin-right: 7px;
+  }
+
   .sideNav > ul,
   .IndexPage-nav .Dropdown-menu {
     padding: 12px;
@@ -1105,6 +1309,14 @@ body {
 
     .DiscussionListItem {
       margin-bottom: 9px;
+      z-index: 0;
+      overflow: visible;
+    }
+
+    .DiscussionListItem:hover,
+    .DiscussionListItem:focus-within,
+    .DiscussionListItem:has(.DiscussionListItem-controls.open) {
+      z-index: 1050;
     }
 
     .DiscussionListItem-content {
@@ -1166,6 +1378,57 @@ body {
       right: 20px;
       margin: 0 !important;
       transform: translateY(-50%);
+    }
+
+    .DiscussionListItem:has(.DiscussionListItem-controls) .DiscussionListItem-content {
+      padding-right: 112px;
+    }
+
+    .DiscussionListItem:has(.DiscussionListItem-controls) .DiscussionListItem-count {
+      right: 58px;
+    }
+
+    .DiscussionListItem-controls {
+      top: 50%;
+      right: 8px;
+      z-index: 1060;
+      opacity: 1;
+      transform: translateY(-50%);
+    }
+
+    .DiscussionListItem-controls.open {
+      z-index: 1070;
+    }
+
+    .DiscussionListItem-controls > .Dropdown-toggle {
+      display: flex;
+      width: 40px;
+      min-width: 40px;
+      height: 40px;
+      min-height: 40px;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #c5d6ee;
+      border-radius: 11px;
+      background: #edf4ff;
+      color: var(--ablecloud-brand-primary-deep);
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .DiscussionListItem-controls > .Dropdown-toggle:hover,
+    .DiscussionListItem-controls > .Dropdown-toggle:focus-visible,
+    .DiscussionListItem-controls.open > .Dropdown-toggle {
+      border-color: #8db0e8;
+      background: #dfeaff;
+    }
+
+    .DiscussionListItem-controls .Dropdown-menu {
+      top: calc(100% + 6px);
+      right: 0;
+      left: auto;
+      z-index: 1080;
+      margin-top: 0;
     }
   }
 }
@@ -1426,6 +1689,50 @@ body {
 
     .Modal-content {
       border-radius: 14px;
+    }
+
+    .SettingsPage fieldset,
+    .UserSecurityPage fieldset {
+      padding: 18px 16px 20px;
+    }
+
+    .Settings-notifications {
+      width: 100% !important;
+      max-width: 100%;
+      box-sizing: border-box;
+      overflow-x: auto;
+    }
+
+    .NotificationGrid {
+      min-width: 0;
+      table-layout: fixed;
+    }
+
+    .NotificationGrid th,
+    .NotificationGrid td {
+      padding: 10px 8px;
+    }
+
+    .NotificationGrid thead th,
+    .NotificationGrid-checkbox {
+      width: 62px;
+    }
+
+    .AccessTokensList-item {
+      align-items: flex-start;
+      padding: 14px;
+    }
+
+    .AccessTokensList-item-icon {
+      width: 40px;
+      min-width: 40px;
+      padding: 4px 0;
+    }
+
+    .AccessTokensList-item-actions {
+      width: 100%;
+      justify-content: flex-end;
+      margin-top: 12px;
     }
   }
 }

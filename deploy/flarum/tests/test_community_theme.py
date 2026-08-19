@@ -47,6 +47,10 @@ class CommunityThemeContractTests(unittest.TestCase):
             ".Modal-content",
             ".UserHero",
             ".UserPage-content",
+            ".SettingsPage",
+            ".UserSecurityPage",
+            ".NotificationGrid",
+            ".AccessTokensList",
         )
         for selector in selectors:
             with self.subTest(selector=selector):
@@ -122,6 +126,20 @@ class CommunityThemeContractTests(unittest.TestCase):
         self.assertIn("media: 내 미디어", self.korean)
         self.assertIn("security_link: 보안", self.korean)
         self.assertIn("아직 작성한 게시물이 없습니다.", self.korean)
+        self.assertIn("내 게시물이 해결 답변으로 선택되었을 때", self.korean)
+        self.assertIn("참여한 토론에 해결 답변이 선택되었을 때", self.korean)
+        self.assertIn("새 토큰", self.korean)
+        self.assertIn("내가 속한 그룹이 게시물에서 언급되었을 때", self.korean)
+        self.assertIn("토론의 마지막 게시물뿐 아니라 새 게시물이 등록될 때마다 알림", self.korean)
+        self.assertIn("서식 편집기 사용", self.korean)
+        self.assertIn("문단 사이의 빈 줄을 줄여서 표시", self.korean)
+        self.assertIn("검색 정보 설정", self.korean)
+        self.assertIn(".DiscussionListItem-controls", self.less)
+        self.assertIn("z-index: 1080", self.less)
+        self.assertIn("right: 58px", self.less)
+        self.assertIn(".SettingsPage fieldset", self.less)
+        self.assertIn(".UserSecurityPage fieldset", self.less)
+        self.assertIn("overflow-x: auto", self.less)
         self.assertIn(".Composer.active", self.less)
         self.assertIn(".Modal .FormControl:focus-visible", self.less)
         self.assertIn(".Modal .Button--primary", self.less)

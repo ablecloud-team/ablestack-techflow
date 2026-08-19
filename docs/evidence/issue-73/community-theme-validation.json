@@ -1,6 +1,6 @@
 {
   "issue": 73,
-  "runId": "issue73-20260819-profile-navigation-final-v3",
+  "runId": "issue73-20260819-settings-security-v1",
   "environment": "WSL Ubuntu 24.04 staging",
   "productionChanged": false,
   "checks": {
@@ -31,6 +31,10 @@
     "discussionRowHeightDesktop": "62px",
     "discussionRowLayoutDesktop": "title-tags-count-single-line",
     "discussionAvatarTitleCenterDifferenceDesktop": "0px",
+    "discussionControlsAlwaysVisible": true,
+    "discussionControlsCenterDifferenceDesktop": "0px",
+    "discussionMenuAboveFollowingRows": true,
+    "discussionMenuZIndex": 1080,
     "postActionsAlwaysVisible": true,
     "replyButton": "icon-text",
     "guestReplyButtonState": "disabled",
@@ -67,6 +71,18 @@
     "profileContentWidthDesktop": "780px",
     "profileDirectEnglish": 0,
     "profileKoreanLabels": "좋아요|내 미디어|보안|해결 답변",
+    "settingsTheme": "PASS",
+    "settingsFieldsetWidthDesktop": "780px",
+    "settingsCardRadius": "16px",
+    "settingsDirectEnglish": 0,
+    "settingsNotificationTableMobile": "302px",
+    "settingsHorizontalOverflowMobile": "0px",
+    "securityTheme": "PASS",
+    "securityFieldsetWidthDesktop": "780px",
+    "securityFieldsetWidthMobile": "336px",
+    "securityDirectEnglish": 0,
+    "securityKoreanLabels": "새 토큰",
+    "securityHorizontalOverflowMobile": "0px",
     "postStreamDivider": "removed",
     "footerLinks": "home-blog-docs-circular-icons",
     "footerIconDesktop": "38px",
@@ -83,7 +99,7 @@
     "users": 39,
     "discussions": 117,
     "posts": 305,
-    "content_sha256": "6121525734c413669b4381da971dccd3dc97f1e351c208cec61a6f76840f22cb",
+    "content_sha256": "dbef43c7a98941de7e863218f278bc5da5bbf98c691fd2da68dfaf07c98075d4",
     "uploads_sha256": "19cdf52600535380969a176d81bf66678b200a4247694641d00b470b8637a97c",
     "http_status": 200
   },
@@ -92,19 +108,19 @@
     "users": 39,
     "discussions": 117,
     "posts": 305,
-    "content_sha256": "6121525734c413669b4381da971dccd3dc97f1e351c208cec61a6f76840f22cb",
+    "content_sha256": "dbef43c7a98941de7e863218f278bc5da5bbf98c691fd2da68dfaf07c98075d4",
     "uploads_sha256": "19cdf52600535380969a176d81bf66678b200a4247694641d00b470b8637a97c",
     "http_status": 200
   },
   "disabledRollback": {
     "theme_enabled": false,
-    "content_sha256": "6121525734c413669b4381da971dccd3dc97f1e351c208cec61a6f76840f22cb",
+    "content_sha256": "dbef43c7a98941de7e863218f278bc5da5bbf98c691fd2da68dfaf07c98075d4",
     "uploads_sha256": "19cdf52600535380969a176d81bf66678b200a4247694641d00b470b8637a97c",
     "http_status": 200
   },
   "finalStaging": {
     "theme_enabled": true,
-    "content_sha256": "6121525734c413669b4381da971dccd3dc97f1e351c208cec61a6f76840f22cb",
+    "content_sha256": "dbef43c7a98941de7e863218f278bc5da5bbf98c691fd2da68dfaf07c98075d4",
     "uploads_sha256": "19cdf52600535380969a176d81bf66678b200a4247694641d00b470b8637a97c",
     "http_status": 200
   }

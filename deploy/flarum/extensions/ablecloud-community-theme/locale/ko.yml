@@ -1,5 +1,10 @@
 fof-best-answer:
   forum:
+    notification:
+      preferences:
+        awarded_best_answer: 내 게시물이 해결 답변으로 선택되었을 때
+        best_answer_in_discussion: 참여한 토론에 해결 답변이 선택되었을 때
+        select_best_answer: 내가 시작한 토론에서 해결 답변 선택 알림을 받을 때
     user:
       best-answer-count: "{count, plural, one {{count}개의 해결 답변} other {{count}개의 해결 답변}}"
     search:
@@ -22,7 +27,32 @@ core:
       posts_empty_text: 아직 작성한 게시물이 없습니다.
       security_link: 보안
   ref:
+    new_token: 새 토큰
     security: 보안
+
+flarum-mentions:
+  forum:
+    settings:
+      notify_group_mentioned_label: 내가 속한 그룹이 게시물에서 언급되었을 때
+
+flarum-subscriptions:
+  forum:
+    settings:
+      notify_for_all_posts_label: 토론의 마지막 게시물뿐 아니라 새 게시물이 등록될 때마다 알림
+
+askvortsov-rich-text:
+  forum:
+    settings:
+      composer_heading: 글 작성
+      use_rich_text_editor_label: 서식 편집기 사용
+      rich_text_compact_paragraphs_label: 문단 사이의 빈 줄을 줄여서 표시
+
+v17development-flarum-seo:
+  forum:
+    controls:
+      configure_seo: 검색 정보 설정
+      update_seo: 검색 정보 수정
+      reset_seo: 검색 정보 초기화
 
 flarum-tags:
   lib:

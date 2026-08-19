@@ -23,6 +23,9 @@ MOBILE = ROOT / "docs/evidence/issue-73/screenshots/after/home-mobile.png"
 ACTIONS = ROOT / "docs/evidence/issue-73/screenshots/after/post-actions-desktop.png"
 TAG_MODAL = ROOT / "docs/evidence/issue-73/screenshots/after/tag-selection-modal-desktop.png"
 PROFILE = ROOT / "docs/evidence/issue-73/screenshots/after/profile-desktop.png"
+DISCUSSION_MENU = ROOT / "docs/evidence/issue-73/screenshots/settings-security-v2/discussion-menu-desktop.png"
+SETTINGS = ROOT / "docs/evidence/issue-73/screenshots/settings-security-v2/settings-desktop.png"
+SECURITY = ROOT / "docs/evidence/issue-73/screenshots/settings-security-v2/security-desktop.png"
 FONT, BOLD = "MalgunGothic", "MalgunGothicBold"
 pdfmetrics.registerFont(TTFont(FONT, "C:/Windows/Fonts/malgun.ttf"))
 pdfmetrics.registerFont(TTFont(BOLD, "C:/Windows/Fonts/malgunbd.ttf"))
@@ -118,8 +121,8 @@ story = [
         ["항목", "결과", "판정"],
         ["전용 테마", "ablecloud/community-theme", "PASS"],
         ["반응형", "1440x900 / 390x844", "PASS"],
-        ["한글", "원문 core.* 키·태그창 직접 영문 0건", "PASS"],
-        ["기능", "홈·목록·태그·검색·로그인·작성·해결 답변", "PASS"],
+        ["한글", "원문 키·태그·프로필·설정·보안 영문 0건", "PASS"],
+        ["기능", "홈·목록·태그·작성·프로필·설정·보안", "PASS"],
         ["롤백", "비활성화 후 HTTP 200", "PASS"],
         ["무결성", "39 / 117 / 305, 해시 동일", "PASS"],
     ], [52 * mm, 86 * mm, 36 * mm]),
@@ -154,7 +157,15 @@ story = [
     screenshot(PROFILE, 174 * mm, 105.5 * mm), Spacer(1, 5 * mm),
     para("프로필 Hero는 165px 블루 Gradient와 96px 아바타로 정리했습니다. 데스크톱 메뉴는 240px, 콘텐츠는 780px이며 빈 화면도 독립 카드로 표시합니다. 모바일은 한 열로 전환합니다. Likes, My media, Security, best answers는 좋아요, 내 미디어, 보안, 해결 답변으로 한글화했고 Locale warm-up에서 실제 번역값을 검증합니다."), PageBreak(),
 
-    para("7. WSL 전체 주기", "h1"),
+    para("7. 토론 메뉴와 설정·보안 통일", "h1"),
+    Table([
+        [screenshot(DISCUSSION_MENU, 83 * mm, 50 * mm), screenshot(SETTINGS, 83 * mm, 50 * mm)],
+        [para("더보기 버튼은 항상 보이며 세로 중심 오차 0px입니다. 열린 메뉴는 z-index 1080으로 뒤쪽 토론 행보다 위에 표시됩니다.", "small"), para("설정의 계정·알림 표는 16px 카드와 공통 버튼으로 통일했습니다. 직접 노출 영문은 0건입니다.", "small")],
+    ], colWidths=[87 * mm, 87 * mm], style=TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("LEFTPADDING", (0, 0), (-1, -1), 2), ("RIGHTPADDING", (0, 0), (-1, -1), 2)])),
+    Spacer(1, 5 * mm), screenshot(SECURITY, 145 * mm, 71 * mm), Spacer(1, 3 * mm),
+    para("보안 화면의 토큰·활성 세션·전역 로그아웃도 같은 카드·버튼 규칙을 사용합니다. New Token은 새 토큰으로 표시합니다. 모바일 설정 표는 302px, 설정·보안 카드는 336px이며 페이지 가로 넘침은 0px입니다."), PageBreak(),
+
+    para("8. WSL 전체 주기", "h1"),
     make_table([
         ["단계", "Theme", "HTTP", "콘텐츠/첨부"],
         ["기준선", "Disabled", "200", "기준 해시"],
@@ -167,13 +178,13 @@ story = [
         ["검증", "결과"],
         ["정적 계약", "8/8"],
         ["사용자 / 토의 / 게시물", "39 / 117 / 305"],
-        ["콘텐츠 SHA-256", "61215257...22cb"],
+        ["콘텐츠 SHA-256", "dbef43c7...075d4"],
         ["첨부 SHA-256", "19cdf526...97c"],
-        ["한글 원문 키 / 태그·프로필 직접 영문", "0건 / 0건"],
+        ["한글 원문 키 / 태그·프로필·설정·보안 영문", "0건 / 0건"],
     ], [70 * mm, 104 * mm]),
-    Spacer(1, 6 * mm), callout("최종 Run ID: issue73-20260819-profile-navigation-final-v3", GREEN, PALE_GREEN), PageBreak(),
+    Spacer(1, 6 * mm), callout("최종 Run ID: issue73-20260819-settings-security-v1", GREEN, PALE_GREEN), PageBreak(),
 
-    para("8. 롤백과 운영 결정", "h1"),
+    para("9. 롤백과 운영 결정", "h1"),
     make_table([
         ["구분", "변경 여부"],
         ["Flarum Core / Vendor", "변경 없음"],
