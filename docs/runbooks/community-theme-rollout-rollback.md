@@ -54,12 +54,26 @@ sudo -u www-data env TECHFLOW_ALLOWED_FLARUM_ROOT=/var/www/html \
 sudo systemctl restart php8.3-fpm nginx
 ```
 
+이미 설치된 테마의 CSS·Locale·JS만 갱신할 때는 변경 자산을
+`/tmp/ablecloud-community-theme-<id>`에 전송한 뒤 경로 제한 배포기를 사용한다.
+배포기는 현재 Extension·Vendor·Composer·컴파일 자산·Locale을
+`/var/backups/techflow-flarum/theme-<id>`에 먼저 백업하고, 적용 후 서비스와
+컴파일 CSS를 검증한다.
+
+```bash
+sudo bash deploy/flarum/apply-community-theme-update.sh \
+  /tmp/ablecloud-community-theme-<id> \
+  theme-<id>
+```
+
 ## 5. 적용 후 검증
 
 - 외부 HTTPS와 서버 로컬 Host/HTTPS 전달 헤더 점검이 모두 200이어야 한다.
 - `public/assets/forum.css`에 `--ablecloud-brand-primary`가 있어야 한다.
 - `public/assets/forum-ko.js`가 비어 있지 않고 `core.forum.header.search_placeholder`를 포함해야 한다.
 - 데스크톱과 모바일에서 홈, 목록, 상세, 검색, 로그인, 글쓰기, 첨부를 확인한다.
+- 사용자 프로필·설정 화면을 1,150px 폭에서 스크롤했을 때 고정 메뉴 폭이
+  280px로 유지되고 메뉴 오른쪽 끝이 본문 왼쪽보다 작거나 같은지 확인한다.
 - `Answered`, `Best Answer`, `Select Best Answer` 원문 노출이 없어야 한다.
 - 사용자·토의·게시물 수와 첨부 해시가 적용 전과 같아야 한다.
 

@@ -1932,6 +1932,15 @@ body {
 
 @media (min-width: 768px) {
   body {
+    // Flarum adds .affix to this list while the user page scrolls. Once the
+    // list becomes position: fixed, percentage width resolves against the
+    // viewport instead of the 280px navigation column and covers the content.
+    .UserPage .UserPage-nav > ul.affix {
+      width: 280px !important;
+      max-width: 280px;
+      box-sizing: border-box;
+    }
+
     .App--index > .App-navigation {
       display: none !important;
     }

@@ -216,6 +216,9 @@ class CommunityThemeContractTests(unittest.TestCase):
         self.assertIn(".UserHero .UserCard-profile", self.less)
         self.assertIn(".UserPage .UserPage-nav", self.less)
         self.assertIn(".UserPage .UserPage-content", self.less)
+        self.assertIn(".UserPage .UserPage-nav > ul.affix", self.less)
+        self.assertIn("width: 280px !important", self.less)
+        self.assertIn("max-width: 280px", self.less)
         self.assertIn(".UserHero .UserCard-avatar", self.less)
         self.assertIn("position: absolute", self.less)
         self.assertIn("likes_link: 좋아요", self.korean)
@@ -265,6 +268,17 @@ class CommunityThemeContractTests(unittest.TestCase):
         self.assertIn("core.forum.user.security_link", locale_warmer)
         self.assertIn("flarum-likes.forum.user.likes_link", locale_warmer)
         self.assertIn("fof-upload.forum.buttons.media", locale_warmer)
+
+    def test_production_theme_update_is_path_scoped(self) -> None:
+        updater = (
+            ROOT / "deploy" / "flarum" / "apply-community-theme-update.sh"
+        ).read_text(encoding="utf-8")
+        self.assertIn('/var/www/html/extensions/ablecloud-community-theme', updater)
+        self.assertIn('/tmp/ablecloud-community-theme-*', updater)
+        self.assertIn('/var/backups/techflow-flarum/theme-*', updater)
+        self.assertIn('rsync -a --delete "$source_root/" "$extension_root/"', updater)
+        self.assertIn("UserPage-nav > ul.affix", updater)
+        self.assertIn("RESULT=PASS", updater)
 
 
 if __name__ == "__main__":
