@@ -105,4 +105,4 @@ sudo systemctl restart php8.3-fpm nginx
 - ROLLBACK: 화면·번역·로그인·작성·첨부 중 하나라도 실패.
 - 2026-08-19 운영 적용 완료: 사용자 메뉴 겹침 보완과 첫 화면 고정 피드가
   WSL 및 운영에 반영되었으며, 운영 백업은
-  `/var/backups/techflow-flarum/theme-index-fixed-feed-20260819T1128Z`에 보존한다.
+  `/var/backups/techflow-flarum/theme-index-fixed-feed-v2-20260819T1140Z`에 보존한다.

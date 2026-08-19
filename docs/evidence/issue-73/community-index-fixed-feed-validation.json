@@ -31,7 +31,7 @@
   "production": {
     "host": "172.16.0.234",
     "url": "https://community.ablecloud.io/",
-    "backup_root": "/var/backups/techflow-flarum/theme-index-fixed-feed-20260819T1128Z",
+    "backup_root": "/var/backups/techflow-flarum/theme-index-fixed-feed-v2-20260819T1140Z",
     "theme_sha256": "348fdb7469bc63651ca8a4e298d5be395dd68a1ac81538e2df943c1b01a238b6",
     "services": {
       "nginx": "active",
@@ -54,6 +54,7 @@
   "validation": {
     "theme_contract_tests": { "passed": 11, "failed": 0 },
     "deployment_script_normalizes_permissions": true,
+    "deployment_script_production_result": "PASS",
     "deployment_script_shell_syntax": "PASS",
     "git_diff_check": "PASS",
     "temporary_remote_assets_removed": true

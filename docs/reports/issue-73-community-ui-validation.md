@@ -180,6 +180,8 @@ WSL 1280x720과 운영 1150x881에서 문서 `scrollY=0`을 유지한 채 목록
 `scrollTop`만 각각 변화했다. 운영 목록을 `420px` 스크롤한 뒤에도 메뉴 Y좌표
 `179.890625`, 도구막대 Y좌표 `209.890625`가 동일했다. 행 높이는 `58px`,
 외부 HTTPS는 `200`, Nginx·PHP-FPM·MariaDB는 모두 `active`다. 운영 적용 전
-백업은 `/var/backups/techflow-flarum/theme-index-fixed-feed-20260819T1128Z`에
-보존했다. 상세 증적은
+백업은 `/var/backups/techflow-flarum/theme-index-fixed-feed-v2-20260819T1140Z`에
+보존했다. SCP 임시 경로가 0700인 경우에도 배포 스크립트가 Extension 경로를
+Composer와 PHP-FPM이 읽을 수 있는 권한으로 정규화하는 것을 운영 재적용
+`RESULT=PASS`로 확인했다. 상세 증적은
 `docs/evidence/issue-73/community-index-fixed-feed-validation.json`에 기록했다.
