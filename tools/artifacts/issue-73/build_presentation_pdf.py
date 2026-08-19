@@ -7,7 +7,7 @@ from reportlab.pdfgen import canvas
 
 
 ROOT = Path(__file__).resolve().parents[3]
-SLIDES = ROOT / "tmp/issue73-presentation-edit-tags/final-renders"
+SLIDES = ROOT / "tmp/issue73-presentation-header/final-renders"
 OUTPUT = ROOT / "output/pdf/techflow-community-ui-modernization-presentation.pdf"
 images = sorted(SLIDES.glob("slide-*.png"))
 if len(images) != 10:

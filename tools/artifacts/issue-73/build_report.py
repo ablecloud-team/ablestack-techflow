@@ -18,7 +18,7 @@ from reportlab.platypus import BaseDocTemplate, Frame, Image, PageBreak, PageTem
 ROOT = Path(__file__).resolve().parents[3]
 OUTPUT = ROOT / "output/pdf/techflow-community-ui-modernization-report.pdf"
 BEFORE = ROOT / "docs/evidence/issue-73/screenshots/before/home-desktop.png"
-AFTER = ROOT / "docs/evidence/issue-73/screenshots/after/home-desktop.png"
+AFTER = ROOT / "docs/evidence/issue-73/screenshots/header-v1/header-desktop-context.png"
 MOBILE = ROOT / "docs/evidence/issue-73/screenshots/after/home-mobile.png"
 ACTIONS = ROOT / "docs/evidence/issue-73/screenshots/after/post-actions-desktop.png"
 TAG_MODAL = ROOT / "docs/evidence/issue-73/screenshots/after/tag-selection-modal-desktop.png"
@@ -135,7 +135,7 @@ story = [
 
     para("3. 현대화 결과", "h1"),
     screenshot(AFTER, 174 * mm, 105.5 * mm), Spacer(1, 5 * mm),
-    para("Hero는 361px에서 약 128px로 줄이고 타이틀은 로고보다 작은 28px로 조정했습니다. 왼쪽 탐색은 240px로 넓혔습니다. 토론 행은 제목·카테고리·댓글 수를 한 줄에 배치해 약 110px에서 62px로 줄였습니다. 제품 기능과 데이터 경로는 그대로입니다."), PageBreak(),
+    para("Hero는 361px에서 약 128px로 줄이고 타이틀은 로고보다 작은 28px로 조정했습니다. 로그인 헤더의 검색·언어·신고·알림·프로필은 모두 44px·동일 Y축으로 정렬하고, 신고·알림은 웹폰트와 무관한 내장 SVG 아이콘으로 표시합니다. 왼쪽 탐색은 240px로 넓혔고 토론 행은 약 110px에서 62px로 줄였습니다."), PageBreak(),
 
     para("4. 모바일과 답변 상태", "h1"),
     make_table([
@@ -183,11 +183,11 @@ story = [
         ["검증", "결과"],
         ["정적 계약", "10/10"],
         ["사용자 / 토의 / 게시물", "39 / 117 / 305"],
-        ["콘텐츠 SHA-256", "7dde04ca...60a8"],
+        ["콘텐츠 SHA-256", "5c5d0cf9...d662"],
         ["첨부 SHA-256", "19cdf526...97c"],
         ["한글 원문 키 / 태그·프로필·설정·보안 영문", "0건 / 0건"],
     ], [70 * mm, 104 * mm]),
-    Spacer(1, 6 * mm), callout("최종 Run ID: issue73-20260819-tags-complete-v1", GREEN, PALE_GREEN), PageBreak(),
+    Spacer(1, 6 * mm), callout("최종 Run ID: issue73-20260819-header-v1", GREEN, PALE_GREEN), PageBreak(),
 
     para("10. 롤백과 운영 결정", "h1"),
     make_table([

@@ -1,6 +1,6 @@
 {
   "issue": 73,
-  "runId": "issue73-20260819-tags-complete-v1",
+  "runId": "issue73-20260819-header-v1",
   "environment": "WSL Ubuntu 24.04 staging",
   "productionChanged": false,
   "checks": {
@@ -46,6 +46,12 @@
     "relativeTagDatesPreserved": true,
     "privateUseIconGlyphsVisible": 0,
     "iconFallback": "system-symbols",
+    "headerAuthenticatedLayout": "PASS",
+    "headerControlHeight": "44px",
+    "headerControlY": "16px",
+    "headerControlAlignmentVariance": "0px",
+    "headerFlagIcon": "embedded-svg-mask",
+    "headerNotificationIcon": "embedded-svg-mask",
     "tagGridMobile": "1-column",
     "tagGridGapMobile": "14px",
     "tagCardWidthMobile": "336px",
@@ -121,7 +127,7 @@
     "users": 39,
     "discussions": 117,
     "posts": 305,
-    "content_sha256": "7dde04ca2fa773249a30115a13018f979d65f2b341707c7cc153b8af112660a8",
+    "content_sha256": "5c5d0cf9bc34bb52825e62985dcdb61d1090b56d0113865387cc68d52978d662",
     "uploads_sha256": "19cdf52600535380969a176d81bf66678b200a4247694641d00b470b8637a97c",
     "http_status": 200
   },
@@ -130,19 +136,19 @@
     "users": 39,
     "discussions": 117,
     "posts": 305,
-    "content_sha256": "7dde04ca2fa773249a30115a13018f979d65f2b341707c7cc153b8af112660a8",
+    "content_sha256": "5c5d0cf9bc34bb52825e62985dcdb61d1090b56d0113865387cc68d52978d662",
     "uploads_sha256": "19cdf52600535380969a176d81bf66678b200a4247694641d00b470b8637a97c",
     "http_status": 200
   },
   "disabledRollback": {
     "theme_enabled": false,
-    "content_sha256": "7dde04ca2fa773249a30115a13018f979d65f2b341707c7cc153b8af112660a8",
+    "content_sha256": "5c5d0cf9bc34bb52825e62985dcdb61d1090b56d0113865387cc68d52978d662",
     "uploads_sha256": "19cdf52600535380969a176d81bf66678b200a4247694641d00b470b8637a97c",
     "http_status": 200
   },
   "finalStaging": {
     "theme_enabled": true,
-    "content_sha256": "7dde04ca2fa773249a30115a13018f979d65f2b341707c7cc153b8af112660a8",
+    "content_sha256": "5c5d0cf9bc34bb52825e62985dcdb61d1090b56d0113865387cc68d52978d662",
     "uploads_sha256": "19cdf52600535380969a176d81bf66678b200a4247694641d00b470b8637a97c",
     "http_status": 200
   }
