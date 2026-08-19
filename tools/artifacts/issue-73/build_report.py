@@ -141,7 +141,7 @@ story = [
         ["최종 해결 가이드", "Green", "선택된 Knowledge Base"],
     ], [48 * mm, 34 * mm, 92 * mm]),
     Spacer(1, 5 * mm),
-    Table([[screenshot(MOBILE, 58 * mm, 127 * mm), para("390px에서는 제목 2줄과 마지막 응답 정보를 유지합니다. Hero 패딩은 데스크톱 19px, 모바일 17px로 대칭이며 아바타와 제목의 중심 차이는 0px입니다.\n\n답장·좋아요·해결 선택·더 보기는 모두 아이콘과 한글 텍스트를 함께 표시합니다. 데스크톱 8px·모바일 6px 간격이며 모바일 가로 넘침은 0px입니다.\n\n목록 복귀 뒤에도 좌측 상단 탐색 버튼은 40x40px로 남아 반복해서 사용할 수 있습니다. Footer는 Home·Blog·Docs를 38px/36px 원형 아이콘으로 표시합니다.")]], colWidths=[64 * mm, 110 * mm], style=TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP")])),
+    Table([[screenshot(MOBILE, 58 * mm, 127 * mm), para("390px에서는 제목 2줄과 마지막 응답 정보를 유지합니다. Hero 패딩은 데스크톱 19px, 모바일 17px로 대칭이며 아바타와 제목의 중심 차이는 0px입니다.\n\n답장·좋아요·해결 선택·더 보기는 모두 아이콘과 한글 텍스트를 함께 표시합니다. 본문 길이에 관계없이 카드-버튼 간격은 설계 8px·실측 7px·편차 0px이며 모바일 가로 넘침은 0px입니다.\n\n목록 복귀 뒤에도 좌측 상단 탐색 버튼은 40x40px로 남아 반복해서 사용할 수 있습니다. Footer는 Home·Blog·Docs를 38px/36px 원형 아이콘으로 표시합니다.")]], colWidths=[64 * mm, 110 * mm], style=TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP")])),
     Spacer(1, 4 * mm), screenshot(ACTIONS, 112 * mm, 70 * mm), PageBreak(),
 
     para("5. 공통 대화상자와 한글", "h1"),
@@ -162,11 +162,11 @@ story = [
         ["검증", "결과"],
         ["정적 계약", "8/8"],
         ["사용자 / 토의 / 게시물", "39 / 117 / 305"],
-        ["콘텐츠 SHA-256", "55ed12c8...ad9d"],
+        ["콘텐츠 SHA-256", "79f3ba26...b982"],
         ["첨부 SHA-256", "19cdf526...97c"],
         ["한글 원문 키 / 태그창 직접 영문", "0건 / 0건"],
     ], [70 * mm, 104 * mm]),
-    Spacer(1, 6 * mm), callout("최종 Run ID: issue73-20260819-dialog-action-consistency-final-rerun", GREEN, PALE_GREEN), PageBreak(),
+    Spacer(1, 6 * mm), callout("최종 Run ID: issue73-20260819-post-action-gap-uniform-final", GREEN, PALE_GREEN), PageBreak(),
 
     para("7. 롤백과 운영 결정", "h1"),
     make_table([

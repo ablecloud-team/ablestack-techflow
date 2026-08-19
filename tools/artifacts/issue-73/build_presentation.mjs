@@ -86,10 +86,10 @@ const modal = await bytes(modalImage);
   notes(s);
 }
 {
-  const s = deck.slides.add(); s.background.fill = C.white; title(s, "작업 버튼과 모든 대화상자를 하나의 규칙으로 통일했습니다", 4);
+  const s = deck.slides.add(); s.background.fill = C.white; title(s, "본문 길이에 관계없이 버튼 간격을 하나로 맞췄습니다", 4);
   addImage(s, "mobile-actions", action, 52, 140, 260, 440, "contain");
   addImage(s, "tag-modal", modal, 346, 140, 842, 350, "contain");
-  text(s, "action-caption", "아이콘 + 한글 텍스트", 50, 594, 264, 36, 20, true, C.blue, "center");
+  text(s, "action-caption", "카드-버튼 8px · 편차 0px", 42, 594, 280, 36, 19, true, C.blue, "center");
   box(s, "dialog-result", 346, 520, 842, 106, C.pale, C.blue);
   text(s, "dialog-result-main", "공통 Modal 규칙 · 부드러운 2px 포커스 · 직접 노출 영문 0건", 378, 540, 778, 38, 22, true, C.ink, "center");
   text(s, "dialog-result-sub", "주 태그를 선택하세요 · 확인 · 태그 필수 조건 무시", 378, 580, 778, 30, 19, false, C.blue, "center");
