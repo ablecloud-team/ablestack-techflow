@@ -1,0 +1,242 @@
+- link "토의 목록으로 돌아가기":
+  - /url: /
+  - generic: 
+- main:
+  - list:
+    - list:
+      - generic "Answered":
+        - generic: 
+    - link " ABLESTACK v4.x Diplo":
+      - /url: /t/ablestack-v4-x-diplo
+      - generic: 
+      - text: ABLESTACK v4.x Diplo
+    - link " Mold":
+      - /url: /t/mold
+      - generic: 
+      - text: Mold
+    - link " 가상머신 운영/관리":
+      - /url: /t/vm-manage
+      - generic: 
+      - text: 가상머신 운영/관리
+    - heading "Windows 가상머신 ISO 설치 중에 디스크가 안보임" [level=1]
+  - navigation:
+    - list:
+      - text: 
+      - button "토의 작업 드롭다운 메뉴를 토글하기":
+        - generic: 
+        - text: 
+      - button "새로운 게시물이 있을 때 이메일을 받습니다":
+        - generic: 
+        - text: 팔로우
+      - button:
+        - generic: 
+      - button "3 게시들물 중 1":
+        - text: 3 게시들물 중 1
+        - generic: 
+  - feed:
+    - article:
+      - list:
+        - heading "dhslove dhslove" [level=3]:
+          - link "dhslove dhslove":
+            - /url: /u/dhslove
+            - img "dhslove"
+            - generic: 
+            - text: dhslove
+        - list
+        - time: 4일 전
+      - paragraph:
+        - img "image.png"
+      - paragraph: 첨부한 이미지 처럼 ISO를 연결해서 Windows를 설치하는 중에 디스크가 안보여서 설치가 불가능 합니다.
+      - paragraph: 가상머신 디스크는 SCSI 형식입니다. 그리고 해당 디스크 형식을 사용해야 합니다. 해결 방법을 알려주세요.
+      - complementary:
+        - list:
+          - button "답장"
+          - button "좋아요"
+          - button "포스트 제어 드롭다운 메뉴 토글하기":
+            - generic: 
+            - text: 
+      - list:
+        - list:
+          - generic: 
+          - heading "TechFlow-Assistant" [level=3]:
+            - link "TechFlow-Assistant":
+              - /url: /u/TechFlow-Assistant
+          - time: 4일 전
+          - generic: 
+          - text: Best Answer
+        - heading "증상" [level=3]
+        - list:
+          - listitem: 설치 화면에 드라이브를 찾을 수 없으며 저장소 드라이버를 불러오라는 경고가 표시됩니다.
+        - heading "원인" [level=3]
+        - list:
+          - listitem: Windows 설치 환경에 가상 SCSI 컨트롤러를 인식할 저장소 드라이버가 로드되지 않은 상태입니다.
+        - heading "추가로 필요한 정보" [level=3]
+        - list:
+          - listitem: 위 절차로 해결되지 않을 때는 선택한 드라이버 폴더의 전체 경로와 Windows 설치 화면에 표시되는 정확한 오류 문구가 필요합니다.
+        - heading "해결 방법" [level=3]
+        - list:
+          - listitem: SCSI 형식을 그대로 유지하고, Mold의 가상머신 ISO 연결 기능에서 승인된 VirtIO Windows Driver ISO를 연결합니다. Windows 설치 ISO가 이미 연결되어 있다면 드라이버 ISO로 잠시 교체합니다.
+          - text: Windows 설치 화면에서
+          - code: Load driver
+          - text: 를 선택한 다음
+          - code: Browse
+          - text: 를 누릅니다.
+          - text: VirtIO Windows Driver ISO에서 현재 설치 중인 Windows 버전과
+          - code: amd64
+          - text: 구조에 맞는 VirtIO SCSI 드라이버 폴더를 선택합니다. 표시된
+          - code: VirtIO SCSI controller
+          - text: 드라이버를 설치합니다.
+          - listitem: 디스크 목록에 설치 대상 디스크와 용량이 표시되면 드라이버가 정상 적용된 것입니다.
+          - text: Mold에서 Windows 설치 ISO를 다시 연결하고 설치 화면에서
+          - code: Refresh
+          - text: 를 누릅니다. 표시된 디스크를 선택하여 설치를 계속합니다.
+          - text: 드라이버가 표시되지 않는 경우 디스크 형식을 다른 방식으로 바꾸지 마십시오. 승인된 드라이버 ISO가 연결되었는지 확인하고, Windows 버전과
+          - code: amd64
+          - text: 가 정확히 일치하는 폴더를 다시 선택하는 것이 안전한 대안입니다.
+        - heading "추가 고려사항" [level=3]
+        - list:
+          - text: Windows Server 설치 대상 선택 화면에서 디스크 목록이 비어 있고, 드라이브를 찾지 못했으므로 저장소 드라이버를 불러오라는 경고와
+          - code: Load driver
+          - text: 항목이 표시됩니다.
+        - heading "적용 버전" [level=3]
+        - list:
+          - listitem: ABLESTACK Diplo
+        - blockquote:
+          - paragraph: 이 문서는 질문자가 해결 답변으로 선택한 내용을 중심으로 TechFlow가 대화를 정리한 Knowledge Base입니다.
+        - paragraph:
+          - link:
+            - /url: https://community.ablecloud.io/_techflow/375db5f9c1b8adbb9159dc86f459c39d9e466338231e2ce0c0c5fcb1a6f718e3
+    - article:
+      - list:
+        - heading "TechFlow-Assistant TechFlow-Assistant" [level=3]:
+          - link "TechFlow-Assistant TechFlow-Assistant":
+            - /url: /u/TechFlow-Assistant
+            - img "TechFlow-Assistant": T
+            - generic: 
+            - text: TechFlow-Assistant
+        - list
+        - time: 4일 전
+      - paragraph: SCSI 형식은 그대로 유지해도 됩니다. Windows 설치 화면에서 VirtIO SCSI 드라이버(Windows가 SCSI 디스크를 인식하게 하는 소프트웨어)를 먼저 불러오면 설치 디스크가 표시됩니다.
+      - paragraph: 먼저 다음 해결 방법을 적용해 보세요.
+      - list:
+        - text: 디스크 형식은 변경하지 마십시오. Mold의 가상머신 작업 메뉴에서 Windows 설치 ISO를 분리하고,
+        - code: VirtIO Windows Driver
+        - text: ISO를 연결합니다.
+        - text: 가상머신 콘솔의 디스크 선택 화면에서
+        - code: Load driver
+        - text: 를 누른 뒤
+        - code: Browse
+        - text: 를 선택합니다. Windows Server 2022라면
+        - code: CD Drive\amd64\2k22
+        - text: 를 선택하고, 다른 Windows 버전이면 그 버전에 맞는 폴더를 선택합니다.
+        - text: 목록에
+        - code: VirtIO SCSI controller
+        - text: 가 표시되면 선택하고
+        - code: Next
+        - text: 를 누릅니다. 정상 기준은 드라이버 설치 후 운영체제 설치 위치 화면에 SCSI 디스크가 나타나는 것입니다.
+        - text: 디스크가 표시되면 VirtIO 드라이버 ISO를 분리하고 Windows 설치 ISO를 다시 연결합니다. 설치 화면에서
+        - code: Refresh
+        - text: 를 누른 뒤 설치를 계속합니다.
+        - text: 드라이버 목록이 비어 있으면
+        - code: 2k22
+        - text: 폴더를 그대로 사용하지 말고, 설치 중인 Windows 버전과
+        - code: amd64
+        - text: 구조에 맞는 폴더를 다시 선택하는 방법을 먼저 시도하십시오. SCSI를 IDE로 바꿀 필요는 없습니다.
+        - text: Windows 설치가 끝난 뒤에는 VirtIO ISO의
+        - code: virtio-win-gt-x64
+        - text: 설치 프로그램으로 나머지 장치 드라이버를 설치하고, 장치 관리자에서 장치 상태가 정상인지 확인할 수 있습니다.
+      - paragraph: 이 방법을 먼저 권장하는 이유는 다음과 같습니다.
+      - list:
+        - listitem: Windows 설치 환경에 VirtIO SCSI 컨트롤러 드라이버가 아직 로드되지 않은 상태입니다.
+      - paragraph: 위 조치로 해결되지 않으면 아래 결과를 알려주세요. 이미 제공한 내용은 다시 보내지 않으셔도 됩니다.
+      - list:
+        - text: 위 절차로 해결되지 않으면 설치 중인 정확한 Windows 버전과
+        - code: Load driver
+        - text: 에서 선택한 폴더 경로, 드라이버 검색 결과 화면이 필요합니다.
+        - code: VirtIO SCSI controller
+        - text: 를 설치한 뒤에도 디스크가 없으면 Mold 가상머신 상세 화면에서 해당 디스크가 연결된 상태를 보여주는 화면이 필요합니다.
+      - paragraph:
+        - link:
+          - /url: https://community.ablecloud.io/_techflow/1a9967988c061faadf128670bcca6fcf384584c88c3b291d1ae5c21952641b7b
+      - complementary:
+        - list:
+          - button "Select Best Answer"
+          - button "답장"
+          - button "좋아요"
+          - button "포스트 제어 드롭다운 메뉴 토글하기":
+            - generic: 
+            - text: 
+    - article:
+      - list:
+        - heading "TechFlow-Assistant TechFlow-Assistant" [level=3]:
+          - link "TechFlow-Assistant TechFlow-Assistant":
+            - /url: /u/TechFlow-Assistant
+            - img "TechFlow-Assistant": T
+            - generic: 
+            - text: TechFlow-Assistant
+        - list
+        - time: 4일 전
+        - listitem: 수정됨
+        - generic: 
+        - text: Best Answer
+      - heading "증상" [level=3]
+      - list:
+        - listitem: 설치 화면에 드라이브를 찾을 수 없으며 저장소 드라이버를 불러오라는 경고가 표시됩니다.
+      - heading "원인" [level=3]
+      - list:
+        - listitem: Windows 설치 환경에 가상 SCSI 컨트롤러를 인식할 저장소 드라이버가 로드되지 않은 상태입니다.
+      - heading "추가로 필요한 정보" [level=3]
+      - list:
+        - listitem: 위 절차로 해결되지 않을 때는 선택한 드라이버 폴더의 전체 경로와 Windows 설치 화면에 표시되는 정확한 오류 문구가 필요합니다.
+      - heading "해결 방법" [level=3]
+      - list:
+        - listitem: SCSI 형식을 그대로 유지하고, Mold의 가상머신 ISO 연결 기능에서 승인된 VirtIO Windows Driver ISO를 연결합니다. Windows 설치 ISO가 이미 연결되어 있다면 드라이버 ISO로 잠시 교체합니다.
+        - text: Windows 설치 화면에서
+        - code: Load driver
+        - text: 를 선택한 다음
+        - code: Browse
+        - text: 를 누릅니다.
+        - text: VirtIO Windows Driver ISO에서 현재 설치 중인 Windows 버전과
+        - code: amd64
+        - text: 구조에 맞는 VirtIO SCSI 드라이버 폴더를 선택합니다. 표시된
+        - code: VirtIO SCSI controller
+        - text: 드라이버를 설치합니다.
+        - listitem: 디스크 목록에 설치 대상 디스크와 용량이 표시되면 드라이버가 정상 적용된 것입니다.
+        - text: Mold에서 Windows 설치 ISO를 다시 연결하고 설치 화면에서
+        - code: Refresh
+        - text: 를 누릅니다. 표시된 디스크를 선택하여 설치를 계속합니다.
+        - text: 드라이버가 표시되지 않는 경우 디스크 형식을 다른 방식으로 바꾸지 마십시오. 승인된 드라이버 ISO가 연결되었는지 확인하고, Windows 버전과
+        - code: amd64
+        - text: 가 정확히 일치하는 폴더를 다시 선택하는 것이 안전한 대안입니다.
+      - heading "추가 고려사항" [level=3]
+      - list:
+        - text: Windows Server 설치 대상 선택 화면에서 디스크 목록이 비어 있고, 드라이브를 찾지 못했으므로 저장소 드라이버를 불러오라는 경고와
+        - code: Load driver
+        - text: 항목이 표시됩니다.
+      - heading "적용 버전" [level=3]
+      - list:
+        - listitem: ABLESTACK Diplo
+      - blockquote:
+        - paragraph: 이 문서는 질문자가 해결 답변으로 선택한 내용을 중심으로 TechFlow가 대화를 정리한 Knowledge Base입니다.
+      - paragraph:
+        - link:
+          - /url: https://community.ablecloud.io/_techflow/375db5f9c1b8adbb9159dc86f459c39d9e466338231e2ce0c0c5fcb1a6f718e3
+      - complementary:
+        - list:
+          - button "Unselect Best Answer"
+          - button "답장"
+          - button "좋아요"
+          - button "포스트 제어 드롭다운 메뉴 토글하기":
+            - generic: 
+            - text: 
+    - button "pdh1974 답장 쓰기...":
+      - img "pdh1974"
+      - text: 답장 쓰기...
+  - generic:   
+- generic: 
+- link "ABLECLOUD Home":
+  - /url: https://www.ablecloud.io
+- link "Blog":
+  - /url: https://blog.naver.com/ablecloud_official
+- link "Online Docs":
+  - /url: https://docs.ablecloud.io

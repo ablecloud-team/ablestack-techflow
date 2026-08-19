@@ -1,0 +1,558 @@
+- text: 
+- banner:
+  - link:
+    - /url: http://localhost:18080
+  - list:
+    - search:
+      - text: 
+      - searchbox: 가상머신
+      - button:
+        - generic: 
+    - button:
+      - text: 한국어
+      - generic: 
+    - text: 
+    - button: 가입
+    - button: 로그인
+- main:
+  - button:
+    - generic: 
+  - heading [level=1]: ABLESTACK 사용자 포럼에 오신 것을 환영합니다.
+  - generic: ABLESTACK 설치 및 관리, 운영과 관련된 질문을 남겨주세요. ABLECLOUD 멤버와 함께 신속하게 토론을 진행하고, 솔루션을 제공합니다.
+  - navigation:
+    - list:
+      - button:  토의 시작
+      - text: 
+      - list:
+        - link:
+          - /url: /
+          - generic: 
+          - text: 모든 토의
+        - link:
+          - /url: /tags
+          - generic: 
+          - text: 태그
+        - link:
+          - /url: /t/new-features
+          - generic: 
+          - text: 새로운 기능 소개
+        - link:
+          - /url: /t/ablestack-v4-x-diplo
+          - generic: 
+          - text: ABLESTACK v4.x Diplo
+        - link:
+          - /url: /t/ablestack-vm
+          - generic: 
+          - text: ABLESTACK VM
+        - link:
+          - /url: /t/ablestack-hci
+          - generic: 
+          - text: ABLESTACK HCI
+        - link:
+          - /url: /t/ablestack
+          - generic: 
+          - text: ABLESTACK 설치
+        - link:
+          - /url: /t/ablestack-error
+          - generic: 
+          - text: ABLESTACK 오류/장애
+        - link:
+          - /url: /t/ablestack-features
+          - generic: 
+          - text: ABLESTACK 기능개선
+        - link:
+          - /url: /t/mold
+          - generic: 
+          - text: Mold
+        - link:
+          - /url: /t/vm-manage
+          - generic: 
+          - text: 가상머신 운영/관리
+        - link:
+          - /url: /t/cube
+          - generic: 
+          - text: Cube
+        - link:
+          - /url: /tags
+          - text: 더 보기...
+  - list:
+    - button:
+      - text: 최근
+      - generic: 
+    - text: 
+  - list:
+    - button:
+      - generic: 
+  - feed:
+    - article:
+      - text: 
+      - link:
+        - /url: /u/sijo
+        - img: S
+      - link:
+        - /url: /d/144-gasangmeosin-webkonsol-yeongyeol-oryu
+        - heading [level=2]: 가상머신 웹콘솔 연결 오류
+        - list:
+          - generic: 
+          - text: ABLESTACK VM
+          - generic: 
+          - text: ABLESTACK 오류/장애
+          - generic: 
+          - text: Mold
+          - generic: 
+          - text: sijo님이
+          - time: 6일 전
+          - text: 에 답장했습니다
+      - text:  3
+      - generic: 3 답장들
+    - article:
+      - text: 
+      - link:
+        - /url: /u/ktcheon
+        - img: K
+      - link:
+        - /url: /d/140-ntp-sigan-seobeoreul-byeongyeonghago-sipseubnida
+        - heading [level=2]: NTP 시간 서버를 변경하고 싶습니다.
+        - list:
+          - generic: 
+          - text: ABLESTACK 설치
+          - generic: 
+          - text: ktcheon님이
+          - time: 6일 전
+          - text: 에 답장했습니다
+      - text:  1
+      - generic: 1 답장
+    - article:
+      - text: 
+      - link:
+        - /url: /u/ktcheon
+        - img: K
+      - link:
+        - /url: /d/139-vm-haesangdoreul-byeongyeonghago-sipseubnida
+        - heading [level=2]: VM 해상도를 변경하고 싶습니다.
+        - list:
+          - generic: 
+          - text: ABLESTACK 설치
+          - generic: 
+          - text: ktcheon님이
+          - time: 6일 전
+          - text: 에 답장했습니다
+      - text:  1
+      - generic: 1 답장
+    - article:
+      - text: 
+      - link:
+        - /url: /u/ktcheon
+        - img: K
+      - link:
+        - /url: /d/138-hoseuteu-ha-sangtaega-suspectro-pyosidoebnida
+        - heading [level=2]: 호스트 HA 상태가 suspect로 표시됩니다.
+        - list:
+          - generic: 
+          - text: ABLESTACK 설치
+          - generic: 
+          - text: ktcheon님이
+          - time: 6일 전
+          - text: 에 답장했습니다
+      - text:  1
+      - generic: 1 답장
+    - article:
+      - text: 
+      - link:
+        - /url: /u/dksgusehd10
+      - link:
+        - /url: /d/137-seutorijisenteo-guseongsi-silpae
+        - heading [level=2]: 스토리지센터 구성시 실패
+        - list:
+          - generic: 
+          - text: ABLESTACK HCI
+          - generic: 
+          - text: andrewyss님이
+          - time: 8일 전
+          - text: 에 답장했습니다
+      - text:  1
+      - generic: 1 답장
+    - article:
+      - text: 
+      - link:
+        - /url: /u/sijo
+        - img: S
+      - link:
+        - /url: /d/136-cube-ssh-jeobsog-jehan-gwanryeon
+        - heading [level=2]: Cube SSH 접속 제한 관련
+        - list:
+          - generic: 
+          - text: ABLESTACK v4.x Diplo
+          - generic: 
+          - text: Cube
+          - generic: 
+          - text: sijo님이
+          - time: 7 7월
+          - text: 에 답장했습니다
+      - text:  3
+      - generic: 3 답장들
+    - article:
+      - text: 
+      - link:
+        - /url: /u/gimsoomin
+        - img: G
+      - link:
+        - /url: /d/135-hci-eseo-kaesi-tieoreul-ddaro-guseonghanayo
+        - heading [level=2]: hci 에서 캐시 티어를 따로 구성하나요?
+        - list:
+          - generic: 
+          - text: ABLESTACK v4.x Diplo
+          - generic: 
+          - text: ABLESTACK HCI
+          - generic: 
+          - text: ABLESTACK 설치
+          - generic: 
+          - text: Glue
+          - generic: 
+          - text: gimsoomin님이
+          - time: 26 6월
+          - text: 에 답장했습니다
+      - text:  1
+      - generic: 1 답장
+    - article:
+      - text: 
+      - link:
+        - /url: /u/gimsoomin
+        - img: G
+      - link:
+        - /url: /d/133-v2v-han-gasangmeosinyi-butingi-neomu-oraegeolribnida
+        - heading [level=2]: v2v 한 가상머신의 부팅이 너무 오래걸립니다.
+        - list:
+          - generic: 
+          - text: ABLESTACK v4.x Diplo
+          - generic: 
+          - text: ABLESTACK VM
+          - generic: 
+          - text: ABLESTACK HCI
+          - generic: 
+          - text: ABLESTACK 설치
+          - generic: 
+          - text: Mold
+          - generic: 
+          - text: gimsoomin님이
+          - time: 25 6월
+          - text: 에 답장했습니다
+      - text:  1
+      - generic: 1 답장
+    - article:
+      - text: 
+      - link:
+        - /url: /u/gimsoomin
+        - img: G
+      - link:
+        - /url: /d/132-glue-daemon-sangtaega-boiji-anhseubnida
+        - heading [level=2]: glue daemon 상태가 보이지 않습니다.
+        - list:
+          - generic: 
+          - text: ABLESTACK v4.x Diplo
+          - generic: 
+          - text: ABLESTACK HCI
+          - generic: 
+          - text: ABLESTACK 오류/장애
+          - generic: 
+          - text: Cube
+          - generic: 
+          - text: Wall
+          - generic: 
+          - text: gimsoomin님이
+          - time: 25 6월
+          - text: 에 답장했습니다
+      - text:  1
+      - generic: 1 답장
+    - article:
+      - text: 
+      - link:
+        - /url: /u/gimsoomin
+        - img: G
+      - link:
+        - /url: /d/131-mold-jeobsoge-ssleul-cugahago-sipseubnida
+        - heading [level=2]: Mold 접속에 ssl을 추가하고 싶습니다.
+        - list:
+          - generic: 
+          - text: ABLESTACK v4.x Diplo
+          - generic: 
+          - text: ABLESTACK VM
+          - generic: 
+          - text: ABLESTACK HCI
+          - generic: 
+          - text: ABLESTACK 설치
+          - generic: 
+          - text: Mold
+          - generic: 
+          - text: gimsoomin님이
+          - time: 25 6월
+          - text: 에 답장했습니다
+      - text:  1
+      - generic: 1 답장
+    - article:
+      - text: 
+      - link:
+        - /url: /u/gimsoomin
+        - img: G
+      - link:
+        - /url: /d/130-jon-guseongsi-hoseuteudeungrogi-doeji-anhseubnida
+        - heading [level=2]: 존 구성시 호스트등록이 되지 않습니다.
+        - list:
+          - generic: 
+          - text: ABLESTACK v4.x Diplo
+          - generic: 
+          - text: ABLESTACK VM
+          - generic: 
+          - text: ABLESTACK HCI
+          - generic: 
+          - text: ABLESTACK 설치
+          - generic: 
+          - text: gimsoomin님이
+          - time: 25 6월
+          - text: 에 답장했습니다
+      - text:  1
+      - generic: 1 답장
+    - article:
+      - text: 
+      - link:
+        - /url: /u/gimsoomin
+        - img: G
+      - link:
+        - /url: /d/129-pcs-status-ro-hwaginhaesseulddae-fence-resource-error-ga-jisoghaeseo-ddeubnida
+        - heading [level=2]: pcs status 로 확인했을때 fence resource error 가 지속해서 뜹니다.
+        - list:
+          - generic: 
+          - text: ABLESTACK v4.x Diplo
+          - generic: 
+          - text: ABLESTACK VM
+          - generic: 
+          - text: ABLESTACK HCI
+          - generic: 
+          - text: ABLESTACK 설치
+          - generic: 
+          - text: Cube
+          - generic: 
+          - text: gimsoomin님이
+          - time: 24 6월
+          - text: 에 답장했습니다
+      - text:  1
+      - generic: 1 답장
+    - article:
+      - text: 
+      - link:
+        - /url: /u/gimsoomin
+        - img: G
+      - link:
+        - /url: /d/128-mold-daesibodeu-sang-pyogidoeneun-cpu-koeosuwa-ghz-neun-eoddeohge-gyesanhaneun-geongayo
+        - heading [level=2]: Mold 대시보드 상 표기되는 CPU 코어수와 Ghz 는 어떻게 계산하는 건가요?
+        - list:
+          - generic: 
+          - text: ABLESTACK v4.x Diplo
+          - generic: 
+          - text: ABLESTACK VM
+          - generic: 
+          - text: ABLESTACK HCI
+          - generic: 
+          - text: Mold
+          - generic: 
+          - text: gimsoomin님이
+          - time: 24 6월
+          - text: 에 답장했습니다
+      - text:  1
+      - generic: 1 답장
+    - article:
+      - text: 
+      - link:
+        - /url: /u/gimsoomin
+        - img: G
+      - link:
+        - /url: /d/126-gasangmeosin-konsoli-boiji-anhseubnida
+        - heading [level=2]: 가상머신 콘솔이 보이지 않습니다.
+        - list:
+          - generic: 
+          - text: ABLESTACK v4.x Diplo
+          - generic: 
+          - text: ABLESTACK VM
+          - generic: 
+          - text: ABLESTACK HCI
+          - generic: 
+          - text: ABLESTACK 오류/장애
+          - generic: 
+          - text: Mold
+          - generic: 
+          - text: gimsoomin님이
+          - time: 23 6월
+          - text: 에 답장했습니다
+      - text:  1
+      - generic: 1 답장
+    - article:
+      - text: 
+      - link:
+        - /url: /u/gimsoomin
+        - img: G
+      - link:
+        - /url: /d/125-neteuweokeureul-bondinghamyeonseo-xmit-hash-gabseul-cugahaji-anhassseubnida
+        - heading [level=2]: 네트워크를 본딩하면서 xmit_hash 값을 추가하지 않았습니다.
+        - list:
+          - generic: 
+          - text: ABLESTACK v4.x Diplo
+          - generic: 
+          - text: ABLESTACK VM
+          - generic: 
+          - text: ABLESTACK HCI
+          - generic: 
+          - text: ABLESTACK 설치
+          - generic: 
+          - text: Cube
+          - generic: 
+          - text: gimsoomin님이
+          - time: 23 6월
+          - text: 에 답장했습니다
+      - text:  1
+      - generic: 1 답장
+    - article:
+      - text: 
+      - link:
+        - /url: /u/gimsoomin
+        - img: G
+      - link:
+        - /url: /d/124-gasangmeosini-manheun-hoseuteuyi-missed-paekisi-manhseubnida-drsreul-haneunge-joheulggayo
+        - heading [level=2]: 가상머신이 많은 호스트의 missed 패킷이 많습니다. drs를 하는게 좋을까요?
+        - list:
+          - generic: 
+          - text: ABLESTACK v4.x Diplo
+          - generic: 
+          - text: ABLESTACK VM
+          - generic: 
+          - text: ABLESTACK HCI
+          - generic: 
+          - text: 가상머신 운영/관리
+          - generic: 
+          - text: Cube
+          - text: gimsoomin님이
+          - time: 23 6월
+          - text: 에 게시했습니다
+      - text:  0
+      - generic: 0 답장들
+    - article:
+      - text: 
+      - link:
+        - /url: /u/gimsoomin
+        - img: G
+      - link:
+        - /url: /d/123-pyeswaemangeseo-2ca-otp-injeung-rogeuineul-sayonghago-sipseubnida
+        - heading [level=2]: 폐쇄망에서 2차 OTP 인증 로그인을 사용하고 싶습니다.
+        - list:
+          - generic: 
+          - text: ABLESTACK v4.x Diplo
+          - generic: 
+          - text: ABLESTACK VM
+          - generic: 
+          - text: ABLESTACK HCI
+          - generic: 
+          - text: Mold
+          - generic: 
+          - text: gimsoomin님이
+          - time: 20 6월
+          - text: 에 답장했습니다
+      - text:  1
+      - generic: 1 답장
+    - article:
+      - text: 
+      - link:
+        - /url: /u/gimsoomin
+        - img: G
+      - link:
+        - /url: /d/121-boancwiyagjeom-geomsaeseo-varlog-iha-paildeulyi-gweonhani-644-isangiraneun-gyeolgwaga-nawassseubnida
+        - heading [level=2]: 보안취약점 검사에서 /var/log 이하 파일들의 권한이 644 이상이라는 결과가 나왔습니다.
+        - list:
+          - generic: 
+          - text: ABLESTACK v4.x Diplo
+          - generic: 
+          - text: ABLESTACK VM
+          - generic: 
+          - text: ABLESTACK HCI
+          - generic: 
+          - text: Mold
+          - generic: 
+          - text: 가상머신 운영/관리
+          - generic: 
+          - text: gimsoomin님이
+          - time: 20 6월
+          - text: 에 답장했습니다
+      - text:  1
+      - generic: 1 답장
+    - article:
+      - text: 
+      - link:
+        - /url: /u/gimsoomin
+        - img: G
+      - link:
+        - /url: /d/120-beuraendeuga-dareunhogeun-cpuga-dareunhoseuteuggiri-guseonghal-su-issnayo
+        - heading [level=2]: 브랜드가 다른(혹은 cpu가 다른)호스트끼리 구성할 수 있나요?
+        - list:
+          - generic: 
+          - text: ABLESTACK v4.x Diplo
+          - generic: 
+          - text: ABLESTACK VM
+          - generic: 
+          - text: ABLESTACK HCI
+          - generic: 
+          - text: ABLESTACK 설치
+          - generic: 
+          - text: Mold
+          - generic: 
+          - text: 가상머신 운영/관리
+          - generic: 
+          - text: Cube
+          - generic: 
+          - text: gimsoomin님이
+          - time: 20 6월
+          - text: 에 답장했습니다
+      - text:  1
+      - generic: 1 답장
+    - article:
+      - text: 
+      - link:
+        - /url: /u/gimsoomin
+        - img: G
+      - link:
+        - /url: /d/119-nas-baegeob-gasangmeosinhogeun-mulrieul-unyongharyeogo-habnida-meonjeo-hwaginhal-sahangi-isseulggayo
+        - heading [level=2]: NAS 백업 가상머신(혹은 물리)을 운용하려고 합니다. 먼저 확인할 사항이 있을까요
+        - list:
+          - generic: 
+          - text: ABLESTACK v4.x Diplo
+          - generic: 
+          - text: ABLESTACK VM
+          - generic: 
+          - text: ABLESTACK HCI
+          - generic: 
+          - text: Mold
+          - generic: 
+          - text: 가상머신 운영/관리
+          - generic: 
+          - text: gimsoomin님이
+          - time: 20 6월
+          - text: 에 답장했습니다
+      - text:  1
+      - generic: 1 답장
+  - button: 더 보기
+  - text:   
+- generic: 
+- link "ABLECLOUD Home":
+  - /url: https://www.ablecloud.io
+- link "Blog":
+  - /url: https://blog.naver.com/ablecloud_official
+- link "Online Docs":
+  - /url: https://docs.ablecloud.io
+- dialog:
+  - button "닫기":
+    - generic: 
+  - heading "로그인" [level=3]
+  - textbox "사용자명 또는 이메일" [active]
+  - textbox "비밀번호"
+  - checkbox "로그인 기억하기"
+  - text: 로그인 기억하기
+  - button "로그인"
+  - paragraph: 암호를 잊으셨습니까?
+  - paragraph: 계정이 없습니까? 가입하기

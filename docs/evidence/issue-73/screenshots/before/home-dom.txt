@@ -1,0 +1,653 @@
+- text: 
+- banner:
+  - link "ABLESTACK Users Forum":
+    - /url: https://community.ablecloud.io
+    - img "ABLESTACK Users Forum"
+  - list
+  - list:
+    - search "포럼 검색":
+      - text: 
+      - searchbox "검색"
+    - button "포럼 언어 변경":
+      - text: 한국어
+      - generic: 
+    - text: 
+    - button "알림 보기":
+      - generic: 
+    - button "알림 보기":
+      - generic: 
+    - button "세션 설정 드롭다운 메뉴 토글하기":
+      - img "pdh1974"
+      - generic: pdh1974
+    - text:    
+- main:
+  - button "환영 메세지 숨기기":
+    - generic: 
+  - heading "ABLESTACK 사용자 포럼에 오신 것을 환영합니다." [level=1]
+  - text: ABLESTACK 설치 및 관리, 운영과 관련된 질문을 남겨주세요.
+  - text: ABLECLOUD 멤버와 함께 신속하게 토론을 진행하고, 솔루션을 제공합니다.
+  - navigation:
+    - list:
+      - button "토의 시작":  토의 시작
+      - text: 
+      - list:
+        - link "모든 토의":
+          - /url: /
+          - generic: 
+          - text: 모든 토의
+        - link "팔로우 중인 토의":
+          - /url: /following
+          - generic: 
+          - text: 팔로우 중인 토의
+        - link "태그":
+          - /url: /tags
+          - generic: 
+          - text: 태그
+        - link " 새로운 기능 소개":
+          - /url: /t/new-features
+          - generic: 
+          - text: 새로운 기능 소개
+        - link " ABLESTACK v4.x Diplo":
+          - /url: /t/ablestack-v4-x-diplo
+          - generic: 
+          - text: ABLESTACK v4.x Diplo
+        - link " ABLESTACK VM":
+          - /url: /t/ablestack-vm
+          - generic: 
+          - text: ABLESTACK VM
+        - link " ABLESTACK HCI":
+          - /url: /t/ablestack-hci
+          - generic: 
+          - text: ABLESTACK HCI
+        - link " ABLESTACK 설치":
+          - /url: /t/ablestack
+          - generic: 
+          - text: ABLESTACK 설치
+        - link " ABLESTACK 오류/장애":
+          - /url: /t/ablestack-error
+          - generic: 
+          - text: ABLESTACK 오류/장애
+        - link " ABLESTACK 기능개선":
+          - /url: /t/ablestack-features
+          - generic: 
+          - text: ABLESTACK 기능개선
+        - link " Mold":
+          - /url: /t/mold
+          - generic: 
+          - text: Mold
+        - link " 가상머신 운영/관리":
+          - /url: /t/vm-manage
+          - generic: 
+          - text: 가상머신 운영/관리
+        - link " Cube":
+          - /url: /t/cube
+          - generic: 
+          - text: Cube
+        - link "더 보기...":
+          - /url: /tags
+  - list:
+    - button "토의 정렬 방식 변경":
+      - text: 최근
+      - generic: 
+    - text: 
+  - list:
+    - button "모두 읽음으로 표시":
+      - generic: 
+  - feed:
+    - article:
+      - button "토의 작업 드롭다운 메뉴를 토글하기":
+        - generic: 
+        - text: 
+      - text:       
+      - text: 
+      - link "dhslove님이 4일 전에 게시했습니다":
+        - /url: /u/dhslove
+        - img "dhslove"
+      - list:
+        - generic "Answered":
+          - generic: 
+      - link "Windows 가상머신 ISO 설치 중에 디스크가 안보임  ABLESTACK v4.x Diplo  Mold  가상머신 운영/관리 TechFlow-Assistant님이 4일 전에 답장했습니다":
+        - /url: /d/169-windows-gasangmeosin-iso-seolci-junge-diseukeuga-anboim/3
+        - heading "Windows 가상머신 ISO 설치 중에 디스크가 안보임" [level=2]
+        - list:
+          - generic: 
+          - text: ABLESTACK v4.x Diplo
+          - generic: 
+          - text: Mold
+          - generic: 
+          - text: 가상머신 운영/관리
+          - generic: 
+          - text: TechFlow-Assistant님이
+          - time: 4일 전
+          - text: 에 답장했습니다
+      - text:  2
+      - generic: 2 답장들
+    - article:
+      - button "토의 작업 드롭다운 메뉴를 토글하기":
+        - generic: 
+        - text: 
+      - text:       
+      - text: 
+      - link "dhslove님이 4일 전에 게시했습니다":
+        - /url: /u/dhslove
+        - img "dhslove"
+      - list:
+        - generic "Answered":
+          - generic: 
+      - link "Ubuntu 가상머신에 대해 에이전트가 설치 되어 있지 않다고 표시됨  ABLESTACK v4.x Diplo  가상머신 운영/관리 TechFlow-Assistant님이 4일 전에 답장했습니다":
+        - /url: /d/168-ubuntu-gasangmeosine-daehae-eijeonteuga-seolci-doeeo-issji-anhdago-pyosidoem/5
+        - heading "Ubuntu 가상머신에 대해 에이전트가 설치 되어 있지 않다고 표시됨" [level=2]
+        - list:
+          - generic: 
+          - text: ABLESTACK v4.x Diplo
+          - generic: 
+          - text: 가상머신 운영/관리
+          - generic: 
+          - text: TechFlow-Assistant님이
+          - time: 4일 전
+          - text: 에 답장했습니다
+      - text:  4
+      - generic: 4 답장들
+    - article:
+      - button "토의 작업 드롭다운 메뉴를 토글하기":
+        - generic: 
+        - text: 
+      - text:       
+      - text: 
+      - link "pdh1974님이 4일 전에 게시했습니다":
+        - /url: /u/pdh1974
+        - img "pdh1974"
+      - list:
+        - generic "Answered":
+          - generic: 
+      - link "가상머신 복제 및 스냅샷 생성 시 오류  ABLESTACK v4.x Diplo  ABLESTACK 오류/장애  Mold TechFlow-Assistant님이 4일 전에 답장했습니다":
+        - /url: /d/167-gasangmeosin-bogje-mic-seunaebsyas-saengseong-si-oryu/7
+        - heading "가상머신 복제 및 스냅샷 생성 시 오류" [level=2]
+        - list:
+          - generic: 
+          - text: ABLESTACK v4.x Diplo
+          - generic: 
+          - text: ABLESTACK 오류/장애
+          - generic: 
+          - text: Mold
+          - generic: 
+          - text: TechFlow-Assistant님이
+          - time: 4일 전
+          - text: 에 답장했습니다
+      - text:  6
+      - generic: 6 답장들
+    - article:
+      - button "토의 작업 드롭다운 메뉴를 토글하기":
+        - generic: 
+        - text: 
+      - text:       
+      - text: 
+      - link "sijo님이 6일 전에 게시했습니다":
+        - /url: /u/sijo
+        - img "sijo": S
+      - list
+      - link "가상머신 웹콘솔 연결 오류  ABLESTACK VM  ABLESTACK 오류/장애  Mold sijo님이 6일 전에 답장했습니다":
+        - /url: /d/144-gasangmeosin-webkonsol-yeongyeol-oryu/4
+        - heading "가상머신 웹콘솔 연결 오류" [level=2]
+        - list:
+          - generic: 
+          - text: ABLESTACK VM
+          - generic: 
+          - text: ABLESTACK 오류/장애
+          - generic: 
+          - text: Mold
+          - generic: 
+          - text: sijo님이
+          - time: 6일 전
+          - text: 에 답장했습니다
+      - text:  3
+      - generic: 3 답장들
+    - article:
+      - button "토의 작업 드롭다운 메뉴를 토글하기":
+        - generic: 
+        - text: 
+      - text:       
+      - text: 
+      - link "ktcheon님이 6일 전에 게시했습니다":
+        - /url: /u/ktcheon
+        - img "ktcheon": K
+      - list
+      - link "NTP 시간 서버를 변경하고 싶습니다.  ABLESTACK 설치 ktcheon님이 6일 전에 답장했습니다":
+        - /url: /d/140-ntp-sigan-seobeoreul-byeongyeonghago-sipseubnida/2
+        - heading "NTP 시간 서버를 변경하고 싶습니다." [level=2]
+        - list:
+          - generic: 
+          - text: ABLESTACK 설치
+          - generic: 
+          - text: ktcheon님이
+          - time: 6일 전
+          - text: 에 답장했습니다
+      - text:  1
+      - generic: 1 답장
+    - article:
+      - button "토의 작업 드롭다운 메뉴를 토글하기":
+        - generic: 
+        - text: 
+      - text:       
+      - text: 
+      - link "ktcheon님이 6일 전에 게시했습니다":
+        - /url: /u/ktcheon
+        - img "ktcheon": K
+      - list
+      - link "VM 해상도를 변경하고 싶습니다.  ABLESTACK 설치 ktcheon님이 6일 전에 답장했습니다":
+        - /url: /d/139-vm-haesangdoreul-byeongyeonghago-sipseubnida/2
+        - heading "VM 해상도를 변경하고 싶습니다." [level=2]
+        - list:
+          - generic: 
+          - text: ABLESTACK 설치
+          - generic: 
+          - text: ktcheon님이
+          - time: 6일 전
+          - text: 에 답장했습니다
+      - text:  1
+      - generic: 1 답장
+    - article:
+      - button "토의 작업 드롭다운 메뉴를 토글하기":
+        - generic: 
+        - text: 
+      - text:       
+      - text: 
+      - link "ktcheon님이 6일 전에 게시했습니다":
+        - /url: /u/ktcheon
+        - img "ktcheon": K
+      - list
+      - link "호스트 HA 상태가 suspect로 표시됩니다.  ABLESTACK 설치 ktcheon님이 6일 전에 답장했습니다":
+        - /url: /d/138-hoseuteu-ha-sangtaega-suspectro-pyosidoebnida/2
+        - heading "호스트 HA 상태가 suspect로 표시됩니다." [level=2]
+        - list:
+          - generic: 
+          - text: ABLESTACK 설치
+          - generic: 
+          - text: ktcheon님이
+          - time: 6일 전
+          - text: 에 답장했습니다
+      - text:  1
+      - generic: 1 답장
+    - article:
+      - button "토의 작업 드롭다운 메뉴를 토글하기":
+        - generic: 
+        - text: 
+      - text:       
+      - text: 
+      - link "dksgusehd10님이 14일 전에 게시했습니다":
+        - /url: /u/dksgusehd10
+        - img "dksgusehd10"
+      - list
+      - link "스토리지센터 구성시 실패  ABLESTACK HCI andrewyss님이 8일 전에 답장했습니다":
+        - /url: /d/137-seutorijisenteo-guseongsi-silpae/2
+        - heading "스토리지센터 구성시 실패" [level=2]
+        - list:
+          - generic: 
+          - text: ABLESTACK HCI
+          - generic: 
+          - text: andrewyss님이
+          - time: 8일 전
+          - text: 에 답장했습니다
+      - text:  1
+      - generic: 1 답장
+    - article:
+      - button "토의 작업 드롭다운 메뉴를 토글하기":
+        - generic: 
+        - text: 
+      - text:       
+      - text: 
+      - link "sijo님이 7 7월에 게시했습니다":
+        - /url: /u/sijo
+        - img "sijo": S
+      - list
+      - link "Cube SSH 접속 제한 관련  ABLESTACK v4.x Diplo  Cube sijo님이 7 7월에 답장했습니다":
+        - /url: /d/136-cube-ssh-jeobsog-jehan-gwanryeon/4
+        - heading "Cube SSH 접속 제한 관련" [level=2]
+        - list:
+          - generic: 
+          - text: ABLESTACK v4.x Diplo
+          - generic: 
+          - text: Cube
+          - generic: 
+          - text: sijo님이
+          - time: 7 7월
+          - text: 에 답장했습니다
+      - text:  3
+      - generic: 3 답장들
+    - article:
+      - button "토의 작업 드롭다운 메뉴를 토글하기":
+        - generic: 
+        - text: 
+      - text:       
+      - text: 
+      - link "gimsoomin님이 26 6월에 게시했습니다":
+        - /url: /u/gimsoomin
+        - img "gimsoomin": G
+      - list
+      - link "hci 에서 캐시 티어를 따로 구성하나요?  ABLESTACK v4.x Diplo  ABLESTACK HCI  ABLESTACK 설치  Glue gimsoomin님이 26 6월에 답장했습니다":
+        - /url: /d/135-hci-eseo-kaesi-tieoreul-ddaro-guseonghanayo/2
+        - heading "hci 에서 캐시 티어를 따로 구성하나요?" [level=2]
+        - list:
+          - generic: 
+          - text: ABLESTACK v4.x Diplo
+          - generic: 
+          - text: ABLESTACK HCI
+          - generic: 
+          - text: ABLESTACK 설치
+          - generic: 
+          - text: Glue
+          - generic: 
+          - text: gimsoomin님이
+          - time: 26 6월
+          - text: 에 답장했습니다
+      - text:  1
+      - generic: 1 답장
+    - article:
+      - button "토의 작업 드롭다운 메뉴를 토글하기":
+        - generic: 
+        - text: 
+      - text:       
+      - text: 
+      - link "gimsoomin님이 25 6월에 게시했습니다":
+        - /url: /u/gimsoomin
+        - img "gimsoomin": G
+      - list
+      - link "v2v 한 가상머신의 부팅이 너무 오래걸립니다.  ABLESTACK v4.x Diplo  ABLESTACK VM  ABLESTACK HCI  ABLESTACK 설치  Mold gimsoomin님이 25 6월에 답장했습니다":
+        - /url: /d/133-v2v-han-gasangmeosinyi-butingi-neomu-oraegeolribnida/2
+        - heading "v2v 한 가상머신의 부팅이 너무 오래걸립니다." [level=2]
+        - list:
+          - generic: 
+          - text: ABLESTACK v4.x Diplo
+          - generic: 
+          - text: ABLESTACK VM
+          - generic: 
+          - text: ABLESTACK HCI
+          - generic: 
+          - text: ABLESTACK 설치
+          - generic: 
+          - text: Mold
+          - generic: 
+          - text: gimsoomin님이
+          - time: 25 6월
+          - text: 에 답장했습니다
+      - text:  1
+      - generic: 1 답장
+    - article:
+      - button "토의 작업 드롭다운 메뉴를 토글하기":
+        - generic: 
+        - text: 
+      - text:       
+      - text: 
+      - link "gimsoomin님이 25 6월에 게시했습니다":
+        - /url: /u/gimsoomin
+        - img "gimsoomin": G
+      - list
+      - link "glue daemon 상태가 보이지 않습니다.  ABLESTACK v4.x Diplo  ABLESTACK HCI  ABLESTACK 오류/장애  Cube  Wall gimsoomin님이 25 6월에 답장했습니다":
+        - /url: /d/132-glue-daemon-sangtaega-boiji-anhseubnida/2
+        - heading "glue daemon 상태가 보이지 않습니다." [level=2]
+        - list:
+          - generic: 
+          - text: ABLESTACK v4.x Diplo
+          - generic: 
+          - text: ABLESTACK HCI
+          - generic: 
+          - text: ABLESTACK 오류/장애
+          - generic: 
+          - text: Cube
+          - generic: 
+          - text: Wall
+          - generic: 
+          - text: gimsoomin님이
+          - time: 25 6월
+          - text: 에 답장했습니다
+      - text:  1
+      - generic: 1 답장
+    - article:
+      - button "토의 작업 드롭다운 메뉴를 토글하기":
+        - generic: 
+        - text: 
+      - text:       
+      - text: 
+      - link "gimsoomin님이 25 6월에 게시했습니다":
+        - /url: /u/gimsoomin
+        - img "gimsoomin": G
+      - list
+      - link "Mold 접속에 ssl을 추가하고 싶습니다.  ABLESTACK v4.x Diplo  ABLESTACK VM  ABLESTACK HCI  ABLESTACK 설치  Mold gimsoomin님이 25 6월에 답장했습니다":
+        - /url: /d/131-mold-jeobsoge-ssleul-cugahago-sipseubnida/2
+        - heading "Mold 접속에 ssl을 추가하고 싶습니다." [level=2]
+        - list:
+          - generic: 
+          - text: ABLESTACK v4.x Diplo
+          - generic: 
+          - text: ABLESTACK VM
+          - generic: 
+          - text: ABLESTACK HCI
+          - generic: 
+          - text: ABLESTACK 설치
+          - generic: 
+          - text: Mold
+          - generic: 
+          - text: gimsoomin님이
+          - time: 25 6월
+          - text: 에 답장했습니다
+      - text:  1
+      - generic: 1 답장
+    - article:
+      - button "토의 작업 드롭다운 메뉴를 토글하기":
+        - generic: 
+        - text: 
+      - text:       
+      - text: 
+      - link "gimsoomin님이 25 6월에 게시했습니다":
+        - /url: /u/gimsoomin
+        - img "gimsoomin": G
+      - list
+      - link "존 구성시 호스트등록이 되지 않습니다.  ABLESTACK v4.x Diplo  ABLESTACK VM  ABLESTACK HCI  ABLESTACK 설치 gimsoomin님이 25 6월에 답장했습니다":
+        - /url: /d/130-jon-guseongsi-hoseuteudeungrogi-doeji-anhseubnida
+        - heading "존 구성시 호스트등록이 되지 않습니다." [level=2]
+        - list:
+          - generic: 
+          - text: ABLESTACK v4.x Diplo
+          - generic: 
+          - text: ABLESTACK VM
+          - generic: 
+          - text: ABLESTACK HCI
+          - generic: 
+          - text: ABLESTACK 설치
+          - generic: 
+          - text: gimsoomin님이
+          - time: 25 6월
+          - text: 에 답장했습니다
+      - button " 1 읽지 않은 답장. 읽지 않은 답장을 읽음으로 표시하기.":
+        - text:  2
+        - generic: 1 읽지 않은 답장. 읽지 않은 답장을 읽음으로 표시하기.
+    - article:
+      - button "토의 작업 드롭다운 메뉴를 토글하기":
+        - generic: 
+        - text: 
+      - text:       
+      - text: 
+      - link "gimsoomin님이 24 6월에 게시했습니다":
+        - /url: /u/gimsoomin
+        - img "gimsoomin": G
+      - list
+      - link "pcs status 로 확인했을때 fence resource error 가 지속해서 뜹니다.  ABLESTACK v4.x Diplo  ABLESTACK VM  ABLESTACK HCI  ABLESTACK 설치  Cube gimsoomin님이 24 6월에 답장했습니다":
+        - /url: /d/129-pcs-status-ro-hwaginhaesseulddae-fence-resource-error-ga-jisoghaeseo-ddeubnida
+        - heading "pcs status 로 확인했을때 fence resource error 가 지속해서 뜹니다." [level=2]
+        - list:
+          - generic: 
+          - text: ABLESTACK v4.x Diplo
+          - generic: 
+          - text: ABLESTACK VM
+          - generic: 
+          - text: ABLESTACK HCI
+          - generic: 
+          - text: ABLESTACK 설치
+          - generic: 
+          - text: Cube
+          - generic: 
+          - text: gimsoomin님이
+          - time: 24 6월
+          - text: 에 답장했습니다
+      - button " 1 읽지 않은 답장. 읽지 않은 답장을 읽음으로 표시하기.":
+        - text:  2
+        - generic: 1 읽지 않은 답장. 읽지 않은 답장을 읽음으로 표시하기.
+    - article:
+      - button "토의 작업 드롭다운 메뉴를 토글하기":
+        - generic: 
+        - text: 
+      - text:       
+      - text: 
+      - link "gimsoomin님이 24 6월에 게시했습니다":
+        - /url: /u/gimsoomin
+        - img "gimsoomin": G
+      - list
+      - link "Mold 대시보드 상 표기되는 CPU 코어수와 Ghz 는 어떻게 계산하는 건가요?  ABLESTACK v4.x Diplo  ABLESTACK VM  ABLESTACK HCI  Mold gimsoomin님이 24 6월에 답장했습니다":
+        - /url: /d/128-mold-daesibodeu-sang-pyogidoeneun-cpu-koeosuwa-ghz-neun-eoddeohge-gyesanhaneun-geongayo
+        - heading "Mold 대시보드 상 표기되는 CPU 코어수와 Ghz 는 어떻게 계산하는 건가요?" [level=2]
+        - list:
+          - generic: 
+          - text: ABLESTACK v4.x Diplo
+          - generic: 
+          - text: ABLESTACK VM
+          - generic: 
+          - text: ABLESTACK HCI
+          - generic: 
+          - text: Mold
+          - generic: 
+          - text: gimsoomin님이
+          - time: 24 6월
+          - text: 에 답장했습니다
+      - button " 1 읽지 않은 답장. 읽지 않은 답장을 읽음으로 표시하기.":
+        - text:  2
+        - generic: 1 읽지 않은 답장. 읽지 않은 답장을 읽음으로 표시하기.
+    - article:
+      - button "토의 작업 드롭다운 메뉴를 토글하기":
+        - generic: 
+        - text: 
+      - text:       
+      - text: 
+      - link "gimsoomin님이 23 6월에 게시했습니다":
+        - /url: /u/gimsoomin
+        - img "gimsoomin": G
+      - list
+      - link "가상머신 콘솔이 보이지 않습니다.  ABLESTACK v4.x Diplo  ABLESTACK VM  ABLESTACK HCI  ABLESTACK 오류/장애  Mold gimsoomin님이 23 6월에 답장했습니다":
+        - /url: /d/126-gasangmeosin-konsoli-boiji-anhseubnida
+        - heading "가상머신 콘솔이 보이지 않습니다." [level=2]
+        - list:
+          - generic: 
+          - text: ABLESTACK v4.x Diplo
+          - generic: 
+          - text: ABLESTACK VM
+          - generic: 
+          - text: ABLESTACK HCI
+          - generic: 
+          - text: ABLESTACK 오류/장애
+          - generic: 
+          - text: Mold
+          - generic: 
+          - text: gimsoomin님이
+          - time: 23 6월
+          - text: 에 답장했습니다
+      - button " 1 읽지 않은 답장. 읽지 않은 답장을 읽음으로 표시하기.":
+        - text:  2
+        - generic: 1 읽지 않은 답장. 읽지 않은 답장을 읽음으로 표시하기.
+    - article:
+      - button "토의 작업 드롭다운 메뉴를 토글하기":
+        - generic: 
+        - text: 
+      - text:       
+      - text: 
+      - link "gimsoomin님이 23 6월에 게시했습니다":
+        - /url: /u/gimsoomin
+        - img "gimsoomin": G
+      - list
+      - link "네트워크를 본딩하면서 xmit_hash 값을 추가하지 않았습니다.  ABLESTACK v4.x Diplo  ABLESTACK VM  ABLESTACK HCI  ABLESTACK 설치  Cube gimsoomin님이 23 6월에 답장했습니다":
+        - /url: /d/125-neteuweokeureul-bondinghamyeonseo-xmit-hash-gabseul-cugahaji-anhassseubnida
+        - heading "네트워크를 본딩하면서 xmit_hash 값을 추가하지 않았습니다." [level=2]
+        - list:
+          - generic: 
+          - text: ABLESTACK v4.x Diplo
+          - generic: 
+          - text: ABLESTACK VM
+          - generic: 
+          - text: ABLESTACK HCI
+          - generic: 
+          - text: ABLESTACK 설치
+          - generic: 
+          - text: Cube
+          - generic: 
+          - text: gimsoomin님이
+          - time: 23 6월
+          - text: 에 답장했습니다
+      - button " 1 읽지 않은 답장. 읽지 않은 답장을 읽음으로 표시하기.":
+        - text:  2
+        - generic: 1 읽지 않은 답장. 읽지 않은 답장을 읽음으로 표시하기.
+    - article:
+      - button "토의 작업 드롭다운 메뉴를 토글하기":
+        - generic: 
+        - text: 
+      - text:       
+      - text: 
+      - link "gimsoomin님이 23 6월에 게시했습니다":
+        - /url: /u/gimsoomin
+        - img "gimsoomin": G
+      - list
+      - link "가상머신이 많은 호스트의 missed 패킷이 많습니다. drs를 하는게 좋을까요?  ABLESTACK v4.x Diplo  ABLESTACK VM  ABLESTACK HCI  가상머신 운영/관리  Cube gimsoomin님이 23 6월에 게시했습니다":
+        - /url: /d/124-gasangmeosini-manheun-hoseuteuyi-missed-paekisi-manhseubnida-drsreul-haneunge-joheulggayo
+        - heading "가상머신이 많은 호스트의 missed 패킷이 많습니다. drs를 하는게 좋을까요?" [level=2]
+        - list:
+          - generic: 
+          - text: ABLESTACK v4.x Diplo
+          - generic: 
+          - text: ABLESTACK VM
+          - generic: 
+          - text: ABLESTACK HCI
+          - generic: 
+          - text: 가상머신 운영/관리
+          - generic: 
+          - text: Cube
+          - text: gimsoomin님이
+          - time: 23 6월
+          - text: 에 게시했습니다
+      - button " 0 읽지 않은 답장들. 읽지 않은 답장들을 읽음으로 표시하기.":
+        - text:  1
+        - generic: 0 읽지 않은 답장들. 읽지 않은 답장들을 읽음으로 표시하기.
+    - article:
+      - button "토의 작업 드롭다운 메뉴를 토글하기":
+        - generic: 
+        - text: 
+      - text:       
+      - text: 
+      - link "gimsoomin님이 20 6월에 게시했습니다":
+        - /url: /u/gimsoomin
+        - img "gimsoomin": G
+      - list
+      - link "폐쇄망에서 2차 OTP 인증 로그인을 사용하고 싶습니다.  ABLESTACK v4.x Diplo  ABLESTACK VM  ABLESTACK HCI  Mold gimsoomin님이 20 6월에 답장했습니다":
+        - /url: /d/123-pyeswaemangeseo-2ca-otp-injeung-rogeuineul-sayonghago-sipseubnida
+        - heading "폐쇄망에서 2차 OTP 인증 로그인을 사용하고 싶습니다." [level=2]
+        - list:
+          - generic: 
+          - text: ABLESTACK v4.x Diplo
+          - generic: 
+          - text: ABLESTACK VM
+          - generic: 
+          - text: ABLESTACK HCI
+          - generic: 
+          - text: Mold
+          - generic: 
+          - text: gimsoomin님이
+          - time: 20 6월
+          - text: 에 답장했습니다
+      - button " 1 읽지 않은 답장. 읽지 않은 답장을 읽음으로 표시하기.":
+        - text:  2
+        - generic: 1 읽지 않은 답장. 읽지 않은 답장을 읽음으로 표시하기.
+  - button "더 보기"
+  - generic:   
+- generic: 
+- link "ABLECLOUD Home":
+  - /url: https://www.ablecloud.io
+- link "Blog":
+  - /url: https://blog.naver.com/ablecloud_official
+- link "Online Docs":
+  - /url: https://docs.ablecloud.io

@@ -1,0 +1,209 @@
+#!/usr/bin/env python3
+"""Build the Issue #73 Community UI modernization report PDF."""
+
+from __future__ import annotations
+
+from pathlib import Path
+from xml.sax.saxutils import escape
+
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+from reportlab.lib.units import mm
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.platypus import BaseDocTemplate, Frame, Image, PageBreak, PageTemplate, Paragraph, Spacer, Table, TableStyle
+
+
+ROOT = Path(__file__).resolve().parents[3]
+OUTPUT = ROOT / "output/pdf/techflow-community-ui-modernization-report.pdf"
+BEFORE = ROOT / "docs/evidence/issue-73/screenshots/before/home-desktop.png"
+AFTER = ROOT / "docs/evidence/issue-73/screenshots/header-v1/header-desktop-context.png"
+MOBILE = ROOT / "docs/evidence/issue-73/screenshots/after/home-mobile.png"
+ACTIONS = ROOT / "docs/evidence/issue-73/screenshots/after/post-actions-desktop.png"
+TAG_MODAL = ROOT / "docs/evidence/issue-73/screenshots/after/tag-selection-modal-desktop.png"
+PROFILE = ROOT / "docs/evidence/issue-73/screenshots/after/profile-desktop.png"
+DISCUSSION_MENU = ROOT / "docs/evidence/issue-73/screenshots/settings-security-v2/discussion-menu-desktop.png"
+SETTINGS = ROOT / "docs/evidence/issue-73/screenshots/settings-security-v2/settings-desktop.png"
+SECURITY = ROOT / "docs/evidence/issue-73/screenshots/settings-security-v2/security-desktop.png"
+TAGS = ROOT / "docs/evidence/issue-73/screenshots/tags-card-v3/tags-desktop-full.png"
+FONT, BOLD = "MalgunGothic", "MalgunGothicBold"
+pdfmetrics.registerFont(TTFont(FONT, "C:/Windows/Fonts/malgun.ttf"))
+pdfmetrics.registerFont(TTFont(BOLD, "C:/Windows/Fonts/malgunbd.ttf"))
+
+INK = colors.HexColor("#15253E")
+GRAY = colors.HexColor("#52647D")
+LINE = colors.HexColor("#D8E0EC")
+BLUE = colors.HexColor("#155EEF")
+PALE = colors.HexColor("#EAF2FF")
+GREEN = colors.HexColor("#078248")
+PALE_GREEN = colors.HexColor("#EAFAF2")
+YELLOW = colors.HexColor("#FFF6DF")
+base = getSampleStyleSheet()
+styles = {
+    "meta": ParagraphStyle("meta", parent=base["Normal"], fontName=BOLD, fontSize=8.5, leading=12, textColor=GRAY),
+    "title": ParagraphStyle("title", parent=base["Title"], fontName=BOLD, fontSize=24, leading=33, textColor=INK),
+    "subtitle": ParagraphStyle("subtitle", parent=base["Normal"], fontName=FONT, fontSize=11, leading=18, textColor=GRAY),
+    "h1": ParagraphStyle("h1", parent=base["Heading1"], fontName=BOLD, fontSize=16, leading=23, textColor=INK, spaceAfter=4 * mm),
+    "h2": ParagraphStyle("h2", parent=base["Heading2"], fontName=BOLD, fontSize=12, leading=18, textColor=INK, spaceBefore=2 * mm, spaceAfter=2 * mm),
+    "body": ParagraphStyle("body", parent=base["BodyText"], fontName=FONT, fontSize=9, leading=14.5, textColor=colors.HexColor("#26364D"), spaceAfter=2.2 * mm),
+    "small": ParagraphStyle("small", parent=base["BodyText"], fontName=FONT, fontSize=7.5, leading=11, textColor=GRAY),
+    "table": ParagraphStyle("table", parent=base["BodyText"], fontName=FONT, fontSize=7.5, leading=10.5, textColor=colors.HexColor("#26364D")),
+    "table_head": ParagraphStyle("table_head", parent=base["BodyText"], fontName=BOLD, fontSize=7.5, leading=10.5, textColor=colors.white),
+}
+
+
+def para(value: object, style: str = "body") -> Paragraph:
+    return Paragraph(escape(str(value)).replace("\n", "<br/>"), styles[style])
+
+
+def make_table(rows: list[list[object]], widths: list[float]) -> Table:
+    cells = [[para(cell, "table_head" if row_index == 0 else "table") for cell in row] for row_index, row in enumerate(rows)]
+    item = Table(cells, colWidths=widths, repeatRows=1, hAlign="LEFT")
+    item.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#243B64")),
+        ("GRID", (0, 0), (-1, -1), 0.35, LINE),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 5),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 5),
+        ("TOPPADDING", (0, 0), (-1, -1), 5),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#F7F9FC")]),
+    ]))
+    return item
+
+
+def callout(text: str, border=GREEN, fill=PALE_GREEN) -> Table:
+    item = Table([[para(text)]], colWidths=[174 * mm])
+    item.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, -1), fill),
+        ("BOX", (0, 0), (-1, -1), 1.25, border),
+        ("LEFTPADDING", (0, 0), (-1, -1), 10),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 10),
+        ("TOPPADDING", (0, 0), (-1, -1), 8),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+    ]))
+    return item
+
+
+def screenshot(path: Path, width: float, height: float) -> Image:
+    image = Image(str(path), width=width, height=height)
+    image.hAlign = "CENTER"
+    return image
+
+
+def footer(canvas, doc) -> None:
+    canvas.saveState()
+    canvas.setFont(FONT, 7)
+    canvas.setFillColor(GRAY)
+    canvas.drawString(18 * mm, 10 * mm, "ABLESTACK TechFlow - Issue #73")
+    canvas.drawRightString(192 * mm, 10 * mm, f"{doc.page:02d}")
+    canvas.restoreState()
+
+
+OUTPUT.parent.mkdir(parents=True, exist_ok=True)
+doc = BaseDocTemplate(
+    str(OUTPUT), pagesize=A4, rightMargin=18 * mm, leftMargin=18 * mm,
+    topMargin=16 * mm, bottomMargin=17 * mm,
+    title="TechFlow Issue #73 Community 인터페이스 현대화 완료 보고서",
+    author="ABLESTACK TechFlow",
+)
+doc.addPageTemplates([PageTemplate(id="normal", frames=[Frame(doc.leftMargin, doc.bottomMargin, doc.width, doc.height, id="content")], onPage=footer)])
+
+story = [
+    Spacer(1, 19 * mm), para("ABLESTACK TECHFLOW · ISSUE #73", "meta"), Spacer(1, 8 * mm),
+    para("Community 인터페이스\n현대화 완료 보고서", "title"), Spacer(1, 6 * mm),
+    para("ABLESTACK 브랜드 테마 · 한글 UX · 반응형 · 비활성화 롤백", "subtitle"),
+    Spacer(1, 17 * mm), callout("CONDITIONAL GO - WSL 구현·검증 완료, 운영 Community는 변경하지 않음", BLUE, PALE),
+    Spacer(1, 8 * mm), para("검증일 2026-08-19 · Flarum 1.8.18 · Ubuntu 24.04 WSL", "meta"), PageBreak(),
+
+    para("1. 판단 요약", "h1"),
+    make_table([
+        ["항목", "결과", "판정"],
+        ["전용 테마", "ablecloud/community-theme", "PASS"],
+        ["반응형", "1440x900 / 390x844", "PASS"],
+        ["한글", "원문 키·태그·프로필·설정·보안 영문 0건", "PASS"],
+        ["기능", "홈·목록·태그·작성·프로필·설정·보안", "PASS"],
+        ["롤백", "비활성화 후 HTTP 200", "PASS"],
+        ["무결성", "39 / 117 / 305, 해시 동일", "PASS"],
+    ], [52 * mm, 86 * mm, 36 * mm]),
+    Spacer(1, 7 * mm), callout("Flarum Core, Vendor 원본, DB Schema와 운영 Community를 수정하지 않았습니다.", BLUE, PALE), PageBreak(),
+
+    para("2. 운영 기준선", "h1"),
+    screenshot(BEFORE, 174 * mm, 105.5 * mm), Spacer(1, 5 * mm),
+    para("목록 간격이 좁고 해결 상태가 아이콘에 의존했습니다. 모바일에서는 탐색과 본문이 경쟁했고 AI 진행 답변과 최종 Knowledge Base의 시각적 차이가 약했습니다."), PageBreak(),
+
+    para("3. 현대화 결과", "h1"),
+    screenshot(AFTER, 174 * mm, 105.5 * mm), Spacer(1, 5 * mm),
+    para("Hero는 361px에서 약 128px로 줄이고 타이틀은 로고보다 작은 28px로 조정했습니다. 로그인 헤더의 검색·언어·신고·알림·프로필은 모두 44px·동일 Y축으로 정렬하고, 신고·알림은 웹폰트와 무관한 내장 SVG 아이콘으로 표시합니다. 언어·사용자 드롭다운은 180px 카드와 19px 고정 아이콘 열을 사용하며 Flarum 기본 음수 여백을 제거해 아이콘과 글자가 카드 안의 같은 시작선에 표시됩니다. 빈 아이콘 사각형과 Hover 이동도 제거했습니다. 왼쪽 탐색은 280px로 넓혔고 토론 행은 약 110px에서 62px로 줄였습니다. 목록에서 토론을 열면 게시물 번호를 제거해 scrollY 0의 첫 게시물부터 표시합니다. 태그 도구 모음은 좌우 16px 균등 여백과 아이콘·글자 10px 간격을 사용하며 선택선은 콘텐츠와 겹치지 않는 하단에 표시합니다."), PageBreak(),
+
+    para("4. 모바일과 답변 상태", "h1"),
+    make_table([
+        ["상태", "색", "의미"],
+        ["일반 질문", "White", "사용자 질문과 첨부"],
+        ["AI 기술지원", "Blue", "진행 중인 전문 엔지니어 답변"],
+        ["추가 확인 필요", "Yellow", "로그·화면·환경 자료 요청"],
+        ["최종 해결 가이드", "Green", "선택된 Knowledge Base"],
+    ], [48 * mm, 34 * mm, 92 * mm]),
+    Spacer(1, 5 * mm),
+    Table([[screenshot(MOBILE, 58 * mm, 127 * mm), para("390px에서는 제목 2줄과 마지막 응답 정보를 유지합니다. Hero 패딩은 데스크톱 19px, 모바일 17px로 대칭이며 아바타와 제목의 중심 차이는 0px입니다.\n\n답장·좋아요·해결 선택·더 보기는 모두 아이콘과 한글 텍스트를 함께 표시합니다. 본문 길이에 관계없이 카드-버튼 간격은 설계 8px·실측 7px·편차 0px이며 모바일 가로 넘침은 0px입니다.\n\n데스크톱의 작동하지 않는 모바일 탐색 버튼은 제거하고, 모바일에서는 40x46px 버튼과 270px 서랍 동작을 유지했습니다. Footer는 Home·Blog·Docs를 원형 아이콘으로 표시합니다.")]], colWidths=[64 * mm, 110 * mm], style=TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP")])),
+    Spacer(1, 4 * mm), screenshot(ACTIONS, 112 * mm, 70 * mm), PageBreak(),
+
+    para("5. 공통 대화상자와 한글", "h1"),
+    screenshot(TAG_MODAL, 174 * mm, 98 * mm), Spacer(1, 5 * mm),
+    para("작성·태그·검색·로그인과 확장 기능 대화상자는 같은 헤더, 입력 경계, 원형 닫기, 주요 확인 버튼과 2px의 부드러운 블루 포커스 링을 사용합니다. 검색 입력은 중복 외곽선을 제거해 모서리의 파란 꼭지점 없이 단일 링만 표시합니다. 태그 선택창의 Choose, OK, Bypass tag requirements는 주 태그를 선택하세요, 확인, 태그 필수 조건 무시로 표시합니다."),
+    Spacer(1, 5 * mm), callout("공통 Modal 규칙 적용 · 태그 선택창 직접 노출 영문 0건", BLUE, PALE), PageBreak(),
+
+    para("6. 프로필 화면 통일", "h1"),
+    screenshot(PROFILE, 174 * mm, 105.5 * mm), Spacer(1, 5 * mm),
+    para("프로필 Hero는 165px 블루 Gradient와 96px 아바타로 정리했습니다. 데스크톱 메뉴는 280px, 콘텐츠는 780px이며 빈 화면도 독립 카드로 표시합니다. 모바일은 한 열로 전환합니다. Likes, My media, Security, best answers는 좋아요, 내 미디어, 보안, 해결 답변으로 한글화했고 Locale warm-up에서 실제 번역값을 검증합니다."), PageBreak(),
+
+    para("7. 토론 메뉴와 설정·보안 통일", "h1"),
+    Table([
+        [screenshot(DISCUSSION_MENU, 83 * mm, 50 * mm), screenshot(SETTINGS, 83 * mm, 50 * mm)],
+        [para("더보기는 테두리 없는 이클립스 아이콘만 보입니다. 상세 목록 패널은 Header 아래 68px에서 시작하며 400px 카드 목록·6px 스크롤바를 사용합니다.", "small"), para("설정의 계정·알림 표는 16px 카드와 공통 버튼으로 통일했습니다. 직접 노출 영문은 0건입니다.", "small")],
+    ], colWidths=[87 * mm, 87 * mm], style=TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("LEFTPADDING", (0, 0), (-1, -1), 2), ("RIGHTPADDING", (0, 0), (-1, -1), 2)])),
+    Spacer(1, 5 * mm), screenshot(SECURITY, 145 * mm, 71 * mm), Spacer(1, 3 * mm),
+    para("보안 화면의 토큰·활성 세션·전역 로그아웃도 같은 카드·버튼 규칙을 사용합니다. New Token은 새 토큰으로 표시합니다. 모바일 설정 표는 302px, 설정·보안 카드는 336px이며 페이지 가로 넘침은 0px입니다. 관리자·기술지원·연구소 멤버 배지는 렌치·번개·책 SVG로 표시합니다."), PageBreak(),
+
+    para("8. 태그 정보 구조·날짜·아이콘", "h1"),
+    screenshot(TAGS, 174 * mm, 151 * mm), Spacer(1, 4 * mm),
+    para("주요 태그는 3열·18px 카드, 보조 태그 7건은 설명과 함께 별도 4열·12px 구역으로 분리했습니다. 모바일은 각각 한 열로 전환하며 가로 넘침은 0px입니다. 절대 날짜는 00년 0월 0일, 상대 날짜는 기존 표현을 유지합니다. 배지·토론 타임라인·댓글 수·설정 알림·작성기·검색 초기화를 포함한 45개 이상 의미 Class를 공통 내장 SVG Mask로 표시해 깨진 아이콘은 0건입니다."), PageBreak(),
+
+    para("9. WSL 전체 주기", "h1"),
+    make_table([
+        ["단계", "Theme", "HTTP", "콘텐츠/첨부"],
+        ["기준선", "Disabled", "200", "기준 해시"],
+        ["활성화", "Enabled", "200", "동일"],
+        ["비활성화 롤백", "Disabled", "200", "동일"],
+        ["최종 스테이징", "Enabled", "200", "동일"],
+    ], [48 * mm, 42 * mm, 32 * mm, 52 * mm]),
+    Spacer(1, 6 * mm),
+    make_table([
+        ["검증", "결과"],
+        ["정적 계약", "10/10"],
+        ["사용자 / 토의 / 게시물", "39 / 117 / 305"],
+        ["콘텐츠 SHA-256", "57d74671...5a2"],
+        ["첨부 SHA-256", "19cdf526...97c"],
+        ["한글 원문 키 / 태그·프로필·설정·보안 영문", "0건 / 0건"],
+    ], [70 * mm, 104 * mm]),
+    Spacer(1, 6 * mm), callout("최종 Run ID: issue73-header-dropdown-icons-final-v7", GREEN, PALE_GREEN), PageBreak(),
+
+    para("10. 롤백과 운영 결정", "h1"),
+    make_table([
+        ["구분", "변경 여부"],
+        ["Flarum Core / Vendor", "변경 없음"],
+        ["DB Schema / 콘텐츠", "변경 없음"],
+        ["TechFlow Gateway / Poller", "변경 없음"],
+        ["GitHub→Chat", "변경 없음"],
+        ["운영 Community", "적용 전, 승인 대기"],
+    ], [72 * mm, 102 * mm]),
+    Spacer(1, 6 * mm),
+    callout("장애 시 php flarum extension:disable ablecloud-community-theme로 기본 Flarum UI에 복귀합니다.", BLUE, PALE),
+    Spacer(1, 8 * mm), para("운영 반영 승인 후 Runbook에 따라 백업, 테마 설치, 한글 Cache 검증, 데스크톱·모바일 Smoke, 콘텐츠 해시 비교를 반복합니다."),
+    Spacer(1, 8 * mm), para("근거 자산", "h2"),
+    para("설계: docs/plans/issue-73-community-ui-modernization.md\nRunbook: docs/runbooks/community-theme-rollout-rollback.md\n완료 보고서: docs/reports/issue-73-community-ui-validation.md\n구조화 증적: docs/evidence/issue-73/community-theme-validation.json", "small"),
+]
+
+doc.build(story)
+print(OUTPUT)
