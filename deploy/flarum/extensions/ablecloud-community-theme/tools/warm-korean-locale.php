@@ -23,6 +23,10 @@ if (getenv('TECHFLOW_THEME_EXPECTED') === 'true') {
         'core.forum.user.security_link' => '보안',
         'flarum-likes.forum.user.likes_link' => '좋아요',
         'fof-upload.forum.buttons.media' => '내 미디어',
+        'fof-best-answer.forum.this_best_answer' => '해결 답변으로 선택',
+        'fof-best-answer.forum.remove_best_answer' => '해결 답변 선택 취소',
+        'fof-oauth.forum.user.settings.linked-account.label' => '연결된 계정',
+        'fof-oauth.forum.unlink' => '계정 연결 해제',
     ];
 }
 

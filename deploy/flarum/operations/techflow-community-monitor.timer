@@ -1,0 +1,12 @@
+[Unit]
+Description=Five-minute ABLESTACK Community monitoring
+
+[Timer]
+OnBootSec=2m
+OnUnitActiveSec=5m
+AccuracySec=30s
+Persistent=true
+Unit=techflow-community-monitor.service
+
+[Install]
+WantedBy=timers.target

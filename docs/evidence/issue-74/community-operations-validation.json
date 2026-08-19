@@ -1,0 +1,112 @@
+{
+  "schemaVersion": 1,
+  "issue": 74,
+  "validatedAt": "2026-08-19T18:39:00+09:00",
+  "result": "GO",
+  "production": {
+    "host": "172.16.0.234",
+    "os": "Ubuntu 24.04",
+    "flarum": "1.8.18",
+    "php": "8.3.6",
+    "mariadb": "10.11.13",
+    "nginx": "1.24.0",
+    "rootSizeGiB": 1006,
+    "rootFreeGiB": 955,
+    "diskUsedPercent": 2,
+    "inodeUsedPercent": 1
+  },
+  "backup": {
+    "name": "community-20260819T093152Z",
+    "schedule": "03:20 KST daily with 10 minute randomized delay",
+    "retentionDays": 30,
+    "consistency": "php-fpm-quiesced",
+    "encryption": "OpenPGP RSA-3072 public-key",
+    "encryptedFiles": 2,
+    "integrity": "PASS",
+    "offsiteBytes": 179701760,
+    "productionPrivateKeyPresent": false
+  },
+  "restore": {
+    "environment": "WSL Ubuntu 24.04 isolated app root and database",
+    "tables": 32,
+    "files": 11336,
+    "rtoSeconds": 9,
+    "snapshotAgeAtVerificationSeconds": 135,
+    "httpStatus": 200,
+    "httpSeconds": 0.946645,
+    "plaintextAppRemoved": true,
+    "temporaryDatabaseRemoved": true,
+    "encryptedOffsiteArchiveRetained": true,
+    "counts": {
+      "users": {"source": 41, "restored": 41},
+      "discussions": {"source": 121, "restored": 121},
+      "posts": {"source": 325, "restored": 325},
+      "fofUploadFiles": {"source": 115, "restored": 115}
+    }
+  },
+  "uiTheme": {
+    "sourceIssue": 73,
+    "sourcePullRequest": 80,
+    "package": "ablecloud/community-theme",
+    "version": "dev-main",
+    "productionEnabled": true,
+    "brandPrimary": "#155eef",
+    "externalStatuses": {
+      "home": 200,
+      "tags": 200,
+      "discussion": 200
+    },
+    "desktopHorizontalOverflowPixels": 0,
+    "mobileViewport": "390x844",
+    "mobileHorizontalOverflowPixels": 0,
+    "discussionInitialScrollY": 0,
+    "tagAbsoluteDateFormat": "PASS",
+    "composerOpened": true,
+    "tagDialogDirectEnglishTokens": 0,
+    "bestAnswerDirectEnglishTokens": 0,
+    "oauthSecurityDirectEnglishTokens": 0,
+    "rollback": "disable ablecloud-community-theme and clear cache"
+  },
+  "monitoring": {
+    "intervalMinutes": 5,
+    "servicesHealthy": "3/3",
+    "httpStatuses": [200, 200, 200],
+    "backupIntegrity": true,
+    "mailDriver": "smtp",
+    "activeAlerts": 0,
+    "backupMonitorLock": "PASS",
+    "mockChatCallsForFailureDuplicateRecovery": 2,
+    "productionChatHttp": 200
+  },
+  "security": {
+    "headers": [
+      "X-Content-Type-Options",
+      "X-Frame-Options",
+      "Referrer-Policy",
+      "Permissions-Policy",
+      "Strict-Transport-Security"
+    ],
+    "tls10Blocked": true,
+    "tls12Allowed": true,
+    "rateLimitRequests": 40,
+    "rateLimit429": 27,
+    "configPermission": "0640 root:www-data",
+    "opsSecretPermission": "0600 root:root",
+    "worldWritableFiles": 0,
+    "secretScanFindings": 0,
+    "logrotate": "PASS",
+    "unattendedUpgradeTimer": "enabled/active",
+    "composerAdvisories": [
+      {
+        "id": "CVE-2026-45068",
+        "package": "symfony/mailer",
+        "compensatingControl": "mail_driver must remain smtp"
+      }
+    ]
+  },
+  "protectedServices": {
+    "githubChatWebhookTouched": false,
+    "activepiecesTouched": false,
+    "aiGatewayTouched": false
+  }
+}

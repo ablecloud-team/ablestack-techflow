@@ -1,0 +1,113 @@
+{
+  "schemaVersion": "1.0",
+  "issue": 74,
+  "generatedAt": "2026-08-19T09:43:12.437186+00:00",
+  "artifactCount": 21,
+  "artifacts": [
+    {
+      "path": "deploy/flarum/operations/community-ops-common.sh",
+      "bytes": 3274,
+      "sha256": "0e4fc90cf77d35327c9adb1dcf3863ce962d8ed79b6733264c5ef92e8051684c"
+    },
+    {
+      "path": "deploy/flarum/operations/community-backup.sh",
+      "bytes": 3575,
+      "sha256": "ec4f5c99988c02c7a017e3e44336a3c79ccfb2ce7a2550bd58139efbfd9f746f"
+    },
+    {
+      "path": "deploy/flarum/operations/community-verify-backup.sh",
+      "bytes": 1760,
+      "sha256": "88d7d2a780b091bb943309dd495a9193861fddf14f44e4f35767be0b3f61f9cb"
+    },
+    {
+      "path": "deploy/flarum/operations/community-restore.sh",
+      "bytes": 3183,
+      "sha256": "908b3f2796d9dc0e4cd9fbb9241f8db3a3d44314d38b78e5afdcd34fda08138b"
+    },
+    {
+      "path": "deploy/flarum/operations/community-monitor.sh",
+      "bytes": 8647,
+      "sha256": "e3c6c56db77df55d6350b6c4f099e8002291da14d24b8c7d3b6d3c3b46ee9b14"
+    },
+    {
+      "path": "deploy/flarum/operations/community-offsite-export.sh",
+      "bytes": 1122,
+      "sha256": "3f422a7a0f0800140b05ed6d1a4ac537bfcb0228a37727d9c9bd51d8da61fe21"
+    },
+    {
+      "path": "deploy/flarum/operations/community-install.sh",
+      "bytes": 4029,
+      "sha256": "b14a9a85ffd7ced2cb698b7647a98247662e474e23c49f16f199aed23910f26e"
+    },
+    {
+      "path": "docs/adr/0010-community-backup-observability-security.md",
+      "bytes": 4251,
+      "sha256": "d19014890fc14bf3ac6d3b5bc19264209349de2c5700e076985ba609ba41b2d0"
+    },
+    {
+      "path": "docs/runbooks/community-backup-monitor-security.md",
+      "bytes": 5411,
+      "sha256": "ad785a0a9916b84e5b7469f02a147fc77eeb7979452dceeacfa5a3723a41bcc6"
+    },
+    {
+      "path": "docs/reports/issue-74-community-operations-validation.md",
+      "bytes": 6943,
+      "sha256": "468afe7184b6b27402d44c458d59b72c75017bcfe5b1a1fa6349f857f325ac02"
+    },
+    {
+      "path": "docs/presentations/issue-74-community-operations.md",
+      "bytes": 1096,
+      "sha256": "f751c2be03468c0dbb18864dc7db91ce4d7c35b6254c257b32e9978521822a25"
+    },
+    {
+      "path": "docs/evidence/issue-74/community-operations-validation.json",
+      "bytes": 3175,
+      "sha256": "225de300a2f3d9a01edcea19a39a91e44ff36d417cca0d0e555a19d856592038"
+    },
+    {
+      "path": "output/pdf/techflow-community-operations-report.pdf",
+      "bytes": 109903,
+      "sha256": "7f70748efd1ebfee9dd791969f2e3ab4d18478543a068b28080cf82296d6d811"
+    },
+    {
+      "path": "output/presentation/techflow-community-operations.pptx",
+      "bytes": 47880,
+      "sha256": "e17f0312626be19c9f2b26af82e5bce194e664a805ae9816eb4c03c3d0fedca6"
+    },
+    {
+      "path": "output/pdf/techflow-community-operations-presentation.pdf",
+      "bytes": 355334,
+      "sha256": "27db68acc9934631543fd4103ef835ce166f12b3142d52aee93181c40ab9aa64"
+    },
+    {
+      "path": "tools/artifacts/issue-74/README.md",
+      "bytes": 703,
+      "sha256": "6e2be9e74c761d4fe097a4b257b077ee29111c890ab00dc83ef87684642facbe"
+    },
+    {
+      "path": "tools/artifacts/issue-74/build_report.py",
+      "bytes": 11207,
+      "sha256": "e17b8dfd333d5f2543c8262b3baf2fee1d0bf67a8a3fbe8704821f81b4125f6f"
+    },
+    {
+      "path": "tools/artifacts/issue-74/build_presentation.mjs",
+      "bytes": 13682,
+      "sha256": "d03a3ca75efecff24979eee5c0e5164d5abd9d70618f854b898d85e33ba6cb7d"
+    },
+    {
+      "path": "tools/artifacts/issue-74/build_presentation_pdf.py",
+      "bytes": 1005,
+      "sha256": "d3e24fad273e8501de1c40e9226c40333e2e31e34960982373ed76299f36bc65"
+    },
+    {
+      "path": "tools/artifacts/issue-74/build_manifest.py",
+      "bytes": 1957,
+      "sha256": "8ee48645fdc6f996f153da9457b10101d5f42a00dee8a0e0fc26862005033f63"
+    },
+    {
+      "path": "tools/artifacts/issue-74/validate_artifacts.py",
+      "bytes": 2031,
+      "sha256": "9bfc4bdd187f4f00ee40947eb7e138ed7a30999dbfadbbe5d6a8b4edf726fc7b"
+    }
+  ]
+}
