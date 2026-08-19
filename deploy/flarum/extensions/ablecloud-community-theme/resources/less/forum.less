@@ -1467,7 +1467,8 @@ body {
   #console-nav-footer {
     position: fixed;
     top: 50%;
-    right: max(12px, calc(~"(100vw - 1320px) / 2 + 16px"));
+    // Escape the whole function so LESS does not fold max() to 12px at build time.
+    right: ~"max(12px, calc((100vw - 1165px) / 2 + 16px))";
     bottom: auto;
     left: auto;
     width: 48px;
@@ -2011,8 +2012,8 @@ body {
 
   body {
     // Keep the desktop index shell anchored below the fixed header. The full
-    // right column scrolls while the vertical quick-link rail stays outside
-    // the widened content area.
+    // right column scrolls while a narrow reserved rail sits immediately next
+    // to the unchanged 1100px content area.
     .App--index {
       height: 100%;
       min-height: 0;
@@ -2048,7 +2049,9 @@ body {
 
     .App--index .IndexPage > .container {
       width: 100%;
-      max-width: 1320px;
+      // Preserve the original 1100px content width and add only the 65px
+      // needed for the 48px quick-link rail and its 17px separation.
+      max-width: 1165px;
       flex: 1 1 auto;
       min-height: 0;
       box-sizing: border-box;

@@ -81,8 +81,10 @@ sudo bash deploy/flarum/apply-community-theme-update.sh \
 - 기존 Footer의 `ABLECLOUD Home`, `Blog`, `Online Docs` 링크는 콘텐츠 오른쪽의
   세로형 원형 퀵 링크로 보여야 한다. 데스크톱에서는 48px 폭, 모바일에서는
   44px 폭이며 토론 목록을 스크롤해도 화면상 Y 좌표가 변하지 않아야 한다.
-- 데스크톱 첫 화면의 콘텐츠 컨테이너는 최대 1320px이며, 오른쪽에 80px의
-  안전 여백을 두어 목록과 퀵 링크가 겹치지 않아야 한다.
+- 데스크톱 첫 화면은 기존 1100px 콘텐츠 폭을 유지하고, 오른쪽에 퀵 링크
+  배치용 65px만 추가한 최대 1165px 셸을 사용한다. 토론 목록 오른쪽과 48px
+  퀵 링크 사이에는 약 16px 간격이 있어야 하며 화면 오른쪽 끝으로 분리되면
+  안 된다.
 - 좌측 메뉴는 사용자 설정 화면과 같이 고정한다. 높이가 짧아 태그가 모두 보이지
   않을 때 내부 스크롤은 허용하지만 `scrollbar-width: none`과 WebKit 규칙으로
   스크롤바는 표시하지 않는다.
@@ -123,4 +125,4 @@ sudo systemctl restart php8.3-fpm nginx
 - 2026-08-19 운영 적용 완료: 사용자 메뉴 겹침 보완과 Reddit형 평면 피드·게시물
   정보 계층·이미지 썸네일, 하단 Footer 제거와 우측 고정 퀵 링크가 WSL 및
   운영에 반영되었으며, 최신 운영 백업은
-  `/var/backups/techflow-flarum/theme-vertical-quick-links-20260819T124728Z`에 보존한다.
+  `/var/backups/techflow-flarum/theme-adjacent-quick-links-20260819T125523Z`에 보존한다.
