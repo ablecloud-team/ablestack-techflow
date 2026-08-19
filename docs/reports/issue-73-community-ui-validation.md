@@ -270,3 +270,24 @@ Footer가 차지하던 하단 공간은 회수하되 기존 콘텐츠 폭은 바
 `/var/backups/techflow-flarum/theme-adjacent-quick-links-20260819T125523Z`에
 보존했고 최종 LESS SHA-256은
 `f586c66c079e71d75b26a9f29a54d15bacd2f63d87eb76cfd69c223300df86cf`이다.
+
+### 상단 헤더와 본문 셸 폭 정렬
+
+퀵 링크 영역을 추가한 뒤 본문 셸은 1165px이었지만 상단 헤더와 환영 영역은
+Flarum 기본 1100px에 남아 좌우 외곽선이 맞지 않았다. 데스크톱 첫 화면에만
+헤더와 환영 영역의 최대 폭을 1165px로 지정해 본문 셸과 같은 기준선을 사용했다.
+모바일과 상세·설정 화면의 폭 규칙은 변경하지 않았다.
+
+1680×825 화면의 WSL과 운영 측정값은 동일하다.
+
+| 영역 | X | 오른쪽 | 폭 |
+|---|---:|---:|---:|
+| 상단 헤더 | 258px | 1423px | 1165px |
+| 환영 영역 | 258px | 1423px | 1165px |
+| 본문 셸 | 258px | 1423px | 1165px |
+
+운영 적용 전 백업은
+`/var/backups/techflow-flarum/theme-header-shell-align-20260819T154310Z`에 보존했다.
+최종 LESS SHA-256은
+`2f2557d903df02aedc7a3a252a97048f9cbcf9b91e36fbaebf2aa84bae15cccc`이며,
+HTTP 200과 Nginx·PHP-FPM·MariaDB·Monitor Timer `active`를 확인했다.

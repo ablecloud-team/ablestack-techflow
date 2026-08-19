@@ -2011,6 +2011,15 @@ body {
   }
 
   body {
+    // Align the top navigation and welcome area with the 1165px index shell.
+    // The inner content remains 1100px; the added width represents the quick-link rail.
+    .App--index .App-header > .container,
+    .App--index .WelcomeHero > .container {
+      width: 100%;
+      max-width: 1165px;
+      box-sizing: border-box;
+    }
+
     // Keep the desktop index shell anchored below the fixed header. The full
     // right column scrolls while a narrow reserved rail sits immediately next
     // to the unchanged 1100px content area.

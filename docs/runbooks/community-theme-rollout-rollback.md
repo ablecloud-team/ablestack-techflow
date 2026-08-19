@@ -85,6 +85,9 @@ sudo bash deploy/flarum/apply-community-theme-update.sh \
   배치용 65px만 추가한 최대 1165px 셸을 사용한다. 토론 목록 오른쪽과 48px
   퀵 링크 사이에는 약 16px 간격이 있어야 하며 화면 오른쪽 끝으로 분리되면
   안 된다.
+- 데스크톱 첫 화면의 상단 헤더, 환영 영역과 본문 셸은 모두 최대 1165px로
+  동일해야 한다. 1680px Viewport에서는 각 영역의 X가 258px, 오른쪽 끝이
+  1423px인지 확인한다. 모바일과 다른 페이지에는 이 폭을 강제하지 않는다.
 - 좌측 메뉴는 사용자 설정 화면과 같이 고정한다. 높이가 짧아 태그가 모두 보이지
   않을 때 내부 스크롤은 허용하지만 `scrollbar-width: none`과 WebKit 규칙으로
   스크롤바는 표시하지 않는다.
@@ -125,4 +128,4 @@ sudo systemctl restart php8.3-fpm nginx
 - 2026-08-19 운영 적용 완료: 사용자 메뉴 겹침 보완과 Reddit형 평면 피드·게시물
   정보 계층·이미지 썸네일, 하단 Footer 제거와 우측 고정 퀵 링크가 WSL 및
   운영에 반영되었으며, 최신 운영 백업은
-  `/var/backups/techflow-flarum/theme-adjacent-quick-links-20260819T125523Z`에 보존한다.
+  `/var/backups/techflow-flarum/theme-header-shell-align-20260819T154310Z`에 보존한다.
