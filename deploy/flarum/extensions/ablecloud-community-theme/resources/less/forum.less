@@ -1939,7 +1939,8 @@ body {
 
   body {
     // Keep the desktop index shell anchored between the fixed header and
-    // footer. Only the discussion list scrolls during normal navigation.
+    // footer. The full right column scrolls, including its sort/filter tools,
+    // while the navigation follows the fixed User > Settings pattern.
     .App--index {
       height: 100%;
       min-height: 0;
@@ -1992,8 +1993,8 @@ body {
       box-sizing: border-box;
       overflow-y: auto;
       overscroll-behavior: contain;
-      scrollbar-color: #91a9c9 transparent;
-      scrollbar-width: thin;
+      -ms-overflow-style: none;
+      scrollbar-width: none;
     }
 
     .App--index .IndexPage-results {
@@ -2001,38 +2002,39 @@ body {
       height: auto;
       min-height: 0;
       flex-direction: column;
-      overflow: hidden;
+      overflow-x: hidden;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      -ms-overflow-style: none;
+      scrollbar-width: none;
     }
 
     .App--index .IndexPage-toolbar {
       flex: 0 0 auto;
+      padding-top: 20px;
     }
 
     .App--index .IndexPage-results .DiscussionList {
-      flex: 1 1 auto;
-      min-height: 0;
+      flex: 0 0 auto;
+      min-height: auto;
+      height: auto;
       box-sizing: border-box;
       padding-right: 6px;
-      overflow-x: hidden;
-      overflow-y: auto;
-      overscroll-behavior: contain;
-      scrollbar-color: #91a9c9 transparent;
-      scrollbar-width: thin;
+      overflow: visible;
     }
 
-    // Present discussions as one continuous, compact feed. The row keeps the
-    // existing title, tags, reply count and control menu, while individual
-    // nested cards are replaced by quiet separators and a single hover state.
+    // Follow Reddit's flat feed composition: no list container card and no
+    // nested row cards. ABLESTACK color, type, tags and actions remain intact.
     .App--index .IndexPage-results .DiscussionList-discussions {
       margin: 0;
-      border: 1px solid var(--ablecloud-brand-border);
-      border-radius: 16px;
-      background: var(--ablecloud-brand-surface);
-      box-shadow: 0 8px 24px rgba(24, 71, 142, 0.05);
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
     }
 
     .App--index .IndexPage-results .DiscussionList-discussions > li:not(:last-child) {
-      border-bottom: 1px solid #e2eaf5;
+      border-bottom: 1px solid var(--ablecloud-brand-border);
     }
 
     .App--index .IndexPage-results .DiscussionListItem {
@@ -2044,20 +2046,12 @@ body {
       transform: none;
     }
 
-    .App--index .IndexPage-results .DiscussionList-discussions > li:first-child .DiscussionListItem {
-      border-radius: 15px 15px 0 0;
-    }
-
-    .App--index .IndexPage-results .DiscussionList-discussions > li:last-child .DiscussionListItem {
-      border-radius: 0 0 15px 15px;
-    }
-
     .App--index .IndexPage-results .DiscussionListItem:hover,
     .App--index .IndexPage-results .DiscussionListItem:focus-within,
     .App--index .IndexPage-results .DiscussionListItem:has(.DiscussionListItem-controls.open) {
       border-color: transparent;
-      background: #f3f7ff;
-      box-shadow: inset 3px 0 0 var(--ablecloud-brand-primary);
+      background: rgba(21, 94, 239, 0.055);
+      box-shadow: none;
       transform: none;
     }
 
@@ -2067,27 +2061,16 @@ body {
       padding-bottom: 9px;
     }
 
-    .App--index .IndexPage-nav::-webkit-scrollbar,
-    .App--index .IndexPage-results .DiscussionList::-webkit-scrollbar {
-      width: 6px;
-    }
-
-    .App--index .IndexPage-nav::-webkit-scrollbar-track,
-    .App--index .IndexPage-results .DiscussionList::-webkit-scrollbar-track {
-      background: transparent;
-    }
-
-    .App--index .IndexPage-nav::-webkit-scrollbar-button,
-    .App--index .IndexPage-results .DiscussionList::-webkit-scrollbar-button {
+    .App--index .IndexPage-nav::-webkit-scrollbar {
       display: none;
       width: 0;
       height: 0;
     }
 
-    .App--index .IndexPage-nav::-webkit-scrollbar-thumb,
-    .App--index .IndexPage-results .DiscussionList::-webkit-scrollbar-thumb {
-      border-radius: 999px;
-      background: #91a9c9;
+    .App--index .IndexPage-results::-webkit-scrollbar {
+      display: none;
+      width: 0;
+      height: 0;
     }
 
     // Flarum adds .affix to this list while the user page scrolls. Once the

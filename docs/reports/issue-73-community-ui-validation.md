@@ -169,19 +169,26 @@ Issue #73의 설계·구현·WSL 기능 검증·롤백·문서화 조건을 충�
 
 ## 2026-08-19 운영 후속 적용
 
-운영 승인 후 사용자 프로필·설정 메뉴 겹침 보완과 첫 화면 고정 피드를 WSL과
-운영 Community에 적용했다. 데스크톱 첫 화면은 Welcome Hero, 280px 좌측 메뉴,
-목록 도구막대와 Footer를 고정하고 토론 목록만 스크롤한다. Reddit의 Card/Compact
-전환에서 확인되는 연속 피드 구조를 참고하되 ABLESTACK의 블루 색상, 태그와
-댓글 수, 더보기 기능을 유지했다. 개별 행의 카드 테두리·그림자·들뜸은 제거하고
-한 개의 흰색 피드 표면, 1px 구분선, 파란 Hover/Focus 표시로 단순화했다.
+운영 승인 후 사용자 프로필·설정 메뉴 겹침 보완과 첫 화면 Reddit형 평면 피드를
+WSL과 운영 Community에 적용했다. 데스크톱 첫 화면은 Welcome Hero, 280px 좌측
+메뉴와 Footer를 고정한다. 우측 `.IndexPage-results` 전체가 스크롤되므로 `최신`
+선택 콤보가 있는 도구막대와 토론 행이 함께 이동한다. 좌측 메뉴는 높이가 부족할
+때 내부 스크롤할 수 있지만 스크롤바는 표시하지 않는다. 우측 스크롤바 역시
+숨기되 마우스 휠·트랙패드·키보드 스크롤 동작은 유지한다.
 
-WSL 1280x720과 운영 1150x881에서 문서 `scrollY=0`을 유지한 채 목록
-`scrollTop`만 각각 변화했다. 운영 목록을 `420px` 스크롤한 뒤에도 메뉴 Y좌표
-`179.890625`, 도구막대 Y좌표 `209.890625`가 동일했다. 행 높이는 `58px`,
-외부 HTTPS는 `200`, Nginx·PHP-FPM·MariaDB는 모두 `active`다. 운영 적용 전
-백업은 `/var/backups/techflow-flarum/theme-index-fixed-feed-v2-20260819T1140Z`에
-보존했다. SCP 임시 경로가 0700인 경우에도 배포 스크립트가 Extension 경로를
+목록 바깥 Container와 개별 행의 Border·Background·Shadow를 모두 제거했다.
+Reddit New의 평면 피드처럼 투명한 배경 위에서 1px 구분선만 사용하고,
+ABLESTACK의 블루 색상·폰트·태그·댓글 수·더보기 기능은 유지했다.
+
+WSL과 운영 1280x720에서 문서 `scrollY=0`, 좌측 메뉴 Y좌표 `179.890625`를
+유지했다. 우측 영역 `scrollTop`은 `0→360`, 도구막대 Y좌표는
+`209.890625→-150.109375`로 함께 이동했으며 `.DiscussionList`의 `scrollTop`은
+`0`을 유지했다. 좌측 메뉴는 `0→260`으로 내부 스크롤됐지만 스크롤바 계산값은
+`none`이었다. 행 높이는 `58px`, 외부 HTTPS는 `200`, Nginx·PHP-FPM·MariaDB는
+모두 `active`다. 운영 적용 전 백업은
+`/var/backups/techflow-flarum/theme-reddit-flat-feed-hidden-scroll-20260819T115539Z`에
+보존했다.
+SCP 임시 경로가 0700인 경우에도 배포 스크립트가 Extension 경로를
 Composer와 PHP-FPM이 읽을 수 있는 권한으로 정규화하는 것을 운영 재적용
 `RESULT=PASS`로 확인했다. 상세 증적은
 `docs/evidence/issue-73/community-index-fixed-feed-validation.json`에 기록했다.
