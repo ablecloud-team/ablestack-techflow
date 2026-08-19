@@ -87,7 +87,7 @@ story = [
     make_table([["항목","결과","판정"], ["자동 백업","매일 03:20 KST · 무결성 검증","PASS"],
                 ["암호화","OpenPGP · 운영 공개키만","PASS"], ["외부 복사","179,701,760 Byte WSL Vault","PASS"],
                 ["격리 복원","32 Table · 11,336 File · 9초","PASS"], ["관측·Chat","5분 · 전이 2회 · 운영 HTTP 200","PASS"],
-                ["보안","Header·TLS·Rate Limit·권한·로그","PASS"], ["운영 UI","Theme·한글 Locale·반응형","PASS"]], [49*mm, 88*mm, 37*mm]),
+                ["보안","Header·TLS·Rate Limit·권한·로그","PASS"], ["운영 UI","Theme·한글·OAuth 아이콘","PASS"]], [49*mm, 88*mm, 37*mm]),
     Spacer(1, 7*mm), callout("Nginx·PHP-FPM·MariaDB 3/3 Active · HTTP 200/200/200 · Disk 2% · Alert 0", BLUE), PageBreak(),
 
     para("2. 백업 설계와 일관성", "h1"),
@@ -99,7 +99,7 @@ story = [
     Spacer(1, 4*mm), callout("정기 RPO 24시간+10분 · 운영 보존 30일 · 실패 .partial 자동 제거", GREEN), PageBreak(),
 
     para("3. 운영 Backup과 WSL 전체 복원", "h1"),
-    make_table([["검증","값"], ["운영 Backup","community-20260819T093152Z"], ["암호화 파일","Database·Application 2개"],
+    make_table([["검증","값"], ["운영 Backup","community-20260819T095245Z"], ["암호화 파일","Database·Application 2개"],
                 ["WSL 외부 복사","171.4 MiB"], ["복원 범위","별도 App Root·DB"], ["복원 Table·File","32 / 11,336"],
                 ["RTO","9초"], ["격리 HTTP","200 · 0.947초"]], [65*mm, 109*mm]),
     Spacer(1, 6*mm), make_table([["데이터","원본","복원"], ["사용자",41,41], ["토론",121,121], ["게시물",325,325], ["첨부",115,115]], [82*mm, 46*mm, 46*mm]),

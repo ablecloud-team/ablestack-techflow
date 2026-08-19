@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "issue": 74,
-  "validatedAt": "2026-08-19T18:39:00+09:00",
+  "validatedAt": "2026-08-19T18:54:00+09:00",
   "result": "GO",
   "production": {
     "host": "172.16.0.234",
@@ -16,7 +16,7 @@
     "inodeUsedPercent": 1
   },
   "backup": {
-    "name": "community-20260819T093152Z",
+    "name": "community-20260819T095245Z",
     "schedule": "03:20 KST daily with 10 minute randomized delay",
     "retentionDays": 30,
     "consistency": "php-fpm-quiesced",
@@ -65,6 +65,13 @@
     "tagDialogDirectEnglishTokens": 0,
     "bestAnswerDirectEnglishTokens": 0,
     "oauthSecurityDirectEnglishTokens": 0,
+    "oauthProviderIcons": {
+      "wslCompiledCss": "PASS",
+      "productionGoogle": "28x28 SVG mask",
+      "productionGitHub": "28x28 SVG mask",
+      "brokenFallbackSquares": 0,
+      "horizontalOverflowPixels": 0
+    },
     "rollback": "disable ablecloud-community-theme and clear cache"
   },
   "monitoring": {

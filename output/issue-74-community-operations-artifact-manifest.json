@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0",
   "issue": 74,
-  "generatedAt": "2026-08-19T09:43:12.437186+00:00",
+  "generatedAt": "2026-08-19T09:54:18.512347+00:00",
   "artifactCount": 21,
   "artifacts": [
     {
@@ -51,8 +51,8 @@
     },
     {
       "path": "docs/reports/issue-74-community-operations-validation.md",
-      "bytes": 6943,
-      "sha256": "468afe7184b6b27402d44c458d59b72c75017bcfe5b1a1fa6349f857f325ac02"
+      "bytes": 7136,
+      "sha256": "4cfb509d13d7e4c75dcdd94bfb9485cc7523377f1990d3c093a51ed273f68723"
     },
     {
       "path": "docs/presentations/issue-74-community-operations.md",
@@ -61,13 +61,13 @@
     },
     {
       "path": "docs/evidence/issue-74/community-operations-validation.json",
-      "bytes": 3175,
-      "sha256": "225de300a2f3d9a01edcea19a39a91e44ff36d417cca0d0e555a19d856592038"
+      "bytes": 3400,
+      "sha256": "8b1f1b3d8945227b8b7afecfadae368d3db1cb563f26ad6f73b8ebc6b182c5c5"
     },
     {
       "path": "output/pdf/techflow-community-operations-report.pdf",
-      "bytes": 109903,
-      "sha256": "7f70748efd1ebfee9dd791969f2e3ab4d18478543a068b28080cf82296d6d811"
+      "bytes": 109572,
+      "sha256": "101a69ba928c389d1675d89842bb6ed178dc91203b0c2448a035eeae5efb71cc"
     },
     {
       "path": "output/presentation/techflow-community-operations.pptx",
@@ -86,8 +86,8 @@
     },
     {
       "path": "tools/artifacts/issue-74/build_report.py",
-      "bytes": 11207,
-      "sha256": "e17b8dfd333d5f2543c8262b3baf2fee1d0bf67a8a3fbe8704821f81b4125f6f"
+      "bytes": 11206,
+      "sha256": "5552f78f736166920e2a974a79536c1abba66be6f6048efe927df6f685c66f22"
     },
     {
       "path": "tools/artifacts/issue-74/build_presentation.mjs",

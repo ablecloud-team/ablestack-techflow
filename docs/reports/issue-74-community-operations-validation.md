@@ -6,7 +6,7 @@ ABLESTACK Community 운영 서버에 일관성 있는 암호화 백업, 5분 주
 
 운영 서비스는 Nginx·PHP-FPM·MariaDB 3/3 Active, Community·AI 연동 HTTP 200, 디스크 2%·inode 1%, 최신 백업 무결성 정상, smtp 강제 정책 정상, 활성 경보 0건이다. 운영 판정은 **GO**다.
 
-후속 승인에 따라 Issue #73/PR #80의 `ablecloud/community-theme`도 운영에 활성화했다. 홈·태그·상세 외부 HTTPS 200, 데스크톱·390x844 모바일 가로 넘침 0px, 태그 절대 날짜 형식, 상세 첫 화면 `scrollY=0`, 글쓰기·태그 선택 대화상자를 확인했다. 운영 환경에서 추가로 발견한 Best Answer와 OAuth 보안 화면 영문은 테마 Locale에 포함해 직접 노출 0건으로 보완했다.
+후속 승인에 따라 Issue #73/PR #80의 `ablecloud/community-theme`도 운영에 활성화했다. 홈·태그·상세 외부 HTTPS 200, 데스크톱·390x844 모바일 가로 넘침 0px, 태그 절대 날짜 형식, 상세 첫 화면 `scrollY=0`, 글쓰기·태그 선택 대화상자를 확인했다. 운영 환경에서 추가로 발견한 Best Answer와 OAuth 보안 화면 영문은 테마 Locale에 포함해 직접 노출 0건으로 보완했다. 연결 계정의 Google·GitHub 브랜드 아이콘도 내장 SVG Mask와 28px 중앙 정렬 규칙으로 보완해 WSL CSS와 운영 실제 화면에서 깨진 사각형 0건을 확인했다.
 
 ## 구현 결과
 
@@ -51,7 +51,7 @@ sequenceDiagram
 
 | 검증 | 결과 |
 |---|---:|
-| 운영 Backup | `community-20260819T093152Z` |
+| 운영 Backup | `community-20260819T095245Z` |
 | 암호화 파일 | DB·Application 2개 |
 | 운영 Archive 권한 | Root 전용 0600 |
 | WSL 외부 복사 | 171.4 MiB |

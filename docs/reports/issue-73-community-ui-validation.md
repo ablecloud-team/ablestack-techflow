@@ -18,6 +18,7 @@ PR #80 병합 뒤 별도 운영 적용 승인을 받아 `ablecloud/community-the
 - 태그 절대 날짜 `00년 0월 0일`, 상대 날짜 유지
 - 글쓰기·태그 선택 대화상자와 검색: 정상
 - 운영 환경에서 확인된 Best Answer·OAuth 보안 화면 잔여 영문: Theme Locale 보완 후 직접 노출 0건
+- 연결 계정 Google·GitHub 아이콘: 28x28 내장 SVG Mask, WSL CSS·운영 실제 화면 깨짐 0건
 
 문제 발생 시 데이터 복원 없이 `ablecloud-community-theme`만 비활성화하고 Cache를 비우는 롤백 경계를 유지한다. 이 후속 적용 판정은 **운영 GO**다. 상세 구조화 증적은 `docs/evidence/issue-74/community-operations-validation.json`의 `uiTheme`에 기록했다.
 

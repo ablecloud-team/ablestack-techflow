@@ -120,6 +120,8 @@ class CommunityThemeContractTests(unittest.TestCase):
             ".fa-superscript",
             ".fa-terminal",
             ".fa-caret-square-right",
+            ".fa-google",
+            ".fa-github",
         ):
             with self.subTest(icon=icon):
                 self.assertIn(icon, self.less)
@@ -501,6 +503,8 @@ class CommunityThemeContractTests(unittest.TestCase):
         self.assertIn("right: 58px", self.less)
         self.assertIn(".SettingsPage fieldset", self.less)
         self.assertIn(".UserSecurityPage fieldset", self.less)
+        self.assertIn(".UserSecurityPage .LinkedAccountsList-item-icon", self.less)
+        self.assertIn("flex: 0 0 28px", self.less)
         self.assertIn("overflow-x: auto", self.less)
         self.assertIn(".Composer.active", self.less)
         self.assertIn(".Modal .FormControl:focus-visible", self.less)
