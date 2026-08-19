@@ -253,6 +253,10 @@ body {
     border-bottom: 0;
   }
 
+  .PostStream-item:has(.Post-actions) {
+    padding-bottom: 52px;
+  }
+
   article.Post > div {
     position: relative;
     border: 1px solid var(--ablecloud-brand-border);
@@ -346,18 +350,13 @@ body {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    gap: 7px;
     width: auto;
     min-width: 40px;
     padding: 0 12px;
     border: 1px solid var(--ablecloud-brand-border);
     background: var(--ablecloud-brand-primary-faint) !important;
     color: var(--ablecloud-brand-primary-deep) !important;
-  }
-
-  .Post-actions .item-reply .Button,
-  .Post-actions > ul > li:last-child .Button {
-    width: 40px;
-    padding: 0;
   }
 
   .Post-actions .Button:hover,
@@ -367,19 +366,49 @@ body {
     color: var(--ablecloud-brand-primary) !important;
   }
 
-  .Post-actions .item-reply .Button-label {
+  .Post-actions .item-reply .Button-label,
+  .Post-actions .item-like .Button-label,
+  .Post-actions .item-bestAnswer .Button-label,
+  .Post-actions .Post-controls > .Dropdown-toggle .Button-label {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    gap: 7px;
+    font-size: 14px;
+    line-height: 1;
+  }
+
+  .Post-actions .item-bestAnswer .Button-label {
     font-size: 0;
+  }
+
+  .Post-actions .item-reply .Button-label::before,
+  .Post-actions .item-like .Button-label::before,
+  .Post-actions .item-bestAnswer .Button-label::before {
+    font-family: "Font Awesome 5 Free";
+    font-size: 14px;
+    font-weight: 900;
+    line-height: 1;
   }
 
   .Post-actions .item-reply .Button-label::before {
     content: "\f3e5";
-    font-family: "Font Awesome 5 Free";
-    font-size: 15px;
-    font-weight: 900;
-    line-height: 1;
+  }
+
+  .Post-actions .item-like .Button-label::before {
+    content: "\f164";
+  }
+
+  .Post-actions .item-bestAnswer .Button-label::before {
+    content: "\f058";
+  }
+
+  .Post-actions .Post-controls > .Dropdown-toggle .Button-label::after {
+    content: "더 보기";
+  }
+
+  .Post-actions .Post-controls > .Dropdown-toggle .Button-caret {
+    display: none;
   }
 
   .Post-actions .Button:disabled,
@@ -644,6 +673,133 @@ body {
     box-shadow: 0 26px 64px rgba(24, 71, 142, 0.2);
   }
 
+  .Modal-content {
+    overflow: hidden;
+    border-color: #b9cdec;
+  }
+
+  .Modal-header {
+    min-height: 58px;
+    padding: 17px 56px 14px 22px;
+    background: var(--ablecloud-brand-primary-faint);
+  }
+
+  .Modal-header .App-titleControl {
+    color: var(--ablecloud-brand-ink);
+    font-weight: 750;
+  }
+
+  .Modal-close .Button {
+    border: 1px solid transparent;
+    border-radius: 999px;
+    color: var(--ablecloud-brand-muted);
+  }
+
+  .Modal-close .Button:hover,
+  .Modal-close .Button:focus-visible {
+    border-color: var(--ablecloud-brand-border);
+    outline: none !important;
+    background: #eaf2ff;
+    color: var(--ablecloud-brand-primary-deep);
+    box-shadow: 0 0 0 2px rgba(21, 94, 239, 0.12);
+  }
+
+  .Modal .FormControl {
+    border: 1px solid var(--ablecloud-brand-border);
+    background: var(--ablecloud-brand-primary-faint);
+    box-shadow: none;
+  }
+
+  .Modal .FormControl:focus,
+  .Modal .FormControl:focus-visible,
+  .Modal .Dropdown-toggle:focus-visible,
+  .Modal .Button:focus-visible {
+    border-color: var(--ablecloud-brand-primary);
+    outline: none !important;
+    box-shadow: 0 0 0 2px rgba(21, 94, 239, 0.14);
+  }
+
+  .Modal .Button--primary {
+    border: 1px solid var(--ablecloud-brand-primary);
+    background: var(--ablecloud-brand-primary);
+    color: #fff;
+  }
+
+  .Modal .Button--primary:hover,
+  .Modal .Button--primary:focus-visible {
+    border-color: var(--ablecloud-brand-primary-hover);
+    background: var(--ablecloud-brand-primary-hover);
+  }
+
+  .Modal-footer {
+    border-top-color: var(--ablecloud-brand-border);
+    background: #fbfdff;
+  }
+
+  .Composer.active {
+    border-color: #b9cdec;
+    box-shadow: 0 20px 52px rgba(24, 71, 142, 0.18), 0 0 0 1px rgba(21, 94, 239, 0.1) !important;
+  }
+
+  .ComposerBody-header .DiscussionComposer-changeTags {
+    display: inline-flex;
+    align-items: center;
+    min-height: 36px;
+    padding: 0 11px;
+    border: 1px solid var(--ablecloud-brand-border);
+    border-radius: 9px;
+    background: var(--ablecloud-brand-primary-faint);
+    color: var(--ablecloud-brand-primary-deep);
+    font-weight: 650;
+  }
+
+  .ComposerBody-header .DiscussionComposer-changeTags:hover,
+  .ComposerBody-header .DiscussionComposer-changeTags:focus-visible {
+    border-color: #8cb0ec;
+    outline: none !important;
+    background: #eaf2ff;
+    box-shadow: 0 0 0 2px rgba(21, 94, 239, 0.14);
+  }
+
+  .ComposerBody-header .item-discussionTitle input.FormControl {
+    padding: 0 12px;
+    border: 1px solid transparent;
+    background: var(--ablecloud-brand-primary-faint);
+    box-shadow: none;
+  }
+
+  .ComposerBody-header .item-discussionTitle input.FormControl:focus,
+  .ComposerBody-header .item-discussionTitle input.FormControl:focus-visible,
+  .Composer .TextEditor-editor:focus,
+  .Composer .TextEditor-editor:focus-visible {
+    border-color: var(--ablecloud-brand-primary) !important;
+    outline: none !important;
+    background: #fff !important;
+    box-shadow: 0 0 0 2px rgba(21, 94, 239, 0.14);
+  }
+
+  .Composer .TextEditor-editor {
+    padding: 12px 14px;
+    border: 1px solid var(--ablecloud-brand-border);
+    border-radius: 11px;
+    background: #fbfdff;
+  }
+
+  .Composer-controls .Button {
+    border: 1px solid transparent;
+    border-radius: 999px;
+    color: var(--ablecloud-brand-muted);
+  }
+
+  .Composer-controls .Button:hover,
+  .Composer-controls .Button:focus-visible {
+    border-color: var(--ablecloud-brand-border);
+    outline: none !important;
+    background: var(--ablecloud-brand-primary-faint);
+    color: var(--ablecloud-brand-primary-deep);
+    box-shadow: 0 0 0 2px rgba(21, 94, 239, 0.12);
+  }
+
   .Composer-header,
   .Modal-header {
     border-bottom: 1px solid var(--ablecloud-brand-border);
@@ -654,6 +810,112 @@ body {
     color: var(--ablecloud-brand-ink);
     font-size: 16px;
     line-height: 1.7;
+  }
+
+  .TagSelectionModal .Modal-content {
+    box-shadow: 0 24px 60px rgba(24, 71, 142, 0.2);
+  }
+
+  .TagSelectionModal .Modal-header {
+    background: var(--ablecloud-brand-primary-faint);
+  }
+
+  .TagSelectionModal-form {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--ablecloud-brand-border);
+    background: #f8fbff;
+  }
+
+  .TagSelectionModal .Modal-body {
+    padding: 0;
+  }
+
+  .TagSelectionModal-form-input {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .TagSelectionModal .TagsInput.FormControl {
+    min-height: 44px;
+    padding: 4px 10px;
+    border: 1px solid var(--ablecloud-brand-border);
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: none;
+  }
+
+  .TagSelectionModal .TagsInput.FormControl.focus {
+    border-color: var(--ablecloud-brand-primary);
+    outline: none !important;
+    box-shadow: 0 0 0 2px rgba(21, 94, 239, 0.14);
+  }
+
+  .TagSelectionModal .TagsInput input.FormControl,
+  .TagSelectionModal .TagsInput input.FormControl:focus,
+  .TagSelectionModal .TagsInput input.FormControl:focus-visible {
+    min-height: 34px;
+    padding: 0 4px;
+    border: 0;
+    outline: none !important;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .TagSelectionModal-form-submit .Button {
+    min-width: 82px;
+    min-height: 44px;
+  }
+
+  .TagSelectionModal .Modal-footer {
+    background: #fff;
+  }
+
+  .TagSelectionModal-list {
+    padding: 8px;
+  }
+
+  .TagSelectionModal-list > li {
+    margin: 4px 0;
+    padding: 12px 14px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+  }
+
+  .TagSelectionModal-list > li:hover,
+  .TagSelectionModal-list > li.active {
+    border-color: #c7d9f4;
+    background: var(--ablecloud-brand-primary-faint);
+    box-shadow: none;
+  }
+
+  .TagSelectionModal-list > li.selected {
+    border-color: #8cb0ec;
+    background: #eaf2ff;
+    box-shadow: inset 3px 0 0 var(--ablecloud-brand-primary);
+  }
+
+  .TagSelectionModal-list .SelectTagListItem-name {
+    color: var(--ablecloud-brand-ink);
+    font-weight: 700;
+  }
+
+  .TagSelectionModal-list .SelectTagListItem-description {
+    color: var(--ablecloud-brand-muted);
+  }
+
+  .TagSelectionModal-controls {
+    padding: 12px 20px 18px;
+    border-top: 1px solid var(--ablecloud-brand-border);
+    background: #fff;
+  }
+
+  .TagSelectionModal-controls .Button {
+    border: 1px solid var(--ablecloud-brand-border);
+    background: var(--ablecloud-brand-primary-faint);
+    color: var(--ablecloud-brand-primary-deep);
   }
 
   .FoFUpload-uploadButton,
@@ -803,6 +1065,43 @@ body {
 
     .DiscussionHero .container {
       padding: 24px 15px;
+    }
+
+    .Post-actions .Button {
+      gap: 4px;
+      padding-right: 5px;
+      padding-left: 5px;
+      font-size: 13px;
+    }
+
+    .Post-actions > ul {
+      gap: 6px;
+    }
+
+    .PostStream-item:has(.Post-actions) {
+      padding-bottom: 76px;
+    }
+
+    .Post-actions .item-reply .Button-label,
+    .Post-actions .item-like .Button-label,
+    .Post-actions .Post-controls > .Dropdown-toggle .Button-label {
+      gap: 4px;
+      font-size: 13px;
+    }
+
+    .Post-actions .item-reply .Button-label::before,
+    .Post-actions .item-like .Button-label::before,
+    .Post-actions .item-bestAnswer .Button-label::before,
+    .Post-actions .item-bestAnswer .Button-label::after {
+      font-size: 13px;
+    }
+
+    .Post-actions .item-bestAnswer .Button--link .Button-label::after {
+      content: "해결 선택";
+    }
+
+    .Post-actions .item-bestAnswer .Button--primary .Button-label::after {
+      content: "선택 취소";
     }
 
     .DiscussionListItem {

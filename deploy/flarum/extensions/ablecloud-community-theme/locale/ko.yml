@@ -3,3 +3,12 @@ fof-best-answer:
     search:
       discussions_solutions_heading: 해결된 토론
       all_discussions_solutions_button: '"{query}"에 대한 해결된 토론 검색'
+
+flarum-tags:
+  lib:
+    tag_selection_modal:
+      bypass_requirements: 태그 필수 조건 무시
+      choose_primary_placeholder: "{count, plural, one {주 태그를 선택하세요} other {주 태그 #개를 선택하세요}}"
+      choose_secondary_placeholder: "{count, plural, one {보조 태그를 선택하세요} other {보조 태그 #개를 선택하세요}}"
+      choose_tags_placeholder: "{count, plural, one {태그를 선택하세요} other {태그 #개를 선택하세요}}"
+      submit_button: 확인

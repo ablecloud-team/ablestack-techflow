@@ -21,6 +21,7 @@ BEFORE = ROOT / "docs/evidence/issue-73/screenshots/before/home-desktop.png"
 AFTER = ROOT / "docs/evidence/issue-73/screenshots/after/home-desktop.png"
 MOBILE = ROOT / "docs/evidence/issue-73/screenshots/after/home-mobile.png"
 ACTIONS = ROOT / "docs/evidence/issue-73/screenshots/after/post-actions-desktop.png"
+TAG_MODAL = ROOT / "docs/evidence/issue-73/screenshots/after/tag-selection-modal-desktop.png"
 FONT, BOLD = "MalgunGothic", "MalgunGothicBold"
 pdfmetrics.registerFont(TTFont(FONT, "C:/Windows/Fonts/malgun.ttf"))
 pdfmetrics.registerFont(TTFont(BOLD, "C:/Windows/Fonts/malgunbd.ttf"))
@@ -116,8 +117,8 @@ story = [
         ["항목", "결과", "판정"],
         ["전용 테마", "ablecloud/community-theme", "PASS"],
         ["반응형", "1440x900 / 390x844", "PASS"],
-        ["한글", "원문 core.* 키 0건", "PASS"],
-        ["기능", "홈·목록·태그·검색·로그인·해결 답변", "PASS"],
+        ["한글", "원문 core.* 키·태그창 직접 영문 0건", "PASS"],
+        ["기능", "홈·목록·태그·검색·로그인·작성·해결 답변", "PASS"],
         ["롤백", "비활성화 후 HTTP 200", "PASS"],
         ["무결성", "39 / 117 / 305, 해시 동일", "PASS"],
     ], [52 * mm, 86 * mm, 36 * mm]),
@@ -140,10 +141,15 @@ story = [
         ["최종 해결 가이드", "Green", "선택된 Knowledge Base"],
     ], [48 * mm, 34 * mm, 92 * mm]),
     Spacer(1, 5 * mm),
-    Table([[screenshot(MOBILE, 58 * mm, 127 * mm), para("390px에서는 제목 2줄과 마지막 응답 정보를 유지합니다. Hero 패딩은 데스크톱 19px, 모바일 17px로 대칭이며 아바타와 제목의 중심 차이는 0px입니다.\n\n답장·좋아요·더 보기는 카드 아래 작업 영역에서 8px씩 떨어집니다. 텍스트 버튼은 내용에 맞춰 넓어지고 아이콘 버튼은 40px를 유지하며 모바일 가로 넘침은 0px입니다.\n\n목록 복귀 뒤에도 좌측 상단 탐색 버튼은 40x40px로 남아 반복해서 사용할 수 있습니다. Footer는 Home·Blog·Docs를 38px/36px 원형 아이콘으로 표시합니다.")]], colWidths=[64 * mm, 110 * mm], style=TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP")])),
+    Table([[screenshot(MOBILE, 58 * mm, 127 * mm), para("390px에서는 제목 2줄과 마지막 응답 정보를 유지합니다. Hero 패딩은 데스크톱 19px, 모바일 17px로 대칭이며 아바타와 제목의 중심 차이는 0px입니다.\n\n답장·좋아요·해결 선택·더 보기는 모두 아이콘과 한글 텍스트를 함께 표시합니다. 데스크톱 8px·모바일 6px 간격이며 모바일 가로 넘침은 0px입니다.\n\n목록 복귀 뒤에도 좌측 상단 탐색 버튼은 40x40px로 남아 반복해서 사용할 수 있습니다. Footer는 Home·Blog·Docs를 38px/36px 원형 아이콘으로 표시합니다.")]], colWidths=[64 * mm, 110 * mm], style=TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP")])),
     Spacer(1, 4 * mm), screenshot(ACTIONS, 112 * mm, 70 * mm), PageBreak(),
 
-    para("5. WSL 전체 주기", "h1"),
+    para("5. 공통 대화상자와 한글", "h1"),
+    screenshot(TAG_MODAL, 174 * mm, 98 * mm), Spacer(1, 5 * mm),
+    para("작성·태그·검색·로그인과 확장 기능 대화상자는 같은 헤더, 입력 경계, 원형 닫기, 주요 확인 버튼과 2px의 부드러운 블루 포커스 링을 사용합니다. 태그 선택창의 Choose, OK, Bypass tag requirements는 주 태그를 선택하세요, 확인, 태그 필수 조건 무시로 표시합니다."),
+    Spacer(1, 5 * mm), callout("공통 Modal 규칙 적용 · 태그 선택창 직접 노출 영문 0건", BLUE, PALE), PageBreak(),
+
+    para("6. WSL 전체 주기", "h1"),
     make_table([
         ["단계", "Theme", "HTTP", "콘텐츠/첨부"],
         ["기준선", "Disabled", "200", "기준 해시"],
@@ -156,13 +162,13 @@ story = [
         ["검증", "결과"],
         ["정적 계약", "8/8"],
         ["사용자 / 토의 / 게시물", "39 / 117 / 305"],
-        ["콘텐츠 SHA-256", "6197202c...ffca"],
+        ["콘텐츠 SHA-256", "55ed12c8...ad9d"],
         ["첨부 SHA-256", "19cdf526...97c"],
-        ["한글 원문 키", "0건"],
+        ["한글 원문 키 / 태그창 직접 영문", "0건 / 0건"],
     ], [70 * mm, 104 * mm]),
-    Spacer(1, 6 * mm), callout("최종 Run ID: issue73-20260819-navigation-actions-final", GREEN, PALE_GREEN), PageBreak(),
+    Spacer(1, 6 * mm), callout("최종 Run ID: issue73-20260819-dialog-action-consistency-final-rerun", GREEN, PALE_GREEN), PageBreak(),
 
-    para("6. 롤백과 운영 결정", "h1"),
+    para("7. 롤백과 운영 결정", "h1"),
     make_table([
         ["구분", "변경 여부"],
         ["Flarum Core / Vendor", "변경 없음"],

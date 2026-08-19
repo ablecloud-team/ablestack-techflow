@@ -1,6 +1,6 @@
 {
   "issue": 73,
-  "runId": "issue73-20260819-navigation-actions-final",
+  "runId": "issue73-20260819-dialog-action-consistency-final-rerun",
   "environment": "WSL Ubuntu 24.04 staging",
   "productionChanged": false,
   "checks": {
@@ -32,14 +32,24 @@
     "discussionRowLayoutDesktop": "title-tags-count-single-line",
     "discussionAvatarTitleCenterDifferenceDesktop": "0px",
     "postActionsAlwaysVisible": true,
-    "replyButton": "40px-icon",
+    "replyButton": "icon-text",
     "guestReplyButtonState": "disabled",
     "replyButtonPlacement": "outside-card-below-8px",
     "replyButtonRightDifferenceDesktop": "1px",
     "postActionLayout": "flex-wrap",
     "postActionGap": "8px",
+    "postActionStyle": "icon-text-all",
+    "postActionDesktopGap": "8px",
+    "postActionMobileGap": "6px",
+    "postActionMobileSingleRow": true,
+    "postActionMobileClearanceMin": "5.28px",
     "postActionOverlapDesktop": "0px",
     "postActionOverflowMobile": "0px",
+    "composerFocusOutline": "none",
+    "composerFocusRing": "2px-soft-brand",
+    "modalDesignRule": "shared",
+    "tagModalDirectEnglish": 0,
+    "tagModalLabels": "주 태그를 선택하세요|확인|태그 필수 조건 무시",
     "desktopNavigationToggle": "persistent-after-list-return",
     "desktopNavigationToggleSize": "40x40px",
     "desktopNavigationToggleRepeatClick": "PASS",
@@ -59,7 +69,7 @@
     "users": 39,
     "discussions": 117,
     "posts": 305,
-    "content_sha256": "6197202cdac4cf780dc5a13a5c4c6e3dffede2aeff14ef639dcf0735ab94ffca",
+    "content_sha256": "55ed12c84d874e9e771fe5d4d59c0c3951110950f17d542cee1b739deb63ad9d",
     "uploads_sha256": "19cdf52600535380969a176d81bf66678b200a4247694641d00b470b8637a97c",
     "http_status": 200
   },
@@ -68,19 +78,19 @@
     "users": 39,
     "discussions": 117,
     "posts": 305,
-    "content_sha256": "6197202cdac4cf780dc5a13a5c4c6e3dffede2aeff14ef639dcf0735ab94ffca",
+    "content_sha256": "55ed12c84d874e9e771fe5d4d59c0c3951110950f17d542cee1b739deb63ad9d",
     "uploads_sha256": "19cdf52600535380969a176d81bf66678b200a4247694641d00b470b8637a97c",
     "http_status": 200
   },
   "disabledRollback": {
     "theme_enabled": false,
-    "content_sha256": "6197202cdac4cf780dc5a13a5c4c6e3dffede2aeff14ef639dcf0735ab94ffca",
+    "content_sha256": "55ed12c84d874e9e771fe5d4d59c0c3951110950f17d542cee1b739deb63ad9d",
     "uploads_sha256": "19cdf52600535380969a176d81bf66678b200a4247694641d00b470b8637a97c",
     "http_status": 200
   },
   "finalStaging": {
     "theme_enabled": true,
-    "content_sha256": "6197202cdac4cf780dc5a13a5c4c6e3dffede2aeff14ef639dcf0735ab94ffca",
+    "content_sha256": "55ed12c84d874e9e771fe5d4d59c0c3951110950f17d542cee1b739deb63ad9d",
     "uploads_sha256": "19cdf52600535380969a176d81bf66678b200a4247694641d00b470b8637a97c",
     "http_status": 200
   }

@@ -9,6 +9,7 @@ const output = path.join(ROOT, "output", "presentation", "techflow-community-ui-
 const beforeImage = path.join(ROOT, "docs", "evidence", "issue-73", "screenshots", "before", "home-desktop.png");
 const afterImage = path.join(ROOT, "docs", "evidence", "issue-73", "screenshots", "after", "home-desktop.png");
 const actionImage = path.join(ROOT, "docs", "evidence", "issue-73", "screenshots", "after", "post-actions-mobile.png");
+const modalImage = path.join(ROOT, "docs", "evidence", "issue-73", "screenshots", "after", "tag-selection-modal-desktop.png");
 await fs.mkdir(renderDir, { recursive: true });
 await fs.mkdir(path.dirname(output), { recursive: true });
 
@@ -47,6 +48,7 @@ function notes(slide) {
 const before = await bytes(beforeImage);
 const after = await bytes(afterImage);
 const action = await bytes(actionImage);
+const modal = await bytes(modalImage);
 
 {
   const s = deck.slides.add(); s.background.fill = C.white;
@@ -84,15 +86,13 @@ const action = await bytes(actionImage);
   notes(s);
 }
 {
-  const s = deck.slides.add(); s.background.fill = C.white; title(s, "작업 버튼은 떨어뜨리고 탐색 버튼은 계속 보이게 했습니다", 4);
-  addImage(s, "mobile-actions", action, 76, 136, 330, 520, "contain");
-  text(s, "mobile-fact-1", "8px", 520, 178, 210, 70, 52, true, C.blue);
-  text(s, "mobile-desc-1", "답장·좋아요·더 보기 사이 간격", 748, 194, 430, 44, 22, false, C.gray);
-  text(s, "mobile-fact-2", "40px", 520, 300, 210, 70, 52, true, C.blue);
-  text(s, "mobile-desc-2", "목록 복귀 후 유지되는 탐색 버튼", 748, 316, 430, 44, 22, false, C.gray);
-  text(s, "mobile-fact-3", "38/36px", 500, 422, 245, 70, 48, true, C.green);
-  text(s, "mobile-desc-3", "Desktop/Mobile Footer 아이콘", 748, 438, 430, 44, 22, false, C.gray);
-  text(s, "mobile-foot", "버튼 겹침 0px · 비로그인 답장 비활성 · 모바일 넘침 0px", 500, 566, 680, 52, 21, true, C.ink);
+  const s = deck.slides.add(); s.background.fill = C.white; title(s, "작업 버튼과 모든 대화상자를 하나의 규칙으로 통일했습니다", 4);
+  addImage(s, "mobile-actions", action, 52, 140, 260, 440, "contain");
+  addImage(s, "tag-modal", modal, 346, 140, 842, 350, "contain");
+  text(s, "action-caption", "아이콘 + 한글 텍스트", 50, 594, 264, 36, 20, true, C.blue, "center");
+  box(s, "dialog-result", 346, 520, 842, 106, C.pale, C.blue);
+  text(s, "dialog-result-main", "공통 Modal 규칙 · 부드러운 2px 포커스 · 직접 노출 영문 0건", 378, 540, 778, 38, 22, true, C.ink, "center");
+  text(s, "dialog-result-sub", "주 태그를 선택하세요 · 확인 · 태그 필수 조건 무시", 378, 580, 778, 30, 19, false, C.blue, "center");
   notes(s);
 }
 {
@@ -130,7 +130,7 @@ const action = await bytes(actionImage);
   const s = deck.slides.add(); s.background.fill = C.white;
   text(s, "close-kicker", "ISSUE #73 · IMPLEMENTATION COMPLETE", 48, 42, 650, 36, 20, true, C.gray);
   text(s, "close-title", "운영 적용만\n승인하면 됩니다", 48, 168, 700, 180, 64, true);
-  text(s, "close-detail", "WSL 전체 주기 PASS · 한글 원문 키 0건\nCore·Vendor·DB·운영 Community 변경 없음", 48, 422, 760, 92, 28, false, C.gray);
+  text(s, "close-detail", "WSL 전체 주기 PASS · 한글 원문 키·태그창 직접 영문 0건\nCore·Vendor·DB·운영 Community 변경 없음", 48, 422, 800, 92, 26, false, C.gray);
   box(s, "close-status", 900, 174, 310, 310, C.pale, C.blue);
   text(s, "close-go", "GO", 934, 242, 242, 94, 68, true, C.blue, "center");
   text(s, "close-condition", "운영 반영 승인 대기", 932, 356, 246, 56, 22, true, C.ink, "center");
