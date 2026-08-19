@@ -1,6 +1,6 @@
 {
   "issue": 73,
-  "runId": "issue73-20260819-hero-avatar-actions-final",
+  "runId": "issue73-20260819-post-action-footer-final",
   "environment": "WSL Ubuntu 24.04 staging",
   "productionChanged": false,
   "checks": {
@@ -34,6 +34,13 @@
     "postActionsAlwaysVisible": true,
     "replyButton": "40px-icon",
     "guestReplyButtonState": "disabled",
+    "replyButtonPlacement": "outside-card-below-8px",
+    "replyButtonRightDifferenceDesktop": "1px",
+    "postStreamDivider": "removed",
+    "footerLinks": "home-blog-docs-circular-icons",
+    "footerIconDesktop": "38px",
+    "footerIconMobile": "36px",
+    "footerHorizontalOverflowMobile": "0px",
     "bestAnswerCard": "PASS",
     "bestAnswerSetByVisible": false,
     "bestAnswerPreviewHeader": "선택된 해결 답변",

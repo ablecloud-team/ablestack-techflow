@@ -246,9 +246,15 @@ body {
 
   .PostStream-item {
     margin: 22px 0;
+    border-bottom: 0;
+  }
+
+  .PostStream-item:not(:last-child) {
+    border-bottom: 0;
   }
 
   article.Post > div {
+    position: relative;
     border: 1px solid var(--ablecloud-brand-border);
     border-radius: var(--ablecloud-radius);
     background: var(--ablecloud-brand-surface);
@@ -314,7 +320,17 @@ body {
   }
 
   .Post-actions {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    z-index: 2;
+    margin: 0;
     opacity: 1 !important;
+  }
+
+  .Post-actions > ul,
+  .Post-actions .item-reply {
+    margin: 0;
   }
 
   .Post-actions .Button {
@@ -363,6 +379,88 @@ body {
     cursor: not-allowed;
     opacity: 0.45;
     pointer-events: none;
+  }
+
+  .App-content {
+    padding-bottom: 64px;
+  }
+
+  #console-nav-footer {
+    height: 56px;
+    padding: 0 22px;
+    border-top: 1px solid var(--ablecloud-brand-border);
+    background: rgba(255, 255, 255, 0.97);
+    box-shadow: 0 -6px 20px rgba(24, 71, 142, 0.08);
+    z-index: 1030;
+  }
+
+  #footer-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 100%;
+  }
+
+  #floatleft,
+  #floatright {
+    display: flex;
+    float: none;
+    align-items: center;
+    gap: 9px;
+    height: 100%;
+    margin: 0;
+  }
+
+  #floatleft > i {
+    display: none;
+  }
+
+  #footer-content .feedback-menu-left,
+  #footer-content .feedback-menu-right {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    margin: 0;
+    border: 1px solid #c3d5ef;
+    border-radius: 50%;
+    background: #f4f8ff;
+    color: var(--ablecloud-brand-primary-deep);
+    font-size: 0;
+    box-shadow: 0 3px 10px rgba(24, 71, 142, 0.08);
+    transition: border-color 0.16s ease, background-color 0.16s ease, color 0.16s ease, transform 0.16s ease;
+  }
+
+  #footer-content .feedback-menu-left:hover,
+  #footer-content .feedback-menu-left:focus-visible,
+  #footer-content .feedback-menu-right:hover,
+  #footer-content .feedback-menu-right:focus-visible {
+    border-color: var(--ablecloud-brand-primary);
+    background: var(--ablecloud-brand-primary);
+    color: #ffffff;
+    transform: translateY(-2px);
+  }
+
+  #footer-content .feedback-menu-left::before,
+  #footer-content .feedback-menu-right::before {
+    font-family: "Font Awesome 5 Free";
+    font-size: 16px;
+    font-weight: 900;
+    line-height: 1;
+  }
+
+  #footer-content .feedback-menu-left::before {
+    content: "\f015";
+  }
+
+  #floatright .feedback-menu-right:first-of-type::before {
+    content: "\f303";
+  }
+
+  #floatright .feedback-menu-right:last-of-type::before {
+    content: "\f518";
   }
 
   article.TechFlowPost--assistant > div,
@@ -717,6 +815,21 @@ body {
 
     .PostStream-item {
       margin: 12px 0;
+    }
+
+    .App-content {
+      padding-bottom: 58px;
+    }
+
+    #console-nav-footer {
+      height: 52px;
+      padding: 0 12px;
+    }
+
+    #footer-content .feedback-menu-left,
+    #footer-content .feedback-menu-right {
+      width: 36px;
+      height: 36px;
     }
 
     article.Post > div {

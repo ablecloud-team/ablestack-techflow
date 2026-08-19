@@ -84,15 +84,15 @@ const action = await bytes(actionImage);
   notes(s);
 }
 {
-  const s = deck.slides.add(); s.background.fill = C.white; title(s, "정렬과 작업 버튼도 읽기 흐름에 맞췄습니다", 4);
+  const s = deck.slides.add(); s.background.fill = C.white; title(s, "작업 버튼과 Footer를 별도 영역으로 분리했습니다", 4);
   addImage(s, "mobile-actions", action, 76, 136, 330, 520, "contain");
-  text(s, "mobile-fact-1", "19/17px", 500, 178, 245, 70, 48, true, C.blue);
-  text(s, "mobile-desc-1", "Desktop/Mobile 대칭 여백", 748, 194, 430, 44, 22, false, C.gray);
-  text(s, "mobile-fact-2", "0px", 520, 300, 210, 70, 52, true, C.blue);
-  text(s, "mobile-desc-2", "아바타·제목 중심 차이", 748, 316, 390, 44, 24, false, C.gray);
-  text(s, "mobile-fact-3", "40px", 520, 422, 210, 70, 52, true, C.green);
-  text(s, "mobile-desc-3", "상시 답장 아이콘", 748, 438, 390, 44, 24, false, C.gray);
-  text(s, "mobile-foot", "비로그인 상태는 회색 비활성 · Desktop/Mobile 실제 검증", 500, 566, 680, 52, 23, true, C.ink);
+  text(s, "mobile-fact-1", "8px", 520, 178, 210, 70, 52, true, C.blue);
+  text(s, "mobile-desc-1", "카드 아래 답장 작업 영역", 748, 194, 430, 44, 22, false, C.gray);
+  text(s, "mobile-fact-2", "1px", 520, 300, 210, 70, 52, true, C.blue);
+  text(s, "mobile-desc-2", "카드·버튼 오른쪽 선 차이", 748, 316, 390, 44, 24, false, C.gray);
+  text(s, "mobile-fact-3", "38/36px", 500, 422, 245, 70, 48, true, C.green);
+  text(s, "mobile-desc-3", "Desktop/Mobile Footer 아이콘", 748, 438, 430, 44, 22, false, C.gray);
+  text(s, "mobile-foot", "중복 구분선 제거 · 비로그인 답장 비활성 · 모바일 넘침 0px", 500, 566, 680, 52, 21, true, C.ink);
   notes(s);
 }
 {

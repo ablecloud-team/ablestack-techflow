@@ -140,7 +140,7 @@ story = [
         ["최종 해결 가이드", "Green", "선택된 Knowledge Base"],
     ], [48 * mm, 34 * mm, 92 * mm]),
     Spacer(1, 5 * mm),
-    Table([[screenshot(MOBILE, 58 * mm, 127 * mm), para("390px에서는 제목 2줄과 마지막 응답 정보를 유지합니다. Hero 패딩은 데스크톱 19px, 모바일 17px로 대칭이며 아바타와 제목의 중심 차이는 0px입니다.\n\n답장은 40px 아이콘으로 항상 표시합니다. 비로그인 상태는 회색·45% 투명도·금지 커서로 구분하고 포인터 실행을 막습니다. DOM의 답장 문구는 접근 가능한 이름으로 유지합니다.\n\n사용자 화면에는 내부 근거 ID와 검토 경로를 노출하지 않습니다.")]], colWidths=[64 * mm, 110 * mm], style=TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP")])),
+    Table([[screenshot(MOBILE, 58 * mm, 127 * mm), para("390px에서는 제목 2줄과 마지막 응답 정보를 유지합니다. Hero 패딩은 데스크톱 19px, 모바일 17px로 대칭이며 아바타와 제목의 중심 차이는 0px입니다.\n\n답장은 카드 아래 8px의 외부 작업 영역에 놓고 오른쪽 선을 1px 이내로 맞췄습니다. 중복 구분선을 제거해 버튼이 다른 경계에 걸치지 않습니다. 비로그인 상태는 회색·45% 투명도로 구분합니다.\n\nFooter는 Home·Blog·Docs를 데스크톱 38px, 모바일 36px 원형 아이콘으로 표시하며 모바일 가로 넘침은 0px입니다.")]], colWidths=[64 * mm, 110 * mm], style=TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP")])),
     Spacer(1, 4 * mm), screenshot(ACTIONS, 112 * mm, 70 * mm), PageBreak(),
 
     para("5. WSL 전체 주기", "h1"),
@@ -160,7 +160,7 @@ story = [
         ["첨부 SHA-256", "19cdf526...97c"],
         ["한글 원문 키", "0건"],
     ], [70 * mm, 104 * mm]),
-    Spacer(1, 6 * mm), callout("최종 Run ID: issue73-20260819-hero-avatar-actions-final", GREEN, PALE_GREEN), PageBreak(),
+    Spacer(1, 6 * mm), callout("최종 Run ID: issue73-20260819-post-action-footer-final", GREEN, PALE_GREEN), PageBreak(),
 
     para("6. 롤백과 운영 결정", "h1"),
     make_table([
