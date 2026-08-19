@@ -324,25 +324,40 @@ body {
     top: calc(100% + 8px);
     right: 0;
     z-index: 2;
+    max-width: 100%;
     margin: 0;
     opacity: 1 !important;
   }
 
-  .Post-actions > ul,
-  .Post-actions .item-reply {
+  .Post-actions > ul {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
     margin: 0;
+  }
+
+  .Post-actions > ul > li,
+  .Post-actions .item-reply {
+    margin: 0 !important;
   }
 
   .Post-actions .Button {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 40px;
+    width: auto;
     min-width: 40px;
-    padding: 0;
+    padding: 0 12px;
     border: 1px solid var(--ablecloud-brand-border);
     background: var(--ablecloud-brand-primary-faint) !important;
     color: var(--ablecloud-brand-primary-deep) !important;
+  }
+
+  .Post-actions .item-reply .Button,
+  .Post-actions > ul > li:last-child .Button {
+    width: 40px;
+    padding: 0;
   }
 
   .Post-actions .Button:hover,
@@ -666,6 +681,30 @@ body {
 
 @media (min-width: 768px) {
   body {
+    .App--index > .App-navigation {
+      position: fixed;
+      top: 8px;
+      left: 8px;
+      z-index: 1040;
+      display: block;
+      width: 40px;
+      height: 40px;
+    }
+
+    .App--index > .App-navigation .Navigation,
+    .App--index > .App-navigation .Navigation-drawer {
+      display: block;
+      width: 40px;
+      height: 40px;
+    }
+
+    .App--index > .App-navigation .Navigation-drawer {
+      border: 1px solid var(--ablecloud-brand-border);
+      background: rgba(255, 255, 255, 0.96);
+      color: var(--ablecloud-brand-primary-deep);
+      box-shadow: var(--ablecloud-shadow-soft);
+    }
+
     .DiscussionListItem {
       margin-bottom: 9px;
     }

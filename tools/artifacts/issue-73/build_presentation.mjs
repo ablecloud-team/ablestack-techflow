@@ -84,15 +84,15 @@ const action = await bytes(actionImage);
   notes(s);
 }
 {
-  const s = deck.slides.add(); s.background.fill = C.white; title(s, "작업 버튼과 Footer를 별도 영역으로 분리했습니다", 4);
+  const s = deck.slides.add(); s.background.fill = C.white; title(s, "작업 버튼은 떨어뜨리고 탐색 버튼은 계속 보이게 했습니다", 4);
   addImage(s, "mobile-actions", action, 76, 136, 330, 520, "contain");
   text(s, "mobile-fact-1", "8px", 520, 178, 210, 70, 52, true, C.blue);
-  text(s, "mobile-desc-1", "카드 아래 답장 작업 영역", 748, 194, 430, 44, 22, false, C.gray);
-  text(s, "mobile-fact-2", "1px", 520, 300, 210, 70, 52, true, C.blue);
-  text(s, "mobile-desc-2", "카드·버튼 오른쪽 선 차이", 748, 316, 390, 44, 24, false, C.gray);
+  text(s, "mobile-desc-1", "답장·좋아요·더 보기 사이 간격", 748, 194, 430, 44, 22, false, C.gray);
+  text(s, "mobile-fact-2", "40px", 520, 300, 210, 70, 52, true, C.blue);
+  text(s, "mobile-desc-2", "목록 복귀 후 유지되는 탐색 버튼", 748, 316, 430, 44, 22, false, C.gray);
   text(s, "mobile-fact-3", "38/36px", 500, 422, 245, 70, 48, true, C.green);
   text(s, "mobile-desc-3", "Desktop/Mobile Footer 아이콘", 748, 438, 430, 44, 22, false, C.gray);
-  text(s, "mobile-foot", "중복 구분선 제거 · 비로그인 답장 비활성 · 모바일 넘침 0px", 500, 566, 680, 52, 21, true, C.ink);
+  text(s, "mobile-foot", "버튼 겹침 0px · 비로그인 답장 비활성 · 모바일 넘침 0px", 500, 566, 680, 52, 21, true, C.ink);
   notes(s);
 }
 {
