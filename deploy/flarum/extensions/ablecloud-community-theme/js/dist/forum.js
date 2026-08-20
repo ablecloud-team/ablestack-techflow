@@ -452,12 +452,35 @@
     fallbackPaneActive = true;
   }
 
+  function syncComposerPaneState(root) {
+    var app = root.querySelector('.App') || document.querySelector('.App');
+    var composerOpen = Boolean(document.querySelector('.Composer.visible:not(.minimized)'));
+
+    if (!app) {
+      return composerOpen;
+    }
+
+    app.classList.toggle('ablecloud-composer-open', composerOpen);
+    document.documentElement.classList.toggle('ablecloud-composer-open', composerOpen);
+
+    if (composerOpen && forumApp.pane) {
+      forumApp.pane.hide();
+    }
+
+    return composerOpen;
+  }
+
   function showFallbackPaneFromEdge(event) {
+    var composerOpen = syncComposerPaneState(document);
+
+    if (composerOpen) {
+      return;
+    }
+
     if (
       fallbackPaneActive &&
       forumApp.pane &&
-      event.clientX < 10 &&
-      !document.querySelector('.Composer.visible:not(.minimized)')
+      event.clientX < 10
     ) {
       forumApp.pane.show();
     }
@@ -473,6 +496,7 @@
         enhanceDiscussionListItems(document);
         captureDiscussionListSnapshot(document);
         ensureFallbackDiscussionPane(document);
+        syncComposerPaneState(document);
         enhanceDiscussionDetail(document);
       });
     };

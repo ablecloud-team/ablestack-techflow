@@ -132,6 +132,13 @@ sudo bash deploy/flarum/apply-community-theme-update.sh \
 - 데스크톱 활성 작성기는 최소 336px 높이를 가져야 하며 게시 버튼은 화면 하단에서
   20px 이상 떨어져야 한다. 작성기가 표시되는 동안 왼쪽 토론 목록은 숨겨져 서로
   겹치지 않아야 하고, 작성기를 닫으면 목록이 다시 표시되어야 한다.
+- 작성기 본문 편집 영역과 하단 도구막대는 독립된 세로 Flex 행이어야 한다. 두 영역의
+  경계는 맞닿을 수 있지만 교차하면 안 되며 도구막대 하단 전체가 작성기 경계 안에
+  있어야 한다. 작성 중인 배경 토론 행은 Hover 상태에서도 작성기보다 앞으로 나오면
+  안 된다.
+- 400px 토론 목록의 더보기 메뉴는 32×32px이고 카드 상단과 오른쪽에서 약 10px
+  안쪽에 있어야 한다. `translateY`를 사용하지 않으며 버튼 전체가 카드 경계 안에
+  포함되어야 한다.
 - 사용자 프로필·설정 화면을 1,150px 폭에서 스크롤했을 때 고정 메뉴 폭이
   280px로 유지되고 메뉴 오른쪽 끝이 본문 왼쪽보다 작거나 같은지 확인한다.
 - `Answered`, `Best Answer`, `Select Best Answer` 원문 노출이 없어야 한다.
@@ -160,4 +167,5 @@ sudo systemctl restart php8.3-fpm nginx
   정보 계층·이미지 썸네일, 하단 Footer 제거와 우측 고정 퀵 링크, 메인 환영 배너
   제거, Flarum 세로 탐색 복원과 1165px 상세 셸 정렬이 WSL 및 운영에 반영되었다.
   최신 운영 백업은
-  `/var/backups/techflow-flarum/theme-composer-pane-final-20260820T112831KST`에 보존한다.
+  `/var/backups/techflow-flarum/theme-composer-pane-layer-final-20260820T122747KST`에
+  보존한다.

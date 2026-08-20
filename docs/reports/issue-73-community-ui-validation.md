@@ -482,3 +482,45 @@ Toolbar 아래에 가려지지 않도록 했다.
 외부 HTTPS 200과 Nginx·PHP-FPM·MariaDB·Community Monitor Timer `active`를
 확인했으며 DB Schema, 게시물, 첨부, TechFlow AI, GitHub→Chat Webhook은 변경하지
 않았다.
+
+### 좌측 목록 메뉴와 토론 작성기 레이어 최종 교정
+
+좁은 400px 토론 목록의 더보기 메뉴가 카드 위로 튀어나온 원인은 데스크톱 목록의
+`top: 50%`와 `translateY(-50%)`가 그대로 상속된 것이었다. 좁은 목록에서는 메뉴를
+카드 상단 10px, 오른쪽 10px에 별도로 고정하고 버튼 영역을 32×32px로 통일했다.
+WSL과 운영 브라우저 모두 카드 실제 경계에서 메뉴 상단까지 11px이며 버튼 전체가
+카드 안에 포함되고 Transform은 `none`이다.
+
+토론 생성 작성기에서는 기존 보완 CSS가 하단 도구막대를 20px 위로 이동시켜 본문
+편집 영역과 실제로 겹쳤다. 작성기 내부를 세로 Flex 구조로 바꾸고 편집 영역과
+도구막대를 각각 독립 행으로 배치했다. 두 영역의 경계 간격은 0px이지만 교차 영역은
+없으며, 65.5px 도구막대 전체가 작성기 하단에서 15.5px 안쪽에 남는다. 게시 버튼은
+작성기 하단에서 29.5px 떨어져 있다.
+
+작성기와 목록이 겹치던 문제는 두 경로를 함께 차단했다. JavaScript가 새 토론 또는
+답변 작성기의 `visible` 상태를 `ablecloud-composer-open` 클래스로 동기화하고 기존
+Pane Controller를 즉시 닫는다. 동시에 작성 중인 화면의 토론 행은 Hover 상태여도
+Z-index를 0으로 유지해 배경 목록이 작성기 앞으로 올라오지 못한다. 목록을 먼저
+고정해 화면에 표시한 뒤 답변 작성기를 연 운영 브라우저 검증에서도 Pane은
+`display:none`, 작성기와의 교차는 `false`였다.
+
+| 브라우저 검증 항목 | WSL | 운영 |
+|---|---:|---:|
+| 목록 메뉴 크기 | 32×32px | 32×32px |
+| 카드 상단 기준 메뉴 위치 | 11px | 11px |
+| 메뉴가 카드 내부에 포함 | 예 | 예 |
+| 작성기 높이 | 336px | 336px |
+| 편집 영역 / 도구막대 높이 | 180 / 65.5px | 180 / 65.5px |
+| 편집 영역과 도구막대 겹침 | 없음 | 없음 |
+| 도구막대 하단 여백 | 15.5px | 15.5px |
+| 목록을 먼저 연 뒤 작성기 겹침 | 없음 | 없음 |
+
+계약 테스트 13건과 WSL
+`issue-73-composer-layout-flex-20260820` 적용·비활성화·재적용 주기를 통과했다.
+운영 배포 전 백업은
+`/var/backups/techflow-flarum/theme-composer-pane-layer-final-20260820T122747KST`에
+보존했다. 운영 Source와 Vendor LESS SHA-256은
+`b13615bd81ac3f794771969e2f97e7cf0bed1cdd02098266b120ac7019f62da1`, JS SHA-256은
+`7636c2790502f03bf148422baec98b6f76c4d77519d5dcdf783469eff914c643`로 일치한다.
+외부 HTTPS 브라우저 접속, Nginx·PHP-FPM·MariaDB·Community Monitor Timer
+`active`를 확인했으며 원격 임시 배포 자산은 제거했다.

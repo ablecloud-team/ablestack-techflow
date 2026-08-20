@@ -1824,13 +1824,50 @@ body {
       min-height: 336px;
     }
 
+    .Composer.active:not(.fullScreen) .Composer-content {
+      height: 100% !important;
+      box-sizing: border-box;
+    }
+
+    .Composer.active:not(.fullScreen) .ComposerBody,
+    .Composer.active:not(.fullScreen) .ComposerBody-content {
+      height: 100% !important;
+      min-height: 0;
+    }
+
+    .Composer.active:not(.fullScreen) .ComposerBody-content,
+    .Composer.active:not(.fullScreen) .TextEditor {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .Composer.active:not(.fullScreen) .ComposerBody-header,
+    .Composer.active:not(.fullScreen) .TextEditor-controls {
+      flex: 0 0 auto;
+    }
+
+    .Composer.active:not(.fullScreen) .ComposerBody-editor,
+    .Composer.active:not(.fullScreen) .TextEditor,
+    .Composer.active:not(.fullScreen) .TextEditor-editorContainer {
+      height: auto !important;
+      min-height: 0;
+      flex: 1 1 auto;
+    }
+
+    .Composer.active:not(.fullScreen) .ComposerBody-mentionsWrapper,
+    .Composer.active:not(.fullScreen) .ComposerBody-emojiWrapper {
+      height: 100%;
+      min-height: 0;
+    }
+
     .Composer.active:not(.fullScreen) .TextEditor-editor {
-      padding-bottom: 32px;
+      height: 100% !important;
+      padding-bottom: 12px;
     }
 
     .Composer.active:not(.fullScreen) .TextEditor-controls {
-      position: relative;
-      bottom: 20px;
+      position: static;
+      bottom: auto;
     }
   }
 
@@ -2520,10 +2557,22 @@ body {
 
     // Keep the discussion context available, but never let the hover pane sit
     // on top of the composer while the user is writing a new topic or reply.
+    // The explicit class is synchronized by forum.js and avoids depending on
+    // :has() support or on the composer being mounted below .App.
+    html.ablecloud-composer-open .DiscussionPage-list,
+    .App.ablecloud-composer-open .DiscussionPage-list,
     .App:has(.Composer.visible:not(.minimized)) .DiscussionPage-list {
       display: none !important;
     }
 
+    html.ablecloud-composer-open .DiscussionListItem,
+    html.ablecloud-composer-open .DiscussionListItem:hover,
+    html.ablecloud-composer-open .DiscussionListItem:focus-within,
+    html.ablecloud-composer-open .DiscussionListItem:has(.DiscussionListItem-controls.open) {
+      z-index: 0 !important;
+    }
+
+    .App.hasPane.panePinned.ablecloud-composer-open .App-composer,
     .App.hasPane.panePinned:has(.Composer.visible:not(.minimized)) .App-composer {
       left: 0;
     }
@@ -2666,6 +2715,21 @@ body {
       right: 12px;
       bottom: 12px;
       transform: none;
+    }
+
+    .DiscussionPage-list .DiscussionListItem-controls {
+      top: 10px;
+      right: 10px;
+      z-index: 1060;
+      transform: none;
+    }
+
+    .DiscussionPage-list .DiscussionListItem-controls > .Dropdown-toggle {
+      width: 32px;
+      min-width: 32px;
+      height: 32px;
+      min-height: 32px;
+      padding: 0;
     }
   }
 }

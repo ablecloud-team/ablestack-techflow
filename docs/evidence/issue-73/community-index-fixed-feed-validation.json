@@ -80,9 +80,9 @@
   "production": {
     "host": "172.16.0.234",
     "url": "https://community.ablecloud.io/",
-    "backup_root": "/var/backups/techflow-flarum/theme-composer-pane-final-20260820T112831KST",
-    "theme_less_sha256": "3fc9dda37cc2e7e78024d470e122a1b883d023de658c973be9467e40359d0ca9",
-    "theme_js_sha256": "a52c0bc148280a01f8cbce9a1ce79a28be6d7529bba7591ea1a6a9ed042dfe62",
+    "backup_root": "/var/backups/techflow-flarum/theme-composer-pane-layer-final-20260820T122747KST",
+    "theme_less_sha256": "b13615bd81ac3f794771969e2f97e7cf0bed1cdd02098266b120ac7019f62da1",
+    "theme_js_sha256": "7636c2790502f03bf148422baec98b6f76c4d77519d5dcdf783469eff914c643",
     "services": {
       "nginx": "active",
       "php8.3-fpm": "active",
@@ -220,30 +220,47 @@
     "result": "PASS"
   },
   "composer_and_discussion_pane": {
-    "root_cause": "the start-from-top handler forced window.location.assign and discarded Flarum's in-memory discussion-list state",
+    "root_cause": [
+      "the start-from-top handler forced window.location.assign and discarded Flarum's in-memory discussion-list state",
+      "the narrow pane inherited the desktop control rule top 50 percent plus translateY minus 50 percent, which placed the ellipsis above the card",
+      "the active composer moved its footer upward by 20px, overlapping the editor, while hovered discussion rows could rise above the composer at z-index 1050"
+    ],
     "navigation_fix": "retain Flarum SPA navigation, normalize the link target, and reset scroll without preventDefault",
     "reload_fallback": "store the already-rendered DiscussionList in session storage and restore a 400px pane after a direct detail reload",
     "composer_layout": {
       "desktop_active_min_height_px": 336,
-      "submit_bottom_inset_px": { "wsl": 22, "production": 22 },
-      "footer_bottom_inset_px": { "wsl": 8, "production": 8 },
+      "editor_height_px": { "wsl": 180, "production": 180 },
+      "footer_height_px": { "wsl": 65.5, "production": 65.5 },
+      "editor_footer_gap_px": { "wsl": 0, "production": 0 },
+      "editor_footer_overlap": { "wsl": false, "production": false },
+      "submit_bottom_inset_px": { "wsl": 29.5, "production": 29.5 },
+      "footer_bottom_inset_px": { "wsl": 15.5, "production": 15.5 },
+      "footer_inside_composer": { "wsl": true, "production": true },
+      "background_discussion_z_index_while_composing": { "wsl": 0, "production": 0 },
       "horizontal_overflow": false
     },
     "discussion_pane": {
       "width_px": 400,
+      "item_control_size_px": { "width": 32, "height": 32 },
+      "item_control_top_offset_px": { "wsl": 11, "production": 11 },
+      "item_control_inside_card": { "wsl": true, "production": true },
+      "item_control_transform": "none",
       "item_count": { "wsl": 20, "production": 20 },
       "active_item_after_reload": { "wsl": 1, "production": 1 },
       "list_click_scroll_y": { "wsl": 0, "production": 0 },
       "hidden_while_composer_visible": true,
       "restored_after_composer_close": true,
-      "composer_overlap": { "wsl": false, "production": false }
+      "composer_overlap": { "wsl": false, "production": false },
+      "explicit_composer_state_class": "ablecloud-composer-open",
+      "pane_display_while_composing": { "wsl": "none", "production": "none" }
     },
-    "wsl_rehearsal": "issue-73-composer-pane-v8 PASS",
+    "wsl_rehearsal": "issue-73-composer-layout-flex-20260820 PASS",
+    "production_browser_https": true,
     "result": "PASS"
   },
   "validation": {
     "theme_contract_tests": { "passed": 13, "failed": 0 },
-    "wsl_rehearsal": "issue-73-composer-pane-v8 PASS",
+    "wsl_rehearsal": "issue-73-composer-layout-flex-20260820 PASS",
     "header_hero_body_alignment": "WSL and production x=250, right=1415, width=1165",
     "discussion_item_enhancement_is_idempotent": true,
     "summary_uses_existing_store_data": true,
