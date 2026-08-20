@@ -167,6 +167,38 @@ class CommunityThemeContractTests(unittest.TestCase):
         self.assertIn("composerOpen && forumApp.pane", self.forum_js)
         self.assertIn("forumApp.pane.hide()", self.forum_js)
 
+    def test_infinite_scroll_emoji_and_new_discussion_dialog_contract(self) -> None:
+        for script_contract in (
+            "enhanceInfiniteDiscussionLoading",
+            "new window.IntersectionObserver",
+            "rootMargin: '0px 0px 120px 0px'",
+            "currentButton.click()",
+            "data-ablecloud-auto-load",
+            "handleEmojiPaletteClick",
+            "ablecloud-EmojiPicker",
+            "data-ablecloud-emoji",
+            "document.execCommand('insertText'",
+            "삽입할 이모지를 선택하세요.",
+            "ablecloud-new-discussion-open",
+            "attributeFilter: ['class']",
+            "window.setTimeout(schedule, 150)",
+            "window.setTimeout(schedule, 600)",
+        ):
+            with self.subTest(script_contract=script_contract):
+                self.assertIn(script_contract, self.forum_js)
+
+        for style_contract in (
+            "&.ablecloud-new-discussion-open .App-composer",
+            "background: rgba(20, 42, 75, 0.46)",
+            "max-width: 960px",
+            "height: calc(100vh - 120px) !important",
+            ".ablecloud-EmojiPicker-grid",
+            "grid-template-columns: repeat(6, minmax(0, 1fr))",
+            ".EmojiDropdown > li:not(.Dropdown-header) > button",
+        ):
+            with self.subTest(style_contract=style_contract):
+                self.assertIn(style_contract, self.less)
+
     def test_reddit_style_discussion_item_structure_contract(self) -> None:
         for script_contract in (
             "enhanceDiscussionListItems",

@@ -10,6 +10,278 @@
   var discussionListSnapshotKey = 'ablecloud-community-discussion-list';
   var fallbackPaneAttribute = 'data-ablecloud-fallback-pane';
   var fallbackPaneActive = false;
+  var infiniteLoadObserver = null;
+  var infiniteLoadTarget = null;
+  var emojiPalette = null;
+  var emojiPaletteTrigger = null;
+  var emojiSelectionRange = null;
+  var commonEmojis = [
+    ['😀', '웃는 얼굴'],
+    ['😃', '활짝 웃는 얼굴'],
+    ['😊', '미소'],
+    ['😂', '기쁨의 눈물'],
+    ['🙂', '살짝 미소'],
+    ['😉', '윙크'],
+    ['😍', '반함'],
+    ['🤔', '생각 중'],
+    ['😮', '놀람'],
+    ['😢', '슬픔'],
+    ['😭', '울음'],
+    ['😅', '안도'],
+    ['😎', '멋짐'],
+    ['👍', '좋아요'],
+    ['👎', '싫어요'],
+    ['👏', '박수'],
+    ['🙏', '부탁과 감사'],
+    ['✅', '확인'],
+    ['❗', '중요'],
+    ['⚠️', '주의'],
+    ['💡', '아이디어'],
+    ['🎉', '축하'],
+    ['❤️', '하트'],
+    ['🔥', '불꽃'],
+  ];
+
+  function disconnectInfiniteDiscussionLoading() {
+    if (infiniteLoadObserver) {
+      infiniteLoadObserver.disconnect();
+    }
+
+    infiniteLoadObserver = null;
+    infiniteLoadTarget = null;
+  }
+
+  function enhanceInfiniteDiscussionLoading(root) {
+    var scrollRoot = root.querySelector('.App--index .IndexPage-results');
+    var loadMore = root.querySelector('.App--index .DiscussionList-loadMore');
+    var button = loadMore && loadMore.querySelector('button');
+
+    if (!scrollRoot || !loadMore || !button || typeof window.IntersectionObserver !== 'function') {
+      disconnectInfiniteDiscussionLoading();
+      return;
+    }
+
+    if (loadMore.getAttribute('data-ablecloud-auto-load') !== 'true') {
+      loadMore.setAttribute('data-ablecloud-auto-load', 'true');
+    }
+
+    if (infiniteLoadTarget === loadMore) {
+      return;
+    }
+
+    disconnectInfiniteDiscussionLoading();
+    infiniteLoadTarget = loadMore;
+    infiniteLoadObserver = new window.IntersectionObserver(
+      function (entries) {
+        entries.forEach(function (entry) {
+          var currentButton = entry.target.querySelector('button');
+
+          if (
+            !entry.isIntersecting ||
+            !currentButton ||
+            currentButton.disabled ||
+            entry.target.getAttribute('data-ablecloud-loading') === 'true'
+          ) {
+            return;
+          }
+
+          entry.target.setAttribute('data-ablecloud-loading', 'true');
+          currentButton.click();
+
+          window.setTimeout(function () {
+            if (entry.target.isConnected) {
+              entry.target.removeAttribute('data-ablecloud-loading');
+            }
+          }, 750);
+        });
+      },
+      {
+        root: scrollRoot,
+        rootMargin: '0px 0px 120px 0px',
+        threshold: 0.01,
+      }
+    );
+    infiniteLoadObserver.observe(loadMore);
+  }
+
+  function closeEmojiPalette() {
+    if (emojiPalette && emojiPalette.parentNode) {
+      emojiPalette.parentNode.removeChild(emojiPalette);
+    }
+
+    if (emojiPaletteTrigger) {
+      emojiPaletteTrigger.setAttribute('aria-expanded', 'false');
+    }
+
+    emojiPalette = null;
+    emojiPaletteTrigger = null;
+    emojiSelectionRange = null;
+  }
+
+  function rememberEmojiCaret(editor) {
+    var selection = window.getSelection();
+
+    if (selection && selection.rangeCount) {
+      var range = selection.getRangeAt(0);
+
+      if (editor.contains(range.commonAncestorContainer)) {
+        return range.cloneRange();
+      }
+    }
+
+    var fallbackRange = document.createRange();
+    fallbackRange.selectNodeContents(editor);
+    fallbackRange.collapse(false);
+    return fallbackRange;
+  }
+
+  function insertEmojiAtCaret(editor, emoji) {
+    if (!editor || !emoji) {
+      return;
+    }
+
+    var selection = window.getSelection();
+    var range = emojiSelectionRange && emojiSelectionRange.startContainer.isConnected
+      ? emojiSelectionRange
+      : rememberEmojiCaret(editor);
+
+    editor.focus();
+
+    if (selection) {
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+
+    var value = emoji + ' ';
+    var inserted = false;
+
+    try {
+      inserted = document.execCommand('insertText', false, value);
+    } catch (error) {
+      inserted = false;
+    }
+
+    if (!inserted) {
+      range.deleteContents();
+      var textNode = document.createTextNode(value);
+      range.insertNode(textNode);
+      range.setStartAfter(textNode);
+      range.collapse(true);
+      if (selection) {
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
+      editor.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+  }
+
+  function openEmojiPalette(trigger) {
+    var composer = trigger.closest('.Composer');
+    var editor = composer && composer.querySelector('.TextEditor-editor[contenteditable="true"]');
+
+    if (!composer || !editor) {
+      return;
+    }
+
+    closeEmojiPalette();
+    document.querySelectorAll('.EmojiDropdown').forEach(function (dropdown) {
+      dropdown.remove();
+    });
+
+    emojiSelectionRange = rememberEmojiCaret(editor);
+    emojiPaletteTrigger = trigger;
+    trigger.setAttribute('aria-expanded', 'true');
+
+    var palette = document.createElement('div');
+    palette.className = 'ablecloud-EmojiPicker';
+    palette.setAttribute('role', 'dialog');
+    palette.setAttribute('aria-label', '이모지 선택');
+
+    var header = document.createElement('div');
+    header.className = 'ablecloud-EmojiPicker-header';
+
+    var title = document.createElement('strong');
+    title.textContent = '이모지 선택';
+    header.appendChild(title);
+
+    var closeButton = document.createElement('button');
+    closeButton.type = 'button';
+    closeButton.className = 'ablecloud-EmojiPicker-close';
+    closeButton.setAttribute('data-ablecloud-emoji-close', 'true');
+    closeButton.setAttribute('aria-label', '이모지 선택창 닫기');
+    closeButton.textContent = '×';
+    header.appendChild(closeButton);
+    palette.appendChild(header);
+
+    var help = document.createElement('p');
+    help.className = 'ablecloud-EmojiPicker-help';
+    help.textContent = '삽입할 이모지를 선택하세요.';
+    palette.appendChild(help);
+
+    var grid = document.createElement('div');
+    grid.className = 'ablecloud-EmojiPicker-grid';
+
+    commonEmojis.forEach(function (item) {
+      var button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'ablecloud-EmojiPicker-option';
+      button.setAttribute('data-ablecloud-emoji', item[0]);
+      button.setAttribute('aria-label', item[1]);
+      button.title = item[1];
+      button.textContent = item[0];
+      grid.appendChild(button);
+    });
+
+    palette.appendChild(grid);
+    composer.appendChild(palette);
+    emojiPalette = palette;
+  }
+
+  function handleEmojiPaletteClick(event) {
+    var trigger = event.target.closest && event.target.closest('.Composer button[aria-label="이모지 삽입"]');
+
+    if (trigger) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+
+      if (emojiPalette) {
+        closeEmojiPalette();
+      } else {
+        openEmojiPalette(trigger);
+      }
+
+      return;
+    }
+
+    var choice = event.target.closest && event.target.closest('[data-ablecloud-emoji]');
+
+    if (choice && emojiPalette && emojiPalette.contains(choice)) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      var editor = emojiPalette.closest('.Composer').querySelector('.TextEditor-editor[contenteditable="true"]');
+      insertEmojiAtCaret(editor, choice.getAttribute('data-ablecloud-emoji'));
+      closeEmojiPalette();
+      return;
+    }
+
+    if (event.target.closest && event.target.closest('[data-ablecloud-emoji-close="true"]')) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      closeEmojiPalette();
+      return;
+    }
+
+    if (emojiPalette && !emojiPalette.contains(event.target)) {
+      closeEmojiPalette();
+    }
+  }
+
+  function handleEmojiPaletteKeydown(event) {
+    if (event.key === 'Escape' && emojiPalette) {
+      event.preventDefault();
+      closeEmojiPalette();
+    }
+  }
 
   function formatDiscussionCreatedAt(createdAt) {
     if (!(createdAt instanceof Date) || Number.isNaN(createdAt.getTime())) {
@@ -455,13 +727,25 @@
   function syncComposerPaneState(root) {
     var app = root.querySelector('.App') || document.querySelector('.App');
     var composerOpen = Boolean(document.querySelector('.Composer.visible:not(.minimized)'));
+    var newDiscussionOpen = Boolean(
+      document.querySelector('.Composer.visible:not(.minimized) .ComposerBody--discussion')
+    );
+
+    document.documentElement.classList.toggle('ablecloud-composer-open', composerOpen);
+    document.documentElement.classList.toggle('ablecloud-new-discussion-open', newDiscussionOpen);
+    document.body.classList.toggle('ablecloud-composer-open', composerOpen);
+    document.body.classList.toggle('ablecloud-new-discussion-open', newDiscussionOpen);
 
     if (!app) {
       return composerOpen;
     }
 
     app.classList.toggle('ablecloud-composer-open', composerOpen);
-    document.documentElement.classList.toggle('ablecloud-composer-open', composerOpen);
+    app.classList.toggle('ablecloud-new-discussion-open', newDiscussionOpen);
+
+    if (!composerOpen) {
+      closeEmojiPalette();
+    }
 
     if (composerOpen && forumApp.pane) {
       forumApp.pane.hide();
@@ -494,6 +778,7 @@
         formatTagDiscussionDates(document);
         normalizeDiscussionListTargets(document);
         enhanceDiscussionListItems(document);
+        enhanceInfiniteDiscussionLoading(document);
         captureDiscussionListSnapshot(document);
         ensureFallbackDiscussionPane(document);
         syncComposerPaneState(document);
@@ -504,12 +789,21 @@
     schedule();
 
     new MutationObserver(schedule).observe(document.body, {
+      attributes: true,
+      attributeFilter: ['class'],
       childList: true,
       characterData: true,
       subtree: true,
     });
 
+    document.addEventListener('click', function () {
+      window.setTimeout(schedule, 0);
+      window.setTimeout(schedule, 150);
+      window.setTimeout(schedule, 600);
+    }, true);
     document.addEventListener('click', openDiscussionFromTop, true);
+    document.addEventListener('click', handleEmojiPaletteClick, true);
+    document.addEventListener('keydown', handleEmojiPaletteKeydown, true);
     document.addEventListener('mousemove', showFallbackPaneFromEdge, { passive: true });
   });
 

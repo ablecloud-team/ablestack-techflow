@@ -1,7 +1,7 @@
 {
   "schema_version": "2.0",
-  "executed_at": "2026-08-20T02:23:35Z",
-  "scope": "Flarum index without welcome banner, Reddit-style discussion list and detail reading flow, and right-side quick links",
+  "executed_at": "2026-08-20T04:09:15Z",
+  "scope": "Flarum index infinite loading, Korean emoji insertion, central new-discussion dialog, Reddit-style discussion list and detail reading flow",
   "design_reference": "https://www.reddit.com/new/?feed=home",
   "navigation_reference": "https://community.ablecloud.io/settings",
   "change": {
@@ -10,6 +10,10 @@
     "scroll_region": ".IndexPage-results including .IndexPage-toolbar and .DiscussionList, scrollbar hidden",
     "discussion_list_owns_scroll": false,
     "toolbar_scrolls_with_feed": true,
+    "discussion_loading": "IntersectionObserver automatically activates the native load-more action near the feed end",
+    "load_more_button": "retained only as a no-IntersectionObserver fallback",
+    "emoji_picker": "24 common Unicode emoji with Korean labels; native internal English names hidden",
+    "new_discussion_composer": "central modal dialog with a full-viewport backdrop; reply composer unchanged",
     "feed": "flat transparent feed with row separators and no outer container card",
     "individual_row_card": false,
     "discussion_item_structure": [
@@ -43,6 +47,7 @@
     "browser": {
       "viewport": { "width": 1680, "height": 825 },
       "enhanced_discussion_count": 20,
+      "automatic_discussion_counts": [20, 40, 60],
       "sample_discussion_ids": [144, 140, 139, 138, 137],
       "sample_row_heights_px": [137, 137, 137, 156, 156],
       "title_line_height_px": 25,
@@ -80,9 +85,9 @@
   "production": {
     "host": "172.16.0.234",
     "url": "https://community.ablecloud.io/",
-    "backup_root": "/var/backups/techflow-flarum/theme-composer-pane-layer-final-20260820T122747KST",
-    "theme_less_sha256": "b13615bd81ac3f794771969e2f97e7cf0bed1cdd02098266b120ac7019f62da1",
-    "theme_js_sha256": "7636c2790502f03bf148422baec98b6f76c4d77519d5dcdf783469eff914c643",
+    "backup_root": "/var/backups/techflow-flarum/theme-infinite-emoji-dialog-final-20260820T1430KST",
+    "theme_less_sha256": "1aff8b1ec4afb8225f960e3cb71666f2707c527b8222239d064df36b9046672b",
+    "theme_js_sha256": "977a9bf06026ab4ff9ec8d5348fcf07edcaa58d38d7abaf94a11114d0a586779",
     "services": {
       "nginx": "active",
       "php8.3-fpm": "active",
@@ -94,6 +99,7 @@
     "browser": {
       "viewport": { "width": 1680, "height": 825 },
       "enhanced_discussion_count": 20,
+      "automatic_discussion_counts": [20, 40, 60],
       "solved_sample_discussion_id": 173,
       "solved_sample_row_height_px": 187,
       "plain_sample_discussion_id": 144,
@@ -219,6 +225,43 @@
     "production_browser": { "visible_icon_width_px": "15 to 16", "broken_glyph_count": 0 },
     "result": "PASS"
   },
+  "infinite_loading_emoji_and_new_discussion_dialog": {
+    "infinite_loading": {
+      "trigger": "IntersectionObserver rooted at .IndexPage-results with a 120px bottom margin",
+      "wsl_browser_counts": [20, 40, 60],
+      "production_browser_counts": [20, 40, 60],
+      "manual_button_click_required": false,
+      "native_button_fallback_retained": true,
+      "repeated_dom_mutation_removed": true
+    },
+    "emoji_picker": {
+      "language": "Korean",
+      "option_count": 24,
+      "native_internal_name_visible": false,
+      "native_dropdown_visible": false,
+      "inserted_value": "😊",
+      "production_editor_text": "이모지 삽입 확인 😊 ",
+      "insertion_result": "PASS"
+    },
+    "new_discussion_dialog": {
+      "scope": "new discussion only; reply composer unchanged",
+      "first_click_state_sync": true,
+      "viewport_px": { "width": 1680, "height": 881 },
+      "composer_rect_px": { "x": 410.875, "y": 206.5, "width": 843.25, "height": 520, "bottom": 726.5 },
+      "backdrop_rect_px": { "x": 0, "y": 0, "width": 1665, "height": 881 },
+      "backdrop_color": "rgba(20, 42, 75, 0.46)",
+      "editor_height_px": 376.5,
+      "toolbar_height_px": 65.5,
+      "editor_toolbar_overlap": false,
+      "minimize_control": "hidden",
+      "fullscreen_control": "hidden",
+      "close_control": "visible",
+      "result": "PASS"
+    },
+    "wsl_rehearsal": "issue-73-browser-final-20260820 PASS",
+    "production_deployment": "PASS",
+    "result": "PASS"
+  },
   "composer_and_discussion_pane": {
     "root_cause": [
       "the start-from-top handler forced window.location.assign and discarded Flarum's in-memory discussion-list state",
@@ -259,8 +302,8 @@
     "result": "PASS"
   },
   "validation": {
-    "theme_contract_tests": { "passed": 13, "failed": 0 },
-    "wsl_rehearsal": "issue-73-composer-layout-flex-20260820 PASS",
+    "theme_contract_tests": { "passed": 14, "failed": 0 },
+    "wsl_rehearsal": "issue-73-browser-final-20260820 PASS",
     "header_hero_body_alignment": "WSL and production x=250, right=1415, width=1165",
     "discussion_item_enhancement_is_idempotent": true,
     "summary_uses_existing_store_data": true,
