@@ -204,14 +204,17 @@ class CommunityThemeContractTests(unittest.TestCase):
             ".App--discussion .item-bestAnswerPost",
             ".ablecloud-InlineReplyPrompt",
             ".ablecloud-TechnicalBlock--collapsed",
-            "single reading column without side panels",
+            "native Flarum vertical navigator",
         ):
             with self.subTest(style_contract=style_contract):
                 self.assertIn(style_contract, self.less)
 
         self.assertIn("display: none !important", self.less)
         self.assertIn("max-width: 1100px", self.less)
-        self.assertIn("position: relative !important", self.less)
+        self.assertIn("max-width: 1165px", self.less)
+        self.assertIn("padding-right: 80px", self.less)
+        self.assertIn("scrollbar-gutter: stable", self.less)
+        self.assertIn("margin-top: 16px", self.less)
         self.assertIn("justify-content: flex-start", self.less)
 
     def test_compact_hero_and_navigation_width_contract(self) -> None:

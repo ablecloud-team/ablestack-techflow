@@ -2010,6 +2010,12 @@ body {
     overflow: hidden;
   }
 
+  html:has(body > .App--index) {
+    // Reserve the same vertical-scrollbar gutter used by discussion pages so
+    // the 1165px index and discussion shells share identical outer edges.
+    scrollbar-gutter: stable;
+  }
+
   body {
     // Align the top navigation and welcome area with the 1165px index shell.
     // The inner content remains 1100px; the added width represents the quick-link rail.
@@ -3017,7 +3023,7 @@ body {
  *
  * Keep the established 1100px content width and the adjacent quick-link rail.
  * The index no longer uses a welcome banner. Discussion pages use a compact,
- * content-aligned title block and a single reading column without side panels.
+ * content-aligned title block and the native Flarum vertical navigator.
  */
 .App--index .WelcomeHero {
   display: none !important;
@@ -3032,9 +3038,9 @@ body {
 
 .App--discussion .DiscussionHero .container {
   width: 100%;
-  max-width: 1100px;
+  max-width: 1165px;
   box-sizing: border-box;
-  padding: 17px 0 15px;
+  padding: 17px 80px 15px 15px;
 }
 
 .App--discussion .DiscussionHero-items {
@@ -3147,18 +3153,19 @@ body {
   font-weight: 900;
 }
 
-.App--discussion .DiscussionPage-discussion > .container,
+.App--discussion .DiscussionPage-discussion > .container {
+  width: 100%;
+  max-width: 1165px;
+  box-sizing: border-box;
+  padding-right: 80px;
+}
+
 .App--discussion .DiscussionPage-stream,
 .App--discussion .PostStream {
   width: 100%;
   max-width: 1100px;
   box-sizing: border-box;
 }
-
-.App--discussion .DiscussionPage-discussion > .container {
-  display: block;
-}
-
 .App--discussion .PostStream {
   margin: 0;
 }
@@ -3334,70 +3341,8 @@ body {
 }
 
 @media (min-width: 768px) {
-  .App--discussion .DiscussionPage-nav {
-    position: relative !important;
-    top: auto !important;
-    width: 100% !important;
-    margin: 0 0 8px !important;
-    padding: 14px 0 10px;
-    z-index: 20;
-  }
-
-  .App--discussion .DiscussionPage-nav > ul {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin: 0;
-  }
-
-  .App--discussion .DiscussionPage-nav > ul > li {
-    margin-bottom: 0;
-  }
-
-  .App--discussion .DiscussionPage-nav .item-controls .ButtonGroup {
-    display: inline-flex;
-    width: auto;
-  }
-
-  .App--discussion .DiscussionPage-nav .item-controls .ButtonGroup > .Button {
-    float: none;
-    flex: 0 0 auto;
-  }
-
-  .App--discussion .DiscussionPage-nav .item-scrubber {
-    margin-left: auto;
-  }
-
-  .App--discussion .DiscussionPage-nav .PostStreamScrubber {
-    margin-top: 0;
-  }
-
-  .App--discussion .DiscussionPage-nav .PostStreamScrubber .Dropdown-menu {
-    display: none !important;
-    position: absolute;
-    top: calc(100% + 8px);
-    right: 0;
-    left: auto;
-    min-width: 240px;
-    padding: 12px;
-    border: 1px solid var(--ablecloud-brand-border);
-    border-radius: 12px;
-    background: #ffffff;
-    box-shadow: var(--ablecloud-shadow);
-  }
-
-  .App--discussion .DiscussionPage-nav .PostStreamScrubber > .Dropdown-toggle {
-    display: inline-flex !important;
-    align-items: center;
-  }
-
-  .App--discussion .DiscussionPage-nav .PostStreamScrubber.open > .Dropdown-menu {
-    display: block !important;
-  }
-
-  .App--discussion .DiscussionPage-stream {
-    width: 100% !important;
-    margin: 0 !important;
+  .App--discussion .DiscussionHero {
+    margin-top: 16px;
   }
 }
 
@@ -3425,6 +3370,12 @@ body {
     width: 100% !important;
     padding-right: 8px;
     padding-left: 8px;
+  }
+
+  .App--discussion .DiscussionPage-discussion > .container {
+    max-width: none;
+    padding-right: 15px;
+    padding-left: 15px;
   }
 
   .App--discussion .PostStream-item article.Post {
