@@ -98,6 +98,22 @@ class CommunityThemeContractTests(unittest.TestCase):
             ".fa-paper-plane",
             ".fa-photo-video",
             ".fa-smile",
+            ".fa-eye",
+            ".fa-eye-slash",
+            ".fa-bold",
+            ".fa-italic",
+            ".fa-code",
+            ".fa-quote-left",
+            ".fa-link",
+            ".fa-image",
+            ".fa-list-ul",
+            ".fa-list-ol",
+            ".fa-plus",
+            ".fa-strikethrough",
+            ".fa-subscript",
+            ".fa-superscript",
+            ".fa-terminal",
+            ".fa-caret-square-right",
         ):
             with self.subTest(icon=icon):
                 self.assertIn(icon, self.less)
@@ -107,7 +123,7 @@ class CommunityThemeContractTests(unittest.TestCase):
         self.assertIn("font-size: 18px", self.less)
         self.assertIn(".Header-secondary > ul", self.less)
         self.assertIn("height: 44px", self.less)
-        self.assertIn("max-width: 1100px", self.less)
+        self.assertIn("max-width: 1165px", self.less)
         self.assertIn("--ablecloud-footer-icon", self.less)
         self.assertGreaterEqual(len(re.findall(r"min-height:\s*44px", self.less)), 3)
         self.assertGreaterEqual(contrast("#155eef", "#ffffff"), 4.5)
@@ -134,10 +150,193 @@ class CommunityThemeContractTests(unittest.TestCase):
         self.assertIn("data-ablecloud-start-from-top", self.forum_js)
         self.assertIn("/(\\/d\\/[^/]+)\\/\\d+\\/?$/", self.forum_js)
         self.assertIn("openDiscussionFromTop", self.forum_js)
-        self.assertIn("window.location.assign(href)", self.forum_js)
+        self.assertNotIn("window.location.assign(href)", self.forum_js)
+        self.assertNotIn("event.preventDefault()", self.forum_js.split("function openDiscussionFromTop", 1)[1].split("function captureDiscussionListSnapshot", 1)[0])
+        self.assertIn("window.scrollTo(0, 0)", self.forum_js)
         self.assertIn("document.addEventListener('click', openDiscussionFromTop, true)", self.forum_js)
+        self.assertIn("captureDiscussionListSnapshot", self.forum_js)
+        self.assertIn("ensureFallbackDiscussionPane", self.forum_js)
+        self.assertIn("ablecloud-community-discussion-list", self.forum_js)
+        self.assertIn("data-ablecloud-fallback-pane", self.forum_js)
+        self.assertIn("forumApp.pane.enable()", self.forum_js)
+        self.assertNotIn("addFallbackPanePinButton", self.forum_js)
+        self.assertIn("document.addEventListener('mousemove', showFallbackPaneFromEdge", self.forum_js)
+        self.assertIn("syncComposerPaneState", self.forum_js)
+        self.assertIn("app.classList.toggle('ablecloud-composer-open', composerOpen)", self.forum_js)
+        self.assertIn("document.documentElement.classList.toggle('ablecloud-composer-open', composerOpen)", self.forum_js)
+        self.assertIn("composerOpen && forumApp.pane", self.forum_js)
+        self.assertIn("forumApp.pane.hide()", self.forum_js)
+
+    def test_infinite_scroll_emoji_and_new_discussion_dialog_contract(self) -> None:
+        for script_contract in (
+            "enhanceInfiniteDiscussionLoading",
+            "new window.IntersectionObserver",
+            "rootMargin: '0px 0px 120px 0px'",
+            "currentButton.click()",
+            "data-ablecloud-auto-load",
+            "handleEmojiPaletteClick",
+            "ablecloud-EmojiPicker",
+            "data-ablecloud-emoji",
+            "document.execCommand('insertText'",
+            "삽입할 이모지를 선택하세요.",
+            "ablecloud-new-discussion-open",
+            "attributeFilter: ['class']",
+            "window.setTimeout(schedule, 150)",
+            "window.setTimeout(schedule, 600)",
+        ):
+            with self.subTest(script_contract=script_contract):
+                self.assertIn(script_contract, self.forum_js)
+
+        for style_contract in (
+            "&.ablecloud-new-discussion-open .App-composer",
+            "background: rgba(20, 42, 75, 0.46)",
+            "max-width: 960px",
+            "height: calc(100vh - 120px) !important",
+            ".ablecloud-EmojiPicker-grid",
+            "grid-template-columns: repeat(6, minmax(0, 1fr))",
+            ".EmojiDropdown > li:not(.Dropdown-header) > button",
+        ):
+            with self.subTest(style_contract=style_contract):
+                self.assertIn(style_contract, self.less)
+
+    def test_mobile_navigation_and_dialog_contract(self) -> None:
+        for script_contract in (
+            "syncMobileNavigationState",
+            "탐색 서랍 닫기",
+            "탐색 서랍 열기",
+            "handleMobileOverlayKeydown",
+            "handleMobileNavigationClick",
+            "handleMobileComposerCloseClick",
+            "document.body.classList.contains('ablecloud-composer-open')",
+            "forumApp.composer.hide()",
+            "작성 중인 내용을 취소하고 대화상자를 닫으시겠습니까?",
+            "drawerToggle.click()",
+        ):
+            with self.subTest(script_contract=script_contract):
+                self.assertIn(script_contract, self.forum_js)
+
+        for style_contract in (
+            ".App--index .IndexPage-nav",
+            ".App--index .IndexPage-nav > ul",
+            "pointer-events: none",
+            ".App.drawerOpen .App-drawer",
+            ".App.drawerOpen .Header-secondary > ul",
+            ".dropdown:not(.open) > .Dropdown-menu",
+            ".App.drawerOpen .Header-secondary .Dropdown-menu > .dropdown-backdrop",
+            "flex-direction: column",
+            ".App.drawerOpen .Navigation-drawer",
+            ".App.drawerOpen .Navigation-drawer .fa-bars",
+            ".Modal-body",
+            "max-height: calc(100vh - 24px)",
+            ".Modal-close .Button",
+            ".Modal-close .Button::after",
+            ".Composer-controls .item-close",
+            ".Composer-controls .item-close .Button::after",
+            "&.ablecloud-composer-open .Composer:not(.fullScreen) .Composer-controls .item-minimize",
+            "&.ablecloud-composer-open .Composer:not(.fullScreen) .Composer-controls .item-close",
+            "z-index: 1002",
+            "display: block !important",
+        ):
+            with self.subTest(style_contract=style_contract):
+                self.assertIn(style_contract, self.less)
+
+    def test_reddit_style_discussion_item_structure_contract(self) -> None:
+        for script_contract in (
+            "enhanceDiscussionListItems",
+            "forumApp.store.getById('discussions'",
+            "discussion.firstPost()",
+            "firstPost.contentPlain()",
+            "ablecloud-DiscussionMeta",
+            "ablecloud-DiscussionSummary",
+            "formatDiscussionCreatedAt",
+            "data-ablecloud-post-structure",
+            "meta.setAttribute('aria-label', '토론 작성 정보')",
+            "badges.setAttribute('aria-label', '해결된 토론')",
+            "findDiscussionThumbnail",
+            "firstPost.contentHtml()",
+            "template.content.querySelector('img[src]')",
+            "thumbnailImage.loading = 'lazy'",
+            "ablecloud-DiscussionMain--withThumbnail",
+            "ablecloud-DiscussionThumbnail",
+        ):
+            with self.subTest(script_contract=script_contract):
+                self.assertIn(script_contract, self.forum_js)
+
+        for style_contract in (
+            ".ablecloud-DiscussionMeta",
+            ".ablecloud-DiscussionMeta-category",
+            ".ablecloud-DiscussionSummary",
+            "-webkit-line-clamp: 2",
+            ".App--index .IndexPage-results .DiscussionListItem-badges .Badge--bestAnswer::after",
+            'content: "해결됨"',
+            "min-height: 136px",
+            "font-size: 18px",
+            ".ablecloud-DiscussionThumbnail",
+            "object-fit: cover",
+            "grid-template-columns: minmax(0, 1fr) 124px",
+            "grid-template-columns: minmax(0, 1fr) 88px",
+        ):
+            with self.subTest(style_contract=style_contract):
+                self.assertIn(style_contract, self.less)
+
+    def test_discussion_detail_reading_flow_contract(self) -> None:
+        for script_contract in (
+            "enhanceDiscussionDetail",
+            "data-ablecloud-reading-flow",
+            "ablecloud-DiscussionDetailMeta",
+            "ablecloud-solution-post",
+            "해결 답변 보기",
+            "scrollToSolution",
+            "ablecloud-InlineReplyPrompt",
+            "답변을 작성해 주세요",
+            "enhanceLongTechnicalBlocks",
+            "전체 로그 보기",
+            "duplicateSolution.setAttribute('aria-hidden', 'true')",
+        ):
+            with self.subTest(script_contract=script_contract):
+                self.assertIn(script_contract, self.forum_js)
+
+        for style_contract in (
+            ".App--index .WelcomeHero",
+            ".App--discussion .DiscussionHero",
+            ".App--discussion .DiscussionHero-title",
+            ".ablecloud-DiscussionDetailMeta",
+            ".ablecloud-SolutionJump",
+            ".App--discussion .DiscussionPage-stream",
+            ".App--discussion .PostStream-item",
+            ".App--discussion .item-bestAnswerPost",
+            ".ablecloud-InlineReplyPrompt",
+            ".ablecloud-TechnicalBlock--collapsed",
+            "native Flarum vertical navigator",
+        ):
+            with self.subTest(style_contract=style_contract):
+                self.assertIn(style_contract, self.less)
+
+        self.assertIn("display: none !important", self.less)
+        self.assertIn("max-width: 1100px", self.less)
+        self.assertIn("max-width: 1165px", self.less)
+        self.assertIn("padding-right: 80px", self.less)
+        self.assertIn("scrollbar-gutter: stable", self.less)
+        self.assertIn(".App--discussion .App-header > .container", self.less)
+        self.assertIn("margin-top: 16px", self.less)
+        self.assertIn("justify-content: flex-start", self.less)
 
     def test_compact_hero_and_navigation_width_contract(self) -> None:
+        self.assertIn("--ablecloud-page-shell-width: 1165px", self.less)
+        self.assertIn("--ablecloud-page-rail-space: 80px", self.less)
+        for shell_selector in (
+            ".App-header > .container",
+            ".WelcomeHero > .container",
+            ".TagHero > .container",
+            ".UserHero .container",
+            ".TagsPage > .container",
+            ".UserPage > .container",
+        ):
+            with self.subTest(shell_selector=shell_selector):
+                self.assertIn(shell_selector, self.less)
+        self.assertIn("max-width: var(--ablecloud-page-shell-width)", self.less)
+        self.assertIn("padding-right: var(--ablecloud-page-rail-space)", self.less)
+        self.assertIn("Shared desktop shell", self.less)
         self.assertIn(".WelcomeHero .container", self.less)
         self.assertIn("font-size: 28px", self.less)
         self.assertIn("width: 280px", self.less)
@@ -179,8 +378,35 @@ class CommunityThemeContractTests(unittest.TestCase):
         self.assertIn("visibility: hidden", self.less)
         self.assertIn(".fa-bolt", self.less)
         self.assertIn(".DiscussionPage-list", self.less)
+        self.assertIn(".DiscussionPage-list .ablecloud-DiscussionMeta", self.less)
+        self.assertIn(".DiscussionPage-list .ablecloud-DiscussionMain--withThumbnail", self.less)
+        self.assertIn("grid-template-columns: minmax(0, 1fr) 72px", self.less)
+        self.assertIn(".DiscussionPage-list .ablecloud-DiscussionSummary", self.less)
+        self.assertIn(".DiscussionPage-list .DiscussionListItem-count", self.less)
         self.assertIn("height: calc(100vh - 68px)", self.less)
         self.assertIn("scrollbar-width: thin", self.less)
+        self.assertIn("html.ablecloud-composer-open .DiscussionPage-list", self.less)
+        self.assertIn(".App.ablecloud-composer-open .DiscussionPage-list", self.less)
+        self.assertIn(".App.hasPane.panePinned.ablecloud-composer-open .App-composer", self.less)
+        self.assertIn(".DiscussionPage-list .DiscussionListItem-controls", self.less)
+        self.assertIn("top: 10px", self.less)
+        self.assertIn("width: 32px", self.less)
+        self.assertIn(".Composer.active:not(.fullScreen)", self.less)
+        self.assertIn("min-height: 336px", self.less)
+        self.assertIn(".Composer.active:not(.fullScreen) .Composer-content", self.less)
+        self.assertIn("height: 100% !important", self.less)
+        self.assertIn(".Composer.active:not(.fullScreen) .ComposerBody-content", self.less)
+        self.assertIn(".Composer.active:not(.fullScreen) .TextEditor", self.less)
+        self.assertIn("display: flex", self.less)
+        self.assertIn("flex-direction: column", self.less)
+        self.assertIn("flex: 1 1 auto", self.less)
+        self.assertIn(".Composer.active:not(.fullScreen) .TextEditor-editorContainer", self.less)
+        self.assertIn(".Composer.active:not(.fullScreen) .TextEditor-controls", self.less)
+        self.assertIn("position: static", self.less)
+        self.assertIn("bottom: auto", self.less)
+        self.assertIn("padding-bottom: 12px", self.less)
+        self.assertIn("html.ablecloud-composer-open .DiscussionListItem:hover", self.less)
+        self.assertIn("z-index: 0 !important", self.less)
         self.assertIn(".Search-input input:focus-visible", self.less)
         self.assertIn("outline: none !important", self.less)
         self.assertIn('.Header-secondary .Dropdown-menu .Button-icon:not([class*="fa-"])', self.less)
@@ -194,6 +420,16 @@ class CommunityThemeContractTests(unittest.TestCase):
         self.assertIn("transform: none", self.less)
         self.assertIn('.Search-input input[type="search"]::-webkit-search-cancel-button', self.less)
         self.assertIn("-webkit-appearance: none", self.less)
+        self.assertIn(".fa-times-circle", self.less)
+        self.assertIn(".Search .Search-input::before", self.less)
+        self.assertIn(".Search .Search-clear .fa-times-circle::before", self.less)
+        self.assertIn(".Header-secondary .Search .Search-results", self.less)
+        self.assertIn(".Search-results .SolutionSearchResult > a", self.less)
+        self.assertIn("display: block !important", self.less)
+        self.assertIn('width: ~"min(560px, calc(100vw - 24px))"', self.less)
+        self.assertIn(".Search-results .SolutionSearchResult-tags .TagsLabel", self.less)
+        self.assertIn(".Search-results .SolutionSearchResult-bestAnswer", self.less)
+        self.assertIn("-webkit-line-clamp: 2", self.less)
         self.assertIn(".DiscussionListItem-count::before", self.less)
         self.assertIn(".DiscussionListItem.unread .DiscussionListItem-count:hover::before", self.less)
         self.assertIn(".Post-actions", self.less)
@@ -213,9 +449,33 @@ class CommunityThemeContractTests(unittest.TestCase):
         self.assertIn(".App--index > .App-navigation", self.less)
         self.assertIn("display: none !important", self.less)
         self.assertNotIn(".App--index > .App-navigation .Navigation-drawer", self.less)
+        self.assertIn(".App--index > .App-content", self.less)
+        self.assertIn("html:has(body > .App--index)", self.less)
+        self.assertIn("body:has(> .App--index)", self.less)
+        self.assertIn(".App--index .IndexPage-results .DiscussionList", self.less)
+        self.assertIn(".App--index .IndexPage-results .DiscussionList-discussions", self.less)
+        self.assertIn("reserved rail sits immediately next", self.less)
+        self.assertIn("Follow Reddit's flat feed composition", self.less)
+        self.assertIn(".App--index .IndexPage-results::-webkit-scrollbar", self.less)
+        self.assertIn(".App--index .IndexPage-nav::-webkit-scrollbar", self.less)
+        self.assertIn("scrollbar-width: none", self.less)
+        self.assertGreaterEqual(self.less.count("scrollbar-width: none"), 2)
+        self.assertIn("overflow: visible", self.less)
+        self.assertIn("flex: 0 0 auto", self.less)
+        self.assertIn("background: rgba(21, 94, 239, 0.055)", self.less)
+        self.assertIn("overscroll-behavior: contain", self.less)
+        self.assertIn("position: fixed", self.less)
+        self.assertIn("bottom: 0", self.less)
+        self.assertNotIn("bottom: 56px", self.less)
+        deploy_script = (ROOT / "deploy" / "flarum" / "apply-community-theme-update.sh").read_text(encoding="utf-8")
+        self.assertIn('chown -R www-data:www-data "$extension_root"', deploy_script)
+        self.assertIn('find "$extension_root" -type d -exec chmod 0755 {} +', deploy_script)
         self.assertIn(".UserHero .UserCard-profile", self.less)
         self.assertIn(".UserPage .UserPage-nav", self.less)
         self.assertIn(".UserPage .UserPage-content", self.less)
+        self.assertIn(".UserPage .UserPage-nav > ul.affix", self.less)
+        self.assertIn("width: 280px !important", self.less)
+        self.assertIn("max-width: 280px", self.less)
         self.assertIn(".UserHero .UserCard-avatar", self.less)
         self.assertIn("position: absolute", self.less)
         self.assertIn("likes_link: 좋아요", self.korean)
@@ -251,6 +511,16 @@ class CommunityThemeContractTests(unittest.TestCase):
         self.assertIn("#floatright .feedback-menu-right:first-of-type", self.less)
         self.assertIn("#floatright .feedback-menu-right:last-of-type", self.less)
         self.assertIn("mask-image: var(--ablecloud-footer-icon)", self.less)
+        self.assertIn("legacy footer bar is replaced with a fixed vertical quick-link rail", self.less)
+        self.assertIn(".App--index .App-header > .container", self.less)
+        self.assertIn(".App--index .WelcomeHero > .container", self.less)
+        self.assertIn("Align the top navigation and welcome area", self.less)
+        self.assertIn('right: ~"max(12px, calc((100vw - 1165px) / 2 + 16px))"', self.less)
+        self.assertIn("flex-direction: column", self.less)
+        self.assertIn("max-width: 1165px", self.less)
+        self.assertIn("padding-right: 80px", self.less)
+        self.assertIn("transform: translateY(-50%)", self.less)
+        self.assertIn("bottom: 16px", self.less)
 
     def test_rehearsal_is_staging_only_and_preserves_content(self) -> None:
         self.assertIn('APP_ROOT" == "/srv/techflow-flarum-staging/app"', self.rehearsal)
@@ -265,6 +535,17 @@ class CommunityThemeContractTests(unittest.TestCase):
         self.assertIn("core.forum.user.security_link", locale_warmer)
         self.assertIn("flarum-likes.forum.user.likes_link", locale_warmer)
         self.assertIn("fof-upload.forum.buttons.media", locale_warmer)
+
+    def test_production_theme_update_is_path_scoped(self) -> None:
+        updater = (
+            ROOT / "deploy" / "flarum" / "apply-community-theme-update.sh"
+        ).read_text(encoding="utf-8")
+        self.assertIn('/var/www/html/extensions/ablecloud-community-theme', updater)
+        self.assertIn('/tmp/ablecloud-community-theme-*', updater)
+        self.assertIn('/var/backups/techflow-flarum/theme-*', updater)
+        self.assertIn('rsync -a --delete "$source_root/" "$extension_root/"', updater)
+        self.assertIn("UserPage-nav > ul.affix", updater)
+        self.assertIn("RESULT=PASS", updater)
 
 
 if __name__ == "__main__":

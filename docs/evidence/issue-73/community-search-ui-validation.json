@@ -1,0 +1,63 @@
+{
+  "schema_version": "1.0",
+  "executed_at": "2026-08-20T13:34:58+09:00",
+  "scope": "Community header search input icons and discussion search result readability",
+  "query": "v2k",
+  "root_cause": [
+    "the solved-search extension rendered tags, title, question excerpt and selected-answer excerpt as a horizontal flex row inside the 400px native search menu",
+    "the theme icon fallback did not map fa-times-circle and the search prefix used an operating-system symbol glyph"
+  ],
+  "implementation": {
+    "result_panel_width_px": 560,
+    "result_layout": "single vertical reading flow: tags, title, question excerpt, selected-answer excerpt",
+    "question_excerpt_lines": 2,
+    "selected_answer_excerpt_lines": 2,
+    "mobile_panel": "12px viewport side insets and viewport-height scrolling",
+    "search_icon": "embedded SVG mask",
+    "clear_icon": "embedded SVG mask for fa-times-circle",
+    "external_icon_font_dependency": false
+  },
+  "wsl": {
+    "url": "http://localhost:18080/",
+    "rehearsal": "search-ui-20260820-r3 PASS",
+    "panel_rect_px": { "x": 403, "y": 67, "width": 560, "height": 456 },
+    "solution_result_count": 1,
+    "result_section_overlap": false,
+    "search_icon_mask_present": true,
+    "clear_icon_mask_present": true,
+    "result": "PASS"
+  },
+  "production": {
+    "url": "https://community.ablecloud.io/",
+    "backup_root": "/var/backups/techflow-flarum/theme-search-ui-20260820",
+    "theme_less_sha256": "61598a1d4be2c48b21cf839546546f5c036c545c580b8d54f763f17127b662b5",
+    "panel_rect_px": { "x": 403, "y": 67, "width": 560, "height": 518 },
+    "solution_result_count": 2,
+    "discussion_result_count_including_solutions": 4,
+    "result_section_overlap": false,
+    "search_icon_mask_present": true,
+    "clear_icon_mask_present": true,
+    "services": {
+      "nginx": "active",
+      "php8.3-fpm": "active",
+      "mariadb": "active"
+    },
+    "local_http_status": 200,
+    "external_browser_https": true,
+    "temporary_remote_assets_removed": true,
+    "result": "PASS"
+  },
+  "validation": {
+    "theme_contract_tests": { "passed": 14, "failed": 0 },
+    "git_diff_check": "PASS",
+    "source_and_vendor_hash_match": true
+  },
+  "protected_scope": {
+    "database_schema_changed": false,
+    "community_content_changed": false,
+    "attachments_changed": false,
+    "techflow_ai_services_changed": false,
+    "github_chat_webhook_changed": false
+  },
+  "decision": "PASS"
+}
