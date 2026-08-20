@@ -37,7 +37,8 @@
 .fa-sort { --ablecloud-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='m7 10 5 5 5-5' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
 .fa-search { --ablecloud-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='11' cy='11' r='6' fill='none' stroke='black' stroke-width='2'/%3E%3Cpath d='m16 16 4 4' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E"); }
 .fa-check { --ablecloud-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='m5 12 4 4L19 6' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
-.fa-times { --ablecloud-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 6l12 12M18 6 6 18' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E"); }
+.fa-times,
+.fa-times-circle { --ablecloud-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='9' fill='none' stroke='black' stroke-width='2'/%3E%3Cpath d='M8 8l8 8M16 8l-8 8' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E"); }
 .fa-flag { --ablecloud-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 3v18M6 5h12l-2.5 4L18 13H6' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
 .fa-bell { --ablecloud-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
 .fa-envelope { --ablecloud-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='3' y='5' width='18' height='14' rx='2' fill='none' stroke='black' stroke-width='2'/%3E%3Cpath d='m4 7 8 6 8-6' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
@@ -108,9 +109,25 @@
 .fa-terminal { --ablecloud-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='3' y='4' width='18' height='16' rx='2' fill='none' stroke='black' stroke-width='2'/%3E%3Cpath d='m7 9 3 3-3 3M12 16h5' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
 .fa-caret-square-right { --ablecloud-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='3' y='3' width='18' height='18' rx='2' fill='none' stroke='black' stroke-width='2'/%3E%3Cpath d='m10 8 6 4-6 4V8Z' fill='black'/%3E%3C/svg%3E"); }
 
-.Search-input::before {
-  font-family: "Segoe UI Symbol", "Apple Symbols", "Noto Sans Symbols 2", sans-serif !important;
-  content: "⌕" !important;
+.Search .Search-input::before {
+  position: absolute;
+  top: 50%;
+  left: 14px;
+  z-index: 1;
+  display: block;
+  width: 18px;
+  height: 18px;
+  background: #5275a7 !important;
+  content: "" !important;
+  transform: translateY(-50%);
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='11' cy='11' r='6' fill='none' stroke='black' stroke-width='2'/%3E%3Cpath d='m16 16 4 4' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E") !important;
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='11' cy='11' r='6' fill='none' stroke='black' stroke-width='2'/%3E%3Cpath d='m16 16 4 4' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E") !important;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
 }
 
 /* Chromium의 기본 검색 초기화 글리프가 웹폰트 부재 시 사각형이 되지 않게 한다. */
@@ -131,6 +148,162 @@
   mask-repeat: no-repeat;
   -webkit-mask-size: contain;
   mask-size: contain;
+}
+
+/*
+ * 검색 확장 기능은 해결된 토론 한 건을 태그·제목·질문·최종 답변의
+ * 가로 4열로 출력한다. 헤더 검색 폭에서는 각 열이 한두 글자로 쪼개지므로
+ * 결과 한 건을 위에서 아래로 읽는 단일 열 카드로 재구성한다.
+ */
+.Search-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #5275a7;
+}
+
+.Search-clear .fa-times-circle {
+  width: 18px;
+  height: 18px;
+}
+
+.Search .Search-clear .fa-times-circle::before {
+  display: block !important;
+  width: 18px !important;
+  height: 18px !important;
+  background: currentColor !important;
+  content: "" !important;
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='9' fill='none' stroke='black' stroke-width='2'/%3E%3Cpath d='M8 8l8 8M16 8l-8 8' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E") !important;
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='9' fill='none' stroke='black' stroke-width='2'/%3E%3Cpath d='M8 8l8 8M16 8l-8 8' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E") !important;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+.Header-secondary .Search .Search-results {
+  right: 0;
+  left: auto;
+  width: ~"min(560px, calc(100vw - 24px))" !important;
+  max-height: ~"min(72vh, 680px)" !important;
+  padding: 8px 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  border: 1px solid var(--ablecloud-brand-border);
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 18px 44px rgba(20, 47, 84, 0.18);
+  overflow-wrap: anywhere;
+  word-break: keep-all;
+  scrollbar-color: #8da4c5 transparent;
+  scrollbar-width: thin;
+}
+
+.Search-results > li {
+  width: 100%;
+}
+
+.Search-results .Dropdown-header {
+  padding: 10px 16px 8px;
+  color: var(--ablecloud-brand-ink);
+  font-size: 14px;
+  font-weight: 750;
+}
+
+.Search-results > li > a {
+  min-width: 0;
+  padding: 11px 16px;
+  color: var(--ablecloud-brand-ink);
+}
+
+.Search-results > li > a:hover,
+.Search-results > li.active > a {
+  background: var(--ablecloud-brand-primary-faint);
+}
+
+.Search-results .DiscussionSearchResult > a,
+.Search-results .SolutionSearchResult > a {
+  display: block !important;
+  min-height: 0;
+  padding: 13px 16px;
+  border-top: 1px solid #edf2f8;
+}
+
+.Search-results .SolutionSearchResult-tags {
+  display: block;
+  width: auto;
+  margin: 0 0 8px;
+}
+
+.Search-results .SolutionSearchResult-tags .TagsLabel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.Search-results .SolutionSearchResult-tags .TagLabel {
+  max-width: 100%;
+  margin: 0;
+  border-radius: 5px;
+}
+
+.Search-results .DiscussionSearchResult-title {
+  width: auto;
+  margin: 0;
+  color: var(--ablecloud-brand-ink);
+  font-size: 15px;
+  font-weight: 750;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  word-break: keep-all;
+}
+
+.Search-results .DiscussionSearchResult-excerpt {
+  display: -webkit-box;
+  width: auto;
+  margin: 6px 0 0;
+  overflow: hidden;
+  color: var(--ablecloud-brand-muted);
+  font-size: 13.5px;
+  line-height: 1.55;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.Search-results .SolutionSearchResult-bestAnswer {
+  display: -webkit-box;
+  width: auto;
+  margin-top: 9px;
+  padding: 9px 11px;
+  border-left: 3px solid #34a66f;
+  border-radius: 8px;
+  background: var(--ablecloud-brand-solution);
+  color: #315f4a;
+  -webkit-line-clamp: 2;
+}
+
+.Search-results mark {
+  padding: 0 2px;
+  border-radius: 3px;
+  background: #fff1a8;
+  color: inherit;
+  font-weight: 750;
+}
+
+@media (max-width: 767px) {
+  .Header-secondary .Search .Search-results {
+    right: 12px;
+    left: 12px;
+    width: auto !important;
+    max-height: calc(100vh - 94px) !important;
+  }
+
+  .Search-results .DiscussionSearchResult > a,
+  .Search-results .SolutionSearchResult > a {
+    padding: 12px 14px;
+  }
 }
 
 :root {
