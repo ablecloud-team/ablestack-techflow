@@ -438,3 +438,47 @@ WSL과 운영 작성기에서 각 아이콘은 15~16px 크기와 실제 Mask URL
 `/var/backups/techflow-flarum/theme-drawer-readability-icons-20260820T1045KST`이며,
 서버 로컬 HTTP 200과 Nginx·PHP-FPM·MariaDB·Community Monitor Timer `active`를
 확인했다.
+
+### 토론 목록 레이어 복원과 작성기 충돌 방지
+
+목록에서 상세 화면을 열 때 항상 첫 게시물부터 보이도록 만든 기존 처리가
+`window.location.assign()`으로 전체 페이지 이동을 강제하고 있었다. 이 과정에서
+Flarum이 메모리에 보관하던 토론 목록 상태가 사라져 화면 왼쪽 가장자리에 마우스를
+가져가도 400px 토론 목록 레이어가 만들어지지 않았다.
+
+전체 페이지 이동을 제거하고 Flarum의 SPA 화면 전환을 유지하도록 변경했다. 링크는
+첫 게시물 경로로 정규화하되 기본 클릭 동작을 막지 않고, 화면 전환 직후 스크롤만
+0으로 맞춘다. 목록에서 상세로 이동한 WSL·운영 브라우저에서 각각 20개 항목의
+`DiscussionPage-list`가 다시 생성되고 `scrollY=0`을 확인했다. 상세 화면을 직접
+새로고침해도 직전에 표시한 목록 Snapshot으로 레이어를 복원하며 현재 토론 1건을
+활성 상태로 표시한다.
+
+작성기 하단은 Flarum의 300px Inline 높이보다 내부 편집기와 Toolbar가 더 길어
+게시 버튼이 화면 하단에 걸렸다. 데스크톱 활성 작성기의 최소 높이를 336px로
+확보하고 Toolbar를 안쪽으로 배치했다. 편집기 하단 여백도 늘려 마지막 문장이
+Toolbar 아래에 가려지지 않도록 했다.
+
+토론 목록 레이어가 열린 상태에서 새 토론이나 답변 작성기를 열면 두 화면이
+겹쳤다. 작성기가 `visible`인 동안 목록 레이어만 일시적으로 숨기고, 고정된 Pane이
+작성기 폭을 밀지 않도록 Composer Container의 왼쪽 값을 0으로 복원했다. 작성기를
+닫으면 목록 레이어와 고정 상태가 다시 표시된다.
+
+| 브라우저 검증 항목 | WSL | 운영 |
+|---|---:|---:|
+| 복원된 목록 폭·항목 수 | 400px · 20건 | 400px · 20건 |
+| 목록 클릭 후 상세 `scrollY` | 0 | 0 |
+| 새로고침 후 현재 토론 활성 항목 | 1건 | 1건 |
+| 활성 작성기 높이 | 336px | 336px |
+| 게시 버튼 하단 여백 | 22px | 22px |
+| 작성기 Footer 하단 여백 | 8px | 8px |
+| 작성기와 목록 겹침 | 없음 | 없음 |
+
+테마 계약 테스트 13건과 WSL `issue-73-composer-pane-v8` 적용·비활성화·재적용
+주기를 통과했다. 운영 배포 전 백업은
+`/var/backups/techflow-flarum/theme-composer-pane-final-20260820T112831KST`에
+보존했다. 운영 Source와 Vendor LESS SHA-256은
+`3fc9dda37cc2e7e78024d470e122a1b883d023de658c973be9467e40359d0ca9`, JS SHA-256은
+`a52c0bc148280a01f8cbce9a1ce79a28be6d7529bba7591ea1a6a9ed042dfe62`로 일치한다.
+외부 HTTPS 200과 Nginx·PHP-FPM·MariaDB·Community Monitor Timer `active`를
+확인했으며 DB Schema, 게시물, 첨부, TechFlow AI, GitHub→Chat Webhook은 변경하지
+않았다.

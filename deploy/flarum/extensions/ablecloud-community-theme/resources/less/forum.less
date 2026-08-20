@@ -1819,6 +1819,21 @@ body {
     box-shadow: 0 20px 52px rgba(24, 71, 142, 0.18), 0 0 0 1px rgba(21, 94, 239, 0.1) !important;
   }
 
+  @media (min-width: 768px) {
+    .Composer.active:not(.fullScreen) {
+      min-height: 336px;
+    }
+
+    .Composer.active:not(.fullScreen) .TextEditor-editor {
+      padding-bottom: 32px;
+    }
+
+    .Composer.active:not(.fullScreen) .TextEditor-controls {
+      position: relative;
+      bottom: 20px;
+    }
+  }
+
   .ComposerBody-header .DiscussionComposer-changeTags {
     display: inline-flex;
     align-items: center;
@@ -2501,6 +2516,16 @@ body {
       box-shadow: 10px 0 26px rgba(24, 71, 142, 0.1);
       scrollbar-color: #91a9c9 transparent;
       scrollbar-width: thin;
+    }
+
+    // Keep the discussion context available, but never let the hover pane sit
+    // on top of the composer while the user is writing a new topic or reply.
+    .App:has(.Composer.visible:not(.minimized)) .DiscussionPage-list {
+      display: none !important;
+    }
+
+    .App.hasPane.panePinned:has(.Composer.visible:not(.minimized)) .App-composer {
+      left: 0;
     }
 
     .DiscussionPage-list::-webkit-scrollbar {

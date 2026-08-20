@@ -7,6 +7,9 @@
   var absoluteDatePattern = /^(\d{4})-(\d{2})-(\d{2})/;
   var discussionItemEnhancedAttribute = 'data-ablecloud-post-structure';
   var discussionDetailEnhancedAttribute = 'data-ablecloud-reading-flow';
+  var discussionListSnapshotKey = 'ablecloud-community-discussion-list';
+  var fallbackPaneAttribute = 'data-ablecloud-fallback-pane';
+  var fallbackPaneActive = false;
 
   function formatDiscussionCreatedAt(createdAt) {
     if (!(createdAt instanceof Date) || Number.isNaN(createdAt.getTime())) {
@@ -332,11 +335,10 @@
       var url = new URL(link.getAttribute('href'), window.location.origin);
       var canonicalPath = url.pathname.replace(/(\/d\/[^/]+)\/\d+\/?$/, '$1');
 
-      if (canonicalPath === url.pathname) {
-        return;
+      if (canonicalPath !== url.pathname) {
+        link.setAttribute('href', canonicalPath + url.search);
       }
 
-      link.setAttribute('href', canonicalPath + url.search);
       link.setAttribute('data-ablecloud-start-from-top', 'true');
     });
   }
@@ -348,12 +350,117 @@
       return;
     }
 
-    var href = link.getAttribute('href');
+    window.requestAnimationFrame(function () {
+      window.scrollTo(0, 0);
+    });
 
-    event.preventDefault();
-    event.stopImmediatePropagation();
+    window.setTimeout(function () {
+      window.scrollTo(0, 0);
+    }, 120);
+  }
 
-    window.location.assign(href);
+  function captureDiscussionListSnapshot(root) {
+    var list = root.querySelector('.App--index .DiscussionList');
+
+    if (!list) {
+      return;
+    }
+
+    try {
+      window.sessionStorage.setItem(discussionListSnapshotKey, list.outerHTML);
+    } catch (error) {
+      // A browser with disabled session storage can still use the normal back link.
+    }
+  }
+
+  function markCurrentDiscussionInPane(pane) {
+    var currentPath = window.location.pathname.replace(/\/$/, '').replace(/(\/d\/[^/]+)\/\d+$/, '$1');
+
+    pane.querySelectorAll('.DiscussionListItem').forEach(function (item) {
+      var link = item.querySelector('.DiscussionListItem-main[href]');
+      var active = false;
+
+      if (link) {
+        try {
+          active = new URL(link.getAttribute('href'), window.location.origin).pathname.replace(/\/$/, '') === currentPath;
+        } catch (error) {
+          active = false;
+        }
+      }
+
+      item.classList.toggle('active', active);
+    });
+  }
+
+  function ensureFallbackDiscussionPane(root) {
+    var page = root.querySelector('.App--discussion .DiscussionPage');
+
+    if (!page) {
+      if (fallbackPaneActive && forumApp.pane) {
+        forumApp.pane.disable();
+      }
+
+      fallbackPaneActive = false;
+      return;
+    }
+
+    var nativePane = page.querySelector('.DiscussionPage-list:not([' + fallbackPaneAttribute + '="true"])');
+
+    if (nativePane) {
+      return;
+    }
+
+    if (page.querySelector('.DiscussionPage-list[' + fallbackPaneAttribute + '="true"]')) {
+      return;
+    }
+
+    var snapshot = '';
+
+    try {
+      snapshot = window.sessionStorage.getItem(discussionListSnapshotKey) || '';
+    } catch (error) {
+      snapshot = '';
+    }
+
+    if (!snapshot) {
+      return;
+    }
+
+    var template = document.createElement('template');
+    template.innerHTML = snapshot;
+    var list = template.content.querySelector('.DiscussionList');
+
+    if (!list) {
+      return;
+    }
+
+    var pane = document.createElement('aside');
+    pane.className = 'DiscussionPage-list ablecloud-DiscussionPage-list--fallback';
+    pane.setAttribute(fallbackPaneAttribute, 'true');
+    pane.setAttribute('aria-label', '최근 토론 목록');
+    pane.appendChild(list);
+    markCurrentDiscussionInPane(pane);
+    page.insertBefore(pane, page.firstChild);
+
+    if (forumApp.pane) {
+      forumApp.pane.enable();
+      forumApp.pane.hide();
+      pane.addEventListener('mouseenter', forumApp.pane.show.bind(forumApp.pane));
+      pane.addEventListener('mouseleave', forumApp.pane.onmouseleave.bind(forumApp.pane));
+    }
+
+    fallbackPaneActive = true;
+  }
+
+  function showFallbackPaneFromEdge(event) {
+    if (
+      fallbackPaneActive &&
+      forumApp.pane &&
+      event.clientX < 10 &&
+      !document.querySelector('.Composer.visible:not(.minimized)')
+    ) {
+      forumApp.pane.show();
+    }
   }
 
   forumApp.initializers.add('ablecloud-community-theme-tag-date', function () {
@@ -364,6 +471,8 @@
         formatTagDiscussionDates(document);
         normalizeDiscussionListTargets(document);
         enhanceDiscussionListItems(document);
+        captureDiscussionListSnapshot(document);
+        ensureFallbackDiscussionPane(document);
         enhanceDiscussionDetail(document);
       });
     };
@@ -377,6 +486,7 @@
     });
 
     document.addEventListener('click', openDiscussionFromTop, true);
+    document.addEventListener('mousemove', showFallbackPaneFromEdge, { passive: true });
   });
 
   module.exports = {};

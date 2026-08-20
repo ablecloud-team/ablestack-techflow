@@ -1,6 +1,6 @@
 {
-  "schema_version": "1.9",
-  "executed_at": "2026-08-20T01:47:43Z",
+  "schema_version": "2.0",
+  "executed_at": "2026-08-20T02:23:35Z",
   "scope": "Flarum index without welcome banner, Reddit-style discussion list and detail reading flow, and right-side quick links",
   "design_reference": "https://www.reddit.com/new/?feed=home",
   "navigation_reference": "https://community.ablecloud.io/settings",
@@ -80,9 +80,9 @@
   "production": {
     "host": "172.16.0.234",
     "url": "https://community.ablecloud.io/",
-    "backup_root": "/var/backups/techflow-flarum/theme-drawer-readability-icons-20260820T1045KST",
-    "theme_less_sha256": "6bcbbebba32f0ad2a49f30c66820c8891a93491d25a4e389242aaa10f2025551",
-    "theme_js_sha256": "05115ef3395d87d0f7327a50bac518376075b3cbd9bbeed356f48ee64521d42e",
+    "backup_root": "/var/backups/techflow-flarum/theme-composer-pane-final-20260820T112831KST",
+    "theme_less_sha256": "3fc9dda37cc2e7e78024d470e122a1b883d023de658c973be9467e40359d0ca9",
+    "theme_js_sha256": "a52c0bc148280a01f8cbce9a1ce79a28be6d7529bba7591ea1a6a9ed042dfe62",
     "services": {
       "nginx": "active",
       "php8.3-fpm": "active",
@@ -219,9 +219,31 @@
     "production_browser": { "visible_icon_width_px": "15 to 16", "broken_glyph_count": 0 },
     "result": "PASS"
   },
+  "composer_and_discussion_pane": {
+    "root_cause": "the start-from-top handler forced window.location.assign and discarded Flarum's in-memory discussion-list state",
+    "navigation_fix": "retain Flarum SPA navigation, normalize the link target, and reset scroll without preventDefault",
+    "reload_fallback": "store the already-rendered DiscussionList in session storage and restore a 400px pane after a direct detail reload",
+    "composer_layout": {
+      "desktop_active_min_height_px": 336,
+      "submit_bottom_inset_px": { "wsl": 22, "production": 22 },
+      "footer_bottom_inset_px": { "wsl": 8, "production": 8 },
+      "horizontal_overflow": false
+    },
+    "discussion_pane": {
+      "width_px": 400,
+      "item_count": { "wsl": 20, "production": 20 },
+      "active_item_after_reload": { "wsl": 1, "production": 1 },
+      "list_click_scroll_y": { "wsl": 0, "production": 0 },
+      "hidden_while_composer_visible": true,
+      "restored_after_composer_close": true,
+      "composer_overlap": { "wsl": false, "production": false }
+    },
+    "wsl_rehearsal": "issue-73-composer-pane-v8 PASS",
+    "result": "PASS"
+  },
   "validation": {
     "theme_contract_tests": { "passed": 13, "failed": 0 },
-    "wsl_rehearsal": "issue-73-drawer-icons-v3 PASS",
+    "wsl_rehearsal": "issue-73-composer-pane-v8 PASS",
     "header_hero_body_alignment": "WSL and production x=250, right=1415, width=1165",
     "discussion_item_enhancement_is_idempotent": true,
     "summary_uses_existing_store_data": true,
