@@ -120,6 +120,11 @@ sudo bash deploy/flarum/apply-community-theme-update.sh \
   이동해야 한다. 이동 후 선택 답변 상단은 고정 Header 아래에서 보여야 한다.
 - 질문 다음에는 `답변을 작성해 주세요` 버튼이 표시되어 기존 Flarum 답장 작성기를
   열어야 한다. 480px보다 긴 `pre` 로그에는 `전체 로그 보기`와 `로그 접기`가 제공되어야 한다.
+- 왼쪽 토론 목록은 400px 폭을 유지하되 메타 정보, 두 줄 제목, 두 줄 요약을 세로로
+  배치해야 한다. 썸네일은 72×54px 오른쪽 전용 열, 댓글 수는 오른쪽 아래에 두고
+  제목·요약과 겹치지 않아야 한다.
+- 작성기의 미리보기·굵게·기울임·코드·인용·링크·이미지·목록·추가 서식 아이콘은
+  SVG Mask로 표시되어야 하며 `P`나 검은 사각형 대체 문자가 없어야 한다.
 - 사용자 프로필·설정 화면을 1,150px 폭에서 스크롤했을 때 고정 메뉴 폭이
   280px로 유지되고 메뉴 오른쪽 끝이 본문 왼쪽보다 작거나 같은지 확인한다.
 - `Answered`, `Best Answer`, `Select Best Answer` 원문 노출이 없어야 한다.
@@ -148,4 +153,4 @@ sudo systemctl restart php8.3-fpm nginx
   정보 계층·이미지 썸네일, 하단 Footer 제거와 우측 고정 퀵 링크, 메인 환영 배너
   제거, Flarum 세로 탐색 복원과 1165px 상세 셸 정렬이 WSL 및 운영에 반영되었다.
   최신 운영 백업은
-  `/var/backups/techflow-flarum/theme-header-shell-align-20260820T0120KST`에 보존한다.
+  `/var/backups/techflow-flarum/theme-drawer-readability-icons-20260820T1045KST`에 보존한다.

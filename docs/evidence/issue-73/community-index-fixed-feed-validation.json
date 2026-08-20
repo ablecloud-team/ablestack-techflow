@@ -1,6 +1,6 @@
 {
-  "schema_version": "1.8",
-  "executed_at": "2026-08-20T01:29:03Z",
+  "schema_version": "1.9",
+  "executed_at": "2026-08-20T01:47:43Z",
   "scope": "Flarum index without welcome banner, Reddit-style discussion list and detail reading flow, and right-side quick links",
   "design_reference": "https://www.reddit.com/new/?feed=home",
   "navigation_reference": "https://community.ablecloud.io/settings",
@@ -80,8 +80,8 @@
   "production": {
     "host": "172.16.0.234",
     "url": "https://community.ablecloud.io/",
-    "backup_root": "/var/backups/techflow-flarum/theme-header-shell-align-20260820T0120KST",
-    "theme_less_sha256": "5408e0c2fe0e52f43e8302adb1fc2f69b9d950de71171963ff172c88159602da",
+    "backup_root": "/var/backups/techflow-flarum/theme-drawer-readability-icons-20260820T1045KST",
+    "theme_less_sha256": "6bcbbebba32f0ad2a49f30c66820c8891a93491d25a4e389242aaa10f2025551",
     "theme_js_sha256": "05115ef3395d87d0f7327a50bac518376075b3cbd9bbeed356f48ee64521d42e",
     "services": {
       "nginx": "active",
@@ -191,9 +191,37 @@
       "result": "PASS"
     }
   },
+  "narrow_discussion_drawer": {
+    "width_px": 400,
+    "width_changed": false,
+    "layout": [
+      "author avatar fixed at the left edge",
+      "category, author and date metadata on the first row",
+      "title on an independent two-line row",
+      "summary on an independent two-line row",
+      "optional 72x54 thumbnail in a dedicated right column",
+      "reply count fixed to the bottom-right without overlapping text"
+    ],
+    "content_right_padding_px": 12,
+    "title_and_summary_share_horizontal_flex_row": false,
+    "thumbnail_size_px": { "width": 72, "height": 54 },
+    "wsl_rehearsal": "issue-73-drawer-icons-v3 PASS",
+    "result": "PASS"
+  },
+  "composer_icon_fallback": {
+    "implementation": "embedded SVG masks without Font Awesome webfont dependency",
+    "mapped_icons": [
+      "preview", "bold", "italic", "inline code", "quote", "link", "image",
+      "unordered list", "ordered list", "additional controls", "strikethrough",
+      "subscript", "superscript", "spoiler", "code block", "block spoiler"
+    ],
+    "wsl_browser": { "visible_icon_width_px": "15 to 16", "broken_glyph_count": 0 },
+    "production_browser": { "visible_icon_width_px": "15 to 16", "broken_glyph_count": 0 },
+    "result": "PASS"
+  },
   "validation": {
     "theme_contract_tests": { "passed": 13, "failed": 0 },
-    "wsl_rehearsal": "issue-73-header-shell-align-v2 PASS",
+    "wsl_rehearsal": "issue-73-drawer-icons-v3 PASS",
     "header_hero_body_alignment": "WSL and production x=250, right=1415, width=1165",
     "discussion_item_enhancement_is_idempotent": true,
     "summary_uses_existing_store_data": true,

@@ -98,6 +98,22 @@ class CommunityThemeContractTests(unittest.TestCase):
             ".fa-paper-plane",
             ".fa-photo-video",
             ".fa-smile",
+            ".fa-eye",
+            ".fa-eye-slash",
+            ".fa-bold",
+            ".fa-italic",
+            ".fa-code",
+            ".fa-quote-left",
+            ".fa-link",
+            ".fa-image",
+            ".fa-list-ul",
+            ".fa-list-ol",
+            ".fa-plus",
+            ".fa-strikethrough",
+            ".fa-subscript",
+            ".fa-superscript",
+            ".fa-terminal",
+            ".fa-caret-square-right",
         ):
             with self.subTest(icon=icon):
                 self.assertIn(icon, self.less)
@@ -260,6 +276,11 @@ class CommunityThemeContractTests(unittest.TestCase):
         self.assertIn("visibility: hidden", self.less)
         self.assertIn(".fa-bolt", self.less)
         self.assertIn(".DiscussionPage-list", self.less)
+        self.assertIn(".DiscussionPage-list .ablecloud-DiscussionMeta", self.less)
+        self.assertIn(".DiscussionPage-list .ablecloud-DiscussionMain--withThumbnail", self.less)
+        self.assertIn("grid-template-columns: minmax(0, 1fr) 72px", self.less)
+        self.assertIn(".DiscussionPage-list .ablecloud-DiscussionSummary", self.less)
+        self.assertIn(".DiscussionPage-list .DiscussionListItem-count", self.less)
         self.assertIn("height: calc(100vh - 68px)", self.less)
         self.assertIn("scrollbar-width: thin", self.less)
         self.assertIn(".Search-input input:focus-visible", self.less)
