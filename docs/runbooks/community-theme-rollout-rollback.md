@@ -73,7 +73,7 @@ sudo bash deploy/flarum/apply-community-theme-update.sh \
 - `public/assets/forum-ko.js`가 비어 있지 않고 `core.forum.header.search_placeholder`를 포함해야 한다.
 - 데스크톱과 모바일에서 홈, 목록, 상세, 검색, 로그인, 글쓰기, 첨부를 확인한다.
 - 데스크톱 첫 화면에서 문서 전체의 `scrollY`가 `0`으로 유지되는지 확인한다.
-  Welcome Hero와 좌측 메뉴는 고정하고 `.IndexPage-results` 전체가 스크롤되어야
+  Welcome Hero는 표시하지 않고 좌측 메뉴는 고정한다. `.IndexPage-results` 전체가 스크롤되어야
   한다. `최신` 선택 콤보를 포함한 `.IndexPage-toolbar`와 토론 행이 함께
   이동해야 하며 `.DiscussionList` 자체의 `scrollTop`은 `0`을 유지해야 한다.
   우측 영역도 `scrollbar-width: none`과 WebKit 규칙으로 스크롤바를 표시하지
@@ -85,9 +85,9 @@ sudo bash deploy/flarum/apply-community-theme-update.sh \
   배치용 65px만 추가한 최대 1165px 셸을 사용한다. 토론 목록 오른쪽과 48px
   퀵 링크 사이에는 약 16px 간격이 있어야 하며 화면 오른쪽 끝으로 분리되면
   안 된다.
-- 데스크톱 첫 화면의 상단 헤더, 환영 영역과 본문 셸은 모두 최대 1165px로
-  동일해야 한다. 1680px Viewport에서는 각 영역의 X가 258px, 오른쪽 끝이
-  1423px인지 확인한다. 모바일과 다른 페이지에는 이 폭을 강제하지 않는다.
+- 데스크톱 첫 화면의 상단 헤더와 본문 셸은 모두 최대 1165px로 동일해야 한다.
+  1680px Viewport에서는 두 영역의 X가 258px, 오른쪽 끝이 1423px인지 확인한다.
+  모바일과 다른 페이지에는 이 폭을 강제하지 않는다.
 - 좌측 메뉴는 사용자 설정 화면과 같이 고정한다. 높이가 짧아 태그가 모두 보이지
   않을 때 내부 스크롤은 허용하지만 `scrollbar-width: none`과 WebKit 규칙으로
   스크롤바는 표시하지 않는다.
@@ -101,6 +101,16 @@ sudo bash deploy/flarum/apply-community-theme-update.sh \
 - 첫 게시물에 이미지가 있으면 첫 이미지를 데스크톱 124×92px, 모바일 88×72px
   우측 썸네일로 표시한다. 이미지가 없는 글에는 빈 썸네일 영역을 만들지 않으며,
   썸네일은 기존 Store 데이터에서 생성하고 지연 로딩해야 한다.
+- 토론 상세는 1100px 콘텐츠 안의 단일 열이어야 한다. 우측 150px 탐색 열은
+  만들지 않고 답장·팔로우·게시물 탐색을 본문 위 64px 가로 도구 모음에 배치한다.
+- 상세 제목은 Welcome Hero와 같은 배너 외형을 사용하지 않는다. 흰 배경의 콘텐츠
+  제목 영역에서 해결 상태·태그·제목·작성자·작성 시각을 왼쪽 정렬로 표시한다.
+- 일반 답변은 카드 중첩 없이 1px 구분선으로 나누고 AI 기술지원·추가 확인 필요·
+  최종 해결 가이드만 의미 색상 카드로 구분한다.
+- 첫 게시물 안의 선택 답변 미리보기는 숨기고 `해결 답변 보기`가 실제 선택 답변으로
+  이동해야 한다. 이동 후 선택 답변 상단은 고정 Header 아래에서 보여야 한다.
+- 질문 다음에는 `답변을 작성해 주세요` 버튼이 표시되어 기존 Flarum 답장 작성기를
+  열어야 한다. 480px보다 긴 `pre` 로그에는 `전체 로그 보기`와 `로그 접기`가 제공되어야 한다.
 - 사용자 프로필·설정 화면을 1,150px 폭에서 스크롤했을 때 고정 메뉴 폭이
   280px로 유지되고 메뉴 오른쪽 끝이 본문 왼쪽보다 작거나 같은지 확인한다.
 - `Answered`, `Best Answer`, `Select Best Answer` 원문 노출이 없어야 한다.
@@ -125,7 +135,7 @@ sudo systemctl restart php8.3-fpm nginx
 
 - GO: HTTP 200, 한글 원문 키 0건, 핵심 기능 정상, 콘텐츠·첨부 불변.
 - ROLLBACK: 화면·번역·로그인·작성·첨부 중 하나라도 실패.
-- 2026-08-19 운영 적용 완료: 사용자 메뉴 겹침 보완과 Reddit형 평면 피드·게시물
-  정보 계층·이미지 썸네일, 하단 Footer 제거와 우측 고정 퀵 링크가 WSL 및
-  운영에 반영되었으며, 최신 운영 백업은
-  `/var/backups/techflow-flarum/theme-header-shell-align-20260819T154310Z`에 보존한다.
+- 2026-08-20 운영 적용 완료: 사용자 메뉴 겹침 보완과 Reddit형 평면 피드·게시물
+  정보 계층·이미지 썸네일, 하단 Footer 제거와 우측 고정 퀵 링크, 메인 환영 배너
+  제거와 상세 단일 열 읽기 흐름이 WSL 및 운영에 반영되었다. 최신 운영 백업은
+  `/var/backups/techflow-flarum/theme-detail-toolbar-20260820T003355Z`에 보존한다.

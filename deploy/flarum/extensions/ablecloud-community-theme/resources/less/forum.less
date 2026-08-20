@@ -847,7 +847,7 @@ body {
   .TagTile:focus-within {
     border-color: #9db9e4;
     border-top-color: var(--tag-bg);
-    box-shadow: var(--ablecloud-shadow);
+    box-shadow: var(--ablecloud-shadow-soft);
     transform: translateY(-2px);
   }
 
@@ -3009,6 +3009,448 @@ body {
       justify-content: flex-end;
       margin-top: 12px;
     }
+  }
+}
+
+/*
+ * Discussion reading flow
+ *
+ * Keep the established 1100px content width and the adjacent quick-link rail.
+ * The index no longer uses a welcome banner. Discussion pages use a compact,
+ * content-aligned title block and a single reading column without side panels.
+ */
+.App--index .WelcomeHero {
+  display: none !important;
+}
+
+.App--discussion .DiscussionHero {
+  border-bottom: 1px solid var(--ablecloud-brand-border);
+  background: #ffffff !important;
+  color: var(--ablecloud-brand-ink) !important;
+  text-align: left;
+}
+
+.App--discussion .DiscussionHero .container {
+  width: 100%;
+  max-width: 1100px;
+  box-sizing: border-box;
+  padding: 17px 0 15px;
+}
+
+.App--discussion .DiscussionHero-items {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+  margin: 0;
+}
+
+.App--discussion .DiscussionHero-items > li {
+  display: block;
+  float: none;
+  margin: 0;
+}
+
+.App--discussion .DiscussionHero-items > .item-badges {
+  order: 1;
+}
+
+.App--discussion .DiscussionHero-items > .item-tags {
+  min-width: 0;
+  order: 2;
+}
+
+.App--discussion .DiscussionHero-items > .item-title {
+  flex: 0 0 100%;
+  order: 3;
+}
+
+.App--discussion .DiscussionHero-items > .item-ablecloudMeta {
+  flex: 0 0 100%;
+  order: 4;
+}
+
+.App--discussion .DiscussionHero-title {
+  max-width: 900px;
+  margin: 2px 0 0;
+  color: var(--ablecloud-brand-ink) !important;
+  font-size: 26px;
+  font-weight: 780;
+  letter-spacing: -0.025em;
+  line-height: 1.38;
+}
+
+.App--discussion .DiscussionHero .Badge--bestAnswer {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  width: auto;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid #86d2aa;
+  border-radius: 999px;
+  background: #d9f5e6;
+  color: #056038;
+  box-shadow: none;
+}
+
+.App--discussion .DiscussionHero .Badge--bestAnswer::after {
+  content: "해결됨";
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.App--discussion .DiscussionHero .Badge--bestAnswer .Badge-icon {
+  font-size: 12px;
+}
+
+.ablecloud-DiscussionDetailMeta {
+  display: flex !important;
+  align-items: center;
+  min-height: 30px;
+  gap: 7px;
+  color: var(--ablecloud-brand-muted);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.ablecloud-DiscussionDetailMeta-author {
+  color: var(--ablecloud-brand-primary-deep);
+  font-weight: 720;
+}
+
+.App--discussion .DiscussionHero .ablecloud-DiscussionDetailMeta-author {
+  color: var(--ablecloud-brand-primary-deep) !important;
+}
+
+.ablecloud-DiscussionDetailMeta-separator {
+  color: #9aa9bc;
+}
+
+.ablecloud-SolutionJump {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  margin-left: auto;
+  padding: 4px 10px;
+  border: 1px solid #86d2aa;
+  border-radius: 999px;
+  background: #f2fbf6;
+  color: #056038 !important;
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.ablecloud-SolutionJump::before {
+  margin-right: 6px;
+  content: "↓";
+  font-weight: 900;
+}
+
+.App--discussion .DiscussionPage-discussion > .container,
+.App--discussion .DiscussionPage-stream,
+.App--discussion .PostStream {
+  width: 100%;
+  max-width: 1100px;
+  box-sizing: border-box;
+}
+
+.App--discussion .DiscussionPage-discussion > .container {
+  display: block;
+}
+
+.App--discussion .PostStream {
+  margin: 0;
+}
+
+.App--discussion .PostStream-item,
+.App--discussion .PostStream-item:has(.Post-actions) {
+  margin: 0 !important;
+  padding: 0;
+  border-bottom: 1px solid var(--ablecloud-brand-border);
+}
+
+.App--discussion .PostStream-item:last-child {
+  border-bottom: 0;
+}
+
+.App--discussion .PostStream-item article.Post {
+  margin: 0;
+  padding-top: 24px;
+  padding-bottom: 24px;
+}
+
+.App--discussion article.Post > div {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+}
+
+.App--discussion article.Post > div:hover {
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.App--discussion .Post-header {
+  margin-bottom: 12px;
+}
+
+.App--discussion .Post-body {
+  max-width: none;
+  color: #26364d;
+  font-size: 16px;
+  line-height: 1.82;
+}
+
+.App--discussion .Post-body p,
+.App--discussion .Post-body li {
+  max-width: 82ch;
+}
+
+.App--discussion .Post-body blockquote {
+  max-width: 82ch;
+  margin: 18px 0;
+  padding: 12px 16px;
+  border-left: 3px solid #8cb0ec;
+  border-radius: 0 10px 10px 0;
+  background: #f4f8ff;
+  color: #425875;
+}
+
+.App--discussion .Post-body pre {
+  max-width: 100%;
+  border: 1px solid #d5dfec;
+  border-radius: 11px;
+  background: #f6f8fb;
+  color: #203047;
+  overflow: auto;
+}
+
+.App--discussion .Post-body pre.ablecloud-TechnicalBlock--collapsed {
+  max-height: 480px;
+}
+
+.ablecloud-TechnicalBlock-toggle {
+  min-height: 36px;
+  margin-top: 8px;
+  padding: 0 11px;
+  border: 1px solid var(--ablecloud-brand-border);
+  background: #f4f8ff;
+  color: var(--ablecloud-brand-primary-deep);
+  font-size: 13px;
+}
+
+.App--discussion .Post-actions {
+  position: static;
+  right: auto;
+  bottom: auto;
+  float: none;
+  max-width: none;
+  margin: 18px 0 0;
+  opacity: 1 !important;
+}
+
+.App--discussion .Post-actions > ul {
+  justify-content: flex-start;
+}
+
+.App--discussion article.TechFlowPost--assistant > div,
+.App--discussion article.Post:has(> div > .Post-header .PostUser-name a[href="/u/TechFlow-Assistant"]) > div,
+.App--discussion article.TechFlowPost--knowledge-base > div,
+.App--discussion article.Post.Post--bestAnswer > div,
+.App--discussion article.TechFlowPost--needs-information > div {
+  padding: 20px 22px;
+  border-radius: 14px;
+  box-shadow: none;
+}
+
+.App--discussion article.TechFlowPost--assistant > div,
+.App--discussion article.Post:has(> div > .Post-header .PostUser-name a[href="/u/TechFlow-Assistant"]) > div {
+  border: 1px solid #a8c5f2;
+}
+
+.App--discussion article.TechFlowPost--knowledge-base > div,
+.App--discussion article.Post.Post--bestAnswer > div {
+  border: 1px solid #86d2aa;
+  border-left: 5px solid #078248;
+}
+
+.App--discussion article.TechFlowPost--needs-information > div {
+  border: 1px solid #e4b955;
+  border-left: 5px solid #d39a18;
+}
+
+.App--discussion .item-bestAnswerPost {
+  display: none !important;
+}
+
+.App--discussion #ablecloud-solution-post {
+  scroll-margin-top: 76px;
+}
+
+.ablecloud-InlineReplyPrompt {
+  margin: 0 20px 24px 105px;
+}
+
+.ablecloud-InlineReplyPrompt-button {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 48px;
+  justify-content: flex-start;
+  padding: 0 16px;
+  border: 1px dashed #9bb8e4;
+  border-radius: 12px;
+  background: #f7faff;
+  color: #4c6382;
+  font-weight: 650;
+  box-shadow: none;
+}
+
+.ablecloud-InlineReplyPrompt-button::before {
+  width: 18px;
+  height: 18px;
+  margin-right: 9px;
+  background: currentColor;
+  content: "";
+  -webkit-mask-image: var(--ablecloud-icon-reply);
+  mask-image: var(--ablecloud-icon-reply);
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  --ablecloud-icon-reply: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='m9 7-5 5 5 5M5 12h8a6 6 0 0 1 6 6v1' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+.ablecloud-InlineReplyPrompt-button:hover,
+.ablecloud-InlineReplyPrompt-button:focus-visible {
+  border-color: var(--ablecloud-brand-primary);
+  background: #eef5ff;
+  color: var(--ablecloud-brand-primary-deep);
+}
+
+@media (min-width: 768px) {
+  .App--discussion .DiscussionPage-nav {
+    position: relative !important;
+    top: auto !important;
+    width: 100% !important;
+    margin: 0 0 8px !important;
+    padding: 14px 0 10px;
+    z-index: 20;
+  }
+
+  .App--discussion .DiscussionPage-nav > ul {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+  }
+
+  .App--discussion .DiscussionPage-nav > ul > li {
+    margin-bottom: 0;
+  }
+
+  .App--discussion .DiscussionPage-nav .item-controls .ButtonGroup {
+    display: inline-flex;
+    width: auto;
+  }
+
+  .App--discussion .DiscussionPage-nav .item-controls .ButtonGroup > .Button {
+    float: none;
+    flex: 0 0 auto;
+  }
+
+  .App--discussion .DiscussionPage-nav .item-scrubber {
+    margin-left: auto;
+  }
+
+  .App--discussion .DiscussionPage-nav .PostStreamScrubber {
+    margin-top: 0;
+  }
+
+  .App--discussion .DiscussionPage-nav .PostStreamScrubber .Dropdown-menu {
+    display: none !important;
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    left: auto;
+    min-width: 240px;
+    padding: 12px;
+    border: 1px solid var(--ablecloud-brand-border);
+    border-radius: 12px;
+    background: #ffffff;
+    box-shadow: var(--ablecloud-shadow);
+  }
+
+  .App--discussion .DiscussionPage-nav .PostStreamScrubber > .Dropdown-toggle {
+    display: inline-flex !important;
+    align-items: center;
+  }
+
+  .App--discussion .DiscussionPage-nav .PostStreamScrubber.open > .Dropdown-menu {
+    display: block !important;
+  }
+
+  .App--discussion .DiscussionPage-stream {
+    width: 100% !important;
+    margin: 0 !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .App--discussion .DiscussionHero .container {
+    padding: 17px 15px 15px;
+  }
+
+  .App--discussion .DiscussionHero-title {
+    font-size: 21px;
+    line-height: 1.4;
+  }
+
+  .ablecloud-DiscussionDetailMeta {
+    flex-wrap: wrap;
+    font-size: 13px;
+  }
+
+  .ablecloud-SolutionJump {
+    margin-left: 0;
+  }
+
+  .App--discussion .DiscussionPage-stream,
+  .App--discussion .PostStream {
+    width: 100% !important;
+    padding-right: 8px;
+    padding-left: 8px;
+  }
+
+  .App--discussion .PostStream-item article.Post {
+    padding-top: 18px;
+    padding-bottom: 18px;
+  }
+
+  .App--discussion article.TechFlowPost--assistant > div,
+  .App--discussion article.Post:has(> div > .Post-header .PostUser-name a[href="/u/TechFlow-Assistant"]) > div,
+  .App--discussion article.TechFlowPost--knowledge-base > div,
+  .App--discussion article.Post.Post--bestAnswer > div,
+  .App--discussion article.TechFlowPost--needs-information > div {
+    padding: 16px;
+  }
+
+  .App--discussion .Post-actions {
+    position: static;
+    margin-top: 16px;
+  }
+
+  .App--discussion .PostStream-item:has(.Post-actions) {
+    padding-bottom: 0;
+  }
+
+  .ablecloud-InlineReplyPrompt {
+    margin: 0 12px 18px 60px;
   }
 }
 

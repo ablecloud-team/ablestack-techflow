@@ -176,6 +176,44 @@ class CommunityThemeContractTests(unittest.TestCase):
             with self.subTest(style_contract=style_contract):
                 self.assertIn(style_contract, self.less)
 
+    def test_discussion_detail_reading_flow_contract(self) -> None:
+        for script_contract in (
+            "enhanceDiscussionDetail",
+            "data-ablecloud-reading-flow",
+            "ablecloud-DiscussionDetailMeta",
+            "ablecloud-solution-post",
+            "해결 답변 보기",
+            "scrollToSolution",
+            "ablecloud-InlineReplyPrompt",
+            "답변을 작성해 주세요",
+            "enhanceLongTechnicalBlocks",
+            "전체 로그 보기",
+            "duplicateSolution.setAttribute('aria-hidden', 'true')",
+        ):
+            with self.subTest(script_contract=script_contract):
+                self.assertIn(script_contract, self.forum_js)
+
+        for style_contract in (
+            ".App--index .WelcomeHero",
+            ".App--discussion .DiscussionHero",
+            ".App--discussion .DiscussionHero-title",
+            ".ablecloud-DiscussionDetailMeta",
+            ".ablecloud-SolutionJump",
+            ".App--discussion .DiscussionPage-stream",
+            ".App--discussion .PostStream-item",
+            ".App--discussion .item-bestAnswerPost",
+            ".ablecloud-InlineReplyPrompt",
+            ".ablecloud-TechnicalBlock--collapsed",
+            "single reading column without side panels",
+        ):
+            with self.subTest(style_contract=style_contract):
+                self.assertIn(style_contract, self.less)
+
+        self.assertIn("display: none !important", self.less)
+        self.assertIn("max-width: 1100px", self.less)
+        self.assertIn("position: relative !important", self.less)
+        self.assertIn("justify-content: flex-start", self.less)
+
     def test_compact_hero_and_navigation_width_contract(self) -> None:
         self.assertIn(".WelcomeHero .container", self.less)
         self.assertIn("font-size: 28px", self.less)

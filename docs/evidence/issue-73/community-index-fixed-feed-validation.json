@@ -1,12 +1,12 @@
 {
-  "schema_version": "1.5",
-  "executed_at": "2026-08-19T15:43:10Z",
-  "scope": "Flarum desktop index fixed navigation, Reddit-style discussion item structure, and right-side quick links",
+  "schema_version": "1.6",
+  "executed_at": "2026-08-20T00:33:55Z",
+  "scope": "Flarum index without welcome banner, Reddit-style discussion list and detail reading flow, and right-side quick links",
   "design_reference": "https://www.reddit.com/new/?feed=home",
   "navigation_reference": "https://community.ablecloud.io/settings",
   "change": {
     "document_scroll": "disabled on desktop index",
-    "fixed_regions": ["welcome hero", "left navigation", "right quick-link rail"],
+    "fixed_regions": ["left navigation", "right quick-link rail"],
     "scroll_region": ".IndexPage-results including .IndexPage-toolbar and .DiscussionList, scrollbar hidden",
     "discussion_list_owns_scroll": false,
     "toolbar_scrolls_with_feed": true,
@@ -34,7 +34,8 @@
     "desktop_feed_width_px": 758,
     "desktop_feed_to_quick_link_gap_px": 16,
     "reclaimed_footer_height_px": 56,
-    "top_shell_alignment": "header and welcome hero use the same 1165px desktop shell as index content"
+    "welcome_hero": "hidden on the index",
+    "top_shell_alignment": "header uses the same 1165px desktop shell as index content"
   },
   "wsl": {
     "environment": "WSL Ubuntu 24.04",
@@ -69,7 +70,7 @@
       "mobile_viewport": { "width": 390, "height": 844 },
       "mobile_quick_link_rail_size_px": { "width": 44, "height": 136 },
       "header_shell": { "x": 258, "right": 1423, "width": 1165 },
-      "welcome_hero_shell": { "x": 258, "right": 1423, "width": 1165 },
+      "welcome_hero_display": "none",
       "index_content_shell": { "x": 258, "right": 1423, "width": 1165 },
       "top_and_content_shell_aligned": true
     },
@@ -79,8 +80,9 @@
   "production": {
     "host": "172.16.0.234",
     "url": "https://community.ablecloud.io/",
-    "backup_root": "/var/backups/techflow-flarum/theme-header-shell-align-20260819T154310Z",
-    "theme_less_sha256": "2f2557d903df02aedc7a3a252a97048f9cbcf9b91e36fbaebf2aa84bae15cccc",
+    "backup_root": "/var/backups/techflow-flarum/theme-detail-toolbar-20260820T003355Z",
+    "theme_less_sha256": "e56463d030b90df6c9626ab2d20595ae51c4352923f4a0f9c67a8bbc644fd0fd",
+    "theme_js_sha256": "05115ef3395d87d0f7327a50bac518376075b3cbd9bbeed356f48ee64521d42e",
     "services": {
       "nginx": "active",
       "php8.3-fpm": "active",
@@ -126,14 +128,57 @@
       "feed_scroll_top_px": 350,
       "bottom_footer_visible": false,
       "header_shell": { "x": 258, "right": 1423, "width": 1165 },
-      "welcome_hero_shell": { "x": 258, "right": 1423, "width": 1165 },
+      "welcome_hero_display": "none",
       "index_content_shell": { "x": 258, "right": 1423, "width": 1165 },
       "top_and_content_shell_aligned": true
     },
     "result": "PASS"
   },
+  "detail_reading_flow": {
+    "layout": {
+      "side_information_columns": false,
+      "content_width_px": 1100,
+      "inner_stream_width_px": 1070,
+      "title_alignment": "left",
+      "navigation": "64px horizontal toolbar above the single reading column",
+      "normal_posts": "flat with 1px separators",
+      "semantic_cards": ["AI technical support", "needs more information", "final solution"],
+      "duplicate_selected_answer_preview": "hidden",
+      "inline_reply_prompt": "답변을 작성해 주세요",
+      "long_log_behavior": "collapsed above 480px with Korean expand and collapse controls"
+    },
+    "wsl": {
+      "url": "http://localhost:18080/d/144-gasangmeosin-webkonsol-yeongyeol-oryu",
+      "title": "가상머신 웹콘솔 연결 오류",
+      "author_meta": "sijo · 8일 전",
+      "post_count": 4,
+      "first_post_text": "mold에서 가상머신 콘솔보기가 연결중에서 더이상 진행 되지가 않습니다.",
+      "navigation_height_px": 64,
+      "stream_width_px": 1070,
+      "duplicate_solution_visible": false,
+      "result": "PASS"
+    },
+    "production": {
+      "url": "https://community.ablecloud.io/d/173-v2keseo-vcenter-eobsi-esxi-hoseuteueseo-gasangmeosin-igwan-gineungeul-jiweonhanayo",
+      "title": "v2k에서 vCenter 없이 ESXi 호스트에서 가상머신 이관 기능을 지원하나요?",
+      "author_meta": "dhslove · 2일 전",
+      "solved_badge": "해결됨",
+      "post_count": 5,
+      "post_numbers": [1, 2, 3, 4, 5],
+      "solution_post_number": 5,
+      "solution_headings": ["증상", "원인", "해결 방법", "추가 고려사항", "적용 버전"],
+      "solution_applied_version": "ABLESTACK Diplo",
+      "solution_jump_final_top_px": 76,
+      "duplicate_solution_visible": false,
+      "inline_reply_opened_native_composer": true,
+      "navigation_height_px": 64,
+      "stream_width_px": 1070,
+      "quick_links": ["ABLECLOUD Home", "Blog", "Online Docs"],
+      "result": "PASS"
+    }
+  },
   "validation": {
-    "theme_contract_tests": { "passed": 12, "failed": 0 },
+    "theme_contract_tests": { "passed": 13, "failed": 0 },
     "discussion_item_enhancement_is_idempotent": true,
     "summary_uses_existing_store_data": true,
     "thumbnail_uses_existing_first_post_html": true,

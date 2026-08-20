@@ -6,6 +6,7 @@
   var relativeDatePattern = /(?:방금|전$|후$)/;
   var absoluteDatePattern = /^(\d{4})-(\d{2})-(\d{2})/;
   var discussionItemEnhancedAttribute = 'data-ablecloud-post-structure';
+  var discussionDetailEnhancedAttribute = 'data-ablecloud-reading-flow';
 
   function formatDiscussionCreatedAt(createdAt) {
     if (!(createdAt instanceof Date) || Number.isNaN(createdAt.getTime())) {
@@ -166,6 +167,144 @@
     });
   }
 
+  function createDetailMetaPart(className, text, href) {
+    var part = href ? document.createElement('a') : document.createElement('span');
+    part.className = className;
+    part.textContent = text;
+
+    if (href) {
+      part.href = href;
+    }
+
+    return part;
+  }
+
+  function scrollToSolution(event) {
+    var solution = document.getElementById('ablecloud-solution-post');
+
+    if (!solution) {
+      return;
+    }
+
+    event.preventDefault();
+    solution.scrollIntoView({
+      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+      block: 'start',
+    });
+  }
+
+  function enhanceLongTechnicalBlocks(root) {
+    root.querySelectorAll('.App--discussion .Post-body pre').forEach(function (block) {
+      if (block.getAttribute('data-ablecloud-log-block') === 'true' || block.scrollHeight <= 480) {
+        return;
+      }
+
+      block.setAttribute('data-ablecloud-log-block', 'true');
+      block.classList.add('ablecloud-TechnicalBlock--collapsed');
+
+      var toggle = document.createElement('button');
+      toggle.type = 'button';
+      toggle.className = 'Button ablecloud-TechnicalBlock-toggle';
+      toggle.setAttribute('aria-expanded', 'false');
+      toggle.textContent = '전체 로그 보기';
+      toggle.addEventListener('click', function () {
+        var expanded = toggle.getAttribute('aria-expanded') === 'true';
+        toggle.setAttribute('aria-expanded', String(!expanded));
+        toggle.textContent = expanded ? '전체 로그 보기' : '로그 접기';
+        block.classList.toggle('ablecloud-TechnicalBlock--collapsed', expanded);
+      });
+      block.insertAdjacentElement('afterend', toggle);
+    });
+  }
+
+  function enhanceDiscussionDetail(root) {
+    var page = root.querySelector('.App--discussion .DiscussionPage');
+    var hero = root.querySelector('.App--discussion .DiscussionHero');
+    var stream = page && page.querySelector('.PostStream');
+    var firstItem = stream && stream.querySelector('.PostStream-item[data-number="1"]');
+    var firstPost = firstItem && firstItem.querySelector('article.Post');
+
+    if (!page || !hero || !stream || !firstPost) {
+      return;
+    }
+
+    var solutionPost = stream.querySelector('article.Post.Post--bestAnswer');
+    var solutionItem = solutionPost && solutionPost.closest('.PostStream-item');
+
+    if (solutionItem) {
+      solutionItem.id = 'ablecloud-solution-post';
+    }
+
+    if (hero.getAttribute(discussionDetailEnhancedAttribute) !== 'true') {
+      var heroItems = hero.querySelector('.DiscussionHero-items');
+      var authorLink = firstPost.querySelector('.PostUser-name a');
+      var authorName = firstPost.querySelector('.PostUser-name .username');
+      var publishedAt = firstPost.querySelector('.PostMeta time');
+      var meta = document.createElement('li');
+      meta.className = 'item-ablecloudMeta ablecloud-DiscussionDetailMeta';
+      meta.setAttribute('aria-label', '토론 작성 정보');
+
+      if (authorName) {
+        meta.appendChild(
+          createDetailMetaPart(
+            'ablecloud-DiscussionDetailMeta-author',
+            authorName.textContent.trim(),
+            authorLink && authorLink.getAttribute('href')
+          )
+        );
+      }
+
+      if (publishedAt) {
+        meta.appendChild(createDetailMetaPart('ablecloud-DiscussionDetailMeta-separator', '·'));
+        meta.appendChild(createDetailMetaPart('ablecloud-DiscussionDetailMeta-time', publishedAt.textContent.trim()));
+      }
+
+      if (solutionItem) {
+        var solutionLink = createDetailMetaPart('ablecloud-SolutionJump', '해결 답변 보기', '#ablecloud-solution-post');
+        solutionLink.addEventListener('click', scrollToSolution);
+        meta.appendChild(solutionLink);
+      }
+
+      if (heroItems) {
+        heroItems.appendChild(meta);
+      }
+
+      var solvedBadge = hero.querySelector('.Badge--bestAnswer');
+
+      if (solvedBadge) {
+        solvedBadge.setAttribute('aria-label', '해결됨');
+      }
+
+      hero.setAttribute(discussionDetailEnhancedAttribute, 'true');
+    }
+
+    var duplicateSolution = firstPost.querySelector('.item-bestAnswerPost');
+
+    if (duplicateSolution) {
+      duplicateSolution.setAttribute('aria-hidden', 'true');
+    }
+
+    if (!firstItem.querySelector('.ablecloud-InlineReplyPrompt')) {
+      var nativeReply = page.querySelector('.DiscussionPage-nav .item-controls .SplitDropdown-button');
+
+      if (nativeReply) {
+        var replyPrompt = document.createElement('div');
+        var replyButton = document.createElement('button');
+        replyPrompt.className = 'ablecloud-InlineReplyPrompt';
+        replyButton.type = 'button';
+        replyButton.className = 'Button ablecloud-InlineReplyPrompt-button';
+        replyButton.textContent = '답변을 작성해 주세요';
+        replyButton.addEventListener('click', function () {
+          nativeReply.click();
+        });
+        replyPrompt.appendChild(replyButton);
+        firstPost.insertAdjacentElement('afterend', replyPrompt);
+      }
+    }
+
+    enhanceLongTechnicalBlocks(root);
+  }
+
   function formatTagDiscussionDates(root) {
     root.querySelectorAll('.TagTile-lastPostedDiscussion time[datetime]').forEach(function (time) {
       var current = time.textContent.trim();
@@ -225,6 +364,7 @@
         formatTagDiscussionDates(document);
         normalizeDiscussionListTargets(document);
         enhanceDiscussionListItems(document);
+        enhanceDiscussionDetail(document);
       });
     };
 
