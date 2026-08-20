@@ -199,6 +199,47 @@ class CommunityThemeContractTests(unittest.TestCase):
             with self.subTest(style_contract=style_contract):
                 self.assertIn(style_contract, self.less)
 
+    def test_mobile_navigation_and_dialog_contract(self) -> None:
+        for script_contract in (
+            "syncMobileNavigationState",
+            "탐색 서랍 닫기",
+            "탐색 서랍 열기",
+            "handleMobileOverlayKeydown",
+            "handleMobileNavigationClick",
+            "handleMobileComposerCloseClick",
+            "document.body.classList.contains('ablecloud-composer-open')",
+            "forumApp.composer.hide()",
+            "작성 중인 내용을 취소하고 대화상자를 닫으시겠습니까?",
+            "drawerToggle.click()",
+        ):
+            with self.subTest(script_contract=script_contract):
+                self.assertIn(script_contract, self.forum_js)
+
+        for style_contract in (
+            ".App--index .IndexPage-nav",
+            ".App--index .IndexPage-nav > ul",
+            "pointer-events: none",
+            ".App.drawerOpen .App-drawer",
+            ".App.drawerOpen .Header-secondary > ul",
+            ".dropdown:not(.open) > .Dropdown-menu",
+            ".App.drawerOpen .Header-secondary .Dropdown-menu > .dropdown-backdrop",
+            "flex-direction: column",
+            ".App.drawerOpen .Navigation-drawer",
+            ".App.drawerOpen .Navigation-drawer .fa-bars",
+            ".Modal-body",
+            "max-height: calc(100vh - 24px)",
+            ".Modal-close .Button",
+            ".Modal-close .Button::after",
+            ".Composer-controls .item-close",
+            ".Composer-controls .item-close .Button::after",
+            "&.ablecloud-composer-open .Composer:not(.fullScreen) .Composer-controls .item-minimize",
+            "&.ablecloud-composer-open .Composer:not(.fullScreen) .Composer-controls .item-close",
+            "z-index: 1002",
+            "display: block !important",
+        ):
+            with self.subTest(style_contract=style_contract):
+                self.assertIn(style_contract, self.less)
+
     def test_reddit_style_discussion_item_structure_contract(self) -> None:
         for script_contract in (
             "enhanceDiscussionListItems",
@@ -281,6 +322,21 @@ class CommunityThemeContractTests(unittest.TestCase):
         self.assertIn("justify-content: flex-start", self.less)
 
     def test_compact_hero_and_navigation_width_contract(self) -> None:
+        self.assertIn("--ablecloud-page-shell-width: 1165px", self.less)
+        self.assertIn("--ablecloud-page-rail-space: 80px", self.less)
+        for shell_selector in (
+            ".App-header > .container",
+            ".WelcomeHero > .container",
+            ".TagHero > .container",
+            ".UserHero .container",
+            ".TagsPage > .container",
+            ".UserPage > .container",
+        ):
+            with self.subTest(shell_selector=shell_selector):
+                self.assertIn(shell_selector, self.less)
+        self.assertIn("max-width: var(--ablecloud-page-shell-width)", self.less)
+        self.assertIn("padding-right: var(--ablecloud-page-rail-space)", self.less)
+        self.assertIn("Shared desktop shell", self.less)
         self.assertIn(".WelcomeHero .container", self.less)
         self.assertIn("font-size: 28px", self.less)
         self.assertIn("width: 280px", self.less)

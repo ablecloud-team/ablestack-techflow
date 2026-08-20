@@ -754,6 +754,94 @@
     return composerOpen;
   }
 
+  function syncMobileNavigationState(root) {
+    var app = root.querySelector('.App') || document.querySelector('.App');
+    var toggle = root.querySelector('.Navigation-drawer') || document.querySelector('.Navigation-drawer');
+
+    if (!app || !toggle) {
+      return;
+    }
+
+    var open = app.classList.contains('drawerOpen');
+    toggle.setAttribute('aria-label', open ? '탐색 서랍 닫기' : '탐색 서랍 열기');
+    toggle.setAttribute('title', open ? '메뉴 닫기' : '메뉴 열기');
+
+    if (!open) {
+      root.querySelectorAll('.drawer-backdrop').forEach(function (backdrop) {
+        backdrop.remove();
+      });
+    }
+  }
+
+  function handleMobileOverlayKeydown(event) {
+    if (event.key !== 'Escape') {
+      return;
+    }
+
+    var app = document.querySelector('.App.drawerOpen');
+    var drawerToggle = app && document.querySelector('.Navigation-drawer');
+
+    if (drawerToggle) {
+      event.preventDefault();
+      drawerToggle.click();
+    }
+  }
+
+  function closeMobileNavigation(event) {
+    var app = document.querySelector('.App.drawerOpen');
+
+    if (!app) {
+      return false;
+    }
+
+    if (event) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    }
+
+    app.classList.remove('drawerOpen');
+    document.querySelectorAll('.drawer-backdrop').forEach(function (backdrop) {
+      backdrop.remove();
+    });
+    syncMobileNavigationState(document);
+    return true;
+  }
+
+  function handleMobileNavigationClick(event) {
+    var toggle = event.target.closest && event.target.closest('.Navigation-drawer');
+    var backdrop = event.target.closest && event.target.closest('.drawer-backdrop');
+
+    if ((toggle || backdrop) && document.querySelector('.App.drawerOpen')) {
+      closeMobileNavigation(event);
+    }
+  }
+
+  function handleMobileComposerCloseClick(event) {
+    var closeButton = event.target.closest && event.target.closest('.Composer-controls .item-close button');
+
+    if (!closeButton || !document.body.classList.contains('ablecloud-composer-open')) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    var title = document.querySelector('.Composer input[placeholder="토의 제목"]');
+    var editor = document.querySelector('.Composer .TextEditor-editor');
+    var hasContent = Boolean(
+      (title && title.value.trim()) ||
+      (editor && editor.textContent.trim())
+    );
+
+    if (hasContent && !window.confirm('작성 중인 내용을 취소하고 대화상자를 닫으시겠습니까?')) {
+      return;
+    }
+
+    forumApp.composer.hide();
+    window.setTimeout(function () {
+      syncComposerPaneState(document);
+    }, 0);
+  }
+
   function showFallbackPaneFromEdge(event) {
     var composerOpen = syncComposerPaneState(document);
 
@@ -782,6 +870,7 @@
         captureDiscussionListSnapshot(document);
         ensureFallbackDiscussionPane(document);
         syncComposerPaneState(document);
+        syncMobileNavigationState(document);
         enhanceDiscussionDetail(document);
       });
     };
@@ -802,8 +891,11 @@
       window.setTimeout(schedule, 600);
     }, true);
     document.addEventListener('click', openDiscussionFromTop, true);
+    document.addEventListener('click', handleMobileNavigationClick, true);
+    document.addEventListener('click', handleMobileComposerCloseClick, true);
     document.addEventListener('click', handleEmojiPaletteClick, true);
     document.addEventListener('keydown', handleEmojiPaletteKeydown, true);
+    document.addEventListener('keydown', handleMobileOverlayKeydown, true);
     document.addEventListener('mousemove', showFallbackPaneFromEdge, { passive: true });
   });
 

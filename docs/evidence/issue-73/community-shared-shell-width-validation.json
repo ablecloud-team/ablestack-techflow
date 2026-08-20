@@ -1,0 +1,71 @@
+{
+  "schema_version": "1.0",
+  "executed_at": "2026-08-20T14:21:54+09:00",
+  "scope": "Align tags, tag hero, user profile, settings and security pages to the discussion-list desktop shell",
+  "desktop_contract": {
+    "shell_width_px": 1165,
+    "shell_left_px_at_1280": 50,
+    "shell_right_px_at_1280": 1215,
+    "inner_content_right_px": 1135,
+    "quick_link_rail_left_px": 1143.5,
+    "quick_link_clearance_px": 8.5,
+    "reserved_right_space_px": 80,
+    "mobile_override": false
+  },
+  "before": {
+    "tags_shell_width_px": 1100,
+    "user_shell_width_px": 1100,
+    "settings_shell_width_px": 1100,
+    "security_shell_width_px": 1100,
+    "left_px_at_1280": 82.5,
+    "right_px_at_1280": 1182.5
+  },
+  "wsl": {
+    "url": "http://localhost:18080",
+    "environment": "Ubuntu 24.04 WSL",
+    "rehearsal_result": "/srv/techflow-flarum-staging/rehearsals/issue-73/issue73-shell-width-20260820/result.json",
+    "rehearsal_cycle": ["enable", "validate", "disable", "rollback-validate", "re-enable"],
+    "result": "PASS",
+    "browser": {
+      "viewport": {"width": 1280, "height": 720},
+      "tags": {"header_width": 1165, "hero_width": 1165, "page_width": 1165, "content_width": 1070},
+      "profile": {"header_width": 1165, "hero_width": 1165, "page_width": 1165, "content_right": 1135},
+      "settings": {"header_width": 1165, "hero_width": 1165, "page_width": 1165, "content_right": 1135},
+      "security": {"header_width": 1165, "hero_width": 1165, "page_width": 1165, "content_right": 1135},
+      "quick_link_overlap": false
+    }
+  },
+  "production": {
+    "url": "https://community.ablecloud.io",
+    "host": "172.16.0.234",
+    "backup_root": "/var/backups/techflow-flarum/theme-shell-width-20260820T142154KST",
+    "source_less_sha256": "6bff0d72cdee7420aa38cd195229787a39cc64a351b8b18eee61955235a48746",
+    "vendor_less_sha256": "6bff0d72cdee7420aa38cd195229787a39cc64a351b8b18eee61955235a48746",
+    "local_http_status": 200,
+    "external_https_status": 200,
+    "services": {"nginx": "active", "php8.3-fpm": "active", "mariadb": "active"},
+    "browser": {
+      "viewport": {"width": 1280, "height": 720},
+      "discussion_list_reference": {"header_width": 1165, "page_width": 1165, "content_right": 1135},
+      "tags": {"header_width": 1165, "hero_width": 1165, "page_width": 1165, "content_width": 1070},
+      "profile": {"header_width": 1165, "hero_width": 1165, "page_width": 1165, "content_right": 1135},
+      "settings": {"header_width": 1165, "hero_width": 1165, "page_width": 1165, "content_right": 1135},
+      "security": {"header_width": 1165, "hero_width": 1165, "page_width": 1165, "content_right": 1135},
+      "quick_link_overlap": false,
+      "visual_check": "PASS"
+    }
+  },
+  "tests": {
+    "command": "python -m unittest discover -s deploy/flarum/tests -p test_*.py -v",
+    "passed": 14,
+    "failed": 0,
+    "git_diff_check": "PASS"
+  },
+  "protected_scope": {
+    "database_schema_changed": false,
+    "discussion_or_attachment_changed": false,
+    "techflow_ai_changed": false,
+    "github_chat_webhook_changed": false
+  },
+  "result": "PASS"
+}

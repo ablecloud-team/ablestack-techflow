@@ -591,3 +591,110 @@ Vendor LESS SHA-256은 모두
 Nginx·PHP-FPM·MariaDB는 `active`, 서버 로컬 HTTP는 200이다. DB Schema, 게시물,
 첨부, TechFlow AI와 GitHub→Chat Webhook은 변경하지 않았고 원격 임시 파일은
 제거했다.
+
+### 태그·프로필·설정·보안 화면 폭 통일
+
+운영 브라우저의 1,280×720 화면에서 토론 목록은 Header와 Page가 1,165px인데,
+태그·프로필·설정·보안 화면은 Flarum 기본 1,100px Container를 사용하고 있었다.
+이 때문에 동일한 Header를 사용해도 좌우 끝이 각각 32.5px 안쪽으로 들어가 화면을
+이동할 때 폭이 달라 보였다.
+
+공통 데스크톱 셸을 1,165px로 정의하고 Header, Welcome/Tag/User Hero, TagsPage,
+UserPage에 동일하게 적용했다. 단순히 내부 콘텐츠를 넓히지 않고 오른쪽 80px을
+고정 퀵 링크 영역으로 예약해 기존 1,070px 내부 폭을 유지했다. 그 결과 태그와
+사용자 화면의 콘텐츠 오른쪽 끝은 목록과 같은 X 1,135px이고, 퀵 링크 시작점
+X 1,143.5px보다 왼쪽에 있어 겹치지 않는다. 768px 미만 화면에는 이 규칙을
+적용하지 않는다.
+
+| 운영 브라우저 검증 화면 | Header | Hero | Page | 콘텐츠 오른쪽 |
+|---|---:|---:|---:|---:|
+| 토론 목록 기준 | 1,165px | 해당 없음 | 1,165px | 1,135px |
+| 태그 | 1,165px | 1,165px | 1,165px | 1,135px |
+| 사용자 프로필 | 1,165px | 1,165px | 1,165px | 1,135px |
+| 설정 | 1,165px | 1,165px | 1,165px | 1,135px |
+| 보안 | 1,165px | 1,165px | 1,165px | 1,135px |
+
+테마 계약 테스트 14건과 WSL
+`issue73-shell-width-20260820` 적용·비활성화·재적용 주기를 통과했다. 운영 배포
+전 백업은 `/var/backups/techflow-flarum/theme-shell-width-20260820T142154KST`에
+보존했다. 운영 Source와 Vendor LESS SHA-256은 모두
+`6bff0d72cdee7420aa38cd195229787a39cc64a351b8b18eee61955235a48746`로 일치한다.
+Nginx·PHP-FPM·MariaDB는 `active`, 서버 로컬 HTTP와 외부 HTTPS는 200이다.
+DB Schema, 게시물, 첨부, TechFlow AI와 GitHub→Chat Webhook은 변경하지 않았다.
+
+### 모바일 하위 메뉴와 새 토론·댓글 닫기 통일
+
+모바일 Drawer 안에서 `한국어` 같은 하위 메뉴를 펼칠 때 Flarum Core가 터치
+기기용 전체 화면 `.dropdown-backdrop`을 메뉴 내부에 추가하고 있었다. 테마가
+하위 메뉴를 Drawer 안의 정적 목록으로 바꾼 뒤에도 이 Backdrop이 남아 Drawer와
+본문을 함께 어둡게 덮는 것이 화면 깨짐의 원인이었다. Drawer의 Locale·Session
+메뉴 안에서만 이 터치 Backdrop을 제거해 다른 Modal이나 전체 Drawer Backdrop의
+닫기 동작은 유지했다.
+
+새 토론의 닫기 버튼은 44×44px로 존재했지만 Composer의 `::before` 레이어보다
+낮은 층에 있어 화면에 가려질 수 있었다. Composer 배경 레이어는 입력을 받지 않는
+최하위 층으로 내리고, 닫기 제어는 `z-index: 1002`에 배치했다. 같은 규칙을 새 토론뿐
+아니라 댓글 작성기에도 적용해 모바일 댓글에서 최소화·전체 화면 버튼을 숨기고
+명시적인 `×` 닫기 버튼을 제공한다. 닫기 처리는 빈 작성기와 작성 중인 작성기 모두
+공통 경로를 사용하며, 작성 중이면 기존 취소 확인을 거친다.
+
+| 390×844 브라우저 검증 | WSL | 운영 |
+|---|---:|---:|
+| Locale 하위 메뉴 | 222×131.1875px | 222×131.1875px |
+| 언어 전환 | `ko → en → ko` | `ko → en → ko` |
+| Drawer 닫기 | 정상 | 정상 |
+| 새 토론 닫기 | 44×44px·Hit 정상 | 44×44px·Hit 정상 |
+| 댓글 닫기 | 44×44px·Hit 정상 | 44×44px·Hit 정상 |
+| 댓글 최소화·전체 화면 | 숨김 | 숨김 |
+| 닫기 후 Composer | 없음 | 없음 |
+
+테마 계약 테스트 15건과 WSL
+`issue73-mobile-submenu-reply-final-20260820` 활성화·비활성화 롤백·재활성화
+주기를 통과했다. 사용자 39명, 토론 117건, 게시물 305건과 콘텐츠·업로드 해시는
+전 과정에서 동일했다. 운영 백업은
+`/var/backups/techflow-flarum/theme-mobile-submenu-reply-20260820T151526KST`에
+보존했다. Source와 Vendor LESS SHA-256은
+`1424f73c1a8b4416e569d7bb32d6fa29a9694fcb9013c2f672030e8138915ca6`, JS는
+`5ad7bb5e00dda6c36c5e97c194d09aefc137c9834cdf9059916f5f0bf956e8cb`로 각각
+일치한다. Nginx·PHP-FPM·MariaDB는 `active`, 외부 HTTPS는 200이며 DB Schema,
+게시물, 첨부, TechFlow AI와 GitHub→Chat Webhook은 변경하지 않았다.
+
+### 모바일 메인·좌측 메뉴·대화상자 인터페이스 교정
+
+390×844 모바일 화면에서 메인 Header 아래에 비어 있는 둥근 사각형이 남던 원인은
+데스크톱 좌측 메뉴의 `.IndexPage-nav > ul` 배경·테두리·높이가 모바일에도
+적용됐기 때문이다. 모바일에서는 현재 필터와 새 토론 버튼만 Header에서 사용할 수
+있도록 메뉴 컨테이너 자체는 0×0 투명 영역으로 만들고 두 버튼의 포인터 입력만
+유지했다. WSL과 운영에서 Header 아래 빈 사각형이 없어졌고 `모든 토의`, 새 토론,
+정렬·새로고침 기능은 그대로 동작한다.
+
+좌측 메뉴가 가로로 깨진 원인은 데스크톱 `.Header-secondary > ul` Flex 행과 숨겨진
+Locale·Session Dropdown이 모바일 Drawer에서도 높이를 차지한 데 있었다. Drawer를
+270px 단일 열로 재구성하고 검색·언어·신고·알림·계정을 46px 행으로 정렬했다.
+닫힌 Dropdown은 `display:none`, 펼친 Dropdown만 정적 하위 목록으로 표시한다.
+44×44px 닫기 버튼과 배경 클릭·ESC 닫기를 제공하고, Flarum 전환 후 남던 Backdrop도
+제거한다. 운영에서 열림 Backdrop 1개, 닫힘 뒤 0개를 확인했다.
+
+토론 작성기의 닫기 버튼은 DOM에 있었지만 Flarum 모바일 작성기의 `::before`
+레이어가 터치 입력을 가로채고 있었다. 이 레이어의 Pointer Event를 제거하고
+44×44px `×` 버튼을 고정했다. 작성 내용이 있으면 취소 확인 후 닫고, 내용이 없으면
+즉시 닫는다. 태그 선택을 포함한 Flarum Modal도 같은 44×44px `×`, 고정 Header,
+스크롤 가능한 Body 규칙을 사용한다.
+
+| 모바일 브라우저 검증 항목 | WSL | 운영 |
+|---|---:|---:|
+| 빈 Navigation 영역 | 0×0px·투명 | 0×0px·투명 |
+| Drawer | 270×844px | 270×844px |
+| Drawer 닫힘 뒤 Backdrop | 0건 | 0건 |
+| 토론 작성 닫기 버튼 | 44×44px·동작 | 44×44px·동작 |
+| 태그 Modal 닫기 버튼 | 44×44px·동작 | 44×44px·동작 |
+| Modal Body 스크롤 | `auto` | `auto` |
+
+테마 계약 테스트 15건과 WSL
+`issue73-mobile-final-20260820` 적용·비활성화·재적용 주기를 통과했다. 사용자 39명,
+토론 117건, 게시물 305건과 콘텐츠·업로드 해시는 전 과정에서 동일했다. 운영 배포
+전 백업은 `/var/backups/techflow-flarum/theme-mobile-ui-20260820T145819KST`에
+보존했다. Source와 Vendor LESS SHA-256은 모두
+`35dc0b6a285f2242b66a2be3253f71de432ec92412c53206173d99c2482547ee`로 일치하고,
+Nginx·PHP-FPM·MariaDB는 `active`, 서버 로컬 HTTP와 외부 목록·상세 HTTPS는 200이다.
+DB Schema, 게시물, 첨부, TechFlow AI와 GitHub→Chat Webhook은 변경하지 않았다.

@@ -88,7 +88,10 @@ sudo bash deploy/flarum/apply-community-theme-update.sh \
 - 데스크톱 첫 화면의 상단 헤더와 본문 셸은 모두 최대 1165px로 동일해야 한다.
   `scrollbar-gutter: stable`을 적용한 1680px Viewport에서는 두 영역의 X가 250px,
   오른쪽 끝이 1415px인지 확인한다.
-  모바일과 다른 페이지에는 이 폭을 강제하지 않는다.
+  태그·태그별 목록·사용자 프로필·설정·보안 화면의 Header·Hero·본문도 같은
+  1165px 외곽선을 사용한다. 본문과 Hero의 오른쪽 80px은 고정 퀵 링크 영역으로
+  예약해 기존 1070px 내부 콘텐츠 폭을 유지하고 겹침을 방지한다. 모바일에는 이
+  데스크톱 폭을 강제하지 않는다.
 - 좌측 메뉴는 사용자 설정 화면과 같이 고정한다. 높이가 짧아 태그가 모두 보이지
   않을 때 내부 스크롤은 허용하지만 `scrollbar-width: none`과 WebKit 규칙으로
   스크롤바는 표시하지 않는다.
@@ -152,6 +155,21 @@ sudo bash deploy/flarum/apply-community-theme-update.sh \
   대화상자로 표시되어야 한다. 최소화·전체 화면은 숨기고 닫기는 유지한다. 본문
   편집 영역과 도구막대가 독립 행으로 대화상자 안에 모두 들어가며, 첫 클릭만으로
   대화상자 상태가 적용되어야 한다. 답장 작성기는 기존 흐름을 유지한다.
+- 390×844 모바일 시작 화면에서 Header 아래 `.IndexPage-nav > ul`은 빈 둥근
+  사각형을 만들지 않아야 한다. 현재 필터와 새 토론 버튼은 Header에서 계속
+  동작해야 한다.
+- 모바일 좌측 Drawer는 270px 단일 열로 표시하고 검색·언어·신고·알림·계정을
+  세로 행으로 배치한다. 닫힌 Locale·Session Dropdown은 공간을 차지하지 않아야
+  하며 44×44px 닫기 버튼, 배경 클릭, ESC로 닫은 뒤 `.drawer-backdrop`은 0건이어야 한다.
+- 모바일 토론 작성기와 모든 Flarum Modal에는 항상 보이는 44×44px `×` 닫기
+  버튼을 제공한다. 닫기 버튼 중심의 실제 Hit Target이 버튼 자신인지 확인하고,
+  태그 Modal은 고정 Header와 독립적으로 스크롤되는 Body를 사용해야 한다.
+- 모바일 Drawer에서 언어·계정 하위 메뉴를 펼칠 때 Flarum의 터치 전용
+  `.dropdown-backdrop`이 Drawer를 덮거나 색을 입히면 안 된다. `한국어 → English →
+  한국어` 전환 후 Drawer가 정상 닫히고 최종 언어가 `ko`인지 확인한다.
+- 모바일 새 토론과 댓글 작성기는 모두 44×44px `×` 닫기를 제공한다. 댓글 작성기에는
+  최소화·전체 화면 버튼을 표시하지 않으며, 닫기 후 `.ablecloud-composer-open` 상태와
+  보이는 Composer가 모두 제거되어야 한다.
 - 헤더 검색에 `v2k`처럼 해결 답변과 일반 토론이 함께 조회되는 검색어를 입력한다.
   검색 결과 한 건은 태그·제목·질문 요약·선택 답변 요약이 위에서 아래로 표시되어야
   하며, 네 영역이 가로 열로 압축되거나 글자가 한두 자씩 끊기면 안 된다. 검색 접두
@@ -186,4 +204,7 @@ sudo systemctl restart php8.3-fpm nginx
   최신 운영 백업은
   `/var/backups/techflow-flarum/theme-infinite-emoji-dialog-final-20260820T1430KST`에
   보존한다. 목록 자동 로딩, 한글 이모지 삽입, 새 토론 중앙 대화상자까지 운영
-  브라우저에서 확인했다.
+  브라우저에서 확인했다. 모바일 메인·Drawer·대화상자 보완의 최신 백업은
+  `/var/backups/techflow-flarum/theme-mobile-submenu-reply-20260820T151526KST`이며,
+  390×844 운영 브라우저에서 Drawer 하위 메뉴 전환과 새 토론·댓글 작성기 닫기를
+  확인했다.

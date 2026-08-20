@@ -307,6 +307,8 @@
 }
 
 :root {
+  --ablecloud-page-shell-width: 1165px;
+  --ablecloud-page-rail-space: 80px;
   --ablecloud-brand-primary: #155eef;
   --ablecloud-brand-primary-hover: #004eeb;
   --ablecloud-brand-primary-deep: #0b3b91;
@@ -2435,6 +2437,34 @@ body {
 }
 
 @media (min-width: 768px) {
+  /*
+   * Shared desktop shell
+   *
+   * Flarum's default desktop container is 1100px while the discussion feed
+   * uses a 1165px shell (1100px content + the adjacent quick-link rail).
+   * Apply that same outer edge to tags, profile, settings and security pages.
+   * The extra 65px is reserved on the right, so the established 1070px inner
+   * content width does not stretch and never sits underneath the fixed rail.
+   */
+  .App-header > .container,
+  .WelcomeHero > .container,
+  .TagHero > .container,
+  .UserHero .container,
+  .TagsPage > .container,
+  .UserPage > .container {
+    width: 100%;
+    max-width: var(--ablecloud-page-shell-width);
+    box-sizing: border-box;
+  }
+
+  .WelcomeHero > .container,
+  .TagHero > .container,
+  .UserHero .container,
+  .TagsPage > .container,
+  .UserPage > .container {
+    padding-right: var(--ablecloud-page-rail-space);
+  }
+
   html:has(body > .App--index),
   body:has(> .App--index) {
     height: 100%;
@@ -3107,6 +3137,215 @@ body {
       min-height: 54px;
     }
 
+    // The mobile title control already carries the current discussion filter.
+    // Do not leave the desktop side-navigation card behind as an empty pill.
+    .App--index .IndexPage-nav {
+      display: block !important;
+      width: 0;
+      height: 0;
+      margin: 0;
+      overflow: visible;
+      pointer-events: none;
+    }
+
+    .App--index .IndexPage-nav > ul {
+      width: 0;
+      height: 0;
+      margin: 0;
+      padding: 0;
+      overflow: visible;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+    }
+
+    .App--index .IndexPage-nav .item-nav,
+    .App--index .IndexPage-nav .item-newDiscussion {
+      pointer-events: auto;
+    }
+
+    /*
+     * Mobile navigation drawer
+     *
+     * Desktop header controls are a horizontal flex row. Reset them to a
+     * vertical, scrollable menu while the Flarum drawer is open so every
+     * action remains inside the 270px drawer.
+     */
+    .App.drawerOpen .App-drawer {
+      overflow-x: hidden;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      background: #fff;
+      box-shadow: 16px 0 36px rgba(20, 42, 75, 0.22);
+      scrollbar-width: none;
+    }
+
+    .App.drawerOpen .App-drawer::-webkit-scrollbar {
+      display: none;
+    }
+
+    .App.drawerOpen .App-header,
+    .App.drawerOpen .App-header > .container {
+      width: 270px;
+      min-height: 100%;
+      height: auto;
+      box-sizing: border-box;
+      overflow: visible;
+      background: #fff;
+    }
+
+    &.ablecloud-composer-open .Composer:not(.fullScreen)::before {
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .App.drawerOpen .App-header > .container {
+      padding: 0 14px 24px;
+    }
+
+    .App.drawerOpen .Header-title {
+      display: flex;
+      width: 100%;
+      min-height: 66px;
+      height: 66px;
+      align-items: center;
+      box-sizing: border-box;
+      padding: 0 48px 0 2px;
+      border-bottom: 1px solid var(--ablecloud-brand-border);
+    }
+
+    .App.drawerOpen .Header-title img {
+      width: auto;
+      max-width: 190px;
+      max-height: 30px;
+    }
+
+    .App.drawerOpen .Header-primary,
+    .App.drawerOpen .Header-secondary,
+    .App.drawerOpen .Header-secondary > ul {
+      width: 100%;
+      height: auto;
+      min-height: 0;
+    }
+
+    .App.drawerOpen .Header-secondary > ul {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 4px;
+      margin: 0;
+      padding: 12px 0 0;
+    }
+
+    .App.drawerOpen .Header-secondary > ul > li {
+      display: block !important;
+      width: 100%;
+      height: auto;
+      min-height: 46px;
+      margin: 0;
+    }
+
+    .App.drawerOpen .Header-secondary > ul > li > .Button,
+    .App.drawerOpen .Header-secondary .Dropdown-toggle {
+      display: flex;
+      width: 100%;
+      min-height: 46px;
+      align-items: center;
+      justify-content: flex-start;
+      box-sizing: border-box;
+      padding: 10px 12px;
+      border: 0;
+      border-radius: 10px;
+      background: transparent;
+      color: #405878;
+      box-shadow: none;
+      text-align: left;
+    }
+
+    .App.drawerOpen .Header-secondary > ul > li > .Button:hover,
+    .App.drawerOpen .Header-secondary > ul > li > .Button:focus-visible,
+    .App.drawerOpen .Header-secondary .Dropdown-toggle:hover,
+    .App.drawerOpen .Header-secondary .Dropdown-toggle:focus-visible {
+      background: var(--ablecloud-brand-primary-soft);
+      color: var(--ablecloud-brand-primary-deep);
+      transform: none;
+    }
+
+    .App.drawerOpen .Header-secondary .item-search,
+    .App.drawerOpen .Header-secondary .Search,
+    .App.drawerOpen .Header-secondary .Search-input,
+    .App.drawerOpen .Header-secondary .Search-input input {
+      width: 100% !important;
+      max-width: none;
+      box-sizing: border-box;
+    }
+
+    .App.drawerOpen .Header-secondary .Search-input input {
+      padding-left: 42px;
+    }
+
+    .App.drawerOpen .Header-secondary .item-locale .dropdown:not(.open) > .Dropdown-menu,
+    .App.drawerOpen .Header-secondary .item-session .dropdown:not(.open) > .Dropdown-menu {
+      display: none !important;
+    }
+
+    .App.drawerOpen .Header-secondary .item-locale .dropdown.open > .Dropdown-menu,
+    .App.drawerOpen .Header-secondary .item-session .dropdown.open > .Dropdown-menu {
+      position: static;
+      display: block !important;
+      visibility: visible !important;
+      float: none;
+      width: 100%;
+      min-width: 0;
+      max-height: none;
+      box-sizing: border-box;
+      margin: 4px 0 0;
+      padding: 6px;
+      border: 1px solid var(--ablecloud-brand-border);
+      border-radius: 10px;
+      background: var(--ablecloud-brand-primary-faint);
+      box-shadow: none;
+      transform: none;
+    }
+
+    // Flarum inserts a full-viewport dropdown backdrop on touch devices.
+    // The submenu is already contained by our drawer, so that backdrop must
+    // not cover or tint the drawer contents.
+    .App.drawerOpen .Header-secondary .Dropdown-menu > .dropdown-backdrop {
+      display: none !important;
+    }
+
+    .App.drawerOpen .App-navigation {
+      z-index: 1060;
+      width: 270px;
+      pointer-events: none;
+    }
+
+    .App.drawerOpen .Navigation-drawer {
+      position: fixed;
+      top: 11px;
+      left: 214px;
+      display: inline-flex;
+      width: 44px;
+      min-width: 44px;
+      height: 44px;
+      min-height: 44px;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      border: 1px solid var(--ablecloud-brand-border);
+      border-radius: 50%;
+      background: #f4f8ff;
+      color: var(--ablecloud-brand-primary-deep);
+      box-shadow: 0 4px 12px rgba(24, 71, 142, 0.12);
+      pointer-events: auto;
+    }
+
+    .App.drawerOpen .Navigation-drawer .fa-bars {
+      --ablecloud-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 6l12 12M18 6 6 18' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+    }
+
     .WelcomeHero {
       padding: 0;
     }
@@ -3517,6 +3756,74 @@ body {
       border-radius: 14px 14px 0 0;
     }
 
+    // All mobile dialogs share a fixed header, visible close action and an
+    // independently scrollable body inside the viewport.
+    .Modal-content {
+      display: flex;
+      max-height: calc(100vh - 24px);
+      flex-direction: column;
+      overflow: hidden;
+      border-radius: 14px;
+    }
+
+    .Modal-header {
+      position: relative;
+      min-height: 58px;
+      flex: 0 0 auto;
+      box-sizing: border-box;
+      padding: 17px 62px 14px;
+      border-bottom: 1px solid var(--ablecloud-brand-border);
+      background: var(--ablecloud-brand-primary-faint);
+    }
+
+    .Modal-body {
+      min-height: 0;
+      flex: 1 1 auto;
+      overflow-x: hidden;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+
+    .Modal-footer {
+      flex: 0 0 auto;
+    }
+
+    .Modal-close {
+      top: 7px !important;
+      right: auto !important;
+      left: 9px !important;
+      width: 44px;
+      height: 44px;
+    }
+
+    .Modal-close .Button {
+      display: inline-flex;
+      width: 44px;
+      min-width: 44px;
+      height: 44px;
+      min-height: 44px;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      border: 1px solid var(--ablecloud-brand-border);
+      border-radius: 50%;
+      background: #fff;
+      color: var(--ablecloud-brand-primary-deep);
+      box-shadow: 0 4px 12px rgba(24, 71, 142, 0.1);
+    }
+
+    .Modal-close .Button-icon {
+      display: none !important;
+    }
+
+    .Modal-close .Button::after {
+      color: currentColor;
+      content: "\00d7";
+      font-size: 28px;
+      font-weight: 400;
+      line-height: 1;
+    }
+
     &.ablecloud-new-discussion-open {
       overflow: hidden;
     }
@@ -3560,6 +3867,57 @@ body {
       display: none;
     }
 
+    &.ablecloud-new-discussion-open .Composer:not(.fullScreen) .Composer-controls {
+      position: absolute;
+      top: 8px;
+      right: auto;
+      left: 8px;
+      z-index: 12;
+      display: block;
+      margin: 0;
+    }
+
+    &.ablecloud-new-discussion-open .Composer:not(.fullScreen) .Composer-controls .item-close {
+      position: static;
+      display: block !important;
+      width: 44px;
+      height: 44px;
+      margin: 0;
+    }
+
+    &.ablecloud-new-discussion-open .Composer:not(.fullScreen) .Composer-controls .item-close .Button {
+      display: inline-flex;
+      width: 44px;
+      min-width: 44px;
+      height: 44px;
+      min-height: 44px;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      border: 1px solid var(--ablecloud-brand-border);
+      border-radius: 50%;
+      background: #fff;
+      color: var(--ablecloud-brand-primary-deep);
+      box-shadow: 0 4px 12px rgba(24, 71, 142, 0.1);
+    }
+
+    &.ablecloud-new-discussion-open .Composer:not(.fullScreen) .Composer-controls .item-close .Button-icon {
+      display: none;
+    }
+
+    &.ablecloud-new-discussion-open .Composer:not(.fullScreen) .Composer-controls .item-close .Button::after {
+      color: currentColor;
+      content: "\00d7";
+      font-size: 28px;
+      font-weight: 400;
+      line-height: 1;
+    }
+
+    &.ablecloud-new-discussion-open .Composer:not(.fullScreen) .ComposerBody-header > .item-title {
+      padding-right: 48px;
+      padding-left: 48px;
+    }
+
     &.ablecloud-new-discussion-open .Composer:not(.fullScreen) .Composer-content,
     &.ablecloud-new-discussion-open .Composer:not(.fullScreen) .ComposerBody,
     &.ablecloud-new-discussion-open .Composer:not(.fullScreen) .ComposerBody-content {
@@ -3598,6 +3956,64 @@ body {
     &.ablecloud-new-discussion-open .Composer:not(.fullScreen) .TextEditor-editor {
       height: 100% !important;
       min-height: 0;
+    }
+
+    // Use the same explicit close action for new discussions and replies.
+    // Mobile users should never have to minimize a composer to dismiss it.
+    &.ablecloud-composer-open .Composer:not(.fullScreen) .Composer-handle,
+    &.ablecloud-composer-open .Composer:not(.fullScreen) .Composer-controls .item-minimize,
+    &.ablecloud-composer-open .Composer:not(.fullScreen) .Composer-controls .item-fullScreen {
+      display: none !important;
+    }
+
+    &.ablecloud-composer-open .Composer:not(.fullScreen) .Composer-controls {
+      position: absolute;
+      top: 8px;
+      right: auto;
+      left: 8px;
+      z-index: 1002;
+      display: block;
+      margin: 0;
+    }
+
+    &.ablecloud-composer-open .Composer:not(.fullScreen) .Composer-controls .item-close {
+      position: static;
+      display: block !important;
+      width: 44px;
+      height: 44px;
+      margin: 0;
+    }
+
+    &.ablecloud-composer-open .Composer:not(.fullScreen) .Composer-controls .item-close .Button {
+      display: inline-flex;
+      width: 44px;
+      min-width: 44px;
+      height: 44px;
+      min-height: 44px;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      border: 1px solid var(--ablecloud-brand-border);
+      border-radius: 50%;
+      background: #fff;
+      color: var(--ablecloud-brand-primary-deep);
+      box-shadow: 0 4px 12px rgba(24, 71, 142, 0.1);
+    }
+
+    &.ablecloud-composer-open .Composer:not(.fullScreen) .Composer-controls .item-close .Button-icon {
+      display: none !important;
+    }
+
+    &.ablecloud-composer-open .Composer:not(.fullScreen) .Composer-controls .item-close .Button::after {
+      color: currentColor;
+      content: "\00d7";
+      font-size: 28px;
+      font-weight: 400;
+      line-height: 1;
+    }
+
+    &.ablecloud-composer-open .Composer:not(.fullScreen) .ComposerBody-header > .item-title {
+      padding-left: 48px;
     }
 
     .ablecloud-EmojiPicker {

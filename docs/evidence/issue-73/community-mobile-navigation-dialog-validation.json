@@ -1,0 +1,87 @@
+{
+  "schema_version": "1.0",
+  "executed_at": "2026-08-20T15:17:00+09:00",
+  "scope": "Mobile drawer submenu backdrop and new-discussion/reply close-interface correction",
+  "viewport": {"width": 390, "height": 844},
+  "wsl": {
+    "url": "http://localhost:18080",
+    "environment": "Ubuntu 24.04 WSL",
+    "rehearsal_result": "/srv/techflow-flarum-staging/rehearsals/issue-73/issue73-mobile-submenu-reply-final-20260820/result.json",
+    "rehearsal_cycle": ["enable", "validate", "disable", "rollback-validate", "re-enable"],
+    "content_integrity": {
+      "users": 39,
+      "discussions": 117,
+      "posts": 305,
+      "content_sha256": "efc9dfbd1f9d6a235378d240494dd94a192d52ea6e956f9167d4a2d44eb11cb7",
+      "uploads_sha256": "19cdf52600535380969a176d81bf66678b200a4247694641d00b470b8637a97c"
+    },
+    "browser": {
+      "empty_navigation_pill": false,
+      "index_navigation_rect": {"width": 0, "height": 0, "background": "transparent", "border": "none"},
+      "drawer_rect": {"width": 270, "height": 844},
+      "drawer_hidden_dropdowns_take_space": false,
+      "locale_submenu_rect": {"x": 24, "y": 202, "width": 222, "height": 131.1875},
+      "locale_transition": ["ko", "en", "ko"],
+      "touch_dropdown_backdrop_hidden": true,
+      "drawer_close_button": {"width": 44, "height": 44, "label": "탐색 서랍 닫기"},
+      "drawer_backdrop_after_close": 0,
+      "composer_close_button": {"width": 44, "height": 44, "label": "닫기", "pointer_target": true},
+      "composer_close_result": "PASS",
+      "reply_close_button": {"x": 9, "y": 9, "width": 44, "height": 44, "pointer_target": true},
+      "reply_minimize_display": "none",
+      "reply_fullscreen_display": "none",
+      "reply_close_result": "PASS",
+      "tag_modal_close_button": {"width": 44, "height": 44, "marker": "×"},
+      "tag_modal_close_result": "PASS"
+    },
+    "result": "PASS"
+  },
+  "production": {
+    "url": "https://community.ablecloud.io",
+    "host": "172.16.0.234",
+    "backup_root": "/var/backups/techflow-flarum/theme-mobile-submenu-reply-20260820T151526KST",
+    "source_less_sha256": "1424f73c1a8b4416e569d7bb32d6fa29a9694fcb9013c2f672030e8138915ca6",
+    "vendor_less_sha256": "1424f73c1a8b4416e569d7bb32d6fa29a9694fcb9013c2f672030e8138915ca6",
+    "source_js_sha256": "5ad7bb5e00dda6c36c5e97c194d09aefc137c9834cdf9059916f5f0bf956e8cb",
+    "vendor_js_sha256": "5ad7bb5e00dda6c36c5e97c194d09aefc137c9834cdf9059916f5f0bf956e8cb",
+    "local_http_status": 200,
+    "external_https_status": 200,
+    "discussion_https_status": 200,
+    "services": {"nginx": "active", "php8.3-fpm": "active", "mariadb": "active"},
+    "browser": {
+      "empty_navigation_pill": false,
+      "index_navigation_rect": {"width": 0, "height": 0, "background": "transparent", "border": "none"},
+      "drawer_rect": {"width": 270, "height": 844},
+      "drawer_hidden_dropdowns_take_space": false,
+      "locale_submenu_rect": {"x": 24, "y": 202, "width": 222, "height": 131.1875},
+      "locale_transition": ["ko", "en", "ko"],
+      "touch_dropdown_backdrop_hidden": true,
+      "drawer_backdrop_after_close": 0,
+      "composer_rect": {"x": 8, "y": 62, "width": 374, "height": 335.1875},
+      "composer_close_button": {"x": 17, "y": 71, "width": 44, "height": 44, "pointer_target": true},
+      "composer_close_result": "PASS",
+      "reply_close_button": {"x": 9, "y": 9, "width": 44, "height": 44, "pointer_target": true},
+      "reply_minimize_display": "none",
+      "reply_fullscreen_display": "none",
+      "reply_close_result": "PASS",
+      "tag_modal_close_button": {"x": 10, "y": 8, "width": 44, "height": 44, "marker": "×"},
+      "tag_modal_body_scroll": "auto",
+      "tag_modal_close_result": "PASS",
+      "visual_check": "PASS"
+    },
+    "result": "PASS"
+  },
+  "tests": {
+    "command": "python3 -m unittest -v deploy.flarum.tests.test_community_theme",
+    "passed": 15,
+    "failed": 0,
+    "git_diff_check": "PASS"
+  },
+  "protected_scope": {
+    "database_schema_changed": false,
+    "discussion_or_attachment_changed": false,
+    "techflow_ai_changed": false,
+    "github_chat_webhook_changed": false
+  },
+  "result": "PASS"
+}
