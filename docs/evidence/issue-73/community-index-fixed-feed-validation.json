@@ -1,6 +1,6 @@
 {
-  "schema_version": "1.7",
-  "executed_at": "2026-08-20T00:55:55Z",
+  "schema_version": "1.8",
+  "executed_at": "2026-08-20T01:29:03Z",
   "scope": "Flarum index without welcome banner, Reddit-style discussion list and detail reading flow, and right-side quick links",
   "design_reference": "https://www.reddit.com/new/?feed=home",
   "navigation_reference": "https://community.ablecloud.io/settings",
@@ -80,8 +80,8 @@
   "production": {
     "host": "172.16.0.234",
     "url": "https://community.ablecloud.io/",
-    "backup_root": "/var/backups/techflow-flarum/theme-native-nav-shell-20260820T005555Z",
-    "theme_less_sha256": "7a68b73b596cddef4308bdfaa7c4f7b2206ddab818c2bb32c097331a93aa3298",
+    "backup_root": "/var/backups/techflow-flarum/theme-header-shell-align-20260820T0120KST",
+    "theme_less_sha256": "5408e0c2fe0e52f43e8302adb1fc2f69b9d950de71171963ff172c88159602da",
     "theme_js_sha256": "05115ef3395d87d0f7327a50bac518376075b3cbd9bbeed356f48ee64521d42e",
     "services": {
       "nginx": "active",
@@ -143,6 +143,7 @@
       "navigation": "native 150px sticky Flarum vertical navigator with reply, follow, first/latest post and unread position",
       "navigation_quick_link_overlap_px": 0,
       "header_to_first_tag_gap_px": 18,
+      "header_hero_body_outer_edges_match": true,
       "index_and_discussion_shell_edges_match": true,
       "normal_posts": "flat with 1px separators",
       "semantic_cards": ["AI technical support", "needs more information", "final solution"],
@@ -156,6 +157,7 @@
       "author_meta": "sijo · 8일 전",
       "post_count": 4,
       "first_post_text": "mold에서 가상머신 콘솔보기가 연결중에서 더이상 진행 되지가 않습니다.",
+      "header_shell": { "x": 250, "right": 1415, "width": 1165 },
       "shell": { "x": 250, "right": 1415, "width": 1165 },
       "navigation_width_px": 150,
       "navigation_height_px": 467,
@@ -178,6 +180,7 @@
       "solution_jump_final_top_px": 76,
       "duplicate_solution_visible": false,
       "inline_reply_opened_native_composer": true,
+      "header_shell": { "x": 250, "right": 1415, "width": 1165 },
       "shell": { "x": 250, "right": 1415, "width": 1165 },
       "navigation_width_px": 150,
       "navigation_height_px": 517,
@@ -190,6 +193,8 @@
   },
   "validation": {
     "theme_contract_tests": { "passed": 13, "failed": 0 },
+    "wsl_rehearsal": "issue-73-header-shell-align-v2 PASS",
+    "header_hero_body_alignment": "WSL and production x=250, right=1415, width=1165",
     "discussion_item_enhancement_is_idempotent": true,
     "summary_uses_existing_store_data": true,
     "thumbnail_uses_existing_first_post_html": true,

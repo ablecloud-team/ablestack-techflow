@@ -214,6 +214,7 @@ class CommunityThemeContractTests(unittest.TestCase):
         self.assertIn("max-width: 1165px", self.less)
         self.assertIn("padding-right: 80px", self.less)
         self.assertIn("scrollbar-gutter: stable", self.less)
+        self.assertIn(".App--discussion .App-header > .container", self.less)
         self.assertIn("margin-top: 16px", self.less)
         self.assertIn("justify-content: flex-start", self.less)
 

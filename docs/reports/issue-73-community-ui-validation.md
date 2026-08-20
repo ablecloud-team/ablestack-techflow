@@ -378,3 +378,29 @@ Flarum의 고유 토론 탐색 기능이었다. 사용자 검토에 따라 `답�
 `/var/backups/techflow-flarum/theme-native-nav-shell-20260820T005555Z`이며 최종
 LESS SHA-256은
 `7a68b73b596cddef4308bdfaa7c4f7b2206ddab818c2bb32c097331a93aa3298`이다.
+
+### 상세 Header·제목·본문 기준선 최종 통일
+
+후속 운영 화면에서 상세 제목과 본문은 1165px 셸을 사용하지만 Header만 Flarum
+기본 1100px 컨테이너에 남아 양쪽 기준선이 32.5px씩 어긋나는 것을 확인했다.
+데스크톱 상세 화면의 Header에도 페이지 공통 1165px 셸을 적용해 Header, 상세
+Hero, 본문 Container가 같은 외곽선을 사용하도록 교정했다. 내부 로고·제목·게시물은
+각 셸의 15px 안쪽 여백에서 동일하게 시작한다.
+
+| 브라우저 실측 항목 | WSL | 운영 |
+|---|---:|---:|
+| Header 셸 | X 250 / 폭 1165 / 우측 1415 | X 250 / 폭 1165 / 우측 1415 |
+| 상세 Hero 셸 | X 250 / 폭 1165 / 우측 1415 | X 250 / 폭 1165 / 우측 1415 |
+| 상세 본문 셸 | X 250 / 폭 1165 / 우측 1415 | X 250 / 폭 1165 / 우측 1415 |
+| 로고·제목·본문 시작선 | X 265 | X 265 |
+
+WSL 토론 #144와 운영 토론 #173의 실제 데이터를 브라우저로 다시 확인했고, 게시물
+Stream 845px와 Flarum 세로 탐색 150px은 변경하지 않았다. WSL 계약 테스트 13건과
+`issue-73-header-shell-align-v2` 적용·비활성화·재적용 주기가 통과했으며 콘텐츠와
+첨부 해시도 보존됐다. 운영 테마 Source와 Vendor LESS SHA-256은 모두
+`5408e0c2fe0e52f43e8302adb1fc2f69b9d950de71171963ff172c88159602da`로
+일치한다. 최신 운영 백업은
+`/var/backups/techflow-flarum/theme-header-shell-align-20260820T0120KST`이며,
+서버 로컬 HTTP 200과 Nginx·PHP-FPM·MariaDB·Community Monitor Timer `active`를
+확인했다. DB Schema, 게시물, 첨부, TechFlow AI와 GitHub→Chat Webhook은 변경하지
+않았다.

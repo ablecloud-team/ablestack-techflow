@@ -103,6 +103,8 @@ sudo bash deploy/flarum/apply-community-theme-update.sh \
   우측 썸네일로 표시한다. 이미지가 없는 글에는 빈 썸네일 영역을 만들지 않으며,
   썸네일은 기존 Store 데이터에서 생성하고 지연 로딩해야 한다.
 - 토론 상세 Hero와 본문 셸은 시작 페이지와 같은 1165px 외곽선을 사용해야 한다.
+  상세 Header도 같은 1165px 외곽선을 사용해 Header·Hero·본문의 좌우 끝이 정확히
+  일치해야 한다.
   게시물 Stream은 845px, 기존 Flarum 세로 탐색은 150px을 유지하고 그 사이에는
   75px 간격을 둔다. 세로 탐색에는 답장·팔로우·원본/최신 게시물·현재 위치·읽지
   않음 정보가 표시되어야 한다.
@@ -146,4 +148,4 @@ sudo systemctl restart php8.3-fpm nginx
   정보 계층·이미지 썸네일, 하단 Footer 제거와 우측 고정 퀵 링크, 메인 환영 배너
   제거, Flarum 세로 탐색 복원과 1165px 상세 셸 정렬이 WSL 및 운영에 반영되었다.
   최신 운영 백업은
-  `/var/backups/techflow-flarum/theme-native-nav-shell-20260820T005555Z`에 보존한다.
+  `/var/backups/techflow-flarum/theme-header-shell-align-20260820T0120KST`에 보존한다.
