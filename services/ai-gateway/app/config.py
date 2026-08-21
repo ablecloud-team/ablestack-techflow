@@ -4,11 +4,15 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import os
+import re
 import tempfile
 
 
 class ConfigurationError(RuntimeError):
     """Raised when the runtime boundary is unsafe or incomplete."""
+
+
+FLARUM_USER_ID_PATTERN = re.compile(r"^[A-Za-z0-9_.:@-]{1,128}$")
 
 
 @dataclass(frozen=True, repr=False)
@@ -17,6 +21,7 @@ class Settings:
     store_backend: str = "memory"
     database_dsn: str | None = None
     provider_mode: str = "mock"
+    official_web_search_enabled: bool = False
     openai_api_key_file: str | None = None
     openai_project_id_file: str | None = None
     safety_identifier_salt_file: str | None = None
@@ -36,7 +41,18 @@ class Settings:
     flarum_base_url: str = "https://community.ablecloud.io"
     flarum_public_url: str = "https://community.ablecloud.io"
     flarum_api_key_file: str | None = None
+    flarum_assistant_user_id_file: str | None = None
+    flarum_solution_selector_user_id_file: str | None = None
+    flarum_resolution_admin_user_ids: tuple[str, ...] = ()
     community_publish_enabled: bool = False
+    community_review_post_enabled: bool = False
+    community_auto_publish_enabled: bool = False
+    chat_bot_enabled: bool = False
+    chat_base_url: str = "https://chat.ablecloud.io"
+    chat_bot_token_file: str | None = None
+    chat_reviewer_usernames: tuple[str, ...] = ()
+    community_approve_webhook_file: str | None = None
+    community_reject_webhook_file: str | None = None
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -45,6 +61,7 @@ class Settings:
             store_backend=os.getenv("TECHFLOW_RAG_STORE", "memory").strip().lower(),
             database_dsn=os.getenv("TECHFLOW_RAG_DATABASE_DSN") or None,
             provider_mode=os.getenv("TECHFLOW_RAG_PROVIDER_MODE", "mock").strip().lower(),
+            official_web_search_enabled=os.getenv("TECHFLOW_OFFICIAL_WEB_SEARCH_ENABLED", "false").lower() == "true",
             openai_api_key_file=os.getenv("TECHFLOW_OPENAI_API_KEY_FILE") or None,
             openai_project_id_file=os.getenv("TECHFLOW_OPENAI_PROJECT_ID_FILE") or None,
             safety_identifier_salt_file=os.getenv("TECHFLOW_SAFETY_IDENTIFIER_SALT_FILE") or None,
@@ -64,7 +81,24 @@ class Settings:
             flarum_base_url=os.getenv("TECHFLOW_FLARUM_BASE_URL", "https://community.ablecloud.io").rstrip("/"),
             flarum_public_url=os.getenv("TECHFLOW_FLARUM_PUBLIC_URL", "https://community.ablecloud.io").rstrip("/"),
             flarum_api_key_file=os.getenv("TECHFLOW_FLARUM_API_KEY_FILE") or None,
+            flarum_assistant_user_id_file=os.getenv("TECHFLOW_FLARUM_ASSISTANT_USER_ID_FILE") or None,
+            flarum_solution_selector_user_id_file=os.getenv("TECHFLOW_FLARUM_SOLUTION_SELECTOR_USER_ID_FILE") or None,
+            flarum_resolution_admin_user_ids=tuple(
+                item.strip()
+                for item in os.getenv("TECHFLOW_FLARUM_RESOLUTION_ADMIN_USER_IDS", "").split(",")
+                if item.strip()
+            ),
             community_publish_enabled=os.getenv("TECHFLOW_COMMUNITY_PUBLISH_ENABLED", "false").lower() == "true",
+            community_review_post_enabled=os.getenv("TECHFLOW_COMMUNITY_REVIEW_POST_ENABLED", "false").lower() == "true",
+            community_auto_publish_enabled=os.getenv("TECHFLOW_COMMUNITY_AUTO_PUBLISH_ENABLED", "false").lower() == "true",
+            chat_bot_enabled=os.getenv("TECHFLOW_CHAT_BOT_ENABLED", "false").lower() == "true",
+            chat_base_url=os.getenv("TECHFLOW_CHAT_BASE_URL", "https://chat.ablecloud.io").rstrip("/"),
+            chat_bot_token_file=os.getenv("TECHFLOW_CHAT_BOT_TOKEN_FILE") or None,
+            chat_reviewer_usernames=tuple(
+                item.strip() for item in os.getenv("TECHFLOW_CHAT_REVIEWER_USERNAMES", "").split(",") if item.strip()
+            ),
+            community_approve_webhook_file=os.getenv("TECHFLOW_COMMUNITY_APPROVE_WEBHOOK_FILE") or None,
+            community_reject_webhook_file=os.getenv("TECHFLOW_COMMUNITY_REJECT_WEBHOOK_FILE") or None,
         )
         settings.validate()
         return settings
@@ -85,6 +119,8 @@ class Settings:
             missing = [name for name, value in required.items() if not value]
             if missing:
                 raise ConfigurationError(f"{', '.join(missing)} required for openai mode")
+        if self.official_web_search_enabled and self.provider_mode != "openai":
+            raise ConfigurationError("official web search requires openai provider mode")
         if not 1 <= self.embedding_batch_size <= 128:
             raise ConfigurationError("TECHFLOW_EMBEDDING_BATCH_SIZE must be between 1 and 128")
         if self.classification != "D0":
@@ -111,22 +147,57 @@ class Settings:
             raise ConfigurationError("TECHFLOW_FLARUM_PUBLIC_URL must use the approved HTTPS community origin")
         if self.community_publish_enabled and not self.flarum_api_key_file:
             raise ConfigurationError("TECHFLOW_FLARUM_API_KEY_FILE is required when publishing is enabled")
+        if self.community_review_post_enabled and not (self.flarum_api_key_file and self.flarum_assistant_user_id_file):
+            raise ConfigurationError(
+                "TECHFLOW_FLARUM_API_KEY_FILE and TECHFLOW_FLARUM_ASSISTANT_USER_ID_FILE are required when review posts are enabled"
+            )
+        if self.community_auto_publish_enabled and not (
+            self.community_publish_enabled and self.flarum_api_key_file and self.flarum_assistant_user_id_file
+            and self.flarum_solution_selector_user_id_file
+        ):
+            raise ConfigurationError(
+                "automatic Community publication requires publishing, API key, assistant identity and solution selector identity"
+            )
+        if self.community_auto_publish_enabled and self.community_review_post_enabled:
+            raise ConfigurationError("automatic publication and review posting are mutually exclusive")
+        if any(
+            not FLARUM_USER_ID_PATTERN.fullmatch(item)
+            for item in self.flarum_resolution_admin_user_ids
+        ):
+            raise ConfigurationError("TECHFLOW_FLARUM_RESOLUTION_ADMIN_USER_IDS contains an invalid Flarum user ID")
+        if self.chat_base_url != "https://chat.ablecloud.io":
+            raise ConfigurationError("TECHFLOW_CHAT_BASE_URL must use the approved HTTPS Chat origin")
+        if self.chat_bot_enabled:
+            required = {
+                "TECHFLOW_CHAT_BOT_TOKEN_FILE": self.chat_bot_token_file,
+            }
+            missing = [name for name, value in required.items() if not value]
+            if missing:
+                raise ConfigurationError(f"{', '.join(missing)} required when Chat Bot is enabled")
+            if not self.chat_reviewer_usernames:
+                raise ConfigurationError("TECHFLOW_CHAT_REVIEWER_USERNAMES required when Chat Bot is enabled")
 
     def __repr__(self) -> str:
         return (
             "Settings(environment={!r}, store_backend={!r}, database_dsn=<redacted>, "
-            "provider_mode={!r}, openai_api_key_file=<redacted>, openai_project_id_file=<redacted>, "
+            "provider_mode={!r}, official_web_search_enabled={!r}, openai_api_key_file=<redacted>, openai_project_id_file=<redacted>, "
             "safety_identifier_salt_file=<redacted>, embedding_batch_size={!r}, "
             "classification={!r}, log_level={!r}, "
             "database_pool_min={!r}, database_pool_max={!r}, artifact_root=<redacted>, "
             "artifact_retention_hours={!r}, artifact_max_bytes={!r}, artifact_max_archive_bytes={!r}, artifact_max_extracted_bytes={!r}, "
             "artifact_max_archive_entries={!r}, artifact_max_compression_ratio={!r}, "
             "artifact_max_log_evidence_chars={!r}, flarum_base_url={!r}, flarum_public_url={!r}, "
-            "flarum_api_key_file=<redacted>, community_publish_enabled={!r})"
+            "flarum_api_key_file=<redacted>, flarum_assistant_user_id_file=<redacted>, "
+            "flarum_solution_selector_user_id_file=<redacted>, "
+            "flarum_resolution_admin_user_ids=<redacted>, "
+            "community_publish_enabled={!r}, community_review_post_enabled={!r}, community_auto_publish_enabled={!r}, chat_bot_enabled={!r}, "
+            "chat_base_url={!r}, chat_bot_token_file=<redacted>, chat_reviewer_usernames=<redacted>, "
+            "community_approve_webhook_file=<redacted>, community_reject_webhook_file=<redacted>)"
         ).format(
             self.environment,
             self.store_backend,
             self.provider_mode,
+            self.official_web_search_enabled,
             self.embedding_batch_size,
             self.classification,
             self.log_level,
@@ -142,4 +213,8 @@ class Settings:
             self.flarum_base_url,
             self.flarum_public_url,
             self.community_publish_enabled,
+            self.community_review_post_enabled,
+            self.community_auto_publish_enabled,
+            self.chat_bot_enabled,
+            self.chat_base_url,
         )

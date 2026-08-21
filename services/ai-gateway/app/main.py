@@ -3,23 +3,26 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
+import asyncio
 import json
 import logging
+from pathlib import Path
 import re
 import time
 from typing import Annotated, Any
 from uuid import UUID, uuid4
 
-from fastapi import BackgroundTasks, Depends, FastAPI, Header, Request, status
+from fastapi import BackgroundTasks, Depends, FastAPI, Header, HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from . import __version__
-from .config import ConfigurationError, Settings
+from .config import ConfigurationError, FLARUM_USER_ID_PATTERN, Settings
 from .models import (
     ApiMeta,
     CompatibilitySetCreateRequest,
     ComprehensiveQueryRequest,
+    ComprehensiveSynthesisRequest,
     CommunityCaseCreateRequest,
     CommunityDecisionRequest,
     CommunityPublishRequest,
@@ -57,7 +60,40 @@ from .source_registry import get_profile
 from .store import InvalidBoundaryError, InvalidStateError, MemoryStore, Store, StoreError
 from .artifacts import ArtifactStore
 from .comprehensive import plan_query
-from .community import FlarumClient, format_draft, profiles_for_tags
+from .community import FlarumClient, conversationalize_answer, format_draft, profiles_for_tags
+from .conversation import (
+    build_conversation_question,
+    build_knowledge_base_question,
+    build_progression_retry_question,
+    community_result_advances,
+    source_post_id,
+)
+from .versioned_assist import (
+    CURATED_PLATFORM_PROFILE,
+    SOURCE_ROLES,
+    VERSIONED_SOURCE_PROFILES,
+    coverage_payload,
+    expand_retrieval_question,
+    evidence_ledger,
+    format_knowledge_base,
+    format_public_answer,
+    select_context_results,
+    versioned_plan,
+)
+from .platform_references import curated_platform_results
+from .official_web import official_web_search_required
+from .chat_assist import (
+    CASE_REFERENCE,
+    CommunityFlowClient,
+    SynologyBotClient,
+    case_card,
+    case_evidence_text,
+    case_reference,
+    case_text,
+    help_text,
+    parse_chat_event,
+    parse_command,
+)
 
 
 CORRELATION_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:-]{7,127}$")
@@ -67,10 +103,24 @@ logger = logging.getLogger("techflow.ai_gateway")
 
 def _json_log(event: str, **fields: object) -> None:
     safe = {"event": event, **fields}
-    logger.info(json.dumps(safe, ensure_ascii=True, separators=(",", ":")))
+    print(json.dumps(safe, ensure_ascii=True, separators=(",", ":")), flush=True)
 
 
 MANUAL_REVIEW_ERROR_CODES = {"CONFLICT", "INVALID_STATE", "SOURCE_HEAD_MOVED"}
+
+
+def _resolution_administrator_ids(settings: Settings) -> set[str]:
+    """Return operator-authorized Flarum identities without trusting the inbound event."""
+    identities = set(settings.flarum_resolution_admin_user_ids)
+    selector_file = settings.flarum_solution_selector_user_id_file
+    if selector_file:
+        try:
+            selector = Path(selector_file).read_text(encoding="utf-8").strip()
+        except OSError:
+            selector = ""
+        if FLARUM_USER_ID_PATTERN.fullmatch(selector):
+            identities.add(selector)
+    return identities
 
 
 def _error(correlation_id: str, status_code: int, code: str) -> JSONResponse:
@@ -119,9 +169,13 @@ def create_app(
     source_fetcher: SnapshotFetcher | None = None,
     embeddings_adapter: EmbeddingsAdapter | None = None,
     responses_adapter: ResponsesAdapter | None = None,
+    chat_bot_client: SynologyBotClient | None = None,
+    community_flow_client: CommunityFlowClient | None = None,
+    flarum_client_instance: FlarumClient | None = None,
 ) -> FastAPI:
     runtime_settings = settings or Settings.from_env()
     runtime_settings.validate()
+    logger.setLevel(getattr(logging, runtime_settings.log_level, logging.INFO))
     runtime_store = store or _build_store(runtime_settings)
     runtime_embeddings = embeddings_adapter or build_embedding_adapter(runtime_settings)
     runtime_responses = responses_adapter or build_responses_adapter(runtime_settings)
@@ -137,11 +191,22 @@ def create_app(
         max_compression_ratio=runtime_settings.artifact_max_compression_ratio,
         max_log_evidence_chars=runtime_settings.artifact_max_log_evidence_chars,
     )
-    flarum_client = FlarumClient(
+    flarum_client = flarum_client_instance or FlarumClient(
         runtime_settings.flarum_base_url,
         runtime_settings.flarum_public_url,
         runtime_settings.flarum_api_key_file,
         runtime_settings.community_publish_enabled,
+        runtime_settings.flarum_assistant_user_id_file,
+        runtime_settings.community_review_post_enabled,
+        runtime_settings.flarum_solution_selector_user_id_file,
+    )
+    runtime_chat_bot = chat_bot_client or SynologyBotClient(
+        runtime_settings.chat_base_url, runtime_settings.chat_bot_token_file, runtime_settings.chat_bot_enabled,
+    )
+    runtime_community_flows = community_flow_client or CommunityFlowClient(
+        runtime_settings.community_approve_webhook_file,
+        runtime_settings.community_reject_webhook_file,
+        runtime_settings.chat_bot_enabled,
     )
 
     @asynccontextmanager
@@ -165,6 +230,8 @@ def create_app(
     async def boundary_middleware(request: Request, call_next):
         started = time.perf_counter()
         correlation_id = request.headers.get("X-Correlation-Id", "")
+        if request.url.path == "/v1/chat/synology/events" and not correlation_id:
+            correlation_id = f"chat-{uuid4().hex}"
         if request.url.path.startswith("/v1") and not CORRELATION_PATTERN.fullmatch(correlation_id):
             return _error("missing", 400, "INVALID_CORRELATION_ID")
         request.state.correlation_id = correlation_id or "healthcheck"
@@ -473,47 +540,100 @@ def create_app(
     def _query_comprehensive(request: ComprehensiveQueryRequest, correlation_id: str) -> dict[str, Any]:
         compatibility = runtime_store.resolve_compatibility_set(request.compatibility_set_id, request.product_version)
         explicit_profiles = request.source_profile_ids or (compatibility or {}).get("sourceProfileIds")
+        versioned_review = not explicit_profiles and not compatibility
         plan = plan_query(request.question, explicit_profiles)
+        plan_payload = versioned_plan(request.question) if versioned_review else plan.payload()
+        if versioned_review:
+            profiles = list(VERSIONED_SOURCE_PROFILES)
+        else:
+            profiles = list(plan.profile_ids)
         if plan.state != "READY":
-            return {"queryId": request.query_id, "state": "NEEDS_INFORMATION", "plan": plan.payload(),
+            if versioned_review:
+                pass
+            else:
+                return {"queryId": request.query_id, "state": "NEEDS_INFORMATION", "plan": plan_payload,
                     "report": None, "citations": [], "generationProviderCalled": False}
-        profiles = list(plan.profile_ids)
         if compatibility and not set(profiles).issubset(set(compatibility["sourceProfileIds"])):
-            return {"queryId": request.query_id, "state": "NEEDS_INFORMATION", "plan": plan.payload(),
+            return {"queryId": request.query_id, "state": "NEEDS_INFORMATION", "plan": plan_payload,
                     "questionsNeeded": ["선택한 영역을 모두 포함하는 승인된 Compatibility Set이 필요합니다."],
                     "report": None, "citations": [], "generationProviderCalled": False}
-        if len(profiles) > 1 and not compatibility:
-            return {"queryId": request.query_id, "state": "NEEDS_INFORMATION", "plan": plan.payload(),
+        if len(profiles) > 1 and not compatibility and not versioned_review:
+            return {"queryId": request.query_id, "state": "NEEDS_INFORMATION", "plan": plan_payload,
                     "questionsNeeded": ["제품 버전 또는 승인된 compatibilitySetId를 지정하십시오."],
                     "report": None, "citations": [], "generationProviderCalled": False}
-        scope = {"compatibilitySetId": compatibility["compatibilitySetId"] if compatibility else None,
-                 "sourceProfileIds": None if compatibility else profiles}
-        retrieval_request = QueryRequest(
-            queryId=request.query_id, question=request.question,
-            compatibilitySetId=scope["compatibilitySetId"], sourceProfileIds=scope["sourceProfileIds"],
-            locale=request.locale, classification=request.classification,
-        )
-        retrieval = _retrieve(retrieval_request, correlation_id)
+        scope = {
+            "policy": "DIPLO_CURRENT_EUROPA_PREVIEW_V1" if versioned_review else "EXPLICIT_V1",
+            "compatibilitySetId": compatibility["compatibilitySetId"] if compatibility else None,
+            "sourceProfileIds": None if compatibility else profiles,
+        }
+        coverage: list[dict[str, object]] = []
+        if versioned_review:
+            retrieval_question = expand_retrieval_question(request.question)
+            embedding_result = runtime_embeddings.embed([retrieval_question])
+            results_by_profile: dict[str, list[dict[str, Any]]] = {}
+            provider_called = embedding_result.provider == "openai"
+            for profile_id in VERSIONED_SOURCE_PROFILES:
+                if profile_id == CURATED_PLATFORM_PROFILE:
+                    curated = curated_platform_results(request.question)
+                    if runtime_settings.official_web_search_enabled and official_web_search_required(
+                        request.question, curated
+                    ):
+                        try:
+                            live_results = runtime_responses.search_official_references(request.question)
+                            curated.extend(live_results)
+                            _json_log(
+                                "official_web_search_completed", correlationId=correlation_id,
+                                resultCount=len(live_results),
+                            )
+                            provider_called = True
+                        except ResponsesProviderError as exc:
+                            _json_log(
+                                "official_web_search_failed", correlationId=correlation_id,
+                                errorCode=exc.code,
+                            )
+                    results_by_profile[profile_id] = curated
+                    continue
+                retrieval_request = QueryRequest(
+                    queryId=request.query_id, question=retrieval_question, sourceProfileIds=[profile_id],
+                    locale=request.locale, classification=request.classification,
+                )
+                item = runtime_store.retrieve(_model_data(retrieval_request), embedding_result, correlation_id)
+                results_by_profile[profile_id] = item["results"]
+            coverage = coverage_payload(request.question, results_by_profile)
+            retrieval = {
+                "results": select_context_results(request.question, results_by_profile),
+                "providerCalled": provider_called,
+            }
+        else:
+            retrieval_request = QueryRequest(
+                queryId=request.query_id, question=request.question,
+                compatibilitySetId=scope["compatibilitySetId"], sourceProfileIds=scope["sourceProfileIds"],
+                locale=request.locale, classification=request.classification,
+            )
+            retrieval = _retrieve(retrieval_request, correlation_id)
         context = context_from_results(retrieval["results"], request.classification)
         if not context:
-            return {"queryId": request.query_id, "state": "ABSTAINED", "plan": plan.payload(),
+            return {"queryId": request.query_id, "state": "ABSTAINED", "plan": plan_payload,
+                    "scope": scope, "coverage": coverage,
                     "report": None, "citations": [], "abstainReason": "no-grounding", "generationProviderCalled": False}
         artifacts = tuple(artifact_store.evidence(artifact_id) for artifact_id in request.artifact_ids)
         provider_request = ComprehensiveResponsesRequest(
             query_id=str(request.query_id), question=request.question, context=context, artifacts=artifacts,
             locale=request.locale, safety_identifier=stable_safety_identifier(request.actor_id, safety_identifier_salt),
+            source_roles=tuple(SOURCE_ROLES.items()) if versioned_review else (),
         )
         try:
             generated = runtime_responses.generate_comprehensive(provider_request)
             runtime_store.record_response_call(request.query_id, generated, correlation_id)
             cited = {item.chunk_id: item for item in context}
             citations = [citation_payload(cited[item]) for item in generated.citations_used if item in cited]
-            return {"queryId": request.query_id, "state": generated.report["state"], "plan": plan.payload(),
-                    "scope": scope, "report": generated.report, "citations": citations,
+            return {"queryId": request.query_id, "state": generated.report["state"], "plan": plan_payload,
+                    "scope": scope, "coverage": coverage, "report": generated.report, "citations": citations,
                     "generationProviderCalled": generated.provider == "openai", "providerProfileId": generated.profile_id}
         except ResponsesProviderError as exc:
             runtime_store.record_response_failure(request.query_id, exc, correlation_id)
-            return {"queryId": request.query_id, "state": "FAILED", "plan": plan.payload(), "report": None,
+            return {"queryId": request.query_id, "state": "FAILED", "plan": plan_payload, "report": None,
+                    "scope": scope, "coverage": coverage,
                     "citations": [], "generationProviderCalled": exc.provider_called, "errorCode": exc.code,
                     "failureClass": exc.failure_class}
 
@@ -530,19 +650,306 @@ def create_app(
         correlation_id: Annotated[str, Depends(_correlation_id)],
         idempotency_key: Annotated[str, Depends(_idempotency_key)],
     ) -> Envelope:
-        profiles = profiles_for_tags(request.tag_slugs)
+        event = _model_data(request)
+        analysis_event = dict(event)
+        if request.artifact_warnings:
+            analysis_event["question"] = request.question + "\n\n[첨부 처리 안내]\n" + "\n".join(
+                f"- {warning}" for warning in request.artifact_warnings
+            )
+        post_id = source_post_id(event)
+        if request.resolution_only:
+            event["bestAnswerSelectedByAdministrator"] = bool(
+                request.best_answer_user_id
+                and request.best_answer_user_id in _resolution_administrator_ids(runtime_settings)
+            )
+            result = runtime_store.sync_community_resolution(event, idempotency_key, correlation_id)
+            if (
+                runtime_settings.community_auto_publish_enabled
+                and result.get("conversationState") == "RESOLVED"
+                and result.get("resolvedPostId")
+            ):
+                knowledge_completed_now = False
+                if result.get("knowledgeBaseSourcePostId") != result.get("resolvedPostId"):
+                    turns = runtime_store.list_community_turns(request.discussion_id)
+                    knowledge_question = build_knowledge_base_question(
+                        request.title, turns, str(result["resolvedPostId"]),
+                    )
+                    artifact_ids: list[UUID] = []
+                    for turn in reversed(turns):
+                        for artifact_id in reversed(turn.get("artifactIds") or []):
+                            value = UUID(str(artifact_id))
+                            if value not in artifact_ids:
+                                artifact_ids.append(value)
+                            if len(artifact_ids) == 5:
+                                break
+                        if len(artifact_ids) == 5:
+                            break
+                    knowledge_result = _query_comprehensive(
+                        ComprehensiveSynthesisRequest(
+                            queryId=uuid4(), question=knowledge_question,
+                            actorId=f"community-kb:{request.author_id}",
+                            productVersion=request.product_version or "diplo",
+                            artifactIds=artifact_ids, locale="ko-KR", classification="D0",
+                        ),
+                        correlation_id,
+                    )
+                    knowledge_result["attachmentFailureRecorded"] = any(
+                        "[첨부 처리 안내]" in str(turn.get("content") or "") for turn in turns
+                    )
+                    knowledge_answer = format_knowledge_base(knowledge_result)
+                    if knowledge_result.get("state") == "FAILED" or not knowledge_answer:
+                        raise HTTPException(
+                            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                            detail={"code": "KNOWLEDGE_BASE_GENERATION_FAILED", "message": "resolved conversation synthesis will retry"},
+                        )
+                    marker = f"<!-- techflow-kb:{result['caseId']}:resolved:{result['resolvedPostId']} -->"
+                    try:
+                        publication = flarum_client.publish_assistant_reply(
+                            result["discussionId"], knowledge_answer, marker,
+                        )
+                        result = runtime_store.mark_community_knowledge_published(
+                            result["caseId"], knowledge_answer, publication,
+                            f"knowledge-base-{result['caseId']}-{result['resolvedPostId']}",
+                        )
+                        _json_log(
+                            "community_knowledge_base_published", correlationId=correlation_id,
+                            caseId=str(result["caseId"]), postId=result["knowledgeBasePostId"],
+                        )
+                    except Exception as exc:
+                        _json_log(
+                            "community_knowledge_base_publish_failed", correlationId=correlation_id,
+                            caseId=str(result["caseId"]), errorType=type(exc).__name__,
+                        )
+                        raise HTTPException(
+                            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                            detail={"code": "KNOWLEDGE_BASE_PUBLICATION_FAILED", "message": "Knowledge Base publication will retry"},
+                        ) from exc
+                if result.get("knowledgeBasePostId") and not result.get("knowledgeBaseSolutionSelectedAt"):
+                    try:
+                        selection = flarum_client.select_solution(
+                            result["discussionId"], result["knowledgeBasePostId"],
+                        )
+                        result = runtime_store.mark_community_knowledge_solution_selected(
+                            result["caseId"], selection,
+                            f"knowledge-solution-{result['caseId']}-{result['knowledgeBasePostId']}",
+                        )
+                        _json_log(
+                            "community_knowledge_base_solution_selected", correlationId=correlation_id,
+                            caseId=str(result["caseId"]), postId=result["knowledgeBasePostId"],
+                        )
+                        knowledge_completed_now = True
+                    except Exception as exc:
+                        _json_log(
+                            "community_knowledge_base_solution_selection_failed", correlationId=correlation_id,
+                            caseId=str(result["caseId"]), errorType=type(exc).__name__,
+                        )
+                        raise HTTPException(
+                            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                            detail={
+                                "code": "KNOWLEDGE_BASE_SOLUTION_SELECTION_FAILED",
+                                "message": "Knowledge Base final solution selection will retry",
+                            },
+                        ) from exc
+                if runtime_settings.chat_bot_enabled and knowledge_completed_now:
+                    reviewer_ids = [item["userId"] for item in runtime_store.list_chat_reviewers()]
+                    if reviewer_ids:
+                        try:
+                            runtime_chat_bot.send(reviewer_ids, case_card(result, notification_type="knowledge"))
+                            _json_log(
+                                "community_knowledge_chat_notification_sent",
+                                correlationId=correlation_id,
+                                caseId=str(result["caseId"]),
+                                reviewerCount=len(reviewer_ids),
+                            )
+                        except Exception as exc:
+                            _json_log(
+                                "community_knowledge_chat_notification_failed", correlationId=correlation_id,
+                                caseId=str(result["caseId"]), errorType=type(exc).__name__,
+                            )
+            return _envelope(result, correlation_id)
+        retry_failed = False
+        if runtime_store.community_turn_exists(request.discussion_id, post_id):
+            current = runtime_store.get_community_case_by_discussion(request.discussion_id)
+            retry_failed = bool(
+                request.response_requested
+                and current.get("state") == "DRAFT_PENDING"
+                and current.get("answerState") == "FAILED"
+                and not current.get("draftAnswer")
+                and current.get("lastSeenPostId") == post_id
+            )
+            if not retry_failed:
+                if (
+                    runtime_settings.community_auto_publish_enabled
+                    and current.get("state") in {"DRAFT_PENDING", "PUBLISHED"}
+                    and (current.get("draftAnswer") or current.get("answerState") == "ABSTAINED")
+                    and current.get("reviewer") != "techflow:auto"
+                ):
+                    try:
+                        marker = f"<!-- techflow-answer:{current['caseId']}:v{current['draftVersion']} -->"
+                        answer = conversationalize_answer(
+                            current.get("draftAnswer") or format_draft({"state": "ABSTAINED"}) or ""
+                        )
+                        publication = flarum_client.publish_assistant_reply(current["discussionId"], answer, marker)
+                        current = runtime_store.mark_community_auto_published(
+                            current["caseId"], answer, publication,
+                            f"auto-publish-{current['caseId']}-v{current['draftVersion']}",
+                        )
+                        if runtime_settings.chat_bot_enabled:
+                            reviewer_ids = [item["userId"] for item in runtime_store.list_chat_reviewers()]
+                            if reviewer_ids:
+                                try:
+                                    runtime_chat_bot.send(
+                                        reviewer_ids, case_card(current, notification_type="published")
+                                    )
+                                    _json_log(
+                                        "community_auto_publish_retry_chat_notification_sent",
+                                        correlationId=correlation_id,
+                                        caseId=str(current["caseId"]),
+                                        reviewerCount=len(reviewer_ids),
+                                    )
+                                except Exception as exc:
+                                    _json_log(
+                                        "community_auto_publish_retry_chat_notification_failed",
+                                        correlationId=correlation_id,
+                                        caseId=str(current["caseId"]),
+                                        errorType=type(exc).__name__,
+                                    )
+                    except Exception as exc:
+                        _json_log(
+                            "community_auto_publish_retry_failed", correlationId=correlation_id,
+                            caseId=str(current["caseId"]), errorType=type(exc).__name__,
+                        )
+                        raise HTTPException(
+                            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                            detail={"code": "COMMUNITY_PUBLICATION_FAILED", "message": "Community publication will retry"},
+                        ) from exc
+                current.update(created=False, turnCreated=False)
+                return _envelope(current, correlation_id)
+        if not request.response_requested:
+            result = runtime_store.record_community_turn(event, idempotency_key, correlation_id)
+            return _envelope(result, correlation_id)
+        turns = runtime_store.list_community_turns(request.discussion_id)
+        if retry_failed:
+            turns = [item for item in turns if item.get("sourcePostId") != post_id]
+        conversation_question = build_conversation_question(request.title, turns, analysis_event)
         assist_request = ComprehensiveQueryRequest(
-            queryId=uuid4(), question=f"{request.title}\n\n{request.question}", actorId=f"community:{request.author_id}",
-            productVersion=request.product_version, sourceProfileIds=[profiles[0]], artifactIds=request.artifact_ids,
+            queryId=uuid4(), question=conversation_question, actorId=f"community:{request.author_id}",
+            productVersion=request.product_version or "diplo", artifactIds=request.artifact_ids,
             locale="ko-KR", classification="D0",
         )
         result = _query_comprehensive(assist_request, correlation_id)
+        if result.get("state") == "FAILED":
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail={"code": "AI_PROVIDER_TEMPORARY_FAILURE", "message": "community draft generation will retry"},
+            )
+        if not community_result_advances(result, turns):
+            _json_log(
+                "community_answer_progression_retry", correlationId=correlation_id,
+                discussionId=request.discussion_id, sourcePostId=post_id,
+            )
+            rewrite_question = build_progression_retry_question(request.title, turns, analysis_event)
+            retry_request = ComprehensiveQueryRequest(
+                queryId=uuid4(), question=rewrite_question, actorId=f"community:{request.author_id}",
+                productVersion=request.product_version or "diplo", artifactIds=request.artifact_ids,
+                locale="ko-KR", classification="D0",
+            )
+            result = _query_comprehensive(retry_request, correlation_id)
+            if result.get("state") == "FAILED":
+                raise HTTPException(
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    detail={"code": "AI_PROVIDER_TEMPORARY_FAILURE", "message": "community draft generation will retry"},
+                )
+            if not community_result_advances(result, turns):
+                _json_log(
+                    "community_answer_progression_rejected", correlationId=correlation_id,
+                    discussionId=request.discussion_id, sourcePostId=post_id,
+                )
+                raise HTTPException(
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    detail={
+                        "code": "COMMUNITY_RESPONSE_NOT_PROGRESSING",
+                        "message": "repetitive community answer was not published and will retry",
+                    },
+                )
+        result["userQuestion"] = request.question
         draft = {"draftAnswer": format_draft(result), "answerState": result.get("state"),
-                 "citations": result.get("citations") or []}
-        return _envelope(
-            runtime_store.create_community_case(_model_data(request), draft, idempotency_key, correlation_id),
-            correlation_id,
-        )
+                 "citations": result.get("citations") or [], "evidenceLedger": evidence_ledger(result)}
+        if retry_failed:
+            result = runtime_store.retry_failed_community_case(event, draft, idempotency_key, correlation_id)
+        else:
+            result = runtime_store.create_community_case(event, draft, idempotency_key, correlation_id)
+        created = result.pop("created", False)
+        turn_created = result.pop("turnCreated", created)
+        if runtime_settings.community_auto_publish_enabled and result.get("draftAnswer"):
+            try:
+                marker = f"<!-- techflow-answer:{result['caseId']}:v{result['draftVersion']} -->"
+                answer = conversationalize_answer(result["draftAnswer"])
+                publication = flarum_client.publish_assistant_reply(result["discussionId"], answer, marker)
+                result = runtime_store.mark_community_auto_published(
+                    result["caseId"], answer, publication,
+                    f"auto-publish-{result['caseId']}-v{result['draftVersion']}",
+                )
+                _json_log(
+                    "community_answer_auto_published", correlationId=correlation_id,
+                    caseId=str(result["caseId"]), postId=result["publishedPostId"],
+                )
+            except Exception as exc:
+                _json_log(
+                    "community_answer_auto_publish_failed", correlationId=correlation_id,
+                    caseId=str(result["caseId"]), errorType=type(exc).__name__,
+                )
+                raise HTTPException(
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    detail={"code": "COMMUNITY_PUBLICATION_FAILED", "message": "Community publication will retry"},
+                ) from exc
+        review_ready = not runtime_settings.community_review_post_enabled
+        if turn_created and runtime_settings.community_review_post_enabled and result.get("draftAnswer"):
+            try:
+                marker = f"<!-- techflow-review:{result['caseId']}:v{result['draftVersion']} -->"
+                review = flarum_client.publish_review_reply(
+                    result["discussionId"], result["draftAnswer"], marker,
+                )
+                result = runtime_store.attach_community_review(
+                    result["caseId"], review, f"review-post-{result['caseId']}-v{result['draftVersion']}",
+                )
+                review_ready = True
+                _json_log(
+                    "community_review_post_created", correlationId=correlation_id,
+                    caseId=str(result["caseId"]), postId=result["reviewPostId"], isApproved=False,
+                )
+            except Exception as exc:
+                _json_log(
+                    "community_review_post_failed", correlationId=correlation_id,
+                    caseId=str(result["caseId"]), errorType=type(exc).__name__,
+                )
+        if runtime_settings.chat_bot_enabled and turn_created and review_ready:
+            reviewer_ids = [item["userId"] for item in runtime_store.list_chat_reviewers()]
+            if not reviewer_ids:
+                _json_log(
+                    "community_chat_notification_skipped", correlationId=correlation_id,
+                    caseId=str(result["caseId"]), reason="no_connected_reviewer",
+                )
+            else:
+                for attempt in range(1, 4):
+                    try:
+                        runtime_chat_bot.send(reviewer_ids, case_card(
+                            result, notification_type="published" if runtime_settings.community_auto_publish_enabled else "review"
+                        ))
+                        _json_log(
+                            "community_chat_notification_sent", correlationId=correlation_id,
+                            caseId=str(result["caseId"]), reviewerCount=len(reviewer_ids), attempt=attempt,
+                        )
+                        break
+                    except Exception as exc:
+                        if attempt == 3:
+                            _json_log(
+                                "community_chat_notification_failed", correlationId=correlation_id,
+                                caseId=str(result["caseId"]), errorType=type(exc).__name__, attempts=attempt,
+                            )
+                        else:
+                            time.sleep(0.2 * attempt)
+        return _envelope(result, correlation_id)
 
     @application.get("/v1/community/cases/{caseId}", response_model=Envelope, operation_id="getCommunityCase")
     def get_community_case(caseId: UUID, correlation_id: Annotated[str, Depends(_correlation_id)]) -> Envelope:
@@ -557,6 +964,61 @@ def create_app(
         discussionId: str, correlation_id: Annotated[str, Depends(_correlation_id)]
     ) -> Envelope:
         return _envelope(runtime_store.get_community_case_by_discussion(discussionId), correlation_id)
+
+    @application.post(
+        "/v1/community/reviews/reconcile", response_model=Envelope,
+        operation_id="reconcileCommunityReviews",
+    )
+    def reconcile_community_reviews(
+        correlation_id: Annotated[str, Depends(_correlation_id)],
+        _: Annotated[str, Depends(_idempotency_key)],
+    ) -> Envelope:
+        checked = approved = missing = retried = retry_failed = 0
+        for item in runtime_store.list_community_cases(("DRAFT_PENDING",), 100):
+            post_id = str(item.get("reviewPostId") or "")
+            if not post_id:
+                if not runtime_settings.community_review_post_enabled or not item.get("draftAnswer"):
+                    continue
+                try:
+                    marker = f"<!-- techflow-review:{item['caseId']}:v{item['draftVersion']} -->"
+                    review = flarum_client.publish_review_reply(item["discussionId"], item["draftAnswer"], marker)
+                    item = runtime_store.attach_community_review(
+                        item["caseId"], review, f"review-post-{item['caseId']}-v{item['draftVersion']}",
+                    )
+                    post_id = str(item["reviewPostId"])
+                    retried += 1
+                    if runtime_settings.chat_bot_enabled:
+                        reviewer_ids = [row["userId"] for row in runtime_store.list_chat_reviewers()]
+                        if reviewer_ids:
+                            runtime_chat_bot.send(reviewer_ids, case_card(item, notification_type="review"))
+                    _json_log(
+                        "community_review_post_recovered", correlationId=correlation_id,
+                        caseId=str(item["caseId"]), postId=post_id,
+                    )
+                except Exception as exc:
+                    retry_failed += 1
+                    _json_log(
+                        "community_review_post_retry_failed", correlationId=correlation_id,
+                        caseId=str(item["caseId"]), errorType=type(exc).__name__,
+                    )
+                    continue
+            checked += 1
+            review_approved = flarum_client.review_post_is_approved(post_id)
+            if review_approved is True:
+                runtime_store.mark_community_review_approved(
+                    item["caseId"], f"flarum-review-approved-{post_id}",
+                )
+                approved += 1
+            elif review_approved is None:
+                runtime_store.mark_community_review_missing(
+                    item["caseId"], f"flarum-review-missing-{post_id}",
+                )
+                missing += 1
+        return _envelope(
+            {"checked": checked, "approved": approved, "missing": missing,
+             "retried": retried, "retryFailed": retry_failed},
+            correlation_id,
+        )
 
     @application.post("/v1/community/cases/{caseId}/decision", response_model=Envelope, operation_id="decideCommunityCase")
     def decide_community_case(
@@ -583,6 +1045,105 @@ def create_app(
         result = runtime_store.mark_community_published(caseId, publication, idempotency_key)
         result["requestedBy"] = request.requested_by
         return _envelope(result, correlation_id)
+
+    def _resolve_chat_case(reference: str) -> dict[str, Any]:
+        if not CASE_REFERENCE.fullmatch(reference):
+            raise InvalidBoundaryError("invalid Community case reference")
+        return runtime_store.resolve_community_case(reference)
+
+    def _pending_chat_response() -> dict[str, Any]:
+        cases = [
+            item for item in runtime_store.list_community_cases(None, 50)
+            if item.get("state") != "PUBLISHED" or item.get("answerState") == "FAILED"
+        ][:10]
+        if not cases:
+            return {"text": "현재 처리 중이거나 실패한 Community 답변이 없습니다."}
+        lines = ["Community 확인 필요 목록"]
+        for item in cases:
+            lines.append(
+                f"• {case_reference(item)} · Discussion #{item['discussionId']} · V{item['draftVersion']} · "
+                f"{item.get('answerState') or '-'} · {item['title']}"
+            )
+        lines.append("상세 <Case 앞 8자> 명령으로 상태를 확인하세요. 내부 근거는 근거 <Case 앞 8자> 명령에서만 표시됩니다.")
+        return {"text": "\n".join(lines)[:7000]}
+
+    async def _wait_for_case(case_id: UUID, desired: set[str], timeout_seconds: float = 15.0) -> dict[str, Any]:
+        deadline = time.monotonic() + timeout_seconds
+        current = runtime_store.get_community_case(case_id)
+        while current["state"] not in desired and time.monotonic() < deadline:
+            await asyncio.sleep(0.2)
+            current = runtime_store.get_community_case(case_id)
+        return current
+
+    @application.post(
+        "/v1/chat/synology/events", response_class=JSONResponse,
+        operation_id="handleSynologyChatEvent",
+    )
+    async def handle_synology_chat_event(request: Request) -> JSONResponse:
+        try:
+            event = parse_chat_event(request.headers.get("content-type", ""), await request.body())
+            runtime_chat_bot.validate(event.token)
+            allowed = {item.casefold() for item in runtime_settings.chat_reviewer_usernames}
+            command, args = parse_command(event)
+            reviewer_commands = {"connect", "pending", "detail", "evidence", "history"}
+            if command in reviewer_commands and event.username.casefold() not in allowed:
+                return JSONResponse(status_code=403, content={"text": "승인 권한이 없는 Chat 사용자입니다."})
+            if command in reviewer_commands:
+                runtime_store.upsert_chat_reviewer(event.user_id, event.username)
+            if command in {"help", "connect"}:
+                response = _pending_chat_response() if command == "connect" else {"text": help_text()}
+                if command == "connect":
+                    response["text"] = f"{event.username} 계정을 TechFlow 게시 알림 수신자로 연결했습니다.\n\n{response['text']}"
+                return JSONResponse(content=response)
+            if command == "pending":
+                return JSONResponse(content=_pending_chat_response())
+            if command == "detail":
+                if len(args) != 1:
+                    return JSONResponse(content={"text": "사용법: 상세 <Discussion ID 또는 Case 앞 8자>"})
+                return JSONResponse(content=case_card(_resolve_chat_case(args[0])))
+            if command == "evidence":
+                if len(args) != 1:
+                    return JSONResponse(content={"text": "사용법: 근거 <Discussion ID 또는 Case 앞 8자>"})
+                return JSONResponse(content={"text": case_evidence_text(_resolve_chat_case(args[0]))})
+            if command == "history":
+                if not args:
+                    cases = runtime_store.list_community_cases(None, 10)
+                    text = "최근 Community 처리 이력\n" + "\n".join(
+                        f"• {case_reference(item)} · {item['state']} · {item.get('reviewer') or '-'} · {item['title']}"
+                        for item in cases
+                    )
+                    return JSONResponse(content={"text": text[:7000]})
+                case = _resolve_chat_case(args[0])
+                events = runtime_store.list_community_case_events(case["caseId"], 10)
+                text = f"Case {case_reference(case)} 처리 이력\n" + "\n".join(
+                    f"• {item['createdAt'].isoformat()} · {item['eventType']} · {item['actor']}"
+                    for item in events
+                )
+                return JSONResponse(content={"text": text[:7000]})
+            if command in {"approve", "reject", "edit"}:
+                return JSONResponse(content={
+                    "text": "Community 답변은 이제 승인 없이 자동 게시됩니다. 상세 또는 이력 명령으로 게시 상태를 확인해 주세요."
+                })
+            if command == "unknown" and event.text:
+                assist_request = ComprehensiveQueryRequest(
+                    queryId=uuid4(), question=event.text, actorId=f"chat:{event.user_id}",
+                    productVersion="diplo", locale="ko-KR", classification="D0",
+                )
+                result = await asyncio.to_thread(_query_comprehensive, assist_request, request.state.correlation_id)
+                answer = format_public_answer(result)
+                if answer:
+                    return JSONResponse(content={"text": answer[:7000]})
+                if result.get("state") == "NEEDS_INFORMATION":
+                    needed = result.get("questionsNeeded") or (result.get("plan") or {}).get("questionsNeeded") or []
+                    return JSONResponse(content={"text": ("추가 정보가 필요합니다.\n" + "\n".join(f"• {item}" for item in needed))[:7000]})
+                return JSONResponse(content={"text": "검토 근거가 충분하지 않아 답변을 보류했습니다. 로그나 화면 정보를 함께 제공해 주세요."})
+            return JSONResponse(content={"text": "알 수 없는 명령입니다.\n\n" + help_text()})
+        except InvalidBoundaryError:
+            return JSONResponse(status_code=403, content={"text": "요청 인증 또는 입력 검증에 실패했습니다."})
+        except StoreError as exc:
+            return JSONResponse(status_code=exc.http_status, content={"text": "Case 상태가 변경됐거나 찾을 수 없습니다."})
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            return JSONResponse(status_code=400, content={"text": "Chat 요청 형식을 해석할 수 없습니다."})
 
     @application.post("/v1/evaluations/runs", response_model=Envelope, status_code=status.HTTP_202_ACCEPTED, operation_id="createEvaluationRun")
     def create_evaluation_run(

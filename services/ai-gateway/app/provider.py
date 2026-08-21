@@ -58,6 +58,7 @@ class ContextChunk:
     start_line: int = 1
     end_line: int = 1
     symbol: str | None = None
+    retrieved_at: str = ""
 
 
 @dataclass(frozen=True)
@@ -122,6 +123,7 @@ class ComprehensiveResponsesRequest:
     artifacts: tuple[EvidenceArtifact, ...] = ()
     locale: str = "ko-KR"
     safety_identifier: str = "techflow-anonymous"
+    source_roles: tuple[tuple[str, str], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -179,6 +181,10 @@ class MockResponsesAdapter:
             profile_id=profile.profile_id,
         )
 
+    def search_official_references(self, question: str) -> list[dict[str, object]]:
+        """Mock mode never performs network access."""
+        return []
+
     def generate_comprehensive(self, request: ComprehensiveResponsesRequest) -> ComprehensiveResponsesResult:
         if not request.context or len(request.context) > 20:
             raise ProviderContractError("comprehensive context must contain 1 to 20 chunks")
@@ -201,6 +207,9 @@ class MockResponsesAdapter:
             "confidence": "HIGH",
             "citationsUsed": list(citations),
             "artifactEvidence": artifact_findings,
+            "currentAssessment": "CURRENT_NORMAL",
+            "previewAssessment": "PREVIEW_NOT_FOUND",
+            "previewGuidance": "차기 버전 코드에서 직접 대응하는 개선 근거를 확인하지 못했습니다.",
             "abstainReason": None,
         }
         return ComprehensiveResponsesResult(

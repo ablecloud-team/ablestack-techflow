@@ -14,14 +14,25 @@
           "name": "create_reviewable_draft",
           "method": "POST",
           "url": "/v1/community/cases",
+          "timeoutSeconds": 300,
           "body": {
             "discussionId": "{{trigger['output']['body']['discussionId']}}",
             "discussionUrl": "{{trigger['output']['body']['discussionUrl']}}",
             "title": "{{trigger['output']['body']['title']}}",
             "question": "{{trigger['output']['body']['question']}}",
             "authorId": "{{trigger['output']['body']['authorId']}}",
+            "postId": "{{trigger['output']['body']['postId']}}",
+            "postNumber": "{{trigger['output']['body']['postNumber']}}",
+            "postAuthorId": "{{trigger['output']['body']['postAuthorId']}}",
+            "turnRole": "{{trigger['output']['body']['turnRole']}}",
+            "responseRequested": "{{trigger['output']['body']['responseRequested']}}",
+            "resolutionOnly": "{{trigger['output']['body']['resolutionOnly']}}",
+            "bestAnswerPostId": "{{trigger['output']['body']['bestAnswerPostId']}}",
+            "bestAnswerUserId": "{{trigger['output']['body']['bestAnswerUserId']}}",
+            "bestAnswerSetAt": "{{trigger['output']['body']['bestAnswerSetAt']}}",
             "tagSlugs": "{{trigger['output']['body']['tagSlugs']}}",
-            "artifactIds": "{{trigger['output']['body']['artifactIds']}}"
+            "artifactIds": "{{trigger['output']['body']['artifactIds']}}",
+            "artifactWarnings": "{{trigger['output']['body']['artifactWarnings']}}"
           }
         }
       ]

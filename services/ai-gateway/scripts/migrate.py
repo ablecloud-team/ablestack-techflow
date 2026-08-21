@@ -18,7 +18,8 @@ EXPECTED_TABLES = {
     "rag_code_symbol", "rag_code_relation", "rag_deletion_ledger", "rag_evaluation_case",
     "rag_evaluation_run", "rag_evaluation_result", "rag_provider_call",
     "rag_source_blob", "rag_source_file", "rag_source_scan_finding",
-    "rag_source_mirror", "community_case", "community_case_event",
+    "rag_source_mirror", "community_case", "community_case_event", "community_turn", "community_response",
+    "chat_reviewer_identity",
 }
 
 
@@ -39,7 +40,7 @@ def dsn() -> str:
 def table_names(connection: psycopg.Connection) -> set[str]:
     rows = connection.execute(
         "SELECT tablename FROM pg_tables WHERE schemaname='public' AND "
-        "(tablename LIKE 'rag_%' OR tablename LIKE 'community_%')"
+        "(tablename LIKE 'rag_%' OR tablename LIKE 'community_%' OR tablename LIKE 'chat_%')"
     ).fetchall()
     return {row[0] for row in rows}
 
@@ -80,12 +81,42 @@ def verify(connection: psycopg.Connection) -> None:
     if issue46_indexes != 2:
         raise SystemExit(f"Issue 46 schema mismatch expectedIndexes=2 actual={issue46_indexes}")
     community_tables = connection.execute(
-        "SELECT count(*) FROM pg_tables WHERE schemaname='public' AND tablename IN ('community_case','community_case_event')"
+        "SELECT count(*) FROM pg_tables WHERE schemaname='public' AND "
+        "tablename IN ('community_case','community_case_event','community_turn','community_response')"
     ).fetchone()[0]
-    if community_tables != 2:
-        raise SystemExit(f"Issue 21 schema mismatch expectedTables=2 actual={community_tables}")
+    if community_tables != 4:
+        raise SystemExit(f"Community schema mismatch expectedTables=4 actual={community_tables}")
+    chat_tables = connection.execute(
+        "SELECT count(*) FROM pg_tables WHERE schemaname='public' AND tablename='chat_reviewer_identity'"
+    ).fetchone()[0]
+    if chat_tables != 1:
+        raise SystemExit(f"Issue 22 schema mismatch expectedTables=1 actual={chat_tables}")
+    issue64_columns = connection.execute(
+        "SELECT count(*) FROM information_schema.columns WHERE table_schema='public' AND "
+        "table_name='community_case' AND column_name IN ('review_post_id','review_post_url')"
+    ).fetchone()[0]
+    if issue64_columns != 2:
+        raise SystemExit(f"Issue 64 schema mismatch expectedColumns=2 actual={issue64_columns}")
+    conversation_columns = connection.execute(
+        "SELECT count(*) FROM information_schema.columns WHERE table_schema='public' AND "
+        "table_name='community_case' AND column_name IN "
+        "('conversation_state','requester_user_id','last_seen_post_id','context_version',"
+        "'resolved_post_id','resolved_by_user_id','resolved_at','reopened_at')"
+    ).fetchone()[0]
+    if conversation_columns != 8:
+        raise SystemExit(f"Community conversation schema mismatch expectedColumns=8 actual={conversation_columns}")
+    knowledge_columns = connection.execute(
+        "SELECT count(*) FROM information_schema.columns WHERE table_schema='public' AND "
+        "table_name='community_case' AND column_name IN "
+        "('knowledge_base_post_id','knowledge_base_post_url','knowledge_base_source_post_id',"
+        "'knowledge_base_answer','knowledge_base_version','knowledge_base_published_at',"
+        "'knowledge_base_solution_selected_at','knowledge_base_solution_selected_by_user_id')"
+    ).fetchone()[0]
+    if knowledge_columns != 8:
+        raise SystemExit(f"Community Knowledge Base schema mismatch expectedColumns=8 actual={knowledge_columns}")
     print(f"schema=valid tables={len(EXPECTED_TABLES)} extensions=2 sourceProfiles=9 "
-          "issue43Columns=8 issue45Columns=2 issue46Indexes=2 issue21Tables=2")
+          "issue43Columns=8 issue45Columns=2 issue46Indexes=2 communityTables=4 issue22Tables=1 "
+          "issue64Columns=2 conversationColumns=8 knowledgeColumns=8")
 
 
 def main() -> int:
@@ -98,6 +129,33 @@ def main() -> int:
         if args.direction == "down":
             if not args.allow_destructive_rollback:
                 raise SystemExit("--allow-destructive-rollback is required")
+            issue22_present = connection.execute(
+                "SELECT 1 FROM pg_tables WHERE schemaname='public' AND tablename='chat_reviewer_identity'"
+            ).fetchone()
+            issue64_present = connection.execute(
+                "SELECT 1 FROM information_schema.columns WHERE table_name='community_case' AND column_name='review_post_id'"
+            ).fetchone()
+            conversation_present = connection.execute(
+                "SELECT 1 FROM pg_tables WHERE schemaname='public' AND tablename='community_turn'"
+            ).fetchone()
+            knowledge_present = connection.execute(
+                "SELECT 1 FROM information_schema.columns WHERE table_name='community_case' "
+                "AND column_name='knowledge_base_post_id'"
+            ).fetchone()
+            knowledge_solution_present = connection.execute(
+                "SELECT 1 FROM information_schema.columns WHERE table_name='community_case' "
+                "AND column_name='knowledge_base_solution_selected_at'"
+            ).fetchone()
+            if knowledge_solution_present:
+                connection.execute((MIGRATIONS / "0013_community_kb_solution_down.sql").read_text(encoding="utf-8"))
+            if knowledge_present:
+                connection.execute((MIGRATIONS / "0012_community_auto_publish_kb_down.sql").read_text(encoding="utf-8"))
+            if conversation_present:
+                connection.execute((MIGRATIONS / "0011_community_conversation_down.sql").read_text(encoding="utf-8"))
+            if issue64_present:
+                connection.execute((MIGRATIONS / "0010_flarum_review_post_down.sql").read_text(encoding="utf-8"))
+            if issue22_present:
+                connection.execute((MIGRATIONS / "0009_chat_approval_down.sql").read_text(encoding="utf-8"))
             issue21_present = connection.execute(
                 "SELECT 1 FROM pg_tables WHERE schemaname='public' AND tablename='community_case'"
             ).fetchone()
@@ -148,6 +206,11 @@ def main() -> int:
             connection.execute((MIGRATIONS / "0006_orchestration_correlation_up.sql").read_text(encoding="utf-8"))
         connection.execute((MIGRATIONS / "0007_reindex_fk_performance_up.sql").read_text(encoding="utf-8"))
         connection.execute((MIGRATIONS / "0008_community_assist_up.sql").read_text(encoding="utf-8"))
+        connection.execute((MIGRATIONS / "0009_chat_approval_up.sql").read_text(encoding="utf-8"))
+        connection.execute((MIGRATIONS / "0010_flarum_review_post_up.sql").read_text(encoding="utf-8"))
+        connection.execute((MIGRATIONS / "0011_community_conversation_up.sql").read_text(encoding="utf-8"))
+        connection.execute((MIGRATIONS / "0012_community_auto_publish_kb_up.sql").read_text(encoding="utf-8"))
+        connection.execute((MIGRATIONS / "0013_community_kb_solution_up.sql").read_text(encoding="utf-8"))
         verify(connection)
     return 0
 

@@ -1,0 +1,61 @@
+# ADR-0010: Community 대화 답변 자동 게시와 해결 기반 Knowledge Base
+
+- 상태: 승인됨
+- 결정일: 2026-08-13
+- 변경일: 2026-08-14
+- 범위: ABLESTACK Community Assist
+- 관련: Issue #69, PR #65
+
+## 배경
+
+기존 방식은 매 답변을 `증상·원인·해결 방법·추가 고려사항·적용 버전` 문서로 만들고 관리자 승인 후 공개했다. 이 방식은 대화 중인 사용자에게 딱딱하게 느껴지고, 필요한 다음 행동이 무엇인지 파악하기 어려우며, 승인 대기 때문에 답변이 공개되지 않을 수 있다.
+
+## 결정
+
+1. 진행 중 답변은 전문 엔지니어가 플랫폼을 처음 접한 사용자에게 설명하는 대화체로 작성한다.
+2. AI-Assistant 답변은 관리자 승인 없이 즉시 공개한다.
+3. 최초 질문자 또는 운영 설정에 등록된 Community 관리자가 Best Answer를 선택하기 전까지 Discussion 단위 Conversation과 첨부 자료 맥락을 유지한다.
+4. 최초 질문자 또는 등록된 관리자가 해결 답변을 선택하면 해당 답변을 중심으로 전체 대화를 다시 종합해 Knowledge Base 최종본을 게시한다. 일반 참여자의 선택은 해결 승인으로 인정하지 않는다.
+5. Knowledge Base 게시가 확인되면 해당 KB Post를 Discussion의 최종 Best Answer(솔루션)로 지정한다. 최초 해결 승인자가 선택한 답변은 KB 생성 원본과 감사 이력으로 보존한다.
+6. Knowledge Base 본문은 제목 없이 `증상`, `원인`, `해결 방법`, `추가 고려사항`, `적용 버전` 순서로 작성한다.
+7. Chat은 승인 수단이 아니라 답변 게시, Knowledge Base 게시·솔루션 지정, 처리 실패를 확인하는 관찰 채널로 사용한다.
+8. 인프라 상태를 변경하는 Ops 작업의 사람 승인은 그대로 유지한다. 이번 결정은 Community 답변 게시에만 적용한다.
+9. 후속 답변은 최신 질문에 직접 답하고 해결 방법·근거 있는 CLI·성공 판정 기준을 먼저 제시한다. 해결되지 않을 때만 대안과 정확한 자료를 요청한다.
+10. 직전 답변과 같은 점검 목록은 한 번 재작성하고, 재작성도 진행되지 않으면 공개하지 않는다.
+11. 최초 질문자와 다른 사람의 후속 댓글도 사람 참여자의 최신 입력으로 처리해 같은 Conversation을 진행한다. AI-Assistant 자신의 Post만 재응답 대상에서 제외한다.
+12. CLI는 설명 문장과 분리하고, 설명 다음의 독립된 `bash` 코드 블록에 복사 가능한 완전한 명령으로 표시한다.
+13. 관리자 해결 권한은 inbound 이벤트의 역할 필드가 아니라 Gateway 운영 설정의 Flarum User ID 허용 목록과 최종 KB selector identity로 판정한다.
+
+## 안전장치
+
+- 허용된 D0 자료만 AI 답변 생성에 사용한다.
+- Doc, Diplo 현재 코드, 관련 제품 코드, Europa Preview, 승인된 플랫폼 자료 순으로 검토한다.
+- 내부 저장소·브랜치·커밋·파일 경로와 Citation은 공개 답변에서 제거한다.
+- 근거가 부족하면 단정하지 않고 필요한 정보를 요청한다.
+- CLI는 내부 근거에 존재하는 명령만 사용하며 실행 위치와 성공 기준을 함께 설명한다. 명령은 설명 문장에 섞지 않고 독립된 `bash` 코드 블록으로 표시한다.
+- SELinux 전체 비활성화, `chmod 777`, 근거 없는 `audit2allow`처럼 과도한 우회는 제안하지 않는다.
+- 게시 실패는 HTTP 성공으로 소비하지 않고 동일 Marker로 재시도한다.
+- KB 게시 후 솔루션 지정 API를 재조회해 실제 Best Answer가 KB Post와 일치할 때만 완료로 기록한다.
+- 자동 게시, KB 게시, 최종 솔루션 지정 이벤트를 Case 이력에 기록한다.
+- Chat에는 전체 답변을 복제하지 않고 상태와 Community 링크만 통지한다.
+
+## 상태 전이
+
+```mermaid
+stateDiagram-v2
+    [*] --> ANALYZING: 신규 질문 또는 후속 질문
+    ANALYZING --> WAITING_REQUESTER: 추가 정보 필요
+    ANALYZING --> WAITING_RESOLUTION: 답변 자동 게시
+    WAITING_REQUESTER --> ANALYZING: 질문자 자료 추가
+    WAITING_RESOLUTION --> ANALYZING: 질문자 후속 질문
+    WAITING_RESOLUTION --> RESOLVED: 최초 질문자 또는 등록 관리자 Best Answer 선택
+    RESOLVED --> RESOLVED: Knowledge Base 게시 및 최종 솔루션 지정
+    RESOLVED --> ANALYZING: 해결 해제 또는 후속 질문
+```
+
+## 결과
+
+- 사용자는 승인 대기 없이 답변을 받는다.
+- 대화 중 답변은 쉽고 자연스럽게 유지된다.
+- 검증된 해결 내용만 최종 Knowledge Base 형식을 갖는다.
+- 자동 공개의 위험은 안전한 공개 Projection, 보류 판정, 감사 이력, Chat 관찰로 통제한다.

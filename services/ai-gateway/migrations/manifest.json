@@ -84,13 +84,63 @@
     },
     {
       "path": "0008_community_assist_down.sql",
-      "sha256": "47f55c788725e7339b2599c03bdf1ca3f37fc47521f714c2ab0fcce71c1e3985",
-      "bytes": 80
+      "sha256": "375b904ba5007c371f2b706c57a22f8cdffd5f18f1b8382b83efa934c67f2e2a",
+      "bytes": 82
     },
     {
       "path": "0008_community_assist_up.sql",
-      "sha256": "8e9ec16f87c60471456d7a49eba4229610e6f9443b7bc83e963009f03c1080b9",
-      "bytes": 1651
+      "sha256": "5559165737c3162dda790b870c92ff7dc82517a8b90881e122ab5c21b43cb7e9",
+      "bytes": 1689
+    },
+    {
+      "path": "0009_chat_approval_down.sql",
+      "sha256": "552464f47205e7e3187d96bd1bae9045cb42dc225a722ed31df74663b615ab44",
+      "bytes": 45
+    },
+    {
+      "path": "0009_chat_approval_up.sql",
+      "sha256": "d4fb59351aa8aa8b8c68f6a05d07b4a6653b5110bd8957d452c6c15324fa20ec",
+      "bytes": 479
+    },
+    {
+      "path": "0010_flarum_review_post_down.sql",
+      "sha256": "8f354ba0ba2359d940d019ef88285af783286e19f58ccdd853a6e879d54d2fe0",
+      "bytes": 166
+    },
+    {
+      "path": "0010_flarum_review_post_up.sql",
+      "sha256": "fcc99bd87b3bb8c482a894023133338012ee4c9355600eb4ad3ba94b51593c93",
+      "bytes": 277
+    },
+    {
+      "path": "0011_community_conversation_down.sql",
+      "sha256": "1909739a55db579f385967bbd6530075ec99b2b1dfbb2b17624ca61638ff3e91",
+      "bytes": 625
+    },
+    {
+      "path": "0011_community_conversation_up.sql",
+      "sha256": "9250b23c8aa4cd46fa02edf0fd06e9d7ed24f1e5375b273421c11d99d7b5af0c",
+      "bytes": 2681
+    },
+    {
+      "path": "0012_community_auto_publish_kb_down.sql",
+      "sha256": "23f9a5ef32d5e81c1d0dae56873b2269f3b6ab4f5dcf789031b68990dab16529",
+      "bytes": 401
+    },
+    {
+      "path": "0012_community_auto_publish_kb_up.sql",
+      "sha256": "bc6d6f0c4feb10c9944af31180258b4dae50cc5c98c287c12011286ba1a823d9",
+      "bytes": 632
+    },
+    {
+      "path": "0013_community_kb_solution_down.sql",
+      "sha256": "0f9a64e597e3ccb7ed2d8083b024f8474412103c46942343a7b14a775904ea8e",
+      "bytes": 161
+    },
+    {
+      "path": "0013_community_kb_solution_up.sql",
+      "sha256": "86d9005e92b1639036b4e7bc0db89032220fc9fbb8d4050150816ad3633177f0",
+      "bytes": 191
     }
   ]
 }

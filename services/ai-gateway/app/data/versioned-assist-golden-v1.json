@@ -1,0 +1,146 @@
+{
+  "schemaVersion": "1.0",
+  "setId": "ABLESTACK_VERSIONED_ASSIST_GOLDEN_V1",
+  "publicDocumentSections": ["증상", "원인", "해결 방법", "추가 고려사항", "적용 버전"],
+  "caseCount": 15,
+  "cases": [
+    {
+      "caseKey": "CURRENT-DEFECT-PREVIEW-IMPROVED-001",
+      "question": "Diplo에서 VM 배포 실패가 재현되며 동일 원인에 대한 Europa 수정이 존재한다.",
+      "expectedCurrentAssessment": "CURRENT_DEFECT",
+      "expectedPreviewAssessment": "PREVIEW_IMPROVED",
+      "expectedPublicGuidance": "개선이 진행 중",
+      "forbiddenPublicClaims": ["출시 확정", "배포 완료", "CLOUD_EUROPA", "github.com"]
+    },
+    {
+      "caseKey": "CURRENT-DEFECT-PREVIEW-PARTIAL-001",
+      "question": "Diplo 오류 원인의 일부만 Europa에서 보완되었다.",
+      "expectedCurrentAssessment": "CURRENT_DEFECT",
+      "expectedPreviewAssessment": "PREVIEW_NOT_FOUND",
+      "expectedPublicGuidance": "추가 검증",
+      "forbiddenPublicClaims": ["완전 해결", "출시 확정", "github.com"]
+    },
+    {
+      "caseKey": "CURRENT-DEFECT-PREVIEW-NOT-FOUND-001",
+      "question": "Diplo 오류가 확인되지만 Europa에서 대응 변경을 찾지 못했다.",
+      "expectedCurrentAssessment": "CURRENT_DEFECT",
+      "expectedPreviewAssessment": "PREVIEW_NOT_FOUND",
+      "expectedPublicGuidance": "제품 보완 검토",
+      "forbiddenPublicClaims": ["개선 완료", "출시 예정", "github.com"]
+    },
+    {
+      "caseKey": "CURRENT-CONFIG-ERROR-001",
+      "question": "제품 결함이 아니라 현재 환경 설정 누락으로 동작하지 않는다.",
+      "expectedCurrentAssessment": "CURRENT_CONFIG_ERROR",
+      "expectedPreviewAssessment": "NOT_APPLICABLE",
+      "expectedPublicGuidance": "설정 또는 환경",
+      "forbiddenPublicClaims": ["제품 결함 확정", "CLOUD_DIPLO", "github.com"]
+    },
+    {
+      "caseKey": "CURRENT-NORMAL-001",
+      "question": "문서와 현재 구현이 일치하며 정상 동작이다.",
+      "expectedCurrentAssessment": "CURRENT_NORMAL",
+      "expectedPreviewAssessment": "NOT_APPLICABLE",
+      "expectedPublicGuidance": "정상 동작",
+      "forbiddenPublicClaims": ["결함", "CLOUD_DIPLO", "github.com"]
+    },
+    {
+      "caseKey": "CURRENT-INSUFFICIENT-PREVIEW-INSUFFICIENT-001",
+      "question": "질문과 첨부 근거가 부족해 현재 상태와 차기 개선 여부를 확정할 수 없다.",
+      "expectedCurrentAssessment": "INSUFFICIENT_EVIDENCE",
+      "expectedPreviewAssessment": "PREVIEW_INSUFFICIENT",
+      "expectedPublicGuidance": "확정하기 어렵",
+      "forbiddenPublicClaims": ["원인 확정", "출시 확정", "github.com"]
+    },
+    {
+      "caseKey": "MOLD-CONSOLE-CONNECTING-001",
+      "question": "Mold에서 가상머신의 콘솔 보기를 클릭하면 콘솔 화면이 표시되지만 \"연결중\"이라고 표시되고, 더 이상 화면을 보여주지 않습니다. 콘솔을 보려면 어떻게 해야 하나요?",
+      "expectedCurrentAssessment": "CURRENT_RUNTIME_ISSUE",
+      "allowedAnswerState": "ANSWERED",
+      "expectedPreviewAssessment": "NOT_APPLICABLE",
+      "requiredPublicGuidance": ["QEMU", "VNC", "라이브 마이그레이션", "정지 후 시작", "운영체제", "query-vnc"],
+      "expectedPublicGuidance": "QEMU VNC 세션 상태를 확인하고 운영 중에는 라이브 마이그레이션을 우선 적용하며 정지 후 시작을 대안으로 안내",
+      "forbiddenPublicClaims": ["ABLESTACK 제품 결함", "Europa에서 해결 완료", "github.com", "CLOUD_DIPLO", "CLOUD_EUROPA"]
+    },
+    {
+      "caseKey": "QEMU-GA-FSFREEZE-MNT-PERMISSION-001",
+      "question": "가상머신에 새 디스크 볼륨을 연결하고 /mnt에 마운트한 뒤 스냅샷 또는 복제를 실행하면 guest-fsfreeze-freeze가 failed to open /mnt: Permission denied로 실패합니다. SELinux 문제일 수 있나요?",
+      "expectedCurrentAssessment": "INSUFFICIENT_EVIDENCE",
+      "allowedAnswerState": "ANSWERED",
+      "expectedPreviewAssessment": "NOT_APPLICABLE",
+      "requiredPublicGuidance": ["ausearch", "findmnt", "ls -ldZ", "matchpathcon", "restorecon", "해결되지 않으면"],
+      "expectedPublicGuidance": "게스트 안에서 SELinux AVC와 마운트 권한을 명령으로 확인하고 확인된 문맥 오류만 복구한 뒤 스냅샷을 재시도",
+      "forbiddenPublicClaims": ["setenforce 0", "SELinux를 끄", "chmod 777", "audit2allow", "ABLESTACK 제품 결함", "github.com", "CLOUD_DIPLO", "CLOUD_EUROPA"]
+    },
+    {
+      "caseKey": "UBUNTU-QEMU-GA-INSTALL-001",
+      "question": "Ubuntu 24.04 가상머신에서 qemu-guest-agent.service could not be found라고 나옵니다. 설치 방법을 알려주세요.",
+      "expectedCurrentAssessment": "CURRENT_CONFIG_ERROR",
+      "expectedPreviewAssessment": "NOT_APPLICABLE",
+      "expectedPublicGuidance": "Ubuntu 가상머신 안에서 패키지를 직접 설치하고 서비스 상태를 확인",
+      "allowedAnswerState": "ANSWERED",
+      "requiredPublicGuidance": ["sudo apt update", "sudo apt install -y qemu-guest-agent", "systemctl status", "해결되지 않으면"],
+      "forbiddenPublicClaims": ["시스템 관리자에게 설치를 요청", "github.com"]
+    },
+    {
+      "caseKey": "RHEL-ROCKY-QEMU-GA-INSTALL-001",
+      "question": "Rocky Linux 가상머신에 QEMU Guest Agent를 설치하고 확인하려면 어떻게 하나요?",
+      "expectedCurrentAssessment": "CURRENT_CONFIG_ERROR",
+      "expectedPreviewAssessment": "NOT_APPLICABLE",
+      "expectedPublicGuidance": "Rocky Linux 가상머신 안에서 패키지를 직접 설치하고 서비스 상태를 확인",
+      "allowedAnswerState": "ANSWERED",
+      "requiredPublicGuidance": ["sudo dnf install -y qemu-guest-agent", "systemctl enable --now", "systemctl status"],
+      "forbiddenPublicClaims": ["시스템 관리자에게 설치를 요청", "github.com"]
+    },
+    {
+      "caseKey": "WINDOWS-QEMU-GA-INSTALL-001",
+      "question": "Windows 가상머신에 QEMU Guest Agent를 설치하고 서비스 상태를 확인하는 방법을 알려주세요.",
+      "expectedCurrentAssessment": "CURRENT_CONFIG_ERROR",
+      "expectedPreviewAssessment": "NOT_APPLICABLE",
+      "expectedPublicGuidance": "Windows 가상머신에서 승인된 설치 미디어를 사용하고 서비스 상태를 확인",
+      "allowedAnswerState": "ANSWERED",
+      "requiredPublicGuidance": ["qemu-ga-x86_64.msi", "Get-Service QEMU-GA", "powershell"],
+      "forbiddenPublicClaims": ["임의 다운로드 사이트", "github.com"]
+    },
+    {
+      "caseKey": "GLUE-OFFICIAL-FALLBACK-001",
+      "question": "Glue 상태가 HEALTH_WARN일 때 어떤 순서로 확인해야 하나요?",
+      "expectedCurrentAssessment": "INSUFFICIENT_EVIDENCE",
+      "expectedPreviewAssessment": "NOT_APPLICABLE",
+      "expectedPublicGuidance": "ABLESTACK 근거를 우선하고 필요한 공식 저장소 진단 절차로 보완",
+      "allowedAnswerState": "ANSWERED",
+      "requiredPublicGuidance": ["Glue"],
+      "forbiddenPublicClaims": ["Ceph 제품으로 문의", "github.com"]
+    },
+    {
+      "caseKey": "KORAL-OFFICIAL-FALLBACK-001",
+      "question": "Koral Pod가 Pending에서 진행되지 않을 때 무엇을 확인해야 하나요?",
+      "expectedCurrentAssessment": "INSUFFICIENT_EVIDENCE",
+      "expectedPreviewAssessment": "NOT_APPLICABLE",
+      "expectedPublicGuidance": "ABLESTACK 근거를 우선하고 필요한 공식 컨테이너 플랫폼 진단 절차로 보완",
+      "allowedAnswerState": "ANSWERED",
+      "requiredPublicGuidance": ["Koral"],
+      "forbiddenPublicClaims": ["Kubernetes 제품으로 문의", "github.com"]
+    },
+    {
+      "caseKey": "WALL-OFFICIAL-FALLBACK-001",
+      "question": "Wall 대시보드 패널에 데이터가 표시되지 않을 때 무엇을 확인해야 하나요?",
+      "expectedCurrentAssessment": "INSUFFICIENT_EVIDENCE",
+      "expectedPreviewAssessment": "NOT_APPLICABLE",
+      "expectedPublicGuidance": "ABLESTACK Wall 근거를 우선하고 필요한 공식 모니터링 플랫폼 절차로 보완",
+      "allowedAnswerState": "ANSWERED",
+      "requiredPublicGuidance": ["Wall"],
+      "forbiddenPublicClaims": ["Grafana 제품으로 문의", "github.com"]
+    },
+    {
+      "caseKey": "MOLD-OFFICIAL-FALLBACK-001",
+      "question": "Mold에서 가상머신 배포가 실패할 때 어떤 순서로 확인해야 하나요?",
+      "expectedCurrentAssessment": "INSUFFICIENT_EVIDENCE",
+      "expectedPreviewAssessment": "PREVIEW_INSUFFICIENT",
+      "expectedPublicGuidance": "ABLESTACK Mold 근거를 우선하고 필요한 공식 클라우드 관리 플랫폼 절차로 보완",
+      "allowedAnswerState": "ANSWERED",
+      "requiredPublicGuidance": ["Mold"],
+      "forbiddenPublicClaims": ["CloudStack 제품으로 문의", "github.com"]
+    }
+  ]
+}

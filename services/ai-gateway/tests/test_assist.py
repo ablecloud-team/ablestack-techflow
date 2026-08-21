@@ -179,6 +179,19 @@ class ArtifactTest(unittest.TestCase):
             with self.assertRaises(InvalidBoundaryError):
                 store.put("binary.log", "text/plain", b"INFO\x00ERROR\n")
 
+    def test_macos_zip_metadata_is_ignored_without_rejecting_valid_logs(self) -> None:
+        archive_bytes = BytesIO()
+        with zipfile.ZipFile(archive_bytes, "w", zipfile.ZIP_DEFLATED) as archive:
+            archive.writestr("host/agent.log", "INFO VM start\nERROR migration failed\n")
+            archive.writestr("__MACOSX/._agent.log", b"\x00\x05\x16\x07Mac OS X\x00metadata")
+            archive.writestr(".DS_Store", b"\x00\x01binary metadata")
+        with tempfile.TemporaryDirectory() as root:
+            store = ArtifactStore(root, retention_hours=1, max_bytes=1024 * 1024)
+            record = store.put("log.zip", "application/zip", archive_bytes.getvalue())
+            self.assertEqual("LOG", record.kind)
+            self.assertEqual(1, record.entry_count)
+            self.assertGreater(record.extracted_bytes or 0, 0)
+
     def test_log_upload_api_returns_normalization_metadata(self) -> None:
         with tempfile.TemporaryDirectory() as root:
             client = TestClient(create_app(Settings(artifact_root=root), MemoryStore()))
@@ -236,7 +249,7 @@ class _Responses:
     def create(self, **kwargs):
         self.kwargs = kwargs
         return SimpleNamespace(
-            output_text='{"state":"ANSWERED","summary":"ok","observedFacts":[],"diagnoses":[],"recommendedActions":[],"unknowns":[],"confidence":"HIGH","citationsUsed":["chunk-1"],"artifactEvidence":[{"artifactId":"artifact-1","finding":"visible","region":"all"}],"abstainReason":null}',
+            output_text='{"state":"ANSWERED","summary":"ok","observedFacts":[],"diagnoses":[],"recommendedActions":[],"unknowns":[],"confidence":"HIGH","citationsUsed":["chunk-1"],"artifactEvidence":[{"artifactId":"artifact-1","finding":"visible","region":"all"}],"currentAssessment":"CURRENT_DEFECT","previewAssessment":"PREVIEW_IMPROVED","previewGuidance":"개선 중","abstainReason":null}',
             model="gpt-5.6-sol", id="resp", _request_id="req",
         )
 
@@ -248,9 +261,9 @@ class _RetryResponses:
     def create(self, **kwargs):
         self.calls.append(kwargs)
         if len(self.calls) == 1:
-            output = '{"state":"ANSWERED","summary":"retry","observedFacts":[],"diagnoses":[{"title":"x","likelihood":"LOW","evidenceIds":["invented-id"]}],"recommendedActions":[],"unknowns":[],"confidence":"LOW","citationsUsed":["invented-id"],"artifactEvidence":[],"abstainReason":null}'
+            output = '{"state":"ANSWERED","summary":"retry","observedFacts":[],"diagnoses":[{"title":"x","likelihood":"LOW","evidenceIds":["invented-id"]}],"recommendedActions":[],"unknowns":[],"confidence":"LOW","citationsUsed":["invented-id"],"artifactEvidence":[],"currentAssessment":"INSUFFICIENT_EVIDENCE","previewAssessment":"PREVIEW_INSUFFICIENT","previewGuidance":null,"abstainReason":null}'
         else:
-            output = '{"state":"ANSWERED","summary":"ok","observedFacts":[],"diagnoses":[{"title":"x","likelihood":"LOW","evidenceIds":["chunk-1","artifact-1"]}],"recommendedActions":[],"unknowns":[],"confidence":"LOW","citationsUsed":["chunk-1"],"artifactEvidence":[{"artifactId":"artifact-1","finding":"error","region":"server.log:1-1"}],"abstainReason":null}'
+            output = '{"state":"ANSWERED","summary":"ok","observedFacts":[],"diagnoses":[{"title":"x","likelihood":"LOW","evidenceIds":["chunk-1","artifact-1"]}],"recommendedActions":[],"unknowns":[],"confidence":"LOW","citationsUsed":["chunk-1"],"artifactEvidence":[{"artifactId":"artifact-1","finding":"error","region":"server.log:1-1"}],"currentAssessment":"CURRENT_DEFECT","previewAssessment":"PREVIEW_NOT_FOUND","previewGuidance":"보완 필요","abstainReason":null}'
         return SimpleNamespace(output_text=output, model="gpt-5.6-sol", id="resp", _request_id="req")
 
 
@@ -258,12 +271,14 @@ class ComprehensiveOpenAITest(unittest.TestCase):
     def test_image_is_original_detail_and_storage_tools_are_disabled(self) -> None:
         responses = _Responses()
         adapter = OpenAIResponsesAdapter("unused", "unused", client=SimpleNamespace(responses=responses))
-        context = (ContextChunk("chunk-1", "D0", "ablecloud-team/ablestack-cloud", "ablestack-europa", "a" * 40, "x.java", "code"),)
+        context = (ContextChunk("chunk-1", "D0", "ablecloud-team/ablestack-docs", "main", "a" * 40, "guide.md", "doc", source_profile_id="SHARED_DOCS", source_kind="DOCUMENTATION"),)
         artifact = ImageArtifact("artifact-1", "image/png", PNG, "digest")
         result = adapter.generate_comprehensive(ComprehensiveResponsesRequest("query", "question", context, (artifact,), safety_identifier="tf-" + "a" * 61))
         user_content = responses.kwargs["input"][1]["content"]
         text_payload = json.loads(user_content[0]["text"])
         self.assertEqual("artifact-1", text_payload["artifacts"][0]["artifactId"])
+        self.assertEqual(1, text_payload["context"][0]["evidencePriority"])
+        self.assertEqual("ABLESTACK_DOCUMENTATION", text_payload["context"][0]["evidenceTier"])
         self.assertEqual("original", user_content[1]["detail"])
         self.assertTrue(user_content[1]["image_url"].startswith("data:image/png;base64,"))
         self.assertFalse(responses.kwargs["store"])

@@ -7,7 +7,7 @@ from enum import StrEnum
 from typing import Annotated, Any, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator, model_validator
 
 
 SafeId = Annotated[str, StringConstraints(pattern=r"^[A-Z][A-Z0-9_]{2,63}$")]
@@ -177,21 +177,53 @@ class ComprehensiveQueryRequest(StrictModel):
         return self
 
 
+class ComprehensiveSynthesisRequest(ComprehensiveQueryRequest):
+    """Trusted internal synthesis request with room for a bounded conversation transcript."""
+
+    question: Annotated[str, StringConstraints(min_length=3, max_length=16000)]
+
+
 class CommunityCaseCreateRequest(StrictModel):
     discussion_id: Annotated[str, StringConstraints(pattern=r"^[1-9][0-9]{0,18}$")] = Field(alias="discussionId")
     discussion_url: Annotated[str, StringConstraints(pattern=r"^https://community\.ablecloud\.io/d/[A-Za-z0-9._~/-]+$")] = Field(alias="discussionUrl")
     title: Annotated[str, StringConstraints(min_length=3, max_length=200)]
-    question: Annotated[str, StringConstraints(min_length=3, max_length=4000)]
+    question: Annotated[str, StringConstraints(min_length=3, max_length=16000)]
     author_id: Annotated[str, StringConstraints(pattern=r"^[A-Za-z0-9_.:@-]{1,128}$")] = Field(alias="authorId")
     tag_slugs: list[Annotated[str, StringConstraints(pattern=r"^[a-z0-9-]{1,64}$")]] = Field(default_factory=list, max_length=20, alias="tagSlugs")
     artifact_ids: list[UUID] = Field(default_factory=list, max_length=5, alias="artifactIds")
+    artifact_warnings: list[Annotated[str, StringConstraints(min_length=3, max_length=300)]] = Field(
+        default_factory=list, max_length=5, alias="artifactWarnings"
+    )
     product_version: Annotated[str, StringConstraints(min_length=1, max_length=64)] | None = Field(default=None, alias="productVersion")
+    post_id: Annotated[str, StringConstraints(pattern=r"^[1-9][0-9]{0,18}$")] | None = Field(default=None, alias="postId")
+    post_number: int | None = Field(default=None, ge=1, alias="postNumber")
+    post_author_id: Annotated[str, StringConstraints(pattern=r"^[A-Za-z0-9_.:@-]{1,128}$")] | None = Field(default=None, alias="postAuthorId")
+    turn_role: Literal["REQUESTER", "STAFF", "ASSISTANT"] = Field(default="REQUESTER", alias="turnRole")
+    response_requested: bool = Field(default=True, alias="responseRequested")
+    resolution_only: bool = Field(default=False, alias="resolutionOnly")
+    best_answer_post_id: Annotated[str, StringConstraints(pattern=r"^[1-9][0-9]{0,18}$")] | None = Field(default=None, alias="bestAnswerPostId")
+    best_answer_user_id: Annotated[str, StringConstraints(pattern=r"^[A-Za-z0-9_.:@-]{1,128}$")] | None = Field(default=None, alias="bestAnswerUserId")
+    best_answer_set_at: datetime | None = Field(default=None, alias="bestAnswerSetAt")
 
     @model_validator(mode="after")
     def unique_artifacts_and_tags(self) -> "CommunityCaseCreateRequest":
-        if len(self.artifact_ids) != len(set(self.artifact_ids)) or len(self.tag_slugs) != len(set(self.tag_slugs)):
-            raise ValueError("artifactIds and tagSlugs must be unique")
+        if (
+            len(self.artifact_ids) != len(set(self.artifact_ids))
+            or len(self.tag_slugs) != len(set(self.tag_slugs))
+            or len(self.artifact_warnings) != len(set(self.artifact_warnings))
+        ):
+            raise ValueError("artifactIds, artifactWarnings and tagSlugs must be unique")
         return self
+
+    @field_validator("post_id", "post_author_id", "best_answer_post_id", "best_answer_user_id", mode="before")
+    @classmethod
+    def normalize_optional_event_fields(cls, value: Any) -> Any:
+        return None if value == "" else value
+
+    @field_validator("post_number", "best_answer_set_at", mode="before")
+    @classmethod
+    def normalize_optional_typed_event_fields(cls, value: Any) -> Any:
+        return None if value == "" else value
 
 
 class CommunityDecisionRequest(StrictModel):
@@ -200,6 +232,14 @@ class CommunityDecisionRequest(StrictModel):
     expected_draft_version: int = Field(ge=1, alias="expectedDraftVersion")
     edited_answer: Annotated[str, StringConstraints(min_length=3, max_length=12000)] | None = Field(default=None, alias="editedAnswer")
     note: Annotated[str, StringConstraints(max_length=1000)] | None = None
+
+    @field_validator("edited_answer", mode="before")
+    @classmethod
+    def normalize_visual_flow_empty_edit(cls, value: Any) -> Any:
+        """Activepieces renders an unset optional template value as an empty string."""
+        if isinstance(value, str) and not value.strip():
+            return None
+        return value
 
 
 class CommunityPublishRequest(StrictModel):

@@ -1,5 +1,79 @@
 # ABLESTACK TechFlow
 
+## Issue #69 Community 자동 답변과 해결 기반 Knowledge Base
+
+Community Assist는 이제 관리자 승인 없이 `TechFlow-Assistant`가 답변을 바로 공개합니다. 진행 중 답변은 전문 엔지니어가 플랫폼을 처음 접한 사용자에게 설명하듯 쉽고 친절하게 작성합니다. 가장 가능성이 높은 해결 방법과 근거 있는 CLI 명령·성공 기준을 먼저 제시하고, 해결되지 않을 때만 다음 대안과 필요한 결과를 요청합니다. 설명과 CLI를 분리하며, 명령은 바로 복사할 수 있는 `bash` 코드 블록으로 표시합니다. 최초 질문자뿐 아니라 토론에 참여한 다른 사람의 후속 댓글도 같은 대화를 진행합니다. 직전 답변의 점검 목록을 반복하면 게시하지 않습니다. 최초 질문자 또는 운영 설정에 등록된 Community 관리자가 Best Answer를 선택하면 선택된 해결 답변과 전체 대화를 종합해 `증상·원인·해결 방법·추가 고려사항·적용 버전`의 Knowledge Base 최종본을 별도로 게시하고, 해당 KB Post를 Discussion의 최종 솔루션으로 지정합니다.
+
+Chat은 더 이상 승인 채널이 아닙니다. 자동 답변 게시, Knowledge Base 게시·최종 솔루션 지정, 실패 상태와 Community 원문 링크를 담당자에게 알려 정상 동작을 관찰하는 채널입니다. 인프라를 변경하는 TechFlow Ops의 승인 정책은 이번 변경 대상이 아닙니다.
+
+- [Community 자동화 사용자 가이드](docs/guides/community-automation-user-guide.md)
+- [Community 자동화 사용자 가이드 PDF](output/pdf/techflow-community-automation-user-guide.pdf)
+- [질문자·관리자 Knowledge Base 승인 변경 보고서](docs/reports/community-requester-admin-kb-approval-validation.md)
+- [자동 게시·Knowledge Base 설계](docs/plans/issue-69-community-auto-publish-kb-design.md)
+- [아키텍처 결정 ADR-0010](docs/adr/0010-community-auto-publish-knowledge-base.md)
+- [배포·운영 Runbook](docs/runbooks/community-conversation.md)
+- [구현·검증 보고서](docs/reports/issue-69-community-auto-publish-kb-validation.md)
+- [완료 보고서 PDF](output/pdf/techflow-community-auto-publish-kb-report.pdf)
+- [발표자료 PDF](output/pdf/techflow-community-auto-publish-kb-presentation.pdf)
+- [발표자료 PPTX](output/presentation/techflow-community-auto-publish-kb.pptx)
+
+## Community Discussion #164 후속 답변 복구
+
+macOS에서 만든 로그 ZIP의 `__MACOSX`·AppleDouble 메타데이터 때문에 실제 로그까지 거부되고 Community Poller가 같은 구간에서 반복되던 장애를 AI Gateway 0.13.2에서 복구했습니다. 실제 로그는 보안 검사를 유지한 채 수집하고, 처리 불가 첨부는 안전한 안내로 전환하며, 성공 Post를 원자적으로 체크포인트해 하나의 실패가 전체 Community 큐를 막지 않습니다. AI 생성이 일시 실패한 후속 Turn도 같은 맥락에서 재시도할 수 있습니다.
+
+Discussion #164의 Post #358 로그와 보완 로그 Post #361은 같은 Conversation으로 분석합니다. 0.14.0부터 기존 승인 대기 초안도 대화체로 바꿔 자동 공개하고, 0.14.1부터는 `읽기 전용`, `변경 없음` 같은 내부 작업 분류를 사용자 답변에 표시하지 않습니다. 0.14.2부터 질문자가 해결 답변을 선택하면 별도의 Knowledge Base 최종본을 생성하고 그 문서를 최종 솔루션으로 지정합니다. 0.14.3부터 후속 답변은 해결책과 구체적인 CLI를 먼저 제시하고, 해결되지 않을 때만 다음 자료를 요청합니다. 0.14.4부터 모든 사람의 후속 댓글을 대화 입력으로 처리하고 CLI를 설명 아래의 독립된 코드 블록으로 표시합니다. 0.14.5부터 긴 대화의 반복 방지 재작성에서도 4,000자 입력 한도를 지키며 최신 질문과 재작성 지침을 함께 보존합니다. 0.14.8부터 최초 질문자뿐 아니라 운영 설정에 등록된 Community 관리자도 해결 답변을 선택해 Knowledge Base 생성을 완료할 수 있습니다. 0.14.9부터 인라인 이미지 참조가 Artifact 또는 명시적 경고 없이 누락되는 것을 차단하고, 실제 실패 기록이 없는 KB의 첨부 다운로드 실패 문구를 제거합니다.
+
+- [Discussion #164 장애 복구 보고서](docs/reports/discussion-164-community-followup-recovery.md)
+- [Community 지속 대화 운영 Runbook](docs/runbooks/community-conversation.md)
+- [장애 복구 보고서 PDF](output/pdf/techflow-community-discussion-164-recovery-report.pdf)
+- [장애 복구 프레젠테이션 PDF](output/pdf/techflow-community-discussion-164-recovery-presentation.pdf)
+- [장애 복구 프레젠테이션 PPTX](output/presentation/techflow-community-discussion-164-recovery.pptx)
+
+## Issues #66-#68 Community 지속 대화와 해결 상태 (Issue #69로 게시 정책 대체)
+
+Community Assist는 질문 한 건에 한 번 답하고 종료하지 않습니다. 질문자가 후속 댓글과 이미지, 로그 또는 로그 압축 파일을 추가하면 같은 Case의 대화 맥락으로 다시 분석합니다. 최초 질문자 또는 등록된 Community 관리자가 Best Answer로 해결 표시를 할 때까지 맥락을 유지하며, 해결 표시가 해제되면 같은 Case를 다시 엽니다. 답변 공개 정책은 Issue #69의 자동 게시 정책을 따릅니다.
+
+사용자 답변은 별도 제목 없이 `증상`부터 시작하고, 적용 버전은 `ABLESTACK Diplo`, `ABLESTACK Europa`로 표시합니다. Citation·Repository·Commit 등 내부 근거는 사용자 본문에 노출하지 않습니다.
+
+- [지속 대화·해결 상태 설계](docs/plans/issues-66-68-community-conversation-design.md)
+- [배포·운영 Runbook](docs/runbooks/community-conversation.md)
+- [구현·E2E 검증 보고서](docs/reports/issues-66-68-community-conversation-validation.md)
+- [완료 보고서 PDF](output/pdf/techflow-community-conversation-report.pdf)
+- [검토 프레젠테이션 PDF](output/pdf/techflow-community-conversation-presentation.pdf)
+- [검토 프레젠테이션 PPTX](output/presentation/techflow-community-conversation.pptx)
+
+## Issue #64 Community 원문 검토형 AI 답변 (Issue #69로 승인 정책 대체)
+
+Chat 길이 제한으로 전체 AI 답변을 검토할 수 없던 문제를 해결했습니다. 별도 일반 계정 `TechFlow-Assistant`가 Community에 전체 답변을 `승인 대기 중`으로 등록하고, Chat은 담당자에게 원문 검토 링크만 전달합니다. 관리자는 질문·답변·이미지·로그 압축 분석 내용을 Community에서 확인한 뒤 Flarum Approval로 공개를 결정합니다.
+
+답변은 ABLESTACK 문서, Diplo 현재 코드와 관련 제품 코드, Europa 미출시 Preview, 공식 libvirt/QEMU/KVM 자료 순서로 종합 검토합니다. 사용자는 근거 경로나 Citation 없이 `증상·원인·해결 방법·추가 고려사항·적용 버전` 형식의 쉬운 답변만 보며, 내부 근거는 담당자가 `근거 <Case ID>`를 명시할 때만 확인합니다.
+
+- [Community 원문 승인형 AI 답변 설계](docs/plans/issue-64-answer-clarity-community-review-design.md)
+- [배포·운영 Runbook](docs/runbooks/community-ai-review-post.md)
+- [구현·E2E 완료 보고서](docs/reports/issue-64-answer-clarity-validation.md)
+- [완료 보고서 PDF](output/pdf/techflow-issue-64-answer-clarity-report.pdf)
+- [승인용 프레젠테이션 PDF](output/pdf/techflow-issue-64-answer-clarity-presentation.pdf)
+- [승인용 프레젠테이션 PPTX](output/presentation/techflow-issue-64-answer-clarity.pptx)
+
+## Issue #22 Chat 기반 Community 승인
+
+Community AI 답변 검토를 Synology Chat의 `TechFlowAssist` Bot으로 일원화합니다. 담당자는 신규 글이 등록되면 선제 알림을 받고, `상세`에서 질문과 답변만 확인해 승인·수정 승인·반려할 수 있습니다. 내부 근거가 필요할 때만 `근거 <Case>`를 명시하며, 처리 이력과 대기 목록도 같은 대화에서 조회합니다. Activepieces는 승인·게시 순서를 실행하고 AI Gateway가 Bot 인증, Reviewer 권한, Draft Version, 상태·멱등성·감사를 강제합니다.
+
+일반 Chat 기술 질문과 Community 답변은 공개 문서·Diplo 현재 출시 코드·Wall·Cockpit·Genie·Kickstart·QEMU 도구를 종합 검토합니다. Europa는 미출시 프리뷰로만 비교하며, 현재 동작의 근거로 혼합하지 않습니다. 저장소·브랜치·커밋·파일·라인은 내부 승인 담당자에게만 Evidence Ledger로 제공하고 일반 사용자 답변에서는 제거합니다.
+
+- [Chat 기반 Community 승인 설계](docs/plans/issue-22-chat-community-approval-design.md)
+- [Chat 기반 Community 승인 운영 Runbook](docs/runbooks/chat-community-approval.md)
+- [Diplo 현재판·Europa 프리뷰 안전 답변 설계](docs/plans/issues-62-63-versioned-safe-answer-design.md)
+- [Versioned Safe Answer 운영 Runbook](docs/runbooks/versioned-safe-answer.md)
+- [Issue #62·#63 구현·검증 보고서](docs/reports/issues-62-63-versioned-safe-answer-validation.md)
+- [Versioned Safe Answer 보고서 PDF](output/pdf/techflow-versioned-safe-answer-report.pdf)
+- [Versioned Safe Answer 발표자료 PDF](output/pdf/techflow-versioned-safe-answer-presentation.pdf)
+- [Versioned Safe Answer 발표자료 PPTX](output/presentation/techflow-versioned-safe-answer.pptx)
+- [구현·검증 보고서](docs/reports/issue-22-chat-community-approval-validation.md)
+- [보고서 PDF](output/pdf/techflow-chat-community-approval-report.pdf)
+- [발표자료 PDF](output/pdf/techflow-chat-community-approval-presentation.pdf)
+- [발표자료 PPTX](output/presentation/techflow-chat-community-approval.pptx)
+
 ## Issue #21 Community 질문 답변·승인
 
 Flarum Community의 새 ABLESTACK 질문을 수집해 문서·소스코드·이미지·로그 근거 기반 초안을 만들고, 담당자가 현재 Draft Version을 승인한 경우에만 `AI-Assistant` 계정으로 게시합니다. Activepieces는 질문 수집·승인·게시 순서를 실행하고 AI Gateway가 상태·멱등성·감사와 승인 강제를 소유합니다.
