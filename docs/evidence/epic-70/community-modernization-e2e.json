@@ -1,0 +1,89 @@
+{
+  "epic": 70,
+  "validatedAt": "2026-08-21T09:43:44Z",
+  "decision": "GO",
+  "environment": {
+    "community": "https://community.ablecloud.io",
+    "flarumVersion": "1.8.18",
+    "staging": "WSL Ubuntu-24.04",
+    "production": "Ubuntu 24.04"
+  },
+  "repositoryValidation": {
+    "aiGatewayTests": {"passed": 153, "failed": 0},
+    "communityThemeAndOperationsTests": {"passed": 22, "failed": 0},
+    "issue74PullRequest": 81,
+    "issue74MergeCommit": "da674df1f4e3e0f5ac9f77834f6baa59eff8dc56",
+    "issue74State": "CLOSED"
+  },
+  "operationalE2E": {
+    "discussionId": "174",
+    "discussionUrl": "https://community.ablecloud.io/d/174",
+    "caseId": "328f88e4-a7dd-45e5-9a57-2fe664016f9f",
+    "authenticatedActorUserId": "1",
+    "assistantUserId": "40",
+    "firstPostId": "404",
+    "firstAnswerPostId": "405",
+    "followupPostId": "406",
+    "followupAnswerPostId": "407",
+    "knowledgeBasePostId": "408",
+    "finalBestAnswerPostId": "408",
+    "conversationState": "RESOLVED",
+    "contextVersion": 5,
+    "draftVersion": 2,
+    "attachments": [
+      {"uploadId": "152", "name": "techflow-e2e-console.png", "kind": "image", "synthetic": true},
+      {"uploadId": "153", "name": "techflow-e2e-console-logs.zip", "kind": "log-archive", "synthetic": true}
+    ],
+    "events": [
+      {"name": "community_answer_auto_published", "postId": "405", "durationMs": 84885.55, "result": "PASS"},
+      {"name": "community_chat_notification_sent", "phase": "first-answer", "attempt": 1, "result": "PASS"},
+      {"name": "community_answer_auto_published", "postId": "407", "durationMs": 92314.38, "result": "PASS"},
+      {"name": "community_chat_notification_sent", "phase": "follow-up", "attempt": 1, "result": "PASS"},
+      {"name": "community_knowledge_base_published", "postId": "408", "durationMs": 76334.83, "result": "PASS"},
+      {"name": "community_knowledge_base_solution_selected", "postId": "408", "result": "PASS"},
+      {"name": "community_knowledge_chat_notification_sent", "result": "PASS"}
+    ],
+    "answerQuality": {
+      "currentDocumentation": "EVIDENCE_FOUND",
+      "currentReleasedCloud": "EVIDENCE_FOUND",
+      "relatedProducts": "EVIDENCE_FOUND",
+      "europaPreview": "EVIDENCE_FOUND",
+      "officialPlatformReferences": "EVIDENCE_FOUND",
+      "userOutputContainsInternalCitations": false,
+      "kbStructure": ["증상", "원인", "해결 방법", "추가 고려사항", "적용 버전"],
+      "appliesTo": "ABLESTACK Diplo"
+    }
+  },
+  "browserValidation": {
+    "browser": "Codex in-app Browser",
+    "titleRendered": true,
+    "solvedStateRendered": true,
+    "imageRendered": true,
+    "logArchiveRendered": true,
+    "firstAnswerRendered": true,
+    "followupRendered": true,
+    "knowledgeBaseRendered": true,
+    "screenshot": "docs/evidence/epic-70/community-discussion-174.jpg"
+  },
+  "operations": {
+    "backupTimer": "active",
+    "monitorTimer": "active",
+    "services": "3/3 active",
+    "http": "200/200/200",
+    "backupIntegrity": true,
+    "isolatedRestore": {"tables": 32, "files": 11336, "users": 41, "discussions": 121, "posts": 325, "uploads": 115, "rtoSeconds": 11},
+    "securityHeaders": 5,
+    "worldWritableFiles": 0,
+    "healthyHeartbeatNotifications": 0
+  },
+  "protectedService": {
+    "name": "github-chat-v1",
+    "guardBefore": "passed",
+    "guardAfter": "passed",
+    "containerId": "bf5c76824dbf8b0513431e4d067043d0ff46fa82553512c41239e5f622804b4c",
+    "imageId": "sha256:ae33662eb227c9826563e94236272547f586437082f65d4d385837793e63670e",
+    "startedAt": "2026-08-10T07:05:05.417216322Z",
+    "health": "healthy",
+    "changed": false
+  }
+}
