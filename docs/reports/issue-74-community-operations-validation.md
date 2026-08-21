@@ -116,3 +116,9 @@ WSL 복구 Vault는 현재 운영 서버와 다른 장애 영역이지만 사용
 ## 완료 판정
 
 Issue #74의 자동 백업·암호화·보존·무결성, 격리 전체 복원, RPO/RTO 측정, 서비스·용량·AI 관측, Chat 경보, 권한·Header·Rate Limit·로그 마스킹, Runbook과 결과 자산 조건을 모두 충족했다.
+
+## PR #81 Rebase 후 재검증
+
+2026-08-21 최신 `main`의 Community UI 변경을 보존한 상태로 PR #81을 Rebase했다. 테마·운영 계약 시험 22건이 모두 통과했고, 운영 암호화 백업을 WSL의 별도 App Root와 별도 DB에 다시 복원했다. 재훈련 RTO는 11초였으며 32개 Table, 11,336개 File과 사용자 41명·토론 121건·게시물 325건·첨부 115건이 원본 Snapshot과 일치했다. 검증 후 임시 DB와 평문 App Root를 제거했다.
+
+운영에서는 Nginx·PHP-FPM·MariaDB 3개 서비스, Community 내부·공개·AI Health가 모두 정상이고 최신 Backup 무결성, smtp Mail Driver, 5개 보안 Header, World-writable File 0건을 다시 확인했다. Backup·Monitor Timer는 모두 `active`이며 활성 경보와 정상 상태 반복 알림은 0건이다. GitHub→Chat Webhook, Activepieces, AI Gateway·Poller에는 변경을 가하지 않았다.

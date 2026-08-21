@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0",
   "issue": 74,
-  "generatedAt": "2026-08-19T09:54:18.512347+00:00",
+  "generatedAt": "2026-08-21T09:25:33.021638+00:00",
   "artifactCount": 21,
   "artifacts": [
     {
@@ -26,8 +26,8 @@
     },
     {
       "path": "deploy/flarum/operations/community-monitor.sh",
-      "bytes": 8647,
-      "sha256": "e3c6c56db77df55d6350b6c4f099e8002291da14d24b8c7d3b6d3c3b46ee9b14"
+      "bytes": 9051,
+      "sha256": "03a9177cefe7eb1f745d3bda78dfe3cf55d6c4d347f8fa80fdf42a54d4feca83"
     },
     {
       "path": "deploy/flarum/operations/community-offsite-export.sh",
@@ -36,38 +36,38 @@
     },
     {
       "path": "deploy/flarum/operations/community-install.sh",
-      "bytes": 4029,
-      "sha256": "b14a9a85ffd7ced2cb698b7647a98247662e474e23c49f16f199aed23910f26e"
+      "bytes": 4045,
+      "sha256": "4067480c19bad9eaec9f5c24eca2a610c482e6c39510c8d88deba677f272e865"
     },
     {
       "path": "docs/adr/0010-community-backup-observability-security.md",
-      "bytes": 4251,
-      "sha256": "d19014890fc14bf3ac6d3b5bc19264209349de2c5700e076985ba609ba41b2d0"
+      "bytes": 4313,
+      "sha256": "f82de8d7857147b31afb14181260c0a33929d3f898474594c2fe38e484178833"
     },
     {
       "path": "docs/runbooks/community-backup-monitor-security.md",
-      "bytes": 5411,
-      "sha256": "ad785a0a9916b84e5b7469f02a147fc77eeb7979452dceeacfa5a3723a41bcc6"
+      "bytes": 5798,
+      "sha256": "2cbcb37b560d51011c75240065fa9d80b2431432577f819f46397bf5b73d7809"
     },
     {
       "path": "docs/reports/issue-74-community-operations-validation.md",
-      "bytes": 7136,
-      "sha256": "4cfb509d13d7e4c75dcdd94bfb9485cc7523377f1990d3c093a51ed273f68723"
+      "bytes": 8949,
+      "sha256": "cad2583a69e74de8cde60a90ed719c1312765098b60abbe567c4b09bdbaef833"
     },
     {
       "path": "docs/presentations/issue-74-community-operations.md",
-      "bytes": 1096,
-      "sha256": "f751c2be03468c0dbb18864dc7db91ce4d7c35b6254c257b32e9978521822a25"
+      "bytes": 1116,
+      "sha256": "9a596d9453150255d071c53e415e7d825b4332a8234e9bbfd5c6c1273040f196"
     },
     {
       "path": "docs/evidence/issue-74/community-operations-validation.json",
-      "bytes": 3400,
-      "sha256": "8b1f1b3d8945227b8b7afecfadae368d3db1cb563f26ad6f73b8ebc6b182c5c5"
+      "bytes": 5244,
+      "sha256": "0a099b80066f3428d41eaafa070a7c4e33bd2fcc1d3903033536b3d582b4453f"
     },
     {
       "path": "output/pdf/techflow-community-operations-report.pdf",
-      "bytes": 109572,
-      "sha256": "101a69ba928c389d1675d89842bb6ed178dc91203b0c2448a035eeae5efb71cc"
+      "bytes": 114224,
+      "sha256": "b55a6c38326d00614f6616bb43fc79239b118cc5236323db35ff4e8f165804d3"
     },
     {
       "path": "output/presentation/techflow-community-operations.pptx",
@@ -81,18 +81,18 @@
     },
     {
       "path": "tools/artifacts/issue-74/README.md",
-      "bytes": 703,
-      "sha256": "6e2be9e74c761d4fe097a4b257b077ee29111c890ab00dc83ef87684642facbe"
+      "bytes": 718,
+      "sha256": "4f492d8d661491f3981fe691aff281f3787245a5daa0c541b34df42ca2a95a0d"
     },
     {
       "path": "tools/artifacts/issue-74/build_report.py",
-      "bytes": 11206,
-      "sha256": "5552f78f736166920e2a974a79536c1abba66be6f6048efe927df6f685c66f22"
+      "bytes": 12594,
+      "sha256": "a67a4ab6846e31078c4ff78eac8accbb561ef2cf6c3e091c9014c1b1487d4256"
     },
     {
       "path": "tools/artifacts/issue-74/build_presentation.mjs",
-      "bytes": 13682,
-      "sha256": "d03a3ca75efecff24979eee5c0e5164d5abd9d70618f854b898d85e33ba6cb7d"
+      "bytes": 13886,
+      "sha256": "d8a8aa4d753c84d3ac79e8c62d3013bef4ab1c90fef0118c835940fc95f6bbfe"
     },
     {
       "path": "tools/artifacts/issue-74/build_presentation_pdf.py",

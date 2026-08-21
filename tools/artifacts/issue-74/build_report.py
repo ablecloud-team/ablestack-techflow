@@ -71,6 +71,7 @@ def footer(canvas, doc) -> None:
 
 
 data = json.loads(SOURCE.read_text(encoding="utf-8"))
+recheck = data["postRebaseValidation"]
 OUTPUT.parent.mkdir(parents=True, exist_ok=True)
 doc = BaseDocTemplate(str(OUTPUT), pagesize=A4, rightMargin=18*mm, leftMargin=18*mm, topMargin=16*mm, bottomMargin=17*mm,
                       title="TechFlow Issue #74 Community 백업·모니터링·보안 운영 강화 완료 보고서", author="ABLESTACK TechFlow")
@@ -80,8 +81,8 @@ story = [
     Spacer(1, 19*mm), para("ABLESTACK TECHFLOW · ISSUE #74", "meta"), Spacer(1, 8*mm),
     para("Community 백업·모니터링·보안\n운영 강화 완료 보고서", "title"), Spacer(1, 6*mm),
     para("운영 Flarum을 일관된 암호화 백업, 5분 관측, Chat 경보와 보안 정책으로 보호하고 WSL에서 전체 복원을 실증한 결과입니다.", "subtitle"),
-    Spacer(1, 17*mm), callout("GO - 운영 적용 완료 · UI Theme 활성 · 전체 복원 9초 · 데이터 차이 0건"),
-    Spacer(1, 8*mm), para("검증일 2026-08-19 · Flarum 1.8.18 · Ubuntu 24.04", "meta"), PageBreak(),
+    Spacer(1, 17*mm), callout("GO - 운영 적용 완료 · UI Theme 보존 · 복원 최초 9초 / 재검증 11초 · 데이터 차이 0건"),
+    Spacer(1, 8*mm), para("최종 재검증 2026-08-21 · Flarum 1.8.18 · Ubuntu 24.04", "meta"), PageBreak(),
 
     para("1. 완료 판단", "h1"),
     make_table([["항목","결과","판정"], ["자동 백업","매일 03:20 KST · 무결성 검증","PASS"],
@@ -137,6 +138,17 @@ story = [
     para("회사 승인 Object Storage 또는 Backup Vault에 같은 암호화 Archive를 복제하고 분기마다 전체 복원 훈련을 반복합니다."),
     para("근거 자산", "h2"),
     para("ADR: docs/adr/0010-community-backup-observability-security.md\nRunbook: docs/runbooks/community-backup-monitor-security.md\n완료 보고서: docs/reports/issue-74-community-operations-validation.md\n구조화 증적: docs/evidence/issue-74/community-operations-validation.json", "small"),
+    PageBreak(), para("8. PR #81 Rebase 후 재검증", "h1"),
+    para("최신 Community UI를 보존한 상태로 운영 자산을 main 위에 다시 적용하고 Repository, WSL 복원, 운영 Monitor와 보안을 반복 검증했습니다."),
+    make_table([["검증", "결과", "판정"],
+                ["테마·운영 계약", recheck["repositoryTests"], "PASS"],
+                ["WSL 전체 복원", f"{recheck['isolatedRestore']['tables']} Table · {recheck['isolatedRestore']['files']:,} File · {recheck['isolatedRestore']['rtoSeconds']}초", "PASS"],
+                ["핵심 데이터", "사용자 41 · 토론 121 · 게시물 325 · 첨부 115", "일치"],
+                ["운영 서비스·HTTP", "3/3 Active · 200/200/200", "PASS"],
+                ["Backup·보안", "Integrity true · Header 5 · World-writable 0", "PASS"],
+                ["Timer·경보", "Backup/Monitor active · Alert 0 · 정상 알림 0", "PASS"]], [51*mm, 86*mm, 37*mm]),
+    Spacer(1, 7*mm), callout("GitHub→Chat Webhook · Activepieces · AI Gateway/Poller 변경 없음", GREEN),
+    Spacer(1, 6*mm), para("재검증 후 임시 DB와 평문 복원 App Root를 제거했습니다. 운영 상태는 읽기·검증 경로만 확인했으며 기존 Community UI와 사용자 데이터는 변경하지 않았습니다."),
 ]
 doc.build(story)
 print(OUTPUT)

@@ -142,5 +142,34 @@
     "githubChatWebhookTouched": false,
     "activepiecesTouched": false,
     "aiGatewayTouched": false
+  },
+  "postRebaseValidation": {
+    "validatedAt": "2026-08-21T18:24:12+09:00",
+    "baseCommit": "5a40b5633b6b8a3d5ee9a3940d7212c7b653c78b",
+    "repositoryTests": "22/22 PASS",
+    "isolatedRestore": {
+      "result": "PASS",
+      "rtoSeconds": 11,
+      "tables": 32,
+      "files": 11336,
+      "users": 41,
+      "discussions": 121,
+      "posts": 325,
+      "fofUploadFiles": 115,
+      "plaintextRemovedAfterValidation": true
+    },
+    "production": {
+      "monitor": "PASS",
+      "servicesHealthy": "3/3",
+      "httpStatuses": [200, 200, 200],
+      "backupIntegrity": true,
+      "mailDriver": "smtp",
+      "activeAlerts": 0,
+      "backupTimer": "active",
+      "monitorTimer": "active",
+      "securityHeaders": 5,
+      "worldWritableFiles": 0,
+      "notificationSent": false
+    }
   }
 }
