@@ -1,0 +1,48 @@
+{
+  "schemaVersion": "1.0",
+  "epic": 70,
+  "generatedAt": "2026-08-21T09:52:16.278909+00:00",
+  "artifactCount": 8,
+  "artifacts": [
+    {
+      "path": "docs/evidence/epic-70/community-modernization-e2e.json",
+      "bytes": 3627,
+      "sha256": "fe311c812be492626b7a944f05057f86bd96215d0c89bb5f388bafb545a06a1d"
+    },
+    {
+      "path": "docs/evidence/epic-70/community-discussion-174.jpg",
+      "bytes": 74971,
+      "sha256": "2164f1cd8601d8df1fd5c0c37c18ca4119a2f5c0902f2b564df2270e71d8f34b"
+    },
+    {
+      "path": "docs/reports/epic-70-community-modernization-validation.md",
+      "bytes": 5023,
+      "sha256": "35d3ed67dccea00cb29a2c09dbbba9d8cdf7f67bf1db66475dd3c75383417acc"
+    },
+    {
+      "path": "docs/runbooks/community-platform-integrated-e2e.md",
+      "bytes": 2515,
+      "sha256": "be4ec5e2a81b9254754156acd4d2914f030b816c0448dd7f00ff1de3a9c2f784"
+    },
+    {
+      "path": "docs/presentations/epic-70-community-modernization.md",
+      "bytes": 754,
+      "sha256": "3ed5d06b97f43be8f14862b5342b76f5b1cb629a193773013ae512908b8b80ce"
+    },
+    {
+      "path": "output/pdf/techflow-community-modernization-report.pdf",
+      "bytes": 201545,
+      "sha256": "94e18f26f9aa84cf411c47e246ac57c6df0c4b5ef1a06c0a0aaf9aeb0d0a96e4"
+    },
+    {
+      "path": "output/presentation/techflow-community-modernization.pptx",
+      "bytes": 98413,
+      "sha256": "2f621b863c882bc0ece69c89c76b4bfb015243b77f5878e704dd0fed7e1e3e7b"
+    },
+    {
+      "path": "output/pdf/techflow-community-modernization-presentation.pdf",
+      "bytes": 390961,
+      "sha256": "4df146d915c5eb0619d6fe35f01acaea8296d1d942b68911023b2b3fea4275cc"
+    }
+  ]
+}
