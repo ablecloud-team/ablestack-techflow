@@ -94,53 +94,63 @@
     },
     {
       "path": "0009_chat_approval_down.sql",
-      "sha256": "552464f47205e7e3187d96bd1bae9045cb42dc225a722ed31df74663b615ab44",
-      "bytes": 45
+      "sha256": "37495ef7bf357beff233836832e548811e5be052dd35ce457aabc4c400aecad5",
+      "bytes": 46
     },
     {
       "path": "0009_chat_approval_up.sql",
-      "sha256": "d4fb59351aa8aa8b8c68f6a05d07b4a6653b5110bd8957d452c6c15324fa20ec",
-      "bytes": 479
+      "sha256": "a4e1c1ddfae1b9fab4449fa623038dd0c7dbc7fd564f12f089806656b2923547",
+      "bytes": 491
     },
     {
       "path": "0010_flarum_review_post_down.sql",
-      "sha256": "8f354ba0ba2359d940d019ef88285af783286e19f58ccdd853a6e879d54d2fe0",
-      "bytes": 166
+      "sha256": "7e593fc84ac149ef804028444e207d68061a557707678d17a03050142f4c5667",
+      "bytes": 171
     },
     {
       "path": "0010_flarum_review_post_up.sql",
-      "sha256": "fcc99bd87b3bb8c482a894023133338012ee4c9355600eb4ad3ba94b51593c93",
-      "bytes": 277
+      "sha256": "26a17fa1f5b90ed0af2783bd33bacc197b9cbbc42cd523dc138cbfd23af5cfb4",
+      "bytes": 284
     },
     {
       "path": "0011_community_conversation_down.sql",
-      "sha256": "1909739a55db579f385967bbd6530075ec99b2b1dfbb2b17624ca61638ff3e91",
-      "bytes": 625
+      "sha256": "7512e2db30355e66cbabd0a521dfd3241faed3ca82213aca3b8395625f0d419d",
+      "bytes": 640
     },
     {
       "path": "0011_community_conversation_up.sql",
-      "sha256": "9250b23c8aa4cd46fa02edf0fd06e9d7ed24f1e5375b273421c11d99d7b5af0c",
-      "bytes": 2681
+      "sha256": "745622ade0a12124dd25c8d2e209e471a79dd45a38db8bd6e2f56c0da1d0455a",
+      "bytes": 2737
     },
     {
       "path": "0012_community_auto_publish_kb_down.sql",
-      "sha256": "23f9a5ef32d5e81c1d0dae56873b2269f3b6ab4f5dcf789031b68990dab16529",
-      "bytes": 401
+      "sha256": "383790e90076009c3ea2cfcd84ec126f36b125995465a3ee165d5cae38a4d789",
+      "bytes": 410
     },
     {
       "path": "0012_community_auto_publish_kb_up.sql",
-      "sha256": "bc6d6f0c4feb10c9944af31180258b4dae50cc5c98c287c12011286ba1a823d9",
-      "bytes": 632
+      "sha256": "72c62eb574680e5751188709f7199552ef5ac4da257e838050ab17ff92ed5974",
+      "bytes": 643
     },
     {
       "path": "0013_community_kb_solution_down.sql",
-      "sha256": "0f9a64e597e3ccb7ed2d8083b024f8474412103c46942343a7b14a775904ea8e",
-      "bytes": 161
+      "sha256": "2459dc480417592199bd4a7b95e8148a8148e683a2e853fc14729e407f8aeced",
+      "bytes": 164
     },
     {
       "path": "0013_community_kb_solution_up.sql",
-      "sha256": "86d9005e92b1639036b4e7bc0db89032220fc9fbb8d4050150816ad3633177f0",
-      "bytes": 191
+      "sha256": "36e7f79a3517025ad9220290c329b55d95539ef8225b91bf4f070306ff0049cf",
+      "bytes": 194
+    },
+    {
+      "path": "0014_epic4_operations_down.sql",
+      "sha256": "47f0c3b610de8cfbaa9659eadeaf2fc6b62ef09ed88ce6cb3a8ede4f5eceafa8",
+      "bytes": 126
+    },
+    {
+      "path": "0014_epic4_operations_up.sql",
+      "sha256": "5e1e405875deea29208bc0baab897b1ad1e9d332cc8a217f9891862f1122f404",
+      "bytes": 2134
     }
   ]
 }

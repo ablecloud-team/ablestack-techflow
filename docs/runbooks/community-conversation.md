@@ -151,10 +151,18 @@ TECHFLOW_FLARUM_SOLUTION_SELECTOR_USER_ID_FILE=/run/secrets/flarum_solution_sele
 
 5. `TECHFLOW_FLARUM_SOLUTION_SELECTOR_USER_ID_SECRET_FILE`은 Best Answer 변경 권한이 있는 Flarum 관리자 ID 파일을 가리키게 한다. 시험 서버에서는 검증된 관리자 User 1을 사용한다.
 6. 추가 관리자가 있다면 `.env`의 `TECHFLOW_FLARUM_RESOLUTION_ADMIN_USER_IDS`에 Flarum User ID를 쉼표로 구분해 설정한다. 최종 KB selector User ID는 자동으로 관리자에 포함된다.
-7. Gateway와 Poller만 0.14.9 이미지로 교체한다.
-8. Health에서 `version=0.14.9`, `provider=openai`, `database=ready`, `vector=ready`를 확인한다.
-9. `.env`에 `TECHFLOW_OFFICIAL_WEB_SEARCH_ENABLED=true`를 설정하고 공식 도메인 제한 실호출을 검증한다.
-10. 기존 GitHub-to-Chat Event Gateway는 재시작·재배포·설정 변경하지 않는다.
+7. Windows와 Linux에서 동일한 LF 기반 소스 패키지를 생성한다. Windows Git의 전역 `core.autocrlf=true`가 `git archive` 결과를 CRLF로 변환할 수 있으므로 일반 `git archive`를 직접 사용하지 않는다.
+
+```bash
+python tools/package_ai_gateway.py \
+  --revision HEAD \
+  --output tmp/ai-gateway-release.tar.gz
+```
+
+8. 패키지 안의 모든 `*.sh`에 CRLF가 없는지 확인한 뒤 Gateway와 Poller만 0.14.10 이상 이미지로 교체한다. `/usr/bin/env: sh\r: No such file or directory`가 나타나면 새 이미지를 배포하지 말고 패키징 단계부터 다시 수행한다.
+9. Health에서 `version=0.14.10` 이상, `provider=openai`, `database=ready`, `vector=ready`를 확인한다.
+10. `.env`에 `TECHFLOW_OFFICIAL_WEB_SEARCH_ENABLED=true`를 설정하고 공식 도메인 제한 실호출을 검증한다.
+11. 기존 GitHub-to-Chat Event Gateway는 재시작·재배포·설정 변경하지 않는다.
 
 OpenAI 시험 환경에서는 재생성 명령에 `compose.openai.override.yml`을 반드시 포함한다. 기본 `compose.yml`만 사용하면 Gateway가 안전 기본값인 Mock Provider로 기동한다.
 

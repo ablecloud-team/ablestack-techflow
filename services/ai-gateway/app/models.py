@@ -263,3 +263,15 @@ class EvaluationRunCreateRequest(StrictModel):
 class EvaluationExecuteRequest(StrictModel):
     case_set_id: Literal["ABLESTACK_GOLDEN_V1"] = Field(default="ABLESTACK_GOLDEN_V1", alias="caseSetId")
     requested_by: Annotated[str, StringConstraints(pattern=r"^[A-Za-z0-9_.:@-]{3,128}$")] = Field(alias="requestedBy")
+
+
+class OperationFailureRequest(StrictModel):
+    subsystem: Literal["gateway", "community-poller", "flarum", "openai", "chat"]
+    operation: Annotated[str, StringConstraints(pattern=r"^[a-z0-9_.:-]{3,64}$")]
+    fingerprint: Annotated[str, StringConstraints(pattern=r"^[a-f0-9]{64}$")]
+    error_type: Annotated[str, StringConstraints(pattern=r"^[A-Za-z0-9_.:-]{3,128}$")] = Field(alias="errorType")
+    max_attempts: int = Field(default=3, ge=1, le=10, alias="maxAttempts")
+
+
+class OperationRecoveryRequest(StrictModel):
+    fingerprint: Annotated[str, StringConstraints(pattern=r"^[a-f0-9]{64}$")]

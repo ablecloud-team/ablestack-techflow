@@ -89,6 +89,7 @@ def parse_command(event: ChatEvent) -> tuple[str, list[str]]:
         "근거": "evidence", "evidence": "evidence",
         "승인": "approve", "approve": "approve", "반려": "reject", "reject": "reject",
         "수정": "edit", "edit": "edit", "이력": "history", "history": "history",
+        "해결": "resolve", "resolve": "resolve", "종료": "resolve",
     }
     return aliases.get(parts[0].lower(), "unknown"), parts[1:]
 
@@ -101,6 +102,7 @@ def help_text() -> str:
         "• 상세 <Discussion ID 또는 Case 앞 8자>\n"
         "• 근거 <Discussion ID 또는 Case 앞 8자> - 내부 검토 근거 표시\n"
         "• 이력 [Case]\n\n"
+        "일반 기술 질문을 바로 입력하면 같은 맥락으로 계속 상담합니다. 해결되면 `해결`을 입력하세요.\n\n"
         "답변은 승인 없이 Community에 바로 게시됩니다. Chat은 게시 상태를 확인하는 용도로 사용합니다."
     )
 

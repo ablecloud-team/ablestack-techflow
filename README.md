@@ -1,5 +1,16 @@
 # ABLESTACK TechFlow
 
+## Epic #4 사내 Assist 실증과 Epic #5 준비
+
+TechFlow AI Gateway 0.15.0은 Community 자동 답변과 사내 Chat 직접 기술지원을 해결 시점까지 연속 대화로 제공한다. 두 채널은 DOC, ABLESTACK Diplo 현재 코드, 관련 제품 코드와 ABLESTACK Europa Preview를 종합하며 이미지·로그·압축파일을 함께 분석한다. Community의 실패 Post는 성공 전까지 다시 처리하고, 같은 Event의 중복 답변은 멱등 키로 막는다. 정상 주기 알림은 보내지 않으며 최초 장애와 실제 복구만 Chat으로 알린다.
+
+- [Epic #4 완료 보고서](docs/reports/epic4-assist-validation.md)
+- [Chat·Community 서비스 연속성 Runbook](docs/runbooks/epic4-service-continuity.md)
+- [Epic #5 ABLESTACK Assist MVP 제품화 계획](docs/plans/epic5-assist-mvp-plan.md)
+- [Epic #4 완료 보고서 PDF](output/pdf/techflow-epic4-assist-validation-report.pdf)
+- [Epic #4 발표자료 PDF](output/pdf/techflow-epic4-assist-validation-presentation.pdf)
+- [Epic #4 발표자료 PPTX](output/presentation/techflow-epic4-assist-validation.pptx)
+
 ## Issue #69 Community 자동 답변과 해결 기반 Knowledge Base
 
 Community Assist는 이제 관리자 승인 없이 `TechFlow-Assistant`가 답변을 바로 공개합니다. 진행 중 답변은 전문 엔지니어가 플랫폼을 처음 접한 사용자에게 설명하듯 쉽고 친절하게 작성합니다. 가장 가능성이 높은 해결 방법과 근거 있는 CLI 명령·성공 기준을 먼저 제시하고, 해결되지 않을 때만 다음 대안과 필요한 결과를 요청합니다. 설명과 CLI를 분리하며, 명령은 바로 복사할 수 있는 `bash` 코드 블록으로 표시합니다. 최초 질문자뿐 아니라 토론에 참여한 다른 사람의 후속 댓글도 같은 대화를 진행합니다. 직전 답변의 점검 목록을 반복하면 게시하지 않습니다. 최초 질문자 또는 운영 설정에 등록된 Community 관리자가 Best Answer를 선택하면 선택된 해결 답변과 전체 대화를 종합해 `증상·원인·해결 방법·추가 고려사항·적용 버전`의 Knowledge Base 최종본을 별도로 게시하고, 해당 KB Post를 Discussion의 최종 솔루션으로 지정합니다.
@@ -55,9 +66,9 @@ Chat 길이 제한으로 전체 AI 답변을 검토할 수 없던 문제를 해�
 - [승인용 프레젠테이션 PDF](output/pdf/techflow-issue-64-answer-clarity-presentation.pdf)
 - [승인용 프레젠테이션 PPTX](output/presentation/techflow-issue-64-answer-clarity.pptx)
 
-## Issue #22 Chat 기반 Community 승인
+## Issue #22 Chat 기술지원과 Community 관찰
 
-Community AI 답변 검토를 Synology Chat의 `TechFlowAssist` Bot으로 일원화합니다. 담당자는 신규 글이 등록되면 선제 알림을 받고, `상세`에서 질문과 답변만 확인해 승인·수정 승인·반려할 수 있습니다. 내부 근거가 필요할 때만 `근거 <Case>`를 명시하며, 처리 이력과 대기 목록도 같은 대화에서 조회합니다. Activepieces는 승인·게시 순서를 실행하고 AI Gateway가 Bot 인증, Reviewer 권한, Draft Version, 상태·멱등성·감사를 강제합니다.
+Synology Chat의 `TechFlowAssist` Bot은 일반 기술 질문을 직접 받고 `해결` 입력 전까지 같은 맥락으로 상담합니다. Community 답변은 승인 없이 자동 게시하며, 담당자는 신규 글·처리 결과·추가 정보 요청·장애·복구를 Chat에서 관찰합니다. `상세`는 사용자용 답변과 원문 링크만 보여주고, 내부 근거가 필요할 때 권한 있는 담당자가 `근거 <Case>`를 명시합니다. 정상 상태의 주기적 성공 알림은 보내지 않습니다.
 
 일반 Chat 기술 질문과 Community 답변은 공개 문서·Diplo 현재 출시 코드·Wall·Cockpit·Genie·Kickstart·QEMU 도구를 종합 검토합니다. Europa는 미출시 프리뷰로만 비교하며, 현재 동작의 근거로 혼합하지 않습니다. 저장소·브랜치·커밋·파일·라인은 내부 승인 담당자에게만 Evidence Ledger로 제공하고 일반 사용자 답변에서는 제거합니다.
 

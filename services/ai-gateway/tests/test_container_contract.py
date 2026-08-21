@@ -2,6 +2,9 @@ from __future__ import annotations
 
 from pathlib import Path
 import re
+import subprocess
+import tarfile
+import tempfile
 import unittest
 
 
@@ -11,9 +14,47 @@ DOCKERFILE = (ROOT / "Dockerfile").read_text(encoding="utf-8")
 COMPOSE = (REPO / "deploy" / "compose" / "ai-gateway" / "compose.yml").read_text(encoding="utf-8")
 MAIN = (ROOT / "app" / "main.py").read_text(encoding="utf-8")
 ARTIFACTS = (ROOT / "app" / "artifacts.py").read_text(encoding="utf-8")
+GITATTRIBUTES = (REPO / ".gitattributes").read_text(encoding="utf-8")
 
 
 class ContainerContractTest(unittest.TestCase):
+    def test_shell_scripts_are_forced_to_lf(self) -> None:
+        self.assertIn("*.sh text eol=lf", GITATTRIBUTES)
+        shell_scripts = sorted(REPO.rglob("*.sh"))
+        self.assertGreater(len(shell_scripts), 0)
+        crlf_scripts = [str(path.relative_to(REPO)) for path in shell_scripts if b"\r\n" in path.read_bytes()]
+        self.assertEqual([], crlf_scripts, f"CRLF shell scripts: {crlf_scripts}")
+
+    def test_container_entrypoint_has_linux_shebang(self) -> None:
+        entrypoint = ROOT / "scripts" / "container-entrypoint.sh"
+        self.assertEqual(b"#!/usr/bin/env sh\n", entrypoint.read_bytes().splitlines(keepends=True)[0])
+
+    def test_release_archive_keeps_shell_scripts_lf_on_windows(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            archive_path = Path(temporary_directory) / "ai-gateway.tar.gz"
+            subprocess.run(
+                [
+                    "git",
+                    "-c",
+                    "core.autocrlf=false",
+                    "archive",
+                    "--format=tar.gz",
+                    f"--output={archive_path}",
+                    "HEAD:services/ai-gateway",
+                ],
+                cwd=REPO,
+                check=True,
+            )
+            with tarfile.open(archive_path, "r:gz") as archive:
+                scripts = [member for member in archive.getmembers() if member.isfile() and member.name.endswith(".sh")]
+                self.assertGreater(len(scripts), 0)
+                crlf_scripts = []
+                for member in scripts:
+                    extracted = archive.extractfile(member)
+                    if extracted is not None and b"\r\n" in extracted.read():
+                        crlf_scripts.append(member.name)
+                self.assertEqual([], crlf_scripts)
+
     def test_base_image_is_digest_pinned(self) -> None:
         self.assertRegex(DOCKERFILE.splitlines()[0], r"^FROM python:3\.12\.11-slim-bookworm@sha256:[0-9a-f]{64}$")
 

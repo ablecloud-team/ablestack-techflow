@@ -355,6 +355,22 @@ class CommunityPollerTests(unittest.TestCase):
         self.assertLessEqual(len(value), 80)
         self.assertNotIn("\n", value)
 
+    def test_operation_state_reports_only_failure_metadata_and_recovery_transition(self) -> None:
+        with patch.object(poll_flarum, "request_json", return_value={}) as request:
+            poll_flarum.report_operation_state(
+                "http://gateway:8090", recovered=False, error_type="TimeoutError",
+            )
+            failure = request.call_args.kwargs["data"]
+            self.assertEqual("community-poller", failure["subsystem"])
+            self.assertEqual("poll", failure["operation"])
+            self.assertEqual(64, len(failure["fingerprint"]))
+            self.assertNotIn("payload", failure)
+            self.assertNotIn("question", failure)
+        with patch.object(poll_flarum, "request_json", return_value={}) as request:
+            poll_flarum.report_operation_state("http://gateway:8090", recovered=True)
+            self.assertEqual({"fingerprint": poll_flarum.POLLER_FAILURE_FINGERPRINT}, request.call_args.kwargs["data"])
+            self.assertTrue(request.call_args.args[0].endswith("/v1/operations/recoveries"))
+
 
 if __name__ == "__main__":
     unittest.main()

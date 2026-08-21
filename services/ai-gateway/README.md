@@ -1,6 +1,12 @@
 # TechFlow AI Gateway
 
-## v0.14.10 구현 범위
+## v0.15.0 구현 범위
+
+- Chat 기술지원 대화를 사용자별 맥락으로 유지하고 `해결` 시점에 종료
+- Community 실패 이벤트의 체크포인트 보류·동일 Event ID 재처리·중복 답변 방지
+- 지수 백오프, Dead Letter, 수동 재처리와 최초 장애·최초 복구 Chat 알림
+- 원문을 포함하지 않는 Community·Chat·Source Coverage·첨부·장애 KPI
+- Windows와 Linux에서 동일한 LF 셸 스크립트 배포 패키지 생성 계약
 
 - Discussion #169에서 확인된 인라인 이미지 누락을 막기 위해 Flarum 첨부 참조 수와 Artifact 처리 결과를 대조합니다.
 - 첨부 참조는 Artifact ID 또는 명시적 처리 경고로 끝나야 하며, 실제 실패 기록이 없는 Knowledge Base에는 다운로드 실패 문구를 허용하지 않습니다.

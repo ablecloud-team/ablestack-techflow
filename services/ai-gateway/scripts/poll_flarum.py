@@ -24,6 +24,7 @@ DEFAULT_ATTACHMENT_TIMEOUT_SECONDS = 7200
 DEFAULT_ATTACHMENT_RETRIES = 2
 DOWNLOAD_CHUNK_BYTES = 1024 * 1024
 TRANSIENT_HTTP_STATUSES = {408, 425, 429, 500, 502, 503, 504}
+POLLER_FAILURE_FINGERPRINT = hashlib.sha256(b"community-poller:poll").hexdigest()
 
 
 class ContentParser(HTMLParser):
@@ -70,6 +71,28 @@ def request_json(
     headers.update(extra_headers or {})
     with urllib.request.urlopen(urllib.request.Request(url, data=body, headers=headers), timeout=30) as response:
         return json.loads(response.read().decode("utf-8"))
+
+
+def report_operation_state(gateway_url: str, *, recovered: bool, error_type: str = "PollFailed") -> None:
+    """Report a state transition without copying Community content or credentials."""
+    run_id = uuid4().hex
+    endpoint = "/v1/operations/recoveries" if recovered else "/v1/operations/failures"
+    payload = {"fingerprint": POLLER_FAILURE_FINGERPRINT}
+    if not recovered:
+        payload.update({
+            "subsystem": "community-poller", "operation": "poll",
+            "errorType": re.sub(r"[^A-Za-z0-9_.:-]", "_", error_type)[:128], "maxAttempts": 3,
+        })
+    try:
+        request_json(
+            gateway_url.rstrip("/") + endpoint, data=payload,
+            extra_headers={
+                "X-Correlation-Id": f"poll-state-{run_id[:16]}",
+                "Idempotency-Key": f"poll-state-{run_id}",
+            },
+        )
+    except Exception as exc:
+        print(json.dumps({"event": "operation_state_report_failed", "errorType": type(exc).__name__}), flush=True)
 
 
 def _bounded_env_int(name: str, default: int, minimum: int, maximum: int) -> int:
@@ -499,9 +522,18 @@ def main() -> int:
         try:
             result = run_once(state_path, bootstrap_only=first)
             print(json.dumps({"event": "community_poll_completed", **result}, separators=(",", ":")), flush=True)
+            report_operation_state(
+                os.getenv("TECHFLOW_GATEWAY_URL", "http://gateway:8090"),
+                recovered=not bool(result.get("failed", 0)),
+                error_type="CommunityPostDeliveryFailed",
+            )
             first = False
         except Exception as exc:
             print(json.dumps({"event": "community_poll_failed", "errorType": type(exc).__name__}), flush=True)
+            report_operation_state(
+                os.getenv("TECHFLOW_GATEWAY_URL", "http://gateway:8090"),
+                recovered=False, error_type=type(exc).__name__,
+            )
         if once:
             return 0
         time.sleep(interval)
