@@ -1,0 +1,17 @@
+[Unit]
+Description=ABLESTACK Community health, capacity and backup monitor
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+ExecStart=/usr/local/libexec/techflow-community-ops/community-monitor.sh
+PrivateTmp=true
+ProtectHome=true
+NoNewPrivileges=true
+SuccessExitStatus=2
+
+[Install]
+WantedBy=multi-user.target

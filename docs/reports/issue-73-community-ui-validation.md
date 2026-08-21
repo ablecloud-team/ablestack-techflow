@@ -6,6 +6,22 @@ ABLESTACK 브랜드 기반 Flarum 전용 테마 확장을 구현하고 WSL Ubunt
 
 Flarum Core, Vendor 원본, DB Schema와 Community 콘텐츠는 수정하지 않았다. 사용자 39명, 토의 117건, 게시물 305건, 콘텐츠와 첨부 해시는 전체 주기 전후 동일했다. 이후 승인된 후속 개선을 WSL과 운영 Community에 같은 독립 테마 확장으로 적용했으며 최종 판정은 **PASS**다.
 
+## 2026-08-19 운영 적용 후속 결과
+
+PR #80 병합 뒤 별도 운영 적용 승인을 받아 `ablecloud/community-theme`을 운영 Flarum 1.8.18에 설치·활성화했다. 적용 직전 암호화 일관성 백업 `community-20260819T093152Z`를 만들고 무결성을 통과한 후 테마만 배포했다.
+
+- 운영 홈·태그·상세 외부 HTTPS: 모두 200
+- Nginx·PHP-FPM·MariaDB: 모두 Active
+- Theme CSS 변수 `--ablecloud-brand-primary`: `#155eef`
+- 데스크톱·390x844 모바일 가로 넘침: 0px
+- 목록→상세 진입: 게시물 번호 제거, `scrollY=0`
+- 태그 절대 날짜 `00년 0월 0일`, 상대 날짜 유지
+- 글쓰기·태그 선택 대화상자와 검색: 정상
+- 운영 환경에서 확인된 Best Answer·OAuth 보안 화면 잔여 영문: Theme Locale 보완 후 직접 노출 0건
+- 연결 계정 Google·GitHub 아이콘: 28x28 내장 SVG Mask, WSL CSS·운영 실제 화면 깨짐 0건
+
+문제 발생 시 데이터 복원 없이 `ablecloud-community-theme`만 비활성화하고 Cache를 비우는 롤백 경계를 유지한다. 이 후속 적용 판정은 **운영 GO**다. 상세 구조화 증적은 `docs/evidence/issue-74/community-operations-validation.json`의 `uiTheme`에 기록했다.
+
 ## 완료 범위
 
 | 완료 조건 | 결과 |

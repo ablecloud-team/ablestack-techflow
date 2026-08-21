@@ -67,6 +67,12 @@ class CommunityThemeContractTests(unittest.TestCase):
     def test_korean_best_answer_labels(self) -> None:
         for text in ("해결됨", "해결 답변으로 선택", "해결 답변 선택 취소", "해결된 답변"):
             self.assertIn(text, self.less)
+        self.assertIn("answered_badge: 해결됨", self.korean)
+        self.assertIn("this_best_answer: 해결 답변으로 선택", self.korean)
+        self.assertIn("remove_best_answer: 해결 답변 선택 취소", self.korean)
+        self.assertIn("best_answer_button: 해결 답변", self.korean)
+        self.assertIn("label: 연결된 계정", self.korean)
+        self.assertIn("unlink: 계정 연결 해제", self.korean)
         self.assertIn("discussions_solutions_heading: 해결된 토론", self.korean)
         self.assertIn("해결된 토론 검색", self.korean)
 
@@ -114,6 +120,8 @@ class CommunityThemeContractTests(unittest.TestCase):
             ".fa-superscript",
             ".fa-terminal",
             ".fa-caret-square-right",
+            ".fa-google",
+            ".fa-github",
         ):
             with self.subTest(icon=icon):
                 self.assertIn(icon, self.less)
@@ -495,6 +503,8 @@ class CommunityThemeContractTests(unittest.TestCase):
         self.assertIn("right: 58px", self.less)
         self.assertIn(".SettingsPage fieldset", self.less)
         self.assertIn(".UserSecurityPage fieldset", self.less)
+        self.assertIn(".UserSecurityPage .LinkedAccountsList-item-icon", self.less)
+        self.assertIn("flex: 0 0 28px", self.less)
         self.assertIn("overflow-x: auto", self.less)
         self.assertIn(".Composer.active", self.less)
         self.assertIn(".Modal .FormControl:focus-visible", self.less)
@@ -535,6 +545,10 @@ class CommunityThemeContractTests(unittest.TestCase):
         self.assertIn("core.forum.user.security_link", locale_warmer)
         self.assertIn("flarum-likes.forum.user.likes_link", locale_warmer)
         self.assertIn("fof-upload.forum.buttons.media", locale_warmer)
+        self.assertIn("fof-best-answer.forum.this_best_answer", locale_warmer)
+        self.assertIn("fof-best-answer.forum.remove_best_answer", locale_warmer)
+        self.assertIn("fof-oauth.forum.user.settings.linked-account.label", locale_warmer)
+        self.assertIn("fof-oauth.forum.unlink", locale_warmer)
 
     def test_production_theme_update_is_path_scoped(self) -> None:
         updater = (
