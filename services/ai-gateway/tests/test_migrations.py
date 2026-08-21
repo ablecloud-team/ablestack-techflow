@@ -16,10 +16,12 @@ UP_0007 = (ROOT / "migrations" / "0007_reindex_fk_performance_up.sql").read_text
 UP_0011 = (ROOT / "migrations" / "0011_community_conversation_up.sql").read_text(encoding="utf-8")
 UP_0012 = (ROOT / "migrations" / "0012_community_auto_publish_kb_up.sql").read_text(encoding="utf-8")
 UP_0013 = (ROOT / "migrations" / "0013_community_kb_solution_up.sql").read_text(encoding="utf-8")
+UP_0014 = (ROOT / "migrations" / "0014_epic4_operations_up.sql").read_text(encoding="utf-8")
 DOWN_0001 = (ROOT / "migrations" / "0001_schema_down.sql").read_text(encoding="utf-8")
 DOWN_0002 = (ROOT / "migrations" / "0002_source_registry_down.sql").read_text(encoding="utf-8")
 DOWN_0003 = (ROOT / "migrations" / "0003_source_mirror_down.sql").read_text(encoding="utf-8")
 DOWN_0004 = (ROOT / "migrations" / "0004_source_mirror_policy_down.sql").read_text(encoding="utf-8")
+DOWN_0014 = (ROOT / "migrations" / "0014_epic4_operations_down.sql").read_text(encoding="utf-8")
 UP = UP_0001 + "\n" + UP_0002 + "\n" + UP_0003 + "\n" + UP_0004 + "\n" + UP_0005 + "\n" + UP_0006 + "\n" + UP_0007
 DOWN = DOWN_0004 + "\n" + DOWN_0003 + "\n" + DOWN_0002 + "\n" + DOWN_0001
 BOOTSTRAP = (ROOT / "migrations" / "0000_extensions_roles_up.sql").read_text(encoding="utf-8")
@@ -120,6 +122,14 @@ class MigrationContractTest(unittest.TestCase):
     def test_knowledge_base_final_solution_selection_is_audited(self) -> None:
         self.assertIn("knowledge_base_solution_selected_at", UP_0013)
         self.assertIn("knowledge_base_solution_selected_by_user_id", UP_0013)
+
+    def test_epic4_chat_context_and_failure_queue_are_persistent(self) -> None:
+        for table in ("chat_assist_conversation", "chat_assist_turn", "operation_failure"):
+            self.assertIn(f"CREATE TABLE IF NOT EXISTS {table}", UP_0014)
+            self.assertIn(f"DROP TABLE IF EXISTS {table}", DOWN_0014)
+        self.assertIn("UNIQUE (user_id, context_version, post_id, role)", UP_0014)
+        self.assertIn("fingerprint char(64) NOT NULL UNIQUE", UP_0014)
+        self.assertIn("DEAD_LETTER", UP_0014)
 
 
 if __name__ == "__main__":

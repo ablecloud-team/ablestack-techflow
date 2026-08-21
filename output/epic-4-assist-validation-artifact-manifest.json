@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "epic": 4,
+  "release": "0.15.0",
+  "artifactCount": 7,
+  "artifacts": [
+    {
+      "path": "docs/reports/epic4-assist-validation.md",
+      "bytes": 4361,
+      "sha256": "dccde73553fc92d1d7041d592a1cec84f231e0c15f669bb0a58bd45eafdbaa2c"
+    },
+    {
+      "path": "docs/runbooks/epic4-service-continuity.md",
+      "bytes": 5267,
+      "sha256": "beef420e62a06bee1a0d795b2fa5075243894e5f48464020f3db4f65234d3c85"
+    },
+    {
+      "path": "docs/plans/epic5-assist-mvp-plan.md",
+      "bytes": 4209,
+      "sha256": "9f67f79a1d4147612c9d32f5a8b6668442679539333d0aa48fdc966de4477cd0"
+    },
+    {
+      "path": "docs/evidence/epic-4/production-e2e.json",
+      "bytes": 2890,
+      "sha256": "4cebebeeb89554a2965fb910c20b437cdad01bb7198279bbb117b7754502e3a8"
+    },
+    {
+      "path": "output/pdf/techflow-epic4-assist-validation-report.pdf",
+      "bytes": 101517,
+      "sha256": "1f942a32b7ebc89fedd43458a59a50cf5d58e0f23ffaa5bfde2107bc2369ca73"
+    },
+    {
+      "path": "output/pdf/techflow-epic4-assist-validation-presentation.pdf",
+      "bytes": 218918,
+      "sha256": "01e32b604ef42d2bff9526d8c90c84351d639420c1f118037bb1e1c507559fd5"
+    },
+    {
+      "path": "output/presentation/techflow-epic4-assist-validation.pptx",
+      "bytes": 33182,
+      "sha256": "50d3b9d82e8059b69995cc111d6a1f83aaa8ea006b4d9deb2115d2bb005b97d2"
+    }
+  ]
+}

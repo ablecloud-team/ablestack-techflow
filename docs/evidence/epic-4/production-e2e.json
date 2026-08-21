@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-08-21T12:58:00Z",
+  "release": {
+    "version": "0.15.0",
+    "image": "techflow/ai-gateway:epic4-0.15.0-1e42010",
+    "commit": "1e42010",
+    "backupRoot": "/home/ablecloud/techflow-backups/epic4-20260821T123826Z"
+  },
+  "localValidation": {
+    "testsPassed": 271,
+    "shellScriptsWithCrlfInReleaseArchive": 0,
+    "openApiOperations": 39
+  },
+  "runtime": {
+    "gateway": {
+      "state": "healthy",
+      "startedAt": "2026-08-21T12:42:16.326943149Z"
+    },
+    "communityPoller": {
+      "state": "running",
+      "startedAt": "2026-08-21T12:42:16.369492127Z",
+      "completedCyclesObserved": 67,
+      "startupFailuresObserved": 1,
+      "recoveredWithoutCheckpointLoss": true
+    },
+    "publicEndpoints": {
+      "community": 200,
+      "chat": 200,
+      "activepieces": 200
+    }
+  },
+  "chatE2E": {
+    "firstAnswerLength": 1484,
+    "secondAnswerLength": 1428,
+    "firstAnswerSha256": "9eb2ab4dbfdef9ff0dbdc09ff66b0bf12ceeade7e20a419f303e1f7ad8304c1d",
+    "secondAnswerSha256": "d58c89b6288b7cff8936492fafec032e334cf1950d42d034f1a0dd5d47fb01c9",
+    "contextStateAfterResolve": "RESOLVED",
+    "contextVersion": 1,
+    "turns": 4
+  },
+  "communityE2E": {
+    "discussionId": "175",
+    "caseId": "a506515a-3be5-4d4c-887f-720b7e60fa29",
+    "publishedPostId": "411",
+    "publishedContentLength": 4328,
+    "internalEvidenceExposed": false,
+    "testDiscussionDeleted": true
+  },
+  "continuityE2E": {
+    "failureNotificationCount": 1,
+    "recoveryNotificationCount": 1,
+    "periodicSuccessNotificationCount": 0,
+    "notificationFailures": 0,
+    "finalFailureState": "RECOVERED"
+  },
+  "kpi": {
+    "communityCases": 2,
+    "communityPublished": 2,
+    "chatConversations": 1,
+    "chatResolved": 1,
+    "operationFailures": 1,
+    "operationRecovered": 1,
+    "rawContentIncluded": false,
+    "internalEvidenceExposed": false
+  },
+  "protectedServices": [
+    {
+      "name": "techflow-activepieces-event-gateway-1",
+      "containerId": "bf5c76824dbf8b0513431e4d067043d0ff46fa82553512c41239e5f622804b4c",
+      "imageId": "sha256:ae33662eb227c9826563e94236272547f586437082f65d4d385837793e63670e",
+      "startedAt": "2026-08-10T07:05:05.417216322Z",
+      "unchanged": true
+    },
+    {
+      "name": "techflow-activepieces-app-1",
+      "containerId": "80a652dc8961adc8594aafac216270106285ec4d8175bee95e3dbcfd95755dac",
+      "imageId": "sha256:208517c4f0d798a477a0c594bf432dd0f4918433f4b6f5b5f188a6e10e638c6c",
+      "startedAt": "2026-08-11T02:31:05.014355437Z",
+      "unchanged": true
+    },
+    {
+      "name": "techflow-activepieces-worker-1",
+      "containerId": "d50ee9a92d9d8337a5253f39644c0a6c2c5473e3c5203af277611f1da2887879",
+      "imageId": "sha256:208517c4f0d798a477a0c594bf432dd0f4918433f4b6f5b5f188a6e10e638c6c",
+      "startedAt": "2026-08-11T02:32:57.161850348Z",
+      "unchanged": true
+    }
+  ]
+}

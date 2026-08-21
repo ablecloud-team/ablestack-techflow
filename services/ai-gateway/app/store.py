@@ -104,6 +104,18 @@ class Store(Protocol):
     def mark_community_knowledge_solution_selected(self, case_id: UUID, selection: dict[str, Any], idempotency_key: str) -> dict[str, Any]: ...
     def upsert_chat_reviewer(self, user_id: str, username: str) -> dict[str, Any]: ...
     def list_chat_reviewers(self) -> list[dict[str, Any]]: ...
+    def open_chat_conversation(self, user_id: str, username: str) -> dict[str, Any]: ...
+    def list_chat_turns(self, user_id: str, limit: int = 12) -> list[dict[str, Any]]: ...
+    def record_chat_turn(self, user_id: str, post_id: str, role: str, content: str) -> dict[str, Any]: ...
+    def resolve_chat_conversation(self, user_id: str) -> dict[str, Any]: ...
+    def record_operation_failure(
+        self, subsystem: str, operation: str, fingerprint: str, error_type: str,
+        correlation_id: str, max_attempts: int = 3,
+    ) -> dict[str, Any]: ...
+    def recover_operation_failure(self, fingerprint: str, correlation_id: str) -> dict[str, Any]: ...
+    def retry_operation_failure(self, failure_id: UUID, correlation_id: str) -> dict[str, Any]: ...
+    def list_operation_failures(self, states: tuple[str, ...] | None = None, limit: int = 50) -> list[dict[str, Any]]: ...
+    def operations_kpis(self, window_hours: int = 24) -> dict[str, Any]: ...
 
 
 def utc_now() -> datetime:
@@ -135,6 +147,10 @@ class MemoryStore:
         self._community_responses: dict[UUID, list[dict[str, Any]]] = {}
         self._community_events: list[dict[str, Any]] = []
         self._chat_reviewers: dict[str, dict[str, Any]] = {}
+        self._chat_conversations: dict[str, dict[str, Any]] = {}
+        self._chat_turns: dict[str, list[dict[str, Any]]] = {}
+        self._operation_failures: dict[UUID, dict[str, Any]] = {}
+        self._operation_failure_by_fingerprint: dict[str, UUID] = {}
         self._idempotency: dict[tuple[str, str], dict[str, Any]] = {}
         from .source_registry import list_repositories, mirror_key
 
@@ -1236,3 +1252,170 @@ class MemoryStore:
     def list_chat_reviewers(self) -> list[dict[str, Any]]:
         with self._lock:
             return deepcopy(sorted(self._chat_reviewers.values(), key=lambda item: item["username"]))
+
+    def open_chat_conversation(self, user_id: str, username: str) -> dict[str, Any]:
+        with self._lock:
+            now = utc_now()
+            value = self._chat_conversations.get(user_id)
+            if value is None:
+                value = {
+                    "userId": user_id, "username": username, "state": "ACTIVE", "contextVersion": 1,
+                    "openedAt": now, "resolvedAt": None, "updatedAt": now,
+                }
+                self._chat_conversations[user_id] = value
+            elif value["state"] == "RESOLVED":
+                value.update(
+                    username=username, state="ACTIVE", contextVersion=value["contextVersion"] + 1,
+                    openedAt=now, resolvedAt=None, updatedAt=now,
+                )
+            else:
+                value.update(username=username, updatedAt=now)
+            return deepcopy(value)
+
+    def list_chat_turns(self, user_id: str, limit: int = 12) -> list[dict[str, Any]]:
+        with self._lock:
+            conversation = self._chat_conversations.get(user_id)
+            if not conversation or conversation["state"] != "ACTIVE":
+                return []
+            version = conversation["contextVersion"]
+            rows = [item for item in self._chat_turns.get(user_id, []) if item["contextVersion"] == version]
+            return deepcopy(rows[-max(1, min(limit, 50)):])
+
+    def record_chat_turn(self, user_id: str, post_id: str, role: str, content: str) -> dict[str, Any]:
+        with self._lock:
+            conversation = self._chat_conversations.get(user_id)
+            if not conversation or conversation["state"] != "ACTIVE":
+                raise InvalidStateError("active Chat conversation is required")
+            version = conversation["contextVersion"]
+            rows = self._chat_turns.setdefault(user_id, [])
+            repeated = next((item for item in rows if item["contextVersion"] == version
+                             and item["postId"] == post_id and item["role"] == role), None)
+            if repeated:
+                return deepcopy(repeated)
+            import hashlib
+            now = utc_now()
+            value = {
+                "turnId": uuid4(), "userId": user_id, "contextVersion": version, "postId": post_id,
+                "role": role, "content": content[:16000],
+                "contentSha256": hashlib.sha256(content.encode("utf-8")).hexdigest(), "createdAt": now,
+            }
+            rows.append(value)
+            conversation["updatedAt"] = now
+            return deepcopy(value)
+
+    def resolve_chat_conversation(self, user_id: str) -> dict[str, Any]:
+        with self._lock:
+            value = self._chat_conversations.get(user_id)
+            if not value:
+                raise NotFoundError("active Chat conversation not found")
+            if value["state"] != "RESOLVED":
+                now = utc_now()
+                value.update(state="RESOLVED", resolvedAt=now, updatedAt=now)
+            return deepcopy(value)
+
+    @staticmethod
+    def _failure_payload(value: dict[str, Any]) -> dict[str, Any]:
+        return deepcopy(value)
+
+    def record_operation_failure(
+        self, subsystem: str, operation: str, fingerprint: str, error_type: str,
+        correlation_id: str, max_attempts: int = 3,
+    ) -> dict[str, Any]:
+        with self._lock:
+            now = utc_now()
+            failure_id = self._operation_failure_by_fingerprint.get(fingerprint)
+            notify = False
+            if failure_id and self._operation_failures[failure_id]["state"] != "RECOVERED":
+                value = self._operation_failures[failure_id]
+                value["attemptCount"] += 1
+                value.update(
+                    state="DEAD_LETTER" if value["attemptCount"] >= value["maxAttempts"] else "OPEN",
+                    lastErrorType=error_type, correlationId=correlation_id, lastFailedAt=now, updatedAt=now,
+                    nextRetryAt=None if value["attemptCount"] >= value["maxAttempts"]
+                    else now + timedelta(seconds=2 ** min(value["attemptCount"] - 1, 8)),
+                )
+            else:
+                failure_id = uuid4()
+                value = {
+                    "failureId": failure_id, "subsystem": subsystem, "operation": operation,
+                    "fingerprint": fingerprint, "state": "OPEN", "attemptCount": 1,
+                    "maxAttempts": max_attempts, "lastErrorType": error_type,
+                    "correlationId": correlation_id, "nextRetryAt": now + timedelta(seconds=1),
+                    "failureNotifiedAt": now, "recoveryNotifiedAt": None, "firstFailedAt": now,
+                    "lastFailedAt": now, "recoveredAt": None, "updatedAt": now,
+                }
+                self._operation_failures[failure_id] = value
+                self._operation_failure_by_fingerprint[fingerprint] = failure_id
+                notify = True
+            return {"failure": self._failure_payload(value), "notifyFailure": notify}
+
+    def recover_operation_failure(self, fingerprint: str, correlation_id: str) -> dict[str, Any]:
+        with self._lock:
+            failure_id = self._operation_failure_by_fingerprint.get(fingerprint)
+            if not failure_id:
+                return {"failure": None, "notifyRecovery": False}
+            value = self._operation_failures[failure_id]
+            if value["state"] == "RECOVERED":
+                return {"failure": self._failure_payload(value), "notifyRecovery": False}
+            now = utc_now()
+            value.update(
+                state="RECOVERED", correlationId=correlation_id, nextRetryAt=None,
+                recoveryNotifiedAt=now, recoveredAt=now, updatedAt=now,
+            )
+            return {"failure": self._failure_payload(value), "notifyRecovery": True}
+
+    def retry_operation_failure(self, failure_id: UUID, correlation_id: str) -> dict[str, Any]:
+        with self._lock:
+            value = self._operation_failures.get(failure_id)
+            if not value:
+                raise NotFoundError("operation failure not found")
+            if value["state"] == "RECOVERED":
+                raise InvalidStateError("recovered operation cannot be retried")
+            now = utc_now()
+            value.update(state="RETRYING", correlationId=correlation_id, nextRetryAt=now, updatedAt=now)
+            return self._failure_payload(value)
+
+    def list_operation_failures(self, states: tuple[str, ...] | None = None, limit: int = 50) -> list[dict[str, Any]]:
+        with self._lock:
+            rows = list(self._operation_failures.values())
+            if states:
+                rows = [item for item in rows if item["state"] in states]
+            rows.sort(key=lambda item: item["updatedAt"], reverse=True)
+            return deepcopy(rows[:max(1, min(limit, 200))])
+
+    def operations_kpis(self, window_hours: int = 24) -> dict[str, Any]:
+        with self._lock:
+            cutoff = utc_now() - timedelta(hours=max(1, min(window_hours, 720)))
+            community = [item for item in self._community_cases.values() if item["updatedAt"] >= cutoff]
+            failures = [item for item in self._operation_failures.values() if item["updatedAt"] >= cutoff]
+            conversations = [item for item in self._chat_conversations.values() if item["updatedAt"] >= cutoff]
+            turns = [item for rows in self._chat_turns.values() for item in rows if item["createdAt"] >= cutoff]
+            ledgers = [item.get("evidenceLedger") or {} for item in community]
+            coverage = [entry for ledger in ledgers for entry in ledger.get("coverage", [])]
+            found = {entry.get("sourceProfileId") for entry in coverage if entry.get("state") == "EVIDENCE_FOUND"}
+            def pct(numerator: int, denominator: int) -> float:
+                return round(100.0 * numerator / denominator, 1) if denominator else 100.0
+            return {
+                "windowHours": window_hours,
+                "community": {
+                    "cases": len(community), "published": sum(item["state"] == "PUBLISHED" for item in community),
+                    "resolved": sum(item.get("conversationState") == "RESOLVED" for item in community),
+                    "needsInformation": sum(item.get("answerState") == "NEEDS_INFORMATION" for item in community),
+                    "publicationRatePct": pct(sum(item["state"] == "PUBLISHED" for item in community), len(community)),
+                },
+                "chat": {
+                    "conversations": len(conversations), "active": sum(item["state"] == "ACTIVE" for item in conversations),
+                    "resolved": sum(item["state"] == "RESOLVED" for item in conversations), "turns": len(turns),
+                },
+                "operations": {
+                    "failures": len(failures), "open": sum(item["state"] == "OPEN" for item in failures),
+                    "deadLetter": sum(item["state"] == "DEAD_LETTER" for item in failures),
+                    "recovered": sum(item["state"] == "RECOVERED" for item in failures),
+                },
+                "sourceCoverage": {
+                    "doc": "SHARED_DOCS" in found, "diplo": "CLOUD_DIPLO" in found,
+                    "europaPreview": "CLOUD_EUROPA" in found,
+                    "otherCodeProfiles": len(found - {"SHARED_DOCS", "CLOUD_DIPLO", "CLOUD_EUROPA"}),
+                },
+                "privacy": {"rawContentIncluded": False, "internalEvidenceExposed": False},
+            }

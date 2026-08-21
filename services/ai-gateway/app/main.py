@@ -33,6 +33,8 @@ from .models import (
     IngestionCreateRequest,
     JobCompletionRequest,
     JobRunRequest,
+    OperationFailureRequest,
+    OperationRecoveryRequest,
     QueryRequest,
     SourceApprovalRequest,
     SourceCreateRequest,
@@ -1124,19 +1126,45 @@ def create_app(
                 return JSONResponse(content={
                     "text": "Community 답변은 이제 승인 없이 자동 게시됩니다. 상세 또는 이력 명령으로 게시 상태를 확인해 주세요."
                 })
+            if command == "resolve":
+                runtime_store.resolve_chat_conversation(event.user_id)
+                return JSONResponse(content={
+                    "text": "이 기술지원 대화를 해결된 상태로 마쳤습니다. 다음 질문은 새로운 맥락으로 시작합니다."
+                })
             if command == "unknown" and event.text:
-                assist_request = ComprehensiveQueryRequest(
-                    queryId=uuid4(), question=event.text, actorId=f"chat:{event.user_id}",
+                runtime_store.open_chat_conversation(event.user_id, event.username)
+                previous = runtime_store.list_chat_turns(event.user_id, 12)
+                cached = next((item for item in previous if item["postId"] == event.post_id
+                               and item["role"] == "ASSISTANT"), None)
+                if cached:
+                    return JSONResponse(content={"text": cached["content"][:7000]})
+                transcript = "\n".join(
+                    f"{'사용자' if item['role'] == 'USER' else '전문 엔지니어'}: {item['content']}"
+                    for item in previous
+                )
+                current_question = event.text
+                contextual_question = (
+                    "같은 사용자의 기술지원 대화입니다. 이전 맥락을 유지하되 현재 질문을 우선하고, "
+                    "DOC, ABLESTACK Diplo 현재 코드, 관련 제품 코드 전체, ABLESTACK Europa 프리뷰를 순서대로 "
+                    "검토해 친절하고 쉬운 말로 답하세요. 정보가 부족하면 다음에 필요한 자료를 구체적으로 요청하세요.\n\n"
+                    + (f"이전 대화:\n{transcript}\n\n" if transcript else "")
+                    + f"현재 질문:\n{current_question}"
+                )[:16000]
+                runtime_store.record_chat_turn(event.user_id, event.post_id, "USER", current_question)
+                assist_request = ComprehensiveSynthesisRequest(
+                    queryId=uuid4(), question=contextual_question, actorId=f"chat:{event.user_id}",
                     productVersion="diplo", locale="ko-KR", classification="D0",
                 )
                 result = await asyncio.to_thread(_query_comprehensive, assist_request, request.state.correlation_id)
                 answer = format_public_answer(result)
-                if answer:
-                    return JSONResponse(content={"text": answer[:7000]})
-                if result.get("state") == "NEEDS_INFORMATION":
+                if not answer and result.get("state") == "NEEDS_INFORMATION":
                     needed = result.get("questionsNeeded") or (result.get("plan") or {}).get("questionsNeeded") or []
-                    return JSONResponse(content={"text": ("추가 정보가 필요합니다.\n" + "\n".join(f"• {item}" for item in needed))[:7000]})
-                return JSONResponse(content={"text": "검토 근거가 충분하지 않아 답변을 보류했습니다. 로그나 화면 정보를 함께 제공해 주세요."})
+                    answer = "추가 정보가 필요합니다.\n" + "\n".join(f"• {item}" for item in needed)
+                if not answer:
+                    answer = "검토 근거가 충분하지 않아 답변을 보류했습니다. 관련 로그나 화면 정보를 함께 보내 주세요."
+                answer = (answer + "\n\n추가 질문을 이어서 보내 주세요. 해결되면 `해결`이라고 입력해 주세요.")[:7000]
+                runtime_store.record_chat_turn(event.user_id, event.post_id, "ASSISTANT", answer)
+                return JSONResponse(content={"text": answer})
             return JSONResponse(content={"text": "알 수 없는 명령입니다.\n\n" + help_text()})
         except InvalidBoundaryError:
             return JSONResponse(status_code=403, content={"text": "요청 인증 또는 입력 검증에 실패했습니다."})
@@ -1144,6 +1172,76 @@ def create_app(
             return JSONResponse(status_code=exc.http_status, content={"text": "Case 상태가 변경됐거나 찾을 수 없습니다."})
         except (json.JSONDecodeError, UnicodeDecodeError):
             return JSONResponse(status_code=400, content={"text": "Chat 요청 형식을 해석할 수 없습니다."})
+
+    def _notify_operation_state(result: dict[str, Any], *, recovered: bool = False) -> None:
+        failure = result.get("failure")
+        notify = result.get("notifyRecovery" if recovered else "notifyFailure")
+        if not failure or not notify or not runtime_settings.chat_bot_enabled:
+            return
+        reviewers = [item["userId"] for item in runtime_store.list_chat_reviewers()]
+        if not reviewers:
+            return
+        state_text = "복구" if recovered else "장애"
+        runtime_chat_bot.send(reviewers, {"text": (
+            f"[TechFlow {state_text}] {failure['subsystem']} · {failure['operation']}\n"
+            f"상태 {failure['state']} · 시도 {failure['attemptCount']}/{failure['maxAttempts']}\n"
+            f"Correlation {failure['correlationId']}"
+        )})
+
+    @application.post("/v1/operations/failures", response_model=Envelope, operation_id="recordOperationFailure")
+    def record_operation_failure(
+        payload: OperationFailureRequest,
+        correlation_id: Annotated[str, Depends(_correlation_id)],
+        idempotency_key: Annotated[str, Depends(_idempotency_key)],
+    ) -> Envelope:
+        del idempotency_key
+        result = runtime_store.record_operation_failure(
+            payload.subsystem, payload.operation, payload.fingerprint, payload.error_type,
+            correlation_id, payload.max_attempts,
+        )
+        try:
+            _notify_operation_state(result)
+        except Exception as exc:
+            _json_log("operation_failure_notification_failed", errorType=type(exc).__name__)
+        return _envelope(result, correlation_id)
+
+    @application.post("/v1/operations/recoveries", response_model=Envelope, operation_id="recoverOperationFailure")
+    def recover_operation_failure(
+        payload: OperationRecoveryRequest,
+        correlation_id: Annotated[str, Depends(_correlation_id)],
+        idempotency_key: Annotated[str, Depends(_idempotency_key)],
+    ) -> Envelope:
+        del idempotency_key
+        result = runtime_store.recover_operation_failure(payload.fingerprint, correlation_id)
+        try:
+            _notify_operation_state(result, recovered=True)
+        except Exception as exc:
+            _json_log("operation_recovery_notification_failed", errorType=type(exc).__name__)
+        return _envelope(result, correlation_id)
+
+    @application.post(
+        "/v1/operations/failures/{failureId}/retry", response_model=Envelope, operation_id="retryOperationFailure",
+    )
+    def retry_operation_failure(
+        failureId: UUID,
+        correlation_id: Annotated[str, Depends(_correlation_id)],
+        idempotency_key: Annotated[str, Depends(_idempotency_key)],
+    ) -> Envelope:
+        del idempotency_key
+        return _envelope(runtime_store.retry_operation_failure(failureId, correlation_id), correlation_id)
+
+    @application.get("/v1/operations/failures", response_model=Envelope, operation_id="listOperationFailures")
+    def list_operation_failures(
+        correlation_id: Annotated[str, Depends(_correlation_id)], state: str | None = None, limit: int = 50,
+    ) -> Envelope:
+        states = tuple(item for item in (state or "").split(",") if item) or None
+        return _envelope(runtime_store.list_operation_failures(states, limit), correlation_id)
+
+    @application.get("/v1/operations/kpis", response_model=Envelope, operation_id="getOperationsKpis")
+    def get_operations_kpis(
+        correlation_id: Annotated[str, Depends(_correlation_id)], windowHours: int = 24,
+    ) -> Envelope:
+        return _envelope(runtime_store.operations_kpis(windowHours), correlation_id)
 
     @application.post("/v1/evaluations/runs", response_model=Envelope, status_code=status.HTTP_202_ACCEPTED, operation_id="createEvaluationRun")
     def create_evaluation_run(

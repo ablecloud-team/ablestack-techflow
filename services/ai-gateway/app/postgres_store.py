@@ -1798,3 +1798,228 @@ class PostgresStore:
             ).fetchall()
             return [{"userId": row["user_id"], "username": row["username"], "lastSeenAt": row["last_seen_at"]}
                     for row in rows]
+
+    @staticmethod
+    def _chat_conversation_payload(row: dict[str, Any]) -> dict[str, Any]:
+        return {
+            "userId": row["user_id"], "username": row["username"], "state": row["state"],
+            "contextVersion": row["context_version"], "openedAt": row["opened_at"],
+            "resolvedAt": row["resolved_at"], "updatedAt": row["updated_at"],
+        }
+
+    def open_chat_conversation(self, user_id: str, username: str) -> dict[str, Any]:
+        with self._pool.connection() as connection:
+            row = connection.execute(
+                "SELECT * FROM chat_assist_conversation WHERE user_id=%s FOR UPDATE", (user_id,),
+            ).fetchone()
+            if not row:
+                row = connection.execute(
+                    """INSERT INTO chat_assist_conversation(user_id,username,state)
+                       VALUES (%s,%s,'ACTIVE') RETURNING *""", (user_id, username),
+                ).fetchone()
+            elif row["state"] == "RESOLVED":
+                row = connection.execute(
+                    """UPDATE chat_assist_conversation SET username=%s,state='ACTIVE',
+                       context_version=context_version+1,opened_at=now(),resolved_at=NULL,updated_at=now()
+                       WHERE user_id=%s RETURNING *""", (username, user_id),
+                ).fetchone()
+            else:
+                row = connection.execute(
+                    "UPDATE chat_assist_conversation SET username=%s,updated_at=now() WHERE user_id=%s RETURNING *",
+                    (username, user_id),
+                ).fetchone()
+            return self._chat_conversation_payload(row)
+
+    def list_chat_turns(self, user_id: str, limit: int = 12) -> list[dict[str, Any]]:
+        with self._pool.connection() as connection:
+            rows = connection.execute(
+                """SELECT t.* FROM chat_assist_turn t JOIN chat_assist_conversation c ON c.user_id=t.user_id
+                   WHERE t.user_id=%s AND c.state='ACTIVE' AND t.context_version=c.context_version
+                   ORDER BY t.created_at DESC LIMIT %s""", (user_id, max(1, min(limit, 50))),
+            ).fetchall()
+            return [{
+                "turnId": row["id"], "userId": row["user_id"], "contextVersion": row["context_version"],
+                "postId": row["post_id"], "role": row["role"], "content": row["content"],
+                "contentSha256": row["content_sha256"], "createdAt": row["created_at"],
+            } for row in reversed(rows)]
+
+    def record_chat_turn(self, user_id: str, post_id: str, role: str, content: str) -> dict[str, Any]:
+        import hashlib
+        with self._pool.connection() as connection:
+            conversation = connection.execute(
+                "SELECT * FROM chat_assist_conversation WHERE user_id=%s AND state='ACTIVE'", (user_id,),
+            ).fetchone()
+            if not conversation:
+                raise InvalidStateError("active Chat conversation is required")
+            row = connection.execute(
+                """INSERT INTO chat_assist_turn
+                   (id,user_id,context_version,post_id,role,content,content_sha256)
+                   VALUES (%s,%s,%s,%s,%s,%s,%s)
+                   ON CONFLICT (user_id,context_version,post_id,role) DO UPDATE SET post_id=EXCLUDED.post_id
+                   RETURNING *""",
+                (uuid4(), user_id, conversation["context_version"], post_id, role, content[:16000],
+                 hashlib.sha256(content.encode("utf-8")).hexdigest()),
+            ).fetchone()
+            return {
+                "turnId": row["id"], "userId": row["user_id"], "contextVersion": row["context_version"],
+                "postId": row["post_id"], "role": row["role"], "content": row["content"],
+                "contentSha256": row["content_sha256"], "createdAt": row["created_at"],
+            }
+
+    def resolve_chat_conversation(self, user_id: str) -> dict[str, Any]:
+        with self._pool.connection() as connection:
+            row = connection.execute(
+                """UPDATE chat_assist_conversation SET state='RESOLVED',resolved_at=COALESCE(resolved_at,now()),
+                   updated_at=now() WHERE user_id=%s RETURNING *""", (user_id,),
+            ).fetchone()
+            if not row:
+                raise NotFoundError("active Chat conversation not found")
+            return self._chat_conversation_payload(row)
+
+    @staticmethod
+    def _operation_failure_payload(row: dict[str, Any]) -> dict[str, Any]:
+        return {
+            "failureId": row["id"], "subsystem": row["subsystem"], "operation": row["operation"],
+            "fingerprint": row["fingerprint"], "state": row["state"], "attemptCount": row["attempt_count"],
+            "maxAttempts": row["max_attempts"], "lastErrorType": row["last_error_type"],
+            "correlationId": row["correlation_id"], "nextRetryAt": row["next_retry_at"],
+            "failureNotifiedAt": row["failure_notified_at"], "recoveryNotifiedAt": row["recovery_notified_at"],
+            "firstFailedAt": row["first_failed_at"], "lastFailedAt": row["last_failed_at"],
+            "recoveredAt": row["recovered_at"], "updatedAt": row["updated_at"],
+        }
+
+    def record_operation_failure(
+        self, subsystem: str, operation: str, fingerprint: str, error_type: str,
+        correlation_id: str, max_attempts: int = 3,
+    ) -> dict[str, Any]:
+        with self._pool.connection() as connection:
+            current = connection.execute(
+                "SELECT * FROM operation_failure WHERE fingerprint=%s FOR UPDATE", (fingerprint,),
+            ).fetchone()
+            notify = not current or current["state"] == "RECOVERED"
+            if notify:
+                if current:
+                    row = connection.execute(
+                        """UPDATE operation_failure SET subsystem=%s,operation=%s,state='OPEN',attempt_count=1,
+                           max_attempts=%s,last_error_type=%s,correlation_id=%s,next_retry_at=now()+interval '1 second',
+                           failure_notified_at=now(),recovery_notified_at=NULL,first_failed_at=now(),last_failed_at=now(),
+                           recovered_at=NULL,updated_at=now() WHERE id=%s RETURNING *""",
+                        (subsystem, operation, max_attempts, error_type, correlation_id, current["id"]),
+                    ).fetchone()
+                else:
+                    row = connection.execute(
+                        """INSERT INTO operation_failure
+                           (id,subsystem,operation,fingerprint,state,attempt_count,max_attempts,last_error_type,
+                            correlation_id,next_retry_at,failure_notified_at)
+                           VALUES (%s,%s,%s,%s,'OPEN',1,%s,%s,%s,now()+interval '1 second',now()) RETURNING *""",
+                        (uuid4(), subsystem, operation, fingerprint, max_attempts, error_type, correlation_id),
+                    ).fetchone()
+            else:
+                row = connection.execute(
+                    """UPDATE operation_failure SET attempt_count=attempt_count+1,
+                       state=CASE WHEN attempt_count+1>=max_attempts THEN 'DEAD_LETTER' ELSE 'OPEN' END,
+                       last_error_type=%s,correlation_id=%s,last_failed_at=now(),updated_at=now(),
+                       next_retry_at=CASE WHEN attempt_count+1>=max_attempts THEN NULL
+                           ELSE now() + make_interval(secs => power(2,least(attempt_count,8))::int) END
+                       WHERE id=%s RETURNING *""", (error_type, correlation_id, current["id"]),
+                ).fetchone()
+            return {"failure": self._operation_failure_payload(row), "notifyFailure": notify}
+
+    def recover_operation_failure(self, fingerprint: str, correlation_id: str) -> dict[str, Any]:
+        with self._pool.connection() as connection:
+            current = connection.execute(
+                "SELECT * FROM operation_failure WHERE fingerprint=%s FOR UPDATE", (fingerprint,),
+            ).fetchone()
+            if not current:
+                return {"failure": None, "notifyRecovery": False}
+            if current["state"] == "RECOVERED":
+                return {"failure": self._operation_failure_payload(current), "notifyRecovery": False}
+            row = connection.execute(
+                """UPDATE operation_failure SET state='RECOVERED',correlation_id=%s,next_retry_at=NULL,
+                   recovery_notified_at=now(),recovered_at=now(),updated_at=now() WHERE id=%s RETURNING *""",
+                (correlation_id, current["id"]),
+            ).fetchone()
+            return {"failure": self._operation_failure_payload(row), "notifyRecovery": True}
+
+    def retry_operation_failure(self, failure_id: UUID, correlation_id: str) -> dict[str, Any]:
+        with self._pool.connection() as connection:
+            row = connection.execute(
+                """UPDATE operation_failure SET state='RETRYING',correlation_id=%s,next_retry_at=now(),updated_at=now()
+                   WHERE id=%s AND state<>'RECOVERED' RETURNING *""", (correlation_id, failure_id),
+            ).fetchone()
+            if not row:
+                raise NotFoundError("retryable operation failure not found")
+            return self._operation_failure_payload(row)
+
+    def list_operation_failures(self, states: tuple[str, ...] | None = None, limit: int = 50) -> list[dict[str, Any]]:
+        with self._pool.connection() as connection:
+            if states:
+                rows = connection.execute(
+                    "SELECT * FROM operation_failure WHERE state=ANY(%s) ORDER BY updated_at DESC LIMIT %s",
+                    (list(states), max(1, min(limit, 200))),
+                ).fetchall()
+            else:
+                rows = connection.execute(
+                    "SELECT * FROM operation_failure ORDER BY updated_at DESC LIMIT %s", (max(1, min(limit, 200)),),
+                ).fetchall()
+            return [self._operation_failure_payload(row) for row in rows]
+
+    def operations_kpis(self, window_hours: int = 24) -> dict[str, Any]:
+        hours = max(1, min(window_hours, 720))
+        with self._pool.connection() as connection:
+            community = connection.execute(
+                """SELECT count(*) AS cases,count(*) FILTER (WHERE state='PUBLISHED') AS published,
+                   count(*) FILTER (WHERE conversation_state='RESOLVED') AS resolved,
+                   count(*) FILTER (WHERE answer_state='NEEDS_INFORMATION') AS needs_information
+                   FROM community_case WHERE updated_at>=now()-make_interval(hours=>%s)""", (hours,),
+            ).fetchone()
+            chat = connection.execute(
+                """SELECT count(*) AS conversations,count(*) FILTER (WHERE state='ACTIVE') AS active,
+                   count(*) FILTER (WHERE state='RESOLVED') AS resolved
+                   FROM chat_assist_conversation WHERE updated_at>=now()-make_interval(hours=>%s)""", (hours,),
+            ).fetchone()
+            turns = connection.execute(
+                "SELECT count(*) AS count FROM chat_assist_turn WHERE created_at>=now()-make_interval(hours=>%s)",
+                (hours,),
+            ).fetchone()["count"]
+            failures = connection.execute(
+                """SELECT count(*) AS failures,count(*) FILTER (WHERE state='OPEN') AS open,
+                   count(*) FILTER (WHERE state='DEAD_LETTER') AS dead_letter,
+                   count(*) FILTER (WHERE state='RECOVERED') AS recovered
+                   FROM operation_failure WHERE updated_at>=now()-make_interval(hours=>%s)""", (hours,),
+            ).fetchone()
+            coverage_rows = connection.execute(
+                """SELECT entry->>'sourceProfileId' AS profile_id,
+                   count(DISTINCT c.id) FILTER (WHERE entry->>'state'='EVIDENCE_FOUND') AS found_cases
+                   FROM community_case c
+                   CROSS JOIN LATERAL jsonb_array_elements(
+                       COALESCE(c.source_metadata->'evidenceLedger'->'coverage','[]'::jsonb)
+                   ) AS entry
+                   WHERE c.updated_at>=now()-make_interval(hours=>%s)
+                   GROUP BY entry->>'sourceProfileId'""", (hours,),
+            ).fetchall()
+            coverage = {row["profile_id"]: row["found_cases"] for row in coverage_rows}
+            artifact_turns = connection.execute(
+                """SELECT count(*) AS count FROM community_turn
+                   WHERE created_at>=now()-make_interval(hours=>%s) AND jsonb_array_length(artifact_ids)>0""",
+                (hours,),
+            ).fetchone()["count"]
+            cases = int(community["cases"])
+            return {
+                "windowHours": hours,
+                "community": {"cases": cases, "published": community["published"], "resolved": community["resolved"],
+                              "needsInformation": community["needs_information"],
+                              "publicationRatePct": round(100.0 * community["published"] / cases, 1) if cases else 100.0},
+                "chat": {"conversations": chat["conversations"], "active": chat["active"],
+                         "resolved": chat["resolved"], "turns": turns},
+                "operations": {"failures": failures["failures"], "open": failures["open"],
+                               "deadLetter": failures["dead_letter"], "recovered": failures["recovered"]},
+                "sourceCoverage": {
+                    "docCases": coverage.get("SHARED_DOCS", 0), "diploCases": coverage.get("CLOUD_DIPLO", 0),
+                    "europaPreviewCases": coverage.get("CLOUD_EUROPA", 0),
+                    "otherCodeCases": sum(value for key, value in coverage.items()
+                                          if key not in {"SHARED_DOCS", "CLOUD_DIPLO", "CLOUD_EUROPA"}),
+                },
+                "artifacts": {"ingestedTurnsWithArtifacts": artifact_turns},
+                "privacy": {"rawContentIncluded": False, "internalEvidenceExposed": False},
+            }

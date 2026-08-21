@@ -1,0 +1,115 @@
+from __future__ import annotations
+
+import hashlib
+import unittest
+from urllib.parse import urlencode
+
+from fastapi.testclient import TestClient
+
+from app.config import Settings
+from app.main import create_app
+from app.store import MemoryStore
+
+
+class FakeBot:
+    def __init__(self) -> None:
+        self.sent: list[tuple[list[str], dict]] = []
+
+    def validate(self, supplied: str) -> None:
+        if supplied != "runtime-chat-token":
+            raise AssertionError("unexpected token")
+
+    def send(self, user_ids: list[str], payload: dict) -> None:
+        self.sent.append((user_ids, payload))
+
+
+def settings() -> Settings:
+    return Settings(
+        chat_bot_enabled=True, chat_bot_token_file="/run/secrets/chat_bot_token",
+        chat_reviewer_usernames=("ceo",),
+    )
+
+
+def chat_form(text: str, post_id: str) -> bytes:
+    return urlencode({
+        "token": "runtime-chat-token", "user_id": "7", "username": "engineer",
+        "post_id": post_id, "text": text,
+    }).encode()
+
+
+class Epic4OperationsTest(unittest.TestCase):
+    def setUp(self) -> None:
+        self.store = MemoryStore()
+        self.bot = FakeBot()
+        self.client = TestClient(create_app(settings(), store=self.store, chat_bot_client=self.bot))
+
+    @staticmethod
+    def headers(run: str) -> dict[str, str]:
+        return {"X-Correlation-Id": f"epic4-{run}-correlation", "Idempotency-Key": f"epic4-{run}-idempotency"}
+
+    def test_chat_context_is_idempotent_and_kept_until_resolved(self) -> None:
+        for index, text in enumerate(("VM 시작 오류를 확인해 줘", "앞 질문과 같은 VM의 로그는 어디서 봐?"), 1):
+            response = self.client.post(
+                "/v1/chat/synology/events", content=chat_form(text, str(index)),
+                headers={"Content-Type": "application/x-www-form-urlencoded"},
+            )
+            self.assertEqual(200, response.status_code)
+            self.assertIn("해결", response.json()["text"])
+        self.assertEqual(4, len(self.store.list_chat_turns("7")))
+        repeated = self.client.post(
+            "/v1/chat/synology/events", content=chat_form("중복 이벤트", "2"),
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+        )
+        self.assertEqual(200, repeated.status_code)
+        self.assertEqual(4, len(self.store.list_chat_turns("7")))
+        resolved = self.client.post(
+            "/v1/chat/synology/events", content=chat_form("해결", "3"),
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+        )
+        self.assertIn("해결된 상태", resolved.json()["text"])
+        self.assertEqual([], self.store.list_chat_turns("7"))
+        reopened = self.store.open_chat_conversation("7", "engineer")
+        self.assertEqual(2, reopened["contextVersion"])
+
+    def test_failure_notified_once_and_recovery_notified_once(self) -> None:
+        self.store.upsert_chat_reviewer("19", "ceo")
+        fingerprint = hashlib.sha256(b"community-poller:poll").hexdigest()
+        payload = {
+            "subsystem": "community-poller", "operation": "poll", "fingerprint": fingerprint,
+            "errorType": "TimeoutError", "maxAttempts": 3,
+        }
+        first = self.client.post("/v1/operations/failures", headers=self.headers("failure-one"), json=payload)
+        second = self.client.post("/v1/operations/failures", headers=self.headers("failure-two"), json=payload)
+        third = self.client.post("/v1/operations/failures", headers=self.headers("failure-three"), json=payload)
+        self.assertTrue(first.json()["data"]["notifyFailure"])
+        self.assertFalse(second.json()["data"]["notifyFailure"])
+        self.assertEqual("DEAD_LETTER", third.json()["data"]["failure"]["state"])
+        self.assertEqual(1, len(self.bot.sent))
+        retry = self.client.post(
+            f"/v1/operations/failures/{third.json()['data']['failure']['failureId']}/retry",
+            headers=self.headers("manual-retry"), json={},
+        )
+        self.assertEqual("RETRYING", retry.json()["data"]["state"])
+        recovered = self.client.post(
+            "/v1/operations/recoveries", headers=self.headers("recovery-one"), json={"fingerprint": fingerprint},
+        )
+        repeated = self.client.post(
+            "/v1/operations/recoveries", headers=self.headers("recovery-two"), json={"fingerprint": fingerprint},
+        )
+        self.assertTrue(recovered.json()["data"]["notifyRecovery"])
+        self.assertFalse(repeated.json()["data"]["notifyRecovery"])
+        self.assertEqual(2, len(self.bot.sent))
+
+    def test_kpis_are_aggregate_only(self) -> None:
+        response = self.client.get(
+            "/v1/operations/kpis?windowHours=24", headers={"X-Correlation-Id": "epic4-kpi-correlation"},
+        )
+        self.assertEqual(200, response.status_code)
+        data = response.json()["data"]
+        self.assertFalse(data["privacy"]["rawContentIncluded"])
+        self.assertNotIn("question", str(data).lower())
+        self.assertNotIn("answer", str(data).lower())
+
+
+if __name__ == "__main__":
+    unittest.main()
