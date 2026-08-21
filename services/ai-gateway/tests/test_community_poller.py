@@ -39,7 +39,7 @@ class FakeResponse(BytesIO):
 class CommunityPollerTests(unittest.TestCase):
     class _Response:
         def __init__(self, content: bytes, content_type: str, disposition: str = "") -> None:
-            self.content = content
+            self._buffer = BytesIO(content)
             self.headers = Message()
             self.headers["Content-Type"] = content_type
             if disposition:
@@ -51,8 +51,8 @@ class CommunityPollerTests(unittest.TestCase):
         def __exit__(self, *_):
             return False
 
-        def read(self, *_):
-            return self.content
+        def read(self, size: int = -1):
+            return self._buffer.read(size)
 
     def test_first_posts_are_normalized_with_post_identity(self) -> None:
         payload = {
@@ -215,12 +215,13 @@ class CommunityPollerTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory, patch.dict(
             os.environ, {"TECHFLOW_COMMUNITY_ATTACHMENT_TMP_DIR": directory}, clear=False,
         ):
-            ids = poll_flarum.upload_artifacts(
+            ids, warnings = poll_flarum.upload_artifacts(
                 event, "http://gateway:8090", "http://172.16.0.234",
                 "https://community.ablecloud.io", "runtime-token", "community-test-0001",
             )
         self.assertEqual([], ids)
-        self.assertIn("Community 외부 주소", event["artifactWarnings"][0])
+        self.assertIn("안전하게 확인하지 못했습니다", warnings[0])
+        self.assertEqual(warnings, event["artifactWarnings"])
 
     def test_archive_media_type_is_normalized_from_download_filename(self) -> None:
         self.assertEqual("application/zip", poll_flarum._normalized_attachment_media_type("support.zip", "application/force-download"))
