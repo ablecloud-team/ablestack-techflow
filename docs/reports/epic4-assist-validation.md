@@ -28,12 +28,35 @@ TechFlow AI Gateway 0.15.0은 GitHub→Chat Webhook, Community AI 자동 답변�
 | Dead Letter | 3회 실패 후 전환 | 통과 |
 | 수동 재처리 | RETRYING 전환 | 통과 |
 | KPI | 원문·Source 상세 미포함 | 통과 |
+| 운영 배포 | Gateway 0.15.0 Healthy, Poller Running | 통과 |
+| 공개 서비스 | Community·Chat·Activepieces HTTP 200 | 통과 |
+| 보호 서비스 | Container·Image·StartedAt 변경 0건 | 통과 |
 
-운영 배포와 실제 Chat·Community E2E 값은 배포 후 생성되는 `docs/evidence/epic-4/production-e2e.json`을 최종 권위 증적으로 사용한다.
+운영 배포와 실제 Chat·Community E2E 값은 [`production-e2e.json`](../evidence/epic-4/production-e2e.json)을 최종 권위 증적으로 사용한다.
+
+### 3.1 실제 Chat E2E
+
+- 첫 질문 답변 1,484자, 후속 질문 답변 1,428자
+- 같은 사용자 Conversation에 User·Assistant 4 Turn 기록
+- 후속 질문에서 앞 질문의 맥락 유지
+- `해결` 입력 후 `RESOLVED`, Context Version 1 종료
+- 통제된 장애와 복구에서 장애 알림 1회·복구 알림 1회·알림 전송 실패 0회
+
+### 3.2 실제 Community E2E
+
+- 운영 검증 Discussion #175를 Poller가 감지
+- Case `a506515a-3be5-4d4c-887f-720b7e60fa29` 생성
+- AI 답변 Post #411 자동 게시, 본문 4,328자
+- 사용자 답변의 내부 Citation·Source 식별정보 노출 0건
+- 시험 Discussion은 검증 직후 삭제하여 운영 목록 오염 방지
+
+### 3.3 기동 중 연속성 관찰
+
+Gateway와 Poller 동시 교체 직후 Poller가 Gateway보다 먼저 기동해 연결 실패 1회를 기록했다. 실패 Post는 체크포인트되지 않았고 같은 상태 파일로 자동 재시도되어 이후 67회 연속 정상 폴링했다. 이는 일시 장애 뒤 작업 유실 없이 복구되는 연속성 정책을 실제 운영 경로에서 확인한 결과다.
 
 ## 4. 서비스 연속성
 
-Community Poller는 실패한 Post를 완료 목록에 기록하지 않는다. 따라서 일시적 Flarum·Artifact·Gateway·OpenAI 오류가 사라지면 같은 Event를 다시 처리한다. Gateway는 Discussion/Post 단위 멱등 키로 재전송을 하나의 Turn과 답변으로 수렴시킨다. Chat은 사용자별 최근 대화 맥락을 유지하며 해결 전까지 추가 자료 요청과 후속 답변을 반복한다.
+Community Poller는 실패한 Post를 완료 목록에 기록하지 않는다. 따라서 일시적 Flarum·Artifact·Gateway·OpenAI 오류가 사라지면 같은 Event를 다시 처리한다. Gateway는 Discussion/Post 단위 멱등 키로 재전송을 하나의 Turn과 답변으로 수렴시킨다. Chat은 사용자별 최근 대화 맥락을 유지하며 해결 전까지 추가 자료 요청과 후속 답변을 반복한다. 운영 Poller는 Flarum 내부 주소를 처리 경로로 사용하고, 사용자 링크에는 공개 HTTPS 주소를 사용한다.
 
 ## 5. 보안과 데이터
 

@@ -21,6 +21,8 @@ GitHub→Chat Webhook의 `github-chat-v1`, `chat-adapter`, `activepieces-control
 
 Poller는 게시물을 성공적으로 Gateway에 전달한 뒤에만 Post ID를 원자적으로 체크포인트한다. 다운로드·Artifact·Webhook·AI 처리 중 하나라도 실패하면 해당 Post ID를 완료 처리하지 않으므로 다음 주기에 다시 시도한다. Gateway는 Flarum Post ID 기반 Event ID와 Idempotency Key로 같은 답변이 중복 게시되는 것을 막는다.
 
+운영 Poller의 Flarum API 주소는 내부 경로 `http://172.16.0.234`이고 사용자에게 제공하는 링크는 `https://community.ablecloud.io`다. 외부 공개 주소를 운영 서버의 수집 경로로 바꾸지 않는다.
+
 해결 답변이 선택될 때까지 Discussion의 Turn을 누적한다. 이미지·로그·압축파일은 Artifact ID만 Conversation에 연결하며, 파일 원문은 보존 정책에 따라 격리·삭제한다. 해결 선택 후 KB 최종본 게시와 솔루션 지정까지 같은 Case로 추적한다.
 
 ## 4. 장애·복구 상태
