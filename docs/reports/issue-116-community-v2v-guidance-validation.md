@@ -90,5 +90,6 @@ AI Gateway 0.16.11에서 기능 질문의 답변 순서, Standalone KVM 가져�
 ## 8. 관련 자산
 
 - Issue #116
+- PR #117
 - `docs/plans/community-capability-answer-flow.md`
 - `docs/evidence/issue-116/discussion-183-v2v-guidance.json`
