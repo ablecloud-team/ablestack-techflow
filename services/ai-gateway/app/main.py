@@ -45,7 +45,13 @@ from .models import (
 from .evaluation import judge_case, load_golden_set
 from .postgres_store import PostgresStore
 from .embedding import EmbeddingsAdapter, build_embedding_adapter
-from .provider import PROVIDER_PROFILES, ComprehensiveResponsesRequest, ResponsesRequest, profile_payloads
+from .provider import (
+    PROVIDER_PROFILES,
+    ComprehensiveResponsesRequest,
+    ProviderContractError,
+    ResponsesRequest,
+    profile_payloads,
+)
 from .responses import (
     ResponsesAdapter,
     ResponsesProviderError,
@@ -69,6 +75,7 @@ from .conversation import (
     build_chat_question,
     build_knowledge_base_question,
     build_progression_retry_question,
+    community_actionability_issues,
     community_result_advances,
     conversation_artifact_ids,
     resolution_progress_result,
@@ -666,7 +673,10 @@ def create_app(
                         }
                     if runtime_settings.official_web_search_enabled and web_required:
                         try:
-                            live_results = runtime_responses.search_official_references(request.question)
+                            # KB synthesis accepts a longer conversation than the
+                            # official-search provider. Reuse the already bounded
+                            # UTF-8 retrieval question instead of the raw transcript.
+                            live_results = runtime_responses.search_official_references(retrieval_question)
                             if guest_os_question and not live_results:
                                 official_profile = PROVIDER_PROFILES["OPENAI_RAG_DEFAULT_V1"]
                                 raise ResponsesProviderError(
@@ -693,6 +703,25 @@ def create_app(
                                     "generationProviderCalled": exc.provider_called, "errorCode": exc.code,
                                     "failureClass": exc.failure_class,
                                 }
+                        except ProviderContractError as exc:
+                            _json_log(
+                                "provider_contract_rejected",
+                                correlationId=correlation_id,
+                                errorCode="PROVIDER_CONTRACT_REJECTED",
+                                boundary=str(exc),
+                            )
+                            return {
+                                "queryId": request.query_id,
+                                "state": "FAILED",
+                                "plan": plan_payload,
+                                "scope": scope,
+                                "coverage": coverage,
+                                "report": None,
+                                "citations": [],
+                                "generationProviderCalled": False,
+                                "errorCode": "PROVIDER_CONTRACT_REJECTED",
+                                "failureClass": "TERMINAL",
+                            }
                     results_by_profile[profile_id] = curated
                     continue
                 retrieval_request = QueryRequest(
@@ -742,6 +771,25 @@ def create_app(
                     "scope": scope, "coverage": coverage,
                     "citations": [], "generationProviderCalled": exc.provider_called, "errorCode": exc.code,
                     "failureClass": exc.failure_class}
+        except ProviderContractError as exc:
+            _json_log(
+                "provider_contract_rejected",
+                correlationId=correlation_id,
+                errorCode="PROVIDER_CONTRACT_REJECTED",
+                boundary=str(exc),
+            )
+            return {
+                "queryId": request.query_id,
+                "state": "FAILED",
+                "plan": plan_payload,
+                "report": None,
+                "scope": scope,
+                "coverage": coverage,
+                "citations": [],
+                "generationProviderCalled": False,
+                "errorCode": "PROVIDER_CONTRACT_REJECTED",
+                "failureClass": "TERMINAL",
+            }
 
     @application.post("/v1/assist/query", response_model=Envelope, operation_id="queryAssist")
     def query_assist(request: ComprehensiveQueryRequest, correlation_id: Annotated[str, Depends(_correlation_id)]) -> Envelope:
@@ -959,12 +1007,18 @@ def create_app(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail={"code": "AI_PROVIDER_TEMPORARY_FAILURE", "message": "community draft generation will retry"},
             )
-        if not community_result_advances(result, turns):
+        progresses = community_result_advances(result, turns)
+        actionability_issues = community_actionability_issues(result)
+        if not progresses or actionability_issues:
             _json_log(
                 "community_answer_progression_retry", correlationId=correlation_id,
                 discussionId=request.discussion_id, sourcePostId=post_id,
+                actionabilityIssues=list(actionability_issues),
             )
-            rewrite_question = build_progression_retry_question(request.title, turns, analysis_event)
+            rewrite_question = build_progression_retry_question(
+                request.title, turns, analysis_event,
+                actionability_issues=actionability_issues,
+            )
             retry_request = ComprehensiveQueryRequest(
                 queryId=uuid4(), question=rewrite_question, actorId=f"community:{request.author_id}",
                 productVersion=request.product_version or "diplo", artifactIds=conversation_artifacts,
@@ -976,16 +1030,22 @@ def create_app(
                     status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                     detail={"code": "AI_PROVIDER_TEMPORARY_FAILURE", "message": "community draft generation will retry"},
                 )
-            if not community_result_advances(result, turns):
+            retry_progresses = community_result_advances(result, turns)
+            retry_actionability_issues = community_actionability_issues(result)
+            if not retry_progresses or retry_actionability_issues:
                 _json_log(
                     "community_answer_progression_rejected", correlationId=correlation_id,
                     discussionId=request.discussion_id, sourcePostId=post_id,
+                    actionabilityIssues=list(retry_actionability_issues),
                 )
                 raise HTTPException(
                     status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                     detail={
-                        "code": "COMMUNITY_RESPONSE_NOT_PROGRESSING",
-                        "message": "repetitive community answer was not published and will retry",
+                        "code": (
+                            "COMMUNITY_RESPONSE_NOT_ACTIONABLE"
+                            if retry_actionability_issues else "COMMUNITY_RESPONSE_NOT_PROGRESSING"
+                        ),
+                        "message": "community answer did not meet progression or actionability requirements",
                     },
                 )
         result["userQuestion"] = request.question

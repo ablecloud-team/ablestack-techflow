@@ -82,6 +82,16 @@ class VersionedAssistPolicyTest(unittest.TestCase):
         self.assertIn("진단 검색어:", expanded)
         self.assertIn("restorecon", expanded)
 
+    def test_korean_retrieval_expansion_uses_utf8_byte_limit(self) -> None:
+        question = "Mold 네트워크 생성 요청 실패 " + "한글 대화 문맥 " * 1200
+
+        expanded = expand_retrieval_question(question)
+
+        self.assertLessEqual(len(expanded.encode("utf-8")), 4000)
+        self.assertTrue(expanded.startswith("Mold 네트워크 생성 요청 실패"))
+        self.assertIn("진단 검색어:", expanded)
+        self.assertIn("createNetwork", expanded)
+
     def test_fsfreeze_question_loads_safe_local_platform_guidance(self) -> None:
         question = "새 볼륨을 /mnt에 마운트한 뒤 guest-fsfreeze-freeze Permission denied가 발생합니다."
         results = curated_platform_results(question)
@@ -118,6 +128,23 @@ class VersionedAssistPolicyTest(unittest.TestCase):
         self.assertIn("Get-TimeZone", expanded)
         self.assertIn("rediscover", expanded)
         self.assertNotIn("qemu-ga-x86_64.msi", combined)
+
+    def test_kvm_ha_degraded_guidance_has_exact_targets_services_and_logs(self) -> None:
+        question = (
+            "BMC 활성화 후 HA 공급자 kvmhapervider는 오타이고 kvmhaprovider가 맞습니다. "
+            "호스트 HA 상태가 Suspect에서 Degraded로 바뀌었습니다."
+        )
+        combined = "\n".join(item["content"] for item in curated_platform_results(question))
+
+        for expected in (
+            "kvmhaprovider", "Activity Check", "kvm.ha.on.storage.heartbeat", "HA.STATE.TRANSITION",
+            "ssh -p <SSH_PORT>", "mold.service", "mold-agent.service",
+            "/var/log/cloudstack/management/management-server.log",
+            "/var/log/cloudstack/agent/agent.log", "--since", "--until", "마스킹",
+        ):
+            self.assertIn(expected, combined)
+        self.assertIn("Degraded를 libvirt 장애 하나로 단정하지 않는다", combined)
+        self.assertIn("Available 전에는 호스트 전원 차단", combined)
 
     def test_rocky_linux_smb_question_loads_exact_official_mount_procedure(self) -> None:
         question = (
@@ -346,6 +373,24 @@ class VersionedAssistPolicyTest(unittest.TestCase):
         self.assertIn("```powershell\nGet-Service QEMU-GA\n```", answer)
         self.assertNotIn("`sudo ausearch", answer)
 
+    def test_ha_runtime_assessment_does_not_become_a_generic_qemu_claim(self) -> None:
+        answer = format_public_answer({
+            "state": "ANSWERED",
+            "report": {
+                "summary": "호스트 HA 상태가 Degraded입니다.",
+                "observedFacts": [],
+                "diagnoses": [{"title": "HA Activity Check가 정상 완료되지 않았을 가능성"}],
+                "recommendedActions": ["Mold에서 HA.STATE.TRANSITION 이벤트를 확인합니다."],
+                "unknowns": [],
+                "currentAssessment": "CURRENT_RUNTIME_ISSUE",
+                "previewAssessment": "NOT_APPLICABLE",
+                "previewGuidance": None,
+            },
+            "citations": [],
+        }) or ""
+
+        self.assertNotIn("가상화 프로그램이 일시적으로 정상 상태를 잃은 문제", answer)
+
     def test_public_projection_removes_all_external_urls(self) -> None:
         answer = sanitize_public_text(
             "공식 자료 https://www.qemu.org/docs/master/interop/qemu-qmp-ref.html 를 확인합니다.",
@@ -399,6 +444,16 @@ class VersionedAssistPolicyTest(unittest.TestCase):
         )
         self.assertIn("/dev/virtio-ports/org.qemu.guest_agent.0", answer)
         self.assertIn("1–2분", answer)
+        self.assertNotIn("제품 내부 경로", answer)
+
+    def test_public_projection_preserves_approved_operational_log_paths(self) -> None:
+        answer = simplify_public_text(
+            "`tail -n 300 /var/log/cloudstack/agent/agent.log`와 "
+            "`grep -Ei 'HA state' /var/log/cloudstack/management/management-server.log`를 실행합니다."
+        )
+
+        self.assertIn("/var/log/cloudstack/agent/agent.log", answer)
+        self.assertIn("/var/log/cloudstack/management/management-server.log", answer)
         self.assertNotIn("제품 내부 경로", answer)
 
     def test_ongoing_answer_naturalizes_internal_action_labels(self) -> None:
@@ -509,6 +564,10 @@ class VersionedAssistPolicyTest(unittest.TestCase):
         console = next(item for item in payload["cases"] if item["caseKey"] == "MOLD-CONSOLE-CONNECTING-001")
         self.assertEqual("Mold에서 가상머신의 콘솔 보기를 클릭하면 콘솔 화면이 표시되지만 \"연결중\"이라고 표시되고, 더 이상 화면을 보여주지 않습니다. 콘솔을 보려면 어떻게 해야 하나요?", console["question"])
         self.assertIn("query-vnc", console["requiredPublicGuidance"])
+        ha_case = next(item for item in payload["cases"] if item["caseKey"] == "COMMUNITY-177-KVM-HA-DEGRADED-001")
+        self.assertIn("kvmhapervider", ha_case["question"])
+        self.assertIn("mold-agent.service", ha_case["requiredPublicGuidance"])
+        self.assertIn("kvmhapervider가 실제 값인지 확인", ha_case["forbiddenPublicClaims"])
 
     def test_product_first_evidence_priority_is_stable(self) -> None:
         self.assertEqual((1, "ABLESTACK_DOCUMENTATION"), evidence_priority("SHARED_DOCS", "DOCUMENTATION"))

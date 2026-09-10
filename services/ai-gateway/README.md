@@ -1,5 +1,44 @@
 # TechFlow AI Gateway
 
+## v0.16.10 구현 범위
+
+- Gateway가 같은 Discussion의 이후 Post까지 처리했다면 이전 Pending Post도 완료로 인정합니다.
+- Poller 실행 중 새로 발견한 해결 토론은 기존 Snapshot이 없어도 해결 이벤트를 생성합니다.
+- 최초 Bootstrap에서는 과거 해결 토론을 일괄 처리하지 않는 기존 안전장치를 유지합니다.
+
+## v0.16.9 구현 범위
+
+- KB용 16,000자 대화가 공식 외부 자료 검색의 4,000자 계약을 넘지 않도록 UTF-8 제한 검색 질문 재사용
+- Provider 계약 오류를 일반 500 대신 명시적 실패 상태로 기록
+- Best Answer가 변경되거나 해제되면 이전 Pending Resolution을 자동 제거
+- Discussion #177의 반복 해결 이벤트 복구와 KB 최종 게시 검증
+
+## v0.16.8 구현 범위
+
+- 질문자 Post만 기본 AI 응답 대상으로 유지
+- 관리자·지원 담당자와 일반 참여자 Post는 Conversation 문맥에 기록하되 자동 답변 억제
+- `@TechFlow-Assistant` 또는 줄 시작 `/ai`가 있을 때만 비질문자 Post의 AI 응답 허용
+- 인용문·코드 블록 안의 AI 호출 문자열은 명시 호출 판정에서 제외
+- 응답 판정 사유를 Community Case 감사 이벤트에 기록
+- 해결 관리자·최종 KB selector·지원 담당자 ID를 신뢰된 지원 ID 집합으로 통합
+
+## v0.16.7 구현 범위
+
+- Community 후속 댓글의 영문 제품 식별자를 이전 TechFlow 답변과 비교해 단일 오타 후보 탐지
+- 원문을 바꾸지 않고 오타 가정을 한 번만 알린 뒤 핵심 증상 분석 계속
+- IP·UUID·버전·명령·경로·상태·로그·Citation·Artifact ID 자동 교정 금지
+- Linux 운영 명령·로그 답변에 실행 대상·SSH/콘솔·권한·정확한 Unit·로그 경로·시간 범위·정상 기준 검사
+- 실행 가능성 미달 답변의 Provider 재작성과 최종 게시 차단
+- Diplo KVM HA Suspect·Degraded 운영 근거와 Discussion #177 Golden Case 추가
+- 동일 Assistant Post 교정 시 Case·Response·Conversation Turn을 함께 갱신하는 멱등 동기화
+
+## v0.16.6 구현 범위
+
+- 누적 Chat 대화 문맥을 글자 수가 아니라 UTF-8 Byte 기준으로 압축
+- 최신 사용자 질문을 유지하면서 오래된 Turn부터 제거해 Embedding 입력 상한 준수
+- Source 검색어 확장도 UTF-8 Byte 기준 4,000 Byte 이하로 제한
+- 한글 11개 Turn·9,291 Byte 장애 재현과 Chat 비동기 완료 회귀시험 추가
+
 ## v0.16.5 구현 범위
 
 - Synology Chat `post_id`를 `post_file_get`으로 조회해 Bot 대화의 이미지·로그·압축로그 수집
@@ -135,7 +174,7 @@ TechFlow AI Gateway는 Activepieces와 AI Provider 사이에서 ABLESTACK 지식
 - 내부 Evidence Ledger와 Community·일반 Chat용 안전 Projection 분리
 - 공개 답변을 `증상·원인·해결 방법·추가 고려사항·적용 버전` 순서의 트러블슈팅 문서로 표준화
 - 일반 Chat 사용자 기술 질문 자동 응답과 승인 담당자 전용 상세 근거·결정 명령 분리
-- 현재 오류·Europa 개선·미개선·설정 오류·정상·근거 부족 6개 Versioned Golden Case
+- 현재 오류·Europa 개선·미개선·설정 오류·정상·근거 부족과 Community 운영 사례를 포함한 17개 Versioned Golden Case
 
 - Synology Chat Bot Token과 Reviewer 허용목록 검증
 - Chat 사용자 ID·이름 연결과 Community Case 대기·상세·이력 조회

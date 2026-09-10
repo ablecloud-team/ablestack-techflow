@@ -92,6 +92,67 @@ class CommunityTests(unittest.TestCase):
         self.assertEqual(self.payload()["question"], turns[0]["content"])
         self.assertNotIn("[첨부 처리 안내]", turns[0]["content"])
 
+    def test_staff_reply_is_recorded_without_creating_an_ai_draft(self) -> None:
+        store = MemoryStore()
+        client = TestClient(create_app(Settings(), store))
+        created = client.post(
+            "/v1/community/cases",
+            headers={**HEADERS, "Idempotency-Key": "community-staff-silence-first"},
+            json={**self.payload(), "postId": "100", "postNumber": 1},
+        )
+        self.assertEqual(201, created.status_code, created.text)
+        case = created.json()["data"]
+
+        response = client.post(
+            "/v1/community/cases",
+            headers={**HEADERS, "Idempotency-Key": "community-staff-silence-second"},
+            json={
+                **self.payload(),
+                "question": "관리자가 질문자에게 직접 안내했습니다.",
+                "postId": "101", "postNumber": 2, "postAuthorId": "7",
+                "turnRole": "STAFF", "responseRequested": False,
+                "responseReason": "STAFF_RECORDED",
+            },
+        )
+
+        self.assertEqual(201, response.status_code, response.text)
+        result = response.json()["data"]
+        self.assertEqual(1, result["draftVersion"])
+        self.assertEqual("101", result["lastSeenPostId"])
+        self.assertTrue(result["turnCreated"])
+        self.assertEqual(["100", "101"], [item["sourcePostId"] for item in store.list_community_turns("901")])
+        events = store.list_community_case_events(UUID(case["caseId"]), 10)
+        recorded = next(item for item in events if item["eventType"] == "TURN_RECORDED")
+        self.assertEqual("STAFF_RECORDED", recorded["details"]["responseReason"])
+
+    def test_legacy_flow_infers_staff_suppression_reason(self) -> None:
+        store = MemoryStore()
+        first = {
+            **self.payload(), "postId": "100", "postNumber": 1,
+            "postAuthorId": "42", "turnRole": "REQUESTER", "responseRequested": True,
+        }
+        case = store.create_community_case(
+            first,
+            {"draftAnswer": "초기 답변", "answerState": "ANSWERED", "citations": []},
+            "community-legacy-reason-first", "community-legacy-reason-correlation",
+        )
+        client = TestClient(create_app(Settings(), store))
+
+        response = client.post(
+            "/v1/community/cases",
+            headers={**HEADERS, "Idempotency-Key": "community-legacy-reason-staff"},
+            json={
+                **self.payload(), "question": "관리자가 직접 답변했습니다.",
+                "postId": "101", "postNumber": 2, "postAuthorId": "7",
+                "turnRole": "STAFF", "responseRequested": False,
+            },
+        )
+
+        self.assertEqual(201, response.status_code, response.text)
+        events = store.list_community_case_events(case["caseId"], 10)
+        recorded = next(item for item in events if item["eventType"] == "TURN_RECORDED")
+        self.assertEqual("STAFF_RECORDED", recorded["details"]["responseReason"])
+
     def test_edited_answer_can_be_approved_but_disabled_publish_fails_closed(self) -> None:
         client = TestClient(create_app(Settings(), MemoryStore()))
         case = client.post("/v1/community/cases", headers=HEADERS, json=self.payload()).json()["data"]
@@ -543,6 +604,34 @@ class CommunityTests(unittest.TestCase):
         self.assertEqual(2, len(store.list_community_turns("901")))
         events = store.list_community_case_events(retried["caseId"], 10)
         self.assertIn("FAILED_DRAFT_RETRIED", [item["eventType"] for item in events])
+
+    def test_reused_assistant_post_correction_updates_case_response_and_turn(self) -> None:
+        store = MemoryStore()
+        case = store.create_community_case(
+            {**self.payload(), "postId": "430", "postNumber": 9, "postAuthorId": "46", "turnRole": "REQUESTER"},
+            {"draftAnswer": "이전 실행 안내", "answerState": "ANSWERED", "citations": []},
+            "correction-create", "correction-create-correlation",
+        )
+        publication = {"postId": "431", "postUrl": "https://community.ablecloud.io/d/177/431"}
+        store.mark_community_auto_published(case["caseId"], "이전 실행 안내", publication, "correction-publish")
+        store.record_community_turn(
+            {
+                "discussionId": "901", "postId": "431", "postNumber": 10,
+                "postAuthorId": "40", "authorId": "40", "turnRole": "ASSISTANT",
+                "question": "이전 실행 안내", "artifactIds": [],
+            },
+            "correction-turn", "correction-turn-correlation",
+        )
+
+        updated = store.mark_community_auto_published(
+            case["caseId"], "접속·로그 경로를 포함한 보완 답변", publication, "correction-update",
+        )
+
+        self.assertEqual("접속·로그 경로를 포함한 보완 답변", updated["draftAnswer"])
+        assistant = next(item for item in store.list_community_turns("901") if item["sourcePostId"] == "431")
+        self.assertEqual("접속·로그 경로를 포함한 보완 답변", assistant["content"])
+        events = store.list_community_case_events(case["caseId"], 20)
+        self.assertIn("AUTO_PUBLISHED_CORRECTED", [item["eventType"] for item in events])
 
     def test_requester_best_answer_resolves_and_unset_reopens_conversation(self) -> None:
         store = MemoryStore()

@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-09-10T02:00:00Z",
+  "issue": 115,
+  "pullRequest": 110,
+  "discussion": {
+    "discussionId": "181",
+    "firstPostId": "451",
+    "requesterSelectedPostId": "456",
+    "requesterUserId": "46",
+    "selectedAnswerAuthorUserId": "12",
+    "knowledgeBasePostId": "465",
+    "knowledgeBaseSourcePostId": "456",
+    "knowledgeBaseVersion": 2,
+    "caseState": "PUBLISHED",
+    "conversationState": "RESOLVED",
+    "knowledgeBasePublished": true,
+    "knowledgeBaseSelectedAsSolution": true,
+    "postApproved": true,
+    "requiredSectionsPresent": true,
+    "pendingPosts": 0,
+    "pendingResolutions": 0
+  },
+  "rootCause": {
+    "relatedToStaffResponseSuppression": false,
+    "gatewayLastSeenPostId": "456",
+    "blockedPendingPostId": "451",
+    "pendingAttempts": 270,
+    "discussionSnapshotExisted": false,
+    "exactPostEqualityCausedStall": true,
+    "missingSnapshotSuppressedResolutionEvent": true
+  },
+  "fix": {
+    "version": "0.16.10",
+    "commit": "bd44f72",
+    "laterSameDiscussionPostConfirmsEarlierPendingPost": true,
+    "resolvedDiscussionWithoutSnapshotIsSubmitted": true,
+    "bootstrapFloodProtectionRetained": true,
+    "openApiOperationCount": 39
+  },
+  "runtime": {
+    "image": "techflow/ai-gateway:issue115-0.16.10-bd44f72",
+    "imageId": "sha256:4231112f37b229d209edd9242e40fb95e5d2ad235fcf6fab38f6ca6db3be0827",
+    "gatewayContainerId": "cabc42f8ee76deccfe6ae4683d500faead937d87c2ad5853aab4ccfd13040810d",
+    "gateway": "healthy",
+    "gatewayRestartCount": 0,
+    "communityPollerContainerId": "88a8f7ffd14069d7937881c64852f106a49ae12dd55095cf15f9853c50f8a8300",
+    "communityPoller": "healthy",
+    "communityPollerRestartCount": 0,
+    "publicCommunityHttpStatus": 200,
+    "publicChatHttpStatus": 200
+  },
+  "protectedServices": {
+    "sourceReconcilerContainerId": "d67ff13feccf62434001f5361db114dbc55169cc0d0a1d7eeef3258977ad2b37c",
+    "githubChatEventGatewayContainerId": "bf5c76824dbf8b0513431e4d067043d0ff46fa825553512c41239e5f622804b4c",
+    "activepiecesAppContainerId": "80a652dc8961adc8594aafac216270106285ec4d8175bee95e33dbcfd95755dac",
+    "activepiecesWorkerContainerId": "d50ee9a92d9d8337a5253f39644c0a6c2c5473e3c5203af2277611f1da2887879",
+    "changed": false,
+    "restartCount": 0
+  },
+  "deployment": {
+    "packageSha256": "BF4645E140C5844EC110BFB443D57C131701ACAE6111B34C1F998B12E6CBED8D",
+    "packager": "tools/package_ai_gateway.py",
+    "archiveShellScriptsLfVerified": true,
+    "imageEntrypointLfVerified": true,
+    "initialCrLfPackageRejected": true,
+    "rollbackSucceeded": true,
+    "backup": "/home/ablecloud/techflow-ai-gateway-backups/issue115-resolution-progress-20260910T014611Z",
+    "databaseSchemaChanged": false
+  },
+  "validation": {
+    "communityPollerTestsPassed": 38,
+    "repositoryTestsPassed": 348,
+    "ruffSelectedFilesPassed": true,
+    "browserVerified": true,
+    "duplicateKnowledgeBasePostCreated": false
+  }
+}

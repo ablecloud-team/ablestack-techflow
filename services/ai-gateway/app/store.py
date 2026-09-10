@@ -810,7 +810,11 @@ class MemoryStore:
                 self._community_events.append({
                     "caseId": case_id, "eventType": "CONVERSATION_REOPENED" if was_resolved else "FOLLOWUP_DRAFT_CREATED",
                     "actor": "techflow", "createdAt": value["updatedAt"],
-                    "details": {"sourcePostId": turn["sourcePostId"], "draftVersion": value["draftVersion"]},
+                    "details": {
+                        "sourcePostId": turn["sourcePostId"],
+                        "draftVersion": value["draftVersion"],
+                        "responseReason": request.get("responseReason") or "REQUESTER_AUTO",
+                    },
                 })
                 result = self._remember("create_community_case", idempotency_key, value)
                 result.update(created=False, turnCreated=True)
@@ -844,7 +848,11 @@ class MemoryStore:
             }]
             self._community_events.append({
                 "caseId": case_id, "eventType": "DRAFT_CREATED", "actor": "techflow",
-                "createdAt": value["createdAt"], "details": {"answerState": value["answerState"]},
+                "createdAt": value["createdAt"],
+                "details": {
+                    "answerState": value["answerState"],
+                    "responseReason": request.get("responseReason") or "REQUESTER_AUTO",
+                },
             })
             result = self._remember("create_community_case", idempotency_key, value)
             result["created"] = True
@@ -952,7 +960,10 @@ class MemoryStore:
             self._community_events.append({
                 "caseId": case_id, "eventType": "CONVERSATION_REOPENED" if reopened else "TURN_RECORDED",
                 "actor": turn["role"].lower(), "createdAt": value["updatedAt"],
-                "details": {"sourcePostId": post_id},
+                "details": {
+                    "sourcePostId": post_id,
+                    "responseReason": request.get("responseReason") or "STAFF_RECORDED",
+                },
             })
             result = self._remember("record_community_turn", idempotency_key, value)
             result["turnCreated"] = True
@@ -1197,6 +1208,18 @@ class MemoryStore:
             if not value:
                 raise NotFoundError("community case not found")
             if value["state"] == "PUBLISHED" and value.get("publishedPostId") == publication["postId"]:
+                if value.get("draftAnswer") != answer:
+                    now = utc_now()
+                    value.update(draftAnswer=answer, updatedAt=now)
+                    if self._community_responses.get(case_id):
+                        self._community_responses[case_id][-1].update(answer=answer, updatedAt=now)
+                    for turn in self._community_turns.get(case_id, []):
+                        if turn.get("sourcePostId") == publication["postId"] and turn.get("role") == "ASSISTANT":
+                            turn["content"] = answer
+                    self._community_events.append({
+                        "caseId": case_id, "eventType": "AUTO_PUBLISHED_CORRECTED",
+                        "actor": "techflow-assistant", "createdAt": now, "details": deepcopy(publication),
+                    })
                 return self._remember("auto_publish_community_case", idempotency_key, value)
             if (
                 value["state"] not in {"DRAFT_PENDING", "PUBLISHED"}

@@ -288,15 +288,22 @@ def _is_specialized_question(question: str) -> bool:
     return bool(feature_source_terms(question))
 
 
+def _utf8_prefix(value: str, limit: int) -> str:
+    """Return the longest safe prefix within an exact UTF-8 byte budget."""
+    return value.encode("utf-8")[:limit].decode("utf-8", errors="ignore")
+
+
 def expand_retrieval_question(question: str, *, limit: int = 4000) -> str:
-    """Add implementation vocabulary without changing the user's visible question."""
+    """Add implementation vocabulary within the embedding UTF-8 byte boundary."""
     anchors = list(feature_source_terms(question))
     if not anchors:
-        return question[:limit]
+        return _utf8_prefix(question, limit)
     suffix = f"\n진단 검색어: {' '.join(dict.fromkeys(anchors))}"
-    if len(suffix) >= limit:
+    suffix_bytes = len(suffix.encode("utf-8"))
+    if suffix_bytes >= limit:
         raise ValueError("retrieval anchors must be shorter than the question limit")
-    return f"{question[:limit - len(suffix)].rstrip()}{suffix}"
+    prefix = _utf8_prefix(question, limit - suffix_bytes).rstrip()
+    return f"{prefix}{suffix}"
 
 
 def _relevance_score(question: str, item: dict[str, Any]) -> int:
@@ -433,6 +440,8 @@ def sanitize_public_text(value: object, citations: Iterable[dict[str, Any]] = ()
     text = str(value or "").strip()
     safe_system_paths = {
         "/dev/virtio-ports/org.qemu.guest_agent.0": "TECHFLOW_SAFE_QGA_CHANNEL_PATH",
+        "/var/log/cloudstack/management/management-server.log": "TECHFLOW_SAFE_MANAGEMENT_LOG_PATH",
+        "/var/log/cloudstack/agent/agent.log": "TECHFLOW_SAFE_AGENT_LOG_PATH",
     }
     for path, placeholder in safe_system_paths.items():
         text = text.replace(path, placeholder)
@@ -665,7 +674,10 @@ def format_public_answer(result: dict[str, Any]) -> str | None:
     if artifact_findings:
         lines.extend(["", "첨부해 주신 자료에서는 다음 내용을 확인했습니다."])
         lines.extend(f"- {value}" for value in artifact_findings[:3])
-    if report.get("currentAssessment") == "CURRENT_RUNTIME_ISSUE":
+    runtime_context = " ".join([summary, *diagnoses]).casefold()
+    if report.get("currentAssessment") == "CURRENT_RUNTIME_ISSUE" and any(
+        marker in runtime_context for marker in ("qemu", "vnc", "콘솔 연결")
+    ):
         lines.extend([
             "",
             "현재 자료로는 ABLESTACK 제품 코드의 오류라기보다 가상화 프로그램이 일시적으로 정상 상태를 잃은 문제에 가깝습니다.",
