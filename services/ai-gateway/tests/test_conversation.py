@@ -182,6 +182,39 @@ class ConversationProgressionTest(unittest.TestCase):
         self.assertIn("태그 불일치", result["report"]["diagnoses"][0]["title"])
         self.assertTrue(any("해결 답변으로 선택" in item for item in result["report"]["recommendedActions"]))
 
+    def test_negative_working_statement_is_not_treated_as_resolution(self) -> None:
+        update = "해당 내장 툴을 사용하여 V2V를 시도하였지만 정상적으로 동작하지 않습니다."
+
+        self.assertFalse(is_resolution_progress_update(update))
+        self.assertIsNone(resolution_progress_result(update))
+
+    def test_continuing_failure_is_not_treated_as_resolution(self) -> None:
+        for update in (
+            "조치했지만 아직 정상 동작하지 못하고 있습니다.",
+            "여전히 오류가 발생하여 문제가 해결되지 않았습니다.",
+            "복구되지 않아 계속 실패합니다.",
+        ):
+            with self.subTest(update=update):
+                self.assertFalse(is_resolution_progress_update(update))
+
+    def test_how_to_prompt_requires_supported_path_before_incident_details(self) -> None:
+        incoming = {
+            "discussionId": "183", "postId": "462", "postNumber": 3,
+            "turnRole": "REQUESTER",
+            "question": "내장 툴로 V2V를 시도했지만 정상적으로 동작하지 않습니다.",
+        }
+        prompt = build_conversation_question(
+            "ABLESTACK Standalone에서 ABLESTACK HCI로 V2V",
+            [{
+                "sourcePostId": "460", "postNumber": 1, "role": "REQUESTER",
+                "content": "Standalone에서 HCI로 V2V하는 방법이 궁금합니다.", "artifactIds": [],
+            }],
+            incoming,
+        )
+
+        self.assertIn("지원하는 기능 경로와 사전 조건", prompt)
+        self.assertIn("해결된 것으로 해석하지 마십시오", prompt)
+
     def test_new_concrete_cli_step_advances_follow_up(self) -> None:
         result = {
             "report": {

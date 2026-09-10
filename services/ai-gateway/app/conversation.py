@@ -20,13 +20,22 @@ _RESOLUTION_UPDATE_MARKERS = (
     "정상 동작", "정상적으로 동작", "조치 후 정상", "문제가 없어", "오류가 없어", "성공했습니다",
 )
 
+_UNRESOLVED_UPDATE_PATTERNS = (
+    re.compile(r"정상(?:적으로)?\s*(?:동작|작동)(?:하|되)?지\s*(?:않|못)"),
+    re.compile(r"(?:문제|오류|장애)(?:가|이)?\s*(?:해결|사라|없어)지\s*(?:않|못)"),
+    re.compile(r"(?:해결|복구|성공)(?:되|하)?지\s*(?:않|못)"),
+    re.compile(r"(?:계속|여전히|아직).{0,24}(?:실패|오류|문제|장애|동작하지|작동하지)"),
+)
+
 PROGRESSION_RETRY_INSTRUCTION = (
     "[진행성 재작성 필수]\n"
     "직전 답변의 설명과 점검 목록을 반복하지 마십시오. "
     "관련 제품 기능과 Source 근거에서 확인한 기초 진단과 해결책을 맨 먼저 쓰십시오. 첨부 화면에서는 상태 코드, "
     "API 명령, 컴포넌트 이름과 오류 문구를 읽어 Source 동작과 연결하십시오. 근거가 있는 정확한 CLI 명령, "
     "실행 위치, 정상 판정 기준을 포함하십시오. 원인을 확정하지 못해도 확인된 실패 분기와 안전한 점검 순서를 "
-    "먼저 설명한 뒤, 아직 제공되지 않은 자료 한정으로 구체적인 명령 결과나 응답 본문을 요청하십시오."
+    "먼저 설명한 뒤, 아직 제공되지 않은 자료 한정으로 구체적인 명령 결과나 응답 본문을 요청하십시오. "
+    "사용 방법이나 지원 범위를 묻는 질문은 장애 질문으로 바꾸지 말고 Source에서 확인한 기능 경로, 사전 조건, "
+    "안전한 실행 순서와 성공 기준을 먼저 답하십시오."
 )
 
 ACTIONABILITY_RETRY_INSTRUCTION = (
@@ -199,6 +208,8 @@ def build_chat_question(
 def is_resolution_progress_update(value: object) -> bool:
     """Recognize a requester's successful outcome without requiring RAG evidence for an acknowledgment."""
     normalized = str(value or "").casefold()
+    if any(pattern.search(normalized) for pattern in _UNRESOLVED_UPDATE_PATTERNS):
+        return False
     return any(marker in normalized for marker in _RESOLUTION_UPDATE_MARKERS)
 
 
@@ -305,6 +316,8 @@ def build_conversation_question(
         "최초 질문부터 현재 댓글까지 하나의 기술지원 맥락으로 종합하되, 최신 질문에 먼저 직접 답하십시오. "
         "반드시 질문과 관련된 제품 기능, API 명령, UI 컴포넌트와 Source 근거를 분석한 뒤 답하십시오. "
         "첨부 화면이나 파일이 있으면 보이는 상태 코드, API 명령, 컴포넌트 이름, 오류 문구를 빠짐없이 읽고 Source 동작과 연결하십시오. "
+        "사용 방법이나 지원 범위를 묻는 질문은 장애 발생 시각이나 로그를 먼저 요구하지 말고, 현재 제품에서 지원하는 기능 경로와 사전 조건, "
+        "안전한 실행 순서, 성공 기준을 먼저 설명하십시오. 사용자가 기능을 시도했지만 동작하지 않는다고 하면 해결된 것으로 해석하지 마십시오. "
         "배경에서 실패한 API 호출과 사용자가 실행한 작업의 실패를 구분하고, 둘이 같다고 단정하지 마십시오. "
         "가장 가능성이 높고 안전한 해결 방법을 맨 먼저 제시하십시오. 근거가 있는 경우 실행 위치, 정확한 CLI 명령, "
         "정상 판정 기준을 함께 적으십시오. 그 방법으로 해결되지 않을 때 적용할 대안과 다음 진단 단계를 이어서 제시하십시오. "
@@ -324,6 +337,7 @@ def build_conversation_question(
     compact_instruction = (
         "[응답 지침]\n"
         "관련 기능과 Source를 분석하고 첨부의 상태 코드·API·오류를 Source 동작과 연결하십시오. "
+        "방법·지원 범위 질문에는 지원 기능과 사전 조건을 먼저 답하고, 실패를 보고한 부정문은 해결 확인으로 해석하지 마십시오. "
         "최신 질문에 기초 진단, 해결 방법, 근거 있는 CLI 명령, 정상 판정 기준을 먼저 제시하십시오. "
         "명백한 오타는 짧게 알리고 분석을 계속하십시오. Linux 운영 명령·로그에는 실행 대상, SSH/콘솔 접속, 권한, "
         "정확한 .service 이름, 로그 경로, 시간 범위와 마스킹 안내를 포함하십시오. "

@@ -146,6 +146,41 @@ class VersionedAssistPolicyTest(unittest.TestCase):
         self.assertIn("Degraded를 libvirt 장애 하나로 단정하지 않는다", combined)
         self.assertIn("Available 전에는 호스트 전원 차단", combined)
 
+    def test_standalone_kvm_to_hci_uses_external_import_source_path(self) -> None:
+        question = "ABLESTACK Standalone 환경의 KVM 가상머신을 ABLESTACK HCI 환경으로 V2V하는 방법"
+        expanded = expand_retrieval_question(question)
+        results = curated_platform_results(question)
+        combined = "\n".join(item["content"] for item in results)
+
+        for expected in (
+            "ImportVmCmd", "importKvmInstance", "GetRemoteVmsCommand",
+            "CopyRemoteVolume", "qemu+tcp://<STANDALONE_HOST>/system",
+            "sudo virsh list --all", "nc -vz <STANDALONE_HOST> 16509",
+            "nc -vz <STANDALONE_HOST> 22", "qemu-img --version",
+            "/var/log/cloudstack/management/management-server.log",
+            "/var/log/cloudstack/agent/agent.log",
+        ):
+            self.assertIn(expected, combined)
+        self.assertIn("ImportVmCmd", expanded)
+        self.assertIn("ManageInstances.vue", expanded)
+        self.assertIn("ablestack_v2k", expanded)
+        self.assertIn("vCenter용 v2k를 사용하지 않는다", combined)
+
+    def test_standalone_kvm_import_prioritizes_exact_source_files(self) -> None:
+        question = "Standalone KVM에서 ABLESTACK HCI로 V2V 가져오기가 실패합니다."
+        rows = [
+            {"path": "docs/v2v.md", "content": "일반 V2V 안내"},
+            {"path": "api/ImportVmCmd.java", "content": "ImportSource.EXTERNAL hypervisor KVM"},
+            {"path": "server/UnmanagedVMsManagerImpl.java", "content": "importKvmInstance getRemoteVmsOnKVMHost"},
+            {"path": "wrapper/LibvirtGetRemoteVmsCommandWrapper.java", "content": "qemu+tcp PowerOff"},
+            {"path": "ui/ManageInstances.vue", "content": "external ImportUnmanagedInstance.vue importVm"},
+        ]
+
+        ranked = relevant_results(question, rows)
+
+        self.assertEqual("api/ImportVmCmd.java", ranked[0]["path"])
+        self.assertEqual(4, len([item for item in ranked[:4] if item["path"] != "docs/v2v.md"]))
+
     def test_rocky_linux_smb_question_loads_exact_official_mount_procedure(self) -> None:
         question = (
             "Rocky Linux 8.10 가상머신에서 SMB 서버에 연결해서 마운트하고 싶습니다. "
@@ -568,6 +603,10 @@ class VersionedAssistPolicyTest(unittest.TestCase):
         self.assertIn("kvmhapervider", ha_case["question"])
         self.assertIn("mold-agent.service", ha_case["requiredPublicGuidance"])
         self.assertIn("kvmhapervider가 실제 값인지 확인", ha_case["forbiddenPublicClaims"])
+        v2v_case = next(item for item in payload["cases"] if item["caseKey"] == "COMMUNITY-183-STANDALONE-KVM-V2V-001")
+        self.assertIn("정상적으로 동작하지 않습니다", v2v_case["question"])
+        self.assertIn("원격 ABLESTACK 호스트에서 인스턴스 가져오기", v2v_case["requiredPublicGuidance"])
+        self.assertIn("문제가 더 이상 발생하지", v2v_case["forbiddenPublicClaims"])
 
     def test_product_first_evidence_priority_is_stable(self) -> None:
         self.assertEqual((1, "ABLESTACK_DOCUMENTATION"), evidence_priority("SHARED_DOCS", "DOCUMENTATION"))

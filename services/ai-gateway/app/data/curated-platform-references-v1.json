@@ -3,7 +3,7 @@
   "setId": "ABLESTACK_CURATED_PLATFORM_REFERENCES_V1",
   "reviewStatus": "APPROVED",
   "reviewedBy": "dhslove",
-  "reviewedAt": "2026-09-02",
+  "reviewedAt": "2026-09-11",
   "refreshPolicy": {
     "mode": "LOCAL_SNAPSHOT_WITH_OFFICIAL_WEB_FALLBACK",
     "checkIntervalDays": 30,
@@ -43,6 +43,15 @@
       "sourceLocator": "https://libvirt.org/formatdomain.html",
       "matchTerms": ["콘솔", "연결중", "연결 중", "vnc", "libvirt", "qemu"],
       "content": "libvirt 도메인 XML의 graphics type vnc는 QEMU 가상머신의 VNC 그래픽 서버와 listen 주소 또는 UNIX socket 엔드포인트를 정의한다. virsh domdisplay <VM> --type vnc는 그래픽 접속 URI를 조회하고 virsh dumpxml <VM>의 graphics 구간은 현재 정의를 확인하는 읽기 전용 진단에 사용할 수 있다. 엔드포인트 조회 결과만으로 게스트 운영체제 장애를 의미하지는 않는다."
+    },
+    {
+      "entryId": "ABLESTACK-DIPLO-EXTERNAL-KVM-IMPORT-001",
+      "authority": "OPERATOR_APPROVED_KNOWLEDGE",
+      "title": "ABLESTACK Standalone KVM에서 HCI로 가상머신 가져오기",
+      "sourceLocator": "operator://ablestack/support/diplo-external-kvm-import/1",
+      "matchTerms": ["standalone", "스탠드얼론", "외부 kvm", "원격 ablestack", "독립 kvm", "kvm 호스트", "v2v", "가져오기", "이관", "마이그레이션"],
+      "requiredTermGroups": [["standalone", "스탠드얼론", "외부 kvm", "원격 ablestack", "독립 kvm", "kvm 호스트"], ["hci", "mold", "클러스터", "cluster", "ablestack"], ["v2v", "가져오기", "이관", "마이그레이션", "import"]],
+      "content": "ABLESTACK Diplo의 도구 → 인스턴스 가져오기-내보내기에는 '원격 ABLESTACK 호스트에서 인스턴스 가져오기' 경로가 있고, UI 설명은 ABLESTACK에서 관리하지 않는 외부 KVM 호스트의 libvirt 도메인을 가져오는 기능이라고 명시한다. 이 경로는 importVm API에 hypervisor=KVM, importsource=external을 전달한다. VMware vCenter를 원본으로 사용하는 ablestack_v2k와는 다른 기능이므로 Standalone KVM 원본에 vCenter용 v2k를 사용하지 않는다. 현재 Diplo 소스의 ImportVmCmd와 UnmanagedVMsManagerImpl.importKvmInstance는 ROOT 관리자만 외부 KVM 가져오기를 실행하도록 하며, 대상 Zone에 Up 상태 KVM 호스트가 있어야 한다. 대상 KVM Agent는 GetRemoteVmsCommand로 qemu+tcp://<STANDALONE_HOST>/system에 연결하고 전원이 꺼진 libvirt VM만 목록에 포함한다. 따라서 원본 VM은 먼저 정상 종료하고 원본 호스트에서 sudo virsh list --all로 shut off 상태를 확인한다. 원격 libvirt TCP 연결은 대상 HCI KVM 호스트에서 nc -vz <STANDALONE_HOST> 16509로 확인하고, 원본 디스크 변환·복사는 SSH 22를 사용하므로 nc -vz <STANDALONE_HOST> 22도 확인한다. 16509를 외부망에 공개하지 말고 승인된 관리망과 방화벽 범위에서만 허용한다. 디스크 복사 단계는 원본 호스트에서 qemu-img convert -O qcow2를 실행해 임시 경로(기본 /tmp)에 변환본을 만든 뒤 대상 Filesystem, NetworkFilesystem, SharedMountPoint 또는 RBD 스토리지로 복사한다. 원본 호스트에서 qemu-img --version과 df -h <TEMP_PATH>로 도구와 여유 공간을 확인하고, 대상 HCI에서는 원본 NIC를 대상 네트워크에, 루트·데이터 디스크를 서비스·디스크 오퍼링에 매핑한다. 가져오기 성공 기준은 작업이 완료되고 대상 VM이 Stopped 상태로 등록되며 모든 볼륨과 NIC 매핑이 보이는 것이다. 시작 전 원본 VM은 그대로 보존하고, 대상 부팅·네트워크·게스트 에이전트 확인이 끝나기 전에는 원본을 삭제하지 않는다. 실패하면 사용한 Diplo 버전, '원격 ABLESTACK 호스트에서 인스턴스 가져오기' 마법사의 실패 단계와 오류 전문, 원본 VM의 sudo virsh list --all 결과, 대상 HCI 호스트에서 22와 16509 연결 결과, 원본의 qemu-img --version과 df -h <TEMP_PATH> 결과를 요청한다. 관리 서버의 /var/log/cloudstack/management/management-server.log에서 importVm, GetRemoteVms, CopyRemoteVolume, Failed to import를 작업 시각 전후로 확인하고 대상 KVM 호스트의 /var/log/cloudstack/agent/agent.log에서 같은 키워드를 확인한다. 공개 게시판에는 SSH 비밀번호, API 키, 토큰, 내부 IP·호스트명과 전체 UUID를 마스킹한다."
     },
     {
       "entryId": "QEMU-LIVE-MIGRATION-001",

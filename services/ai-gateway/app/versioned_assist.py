@@ -151,6 +151,25 @@ NETWORK_REQUEST_FAILURE_MARKERS: tuple[str, ...] = (
     "HTTP 432",
 )
 
+KVM_EXTERNAL_IMPORT_MARKERS: tuple[str, ...] = (
+    "importVm",
+    "ImportVmCmd",
+    "ImportSource.EXTERNAL",
+    "importKvmInstance",
+    "getRemoteVmsOnKVMHost",
+    "GetRemoteVmsCommand",
+    "importExternalKvmVirtualMachine",
+    "CopyRemoteVolumeCommand",
+    "LibvirtGetRemoteVmsCommandWrapper",
+    "LibvirtCopyRemoteVolumeCommandWrapper",
+    "ManageInstances.vue",
+    "ImportUnmanagedInstance.vue",
+    "qemu+tcp",
+    "qemu-img convert",
+    "ablestack_v2k",
+    "vCenter",
+)
+
 
 def versioned_plan(question: str) -> dict[str, object]:
     return {
@@ -254,6 +273,20 @@ def _is_network_request_failure_question(question: str) -> bool:
     return network and failure
 
 
+def _is_kvm_external_import_question(question: str) -> bool:
+    normalized = question.casefold()
+    source = any(marker in normalized for marker in (
+        "standalone", "스탠드얼론", "외부 kvm", "원격 ablestack", "독립 kvm", "kvm 호스트",
+    ))
+    destination = any(marker in normalized for marker in (
+        "hci", "mold", "클러스터", "cluster", "ablestack으로", "ablestack 환경",
+    ))
+    migration = any(marker in normalized for marker in (
+        "v2v", "가져오기", "이관", "마이그레이션", "migration", "import",
+    ))
+    return source and destination and migration
+
+
 def feature_source_terms(question: str) -> tuple[str, ...]:
     """Map a user symptom to implementation terms before source retrieval."""
     anchors: list[str] = []
@@ -275,6 +308,8 @@ def feature_source_terms(question: str) -> tuple[str, ...]:
         anchors.extend(MOLD_MARKERS)
     if _is_network_request_failure_question(question):
         anchors.extend(NETWORK_REQUEST_FAILURE_MARKERS)
+    if _is_kvm_external_import_question(question):
+        anchors.extend(KVM_EXTERNAL_IMPORT_MARKERS)
     return tuple(dict.fromkeys(anchors))
 
 
@@ -347,6 +382,15 @@ def _relevance_score(question: str, item: dict[str, Any]) -> int:
             "samldomainswitcher.vue", "request.js", "plugins.js",
         )):
             score += 30
+    if _is_kvm_external_import_question(question):
+        score += sum(8 for marker in KVM_EXTERNAL_IMPORT_MARKERS if marker.casefold() in searchable)
+        path = str(item.get("path") or "").casefold()
+        if any(marker in path for marker in (
+            "importvmcmd.java", "unmanagedvmsmanagerimpl.java",
+            "libvirtgetremotevmscommandwrapper.java", "libvirtcopyremotevolumecommandwrapper.java",
+            "manageinstances.vue", "importunmanagedinstance.vue", "ablestack_v2k.sh",
+        )):
+            score += 36
     return score
 
 
