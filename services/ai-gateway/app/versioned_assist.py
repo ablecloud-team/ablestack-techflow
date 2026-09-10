@@ -620,6 +620,7 @@ _CLI_PREFIXES = (
     "sudo ", "systemctl ", "journalctl ", "ausearch ", "findmnt ", "namei ",
     "getfacl ", "matchpathcon ", "restorecon ", "virsh ", "qemu-ga ", "ls ",
     "grep ", "curl ", "ip ", "ss ", "getenforce", "sestatus", "mount ", "cat ",
+    "nc ", "qemu-img ", "df ",
     "apt ", "apt-get ", "dnf ", "rpm ", "dpkg ", "msiexec.exe ", "get-service ", "start-service ",
     "restart-service ", "get-timezone", "get-date", "w32tm ", "tzutil.exe ",
 )

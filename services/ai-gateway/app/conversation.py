@@ -54,7 +54,10 @@ _TYPO_PROTECTED_TERMS = {
     "disabled", "enabled", "ineligible", "systemctl", "journalctl", "libvirtd", "virtqemud", "powershell",
     "community", "techflow", "assistant", "localhost",
 }
-_LINUX_OPERATION = re.compile(r"\b(?:sudo\s+)?(?:systemctl|journalctl|virsh|grep|tail)\b", re.IGNORECASE)
+_LINUX_OPERATION = re.compile(
+    r"\b(?:sudo\s+)?(?:systemctl|journalctl|virsh|grep|tail|nc|qemu-img|df)\b",
+    re.IGNORECASE,
+)
 _SSH_EXAMPLE = re.compile(r"\bssh(?:\s+-p\s+\S+)?\s+\S+@\S+", re.IGNORECASE)
 _SERVICE_UNIT = re.compile(r"\b[a-zA-Z0-9_.@-]+\.service\b")
 
@@ -476,7 +479,7 @@ def build_progression_retry_question(
 
 COMMAND_MARKERS = (
     "`", "sudo ", "systemctl ", "journalctl ", "ausearch ", "findmnt ", "namei ", "getfacl ",
-    "matchpathcon ", "restorecon ", "virsh ", "grep ", "ls -",
+    "matchpathcon ", "restorecon ", "virsh ", "grep ", "ls -", "nc ", "qemu-img ", "df ",
 )
 ACTION_MARKERS = (
     "재시작", "마이그레이션", "복구", "수정", "변경", "적용", "재시도", "해제", "활성화", "비활성화",

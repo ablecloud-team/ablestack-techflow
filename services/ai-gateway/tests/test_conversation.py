@@ -21,6 +21,7 @@ from app.conversation import (
 from app.embedding import MAX_INPUT_BYTES, validate_inputs
 from app.models import CommunityCaseCreateRequest, ComprehensiveQueryRequest, ComprehensiveSynthesisRequest
 from app.responses import COMPREHENSIVE_SYSTEM_POLICY
+from app.versioned_assist import format_public_answer
 
 
 class ConversationProgressionTest(unittest.TestCase):
@@ -235,6 +236,9 @@ class ConversationProgressionTest(unittest.TestCase):
             self.assertIn(expected, combined)
         self.assertNotIn("문제가 더 이상 발생하지", combined)
         self.assertEqual((), community_actionability_issues(result))
+        answer = format_public_answer(result) or ""
+        self.assertIn("```bash\nnc -vz <STANDALONE_HOST> 16509", answer)
+        self.assertIn("qemu-img --version\ndf -h <TEMP_PATH>\n```", answer)
 
     def test_new_concrete_cli_step_advances_follow_up(self) -> None:
         result = {
