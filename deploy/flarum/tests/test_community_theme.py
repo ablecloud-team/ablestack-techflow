@@ -64,6 +64,18 @@ class CommunityThemeContractTests(unittest.TestCase):
         self.assertIn("/u/TechFlow-Assistant", self.less)
         self.assertIn('content: "최종 해결 가이드"', self.less)
 
+    def test_solution_state_uses_the_blue_brand_palette(self) -> None:
+        for token in (
+            "--ablecloud-brand-solution: #edf4ff",
+            "--ablecloud-brand-solution-border: #8fb5ef",
+            "--ablecloud-brand-solution-accent: var(--ablecloud-brand-primary)",
+            "--ablecloud-brand-solution-ink: var(--ablecloud-brand-primary-deep)",
+        ):
+            self.assertIn(token, self.less)
+
+        for legacy_green in ("#078248", "#86d2aa", "#d9f5e6", "#056038", "#f4fcf7", "#f2fbf6"):
+            self.assertNotIn(legacy_green, self.less)
+
     def test_korean_best_answer_labels(self) -> None:
         for text in ("해결됨", "해결 답변으로 선택", "해결 답변 선택 취소", "해결된 답변"):
             self.assertIn(text, self.less)
@@ -339,6 +351,18 @@ class CommunityThemeContractTests(unittest.TestCase):
         self.assertIn(".App-header .Header-primary", self.less)
         self.assertIn("margin-left: 247px", self.less)
         self.assertIn("justify-content: flex-start", self.less)
+
+    def test_detail_body_uses_full_width_and_wraps_unbroken_content(self) -> None:
+        self.assertNotIn("max-width: 82ch", self.less)
+        self.assertIn(".App--discussion .Post-body p", self.less)
+        self.assertIn("width: 100%", self.less)
+        self.assertIn("overflow-wrap: anywhere", self.less)
+        self.assertIn("word-break: keep-all", self.less)
+        self.assertIn(".App--discussion .Post-body code", self.less)
+        self.assertIn(".App--discussion .Post-body pre code", self.less)
+        self.assertIn("white-space: pre", self.less)
+        self.assertIn(".Composer .TextEditor-editor", self.less)
+        self.assertIn("white-space: pre-wrap", self.less)
 
     def test_compact_hero_and_navigation_width_contract(self) -> None:
         self.assertIn("--ablecloud-page-inline-space: clamp(32px, 4vw, 80px)", self.less)

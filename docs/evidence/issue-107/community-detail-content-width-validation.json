@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "issue": 107,
+  "pullRequest": 108,
+  "rootCause": {
+    "postBodyWidthPx": 1383,
+    "paragraphWidthBeforePx": 728,
+    "paragraphMaxWidthBefore": "82ch",
+    "composerInsertedBreaks": false,
+    "storedBrCount": 0,
+    "storedWbrCount": 0
+  },
+  "implementation": {
+    "paragraphUsesFullWidth": true,
+    "listUsesFullWidth": true,
+    "blockquoteUsesFullWidth": true,
+    "longTokenWrap": "anywhere",
+    "koreanWordBreak": "keep-all",
+    "preformattedCodePreserved": true,
+    "wideTableScrollsInsidePost": true,
+    "composerVisualWrapOnly": true
+  },
+  "solutionTheme": {
+    "palette": "ABLESTACK Primary Blue",
+    "surface": "#edf4ff",
+    "border": "#8fb5ef",
+    "accent": "#155eef",
+    "ink": "#0b3b91",
+    "legacyGreenPalettePresent": false,
+    "productionDiscussion": 176,
+    "cardBorderLeftRgb": "rgb(21, 94, 239)",
+    "cardBorderTopRgb": "rgb(143, 181, 239)",
+    "chipBackgroundRgb": "rgb(220, 233, 255)",
+    "chipInkRgb": "rgb(11, 59, 145)"
+  },
+  "browserValidation": {
+    "desktopViewportWidth": 1920,
+    "postBodyWidthPx": 1383,
+    "paragraphWidthAfterPx": 1383,
+    "maxChildOverflowPx": 0,
+    "mobileViewportWidth": 390,
+    "mobileDocumentScrollWidthPx": 375,
+    "mobilePostBodyWidthPx": 242,
+    "mobileHorizontalOverflow": false
+  },
+  "validation": {
+    "themeContractTestsPassed": 17,
+    "wslCycle": "issue107-detail-content-width-20260829",
+    "wslSolutionThemeCycle": "issue107-solution-blue-20260829",
+    "wslEnable": "PASS",
+    "wslRollback": "PASS",
+    "wslReEnable": "PASS",
+    "productionLocalHttpStatus": 200,
+    "nginx": "active",
+    "phpFpm": "active",
+    "mariaDb": "active"
+  },
+  "production": {
+    "lessSha256": "45a98c73513043957e4d40cc052be5c16cb9e2b9320e5a865bee5608455ac1d1",
+    "backupRoot": "/var/backups/techflow-flarum/theme-issue107-solution-blue-20260829",
+    "coreChanged": false,
+    "databaseChanged": false,
+    "contentChanged": false,
+    "attachmentsChanged": false,
+    "protectedIntegrationsChanged": false
+  }
+}
