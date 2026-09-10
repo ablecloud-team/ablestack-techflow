@@ -85,4 +85,3 @@ Gateway가 같은 토론의 Post #456까지 기록했다면 Post #451도 이미 
 - Issue #115
 - PR #110
 - `docs/evidence/issue-115/discussion-181-kb-recovery.json`
-
