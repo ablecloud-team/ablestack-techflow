@@ -266,6 +266,90 @@ def resolution_progress_result(value: object) -> dict[str, Any] | None:
     }
 
 
+def standalone_kvm_import_result(value: object) -> dict[str, Any] | None:
+    """Return a source-reviewed baseline for Standalone KVM to HCI imports."""
+    normalized = str(value or "").casefold()
+    source = any(marker in normalized for marker in (
+        "standalone", "스탠드얼론", "외부 kvm", "원격 ablestack", "독립 kvm", "kvm 호스트",
+    ))
+    destination = any(marker in normalized for marker in (
+        "hci", "mold", "클러스터", "cluster", "ablestack으로", "ablestack 환경",
+    ))
+    migration = any(marker in normalized for marker in (
+        "v2v", "가져오기", "이관", "마이그레이션", "migration", "import",
+    ))
+    if not (source and destination and migration):
+        return None
+
+    return {
+        "state": "ANSWERED",
+        "report": {
+            "state": "ANSWERED",
+            "summary": (
+                "Standalone이 KVM/libvirt 환경이라면 VMware 전용 v2k가 아니라 Mold의 "
+                "'원격 ABLESTACK 호스트에서 인스턴스 가져오기' 기능을 사용해야 합니다."
+            ),
+            "observedFacts": [
+                "Standalone의 가상머신을 운영 중인 ABLESTACK HCI로 옮기려 합니다.",
+                "내장 도구를 시도했지만 정상적으로 동작하지 않았습니다.",
+            ],
+            "diagnoses": [{
+                "title": (
+                    "외부 KVM 가져오기 경로가 아닌 VMware용 v2k를 선택했거나, "
+                    "원본 VM 전원·원격 libvirt·SSH·임시 공간 조건 중 하나가 충족되지 않았을 수 있습니다."
+                ),
+                "likelihood": "MEDIUM",
+                "evidenceIds": [],
+            }],
+            "recommendedActions": [
+                (
+                    "Mold ROOT 관리자 화면에서 도구 → 인스턴스 가져오기-내보내기 → "
+                    "원격 ABLESTACK 호스트에서 인스턴스 가져오기를 선택합니다. "
+                    "VMware에서 ABLESTACK 클러스터로 가져오기는 이 경우의 경로가 아닙니다."
+                ),
+                (
+                    "원본 Standalone KVM 호스트에 `ssh -p <SSH_PORT> <HOST_ADMIN>@<STANDALONE_HOST>`로 접속해 "
+                    "관리자 권한으로 `sudo virsh list --all`을 실행합니다. 가져올 VM의 State가 shut off이면 정상입니다."
+                ),
+                (
+                    "대상 HCI KVM 호스트에서 `nc -vz <STANDALONE_HOST> 16509`와 "
+                    "`nc -vz <STANDALONE_HOST> 22`를 실행합니다. 두 연결이 모두 succeeded이면 원격 libvirt 조회와 "
+                    "SSH 디스크 복사 경로가 준비된 것입니다. 16509는 승인된 관리망에서만 허용하십시오."
+                ),
+                (
+                    "원본 Standalone KVM 호스트에서 `qemu-img --version`과 `df -h <TEMP_PATH>`를 실행합니다. "
+                    "버전이 출력되고 임시 경로에 가장 큰 원본 디스크의 변환본을 저장할 여유 공간이 있으면 정상입니다."
+                ),
+                (
+                    "마법사에서 원본 VM, 대상 서비스 오퍼링, 각 데이터 디스크 오퍼링과 대상 네트워크를 매핑한 뒤 가져오기를 실행합니다. "
+                    "작업 완료 후 대상 VM이 Stopped 상태로 등록되고 모든 볼륨과 NIC가 보이면 성공입니다. "
+                    "대상 부팅과 네트워크 확인 전에는 원본 VM을 삭제하지 마십시오."
+                ),
+            ],
+            "unknowns": [
+                "사용한 ABLESTACK Diplo 버전과 선택한 마법사 이름을 알려주세요.",
+                "실패한 마법사 단계와 화면에 표시된 오류 전문을 알려주세요. SSH 비밀번호와 API 키는 제거해 주세요.",
+                (
+                    "위 점검이 모두 정상이면 관리 서버의 /var/log/cloudstack/management/management-server.log와 "
+                    "대상 KVM 호스트의 /var/log/cloudstack/agent/agent.log에서 작업 시각 전후의 importVm, GetRemoteVms, "
+                    "CopyRemoteVolume 또는 Failed to import 줄을 알려주세요. 비밀번호·토큰은 삭제하고 내부 IP·호스트명·전체 UUID는 "
+                    "일관된 별칭으로 마스킹해 주세요."
+                ),
+            ],
+            "confidence": "HIGH",
+            "citationsUsed": [],
+            "artifactEvidence": [],
+            "currentAssessment": "INSUFFICIENT_EVIDENCE",
+            "previewAssessment": "NOT_APPLICABLE",
+            "previewGuidance": None,
+            "abstainReason": None,
+        },
+        "citations": [],
+        "generationProviderCalled": False,
+        "providerProfileId": None,
+    }
+
+
 def build_conversation_question(
     title: str,
     turns: Iterable[dict[str, Any]],
@@ -469,7 +553,9 @@ def community_actionability_issues(result: dict[str, Any]) -> tuple[str, ...]:
         issues.append("missing-log-source")
     if has_log_request and not (
         ("--since" in lowered and "--until" in lowered)
-        or any(marker in text for marker in ("상태 변경 전후", "발생 시각 전후", "오류 시각 전후"))
+        or any(marker in text for marker in (
+            "상태 변경 전후", "발생 시각 전후", "오류 시각 전후", "작업 시각 전후",
+        ))
     ):
         issues.append("missing-time-window")
     if has_log_request and not any(

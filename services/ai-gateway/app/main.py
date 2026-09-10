@@ -79,6 +79,7 @@ from .conversation import (
     community_result_advances,
     conversation_artifact_ids,
     resolution_progress_result,
+    standalone_kvm_import_result,
     source_post_id,
 )
 from .versioned_assist import (
@@ -990,6 +991,18 @@ def create_app(
             UUID(value) for value in conversation_artifact_ids(turns, analysis_event)
         ]
         result = resolution_progress_result(request.question)
+        if result is not None:
+            _json_log(
+                "community_resolution_progress_acknowledged", correlationId=correlation_id,
+                discussionId=request.discussion_id, sourcePostId=post_id,
+            )
+        else:
+            result = standalone_kvm_import_result(conversation_question)
+            if result is not None:
+                _json_log(
+                    "community_reviewed_baseline_used", correlationId=correlation_id,
+                    discussionId=request.discussion_id, sourcePostId=post_id,
+                )
         if result is None:
             assist_request = ComprehensiveQueryRequest(
                 queryId=uuid4(), question=conversation_question, actorId=f"community:{request.author_id}",
@@ -997,11 +1010,6 @@ def create_app(
                 locale="ko-KR", classification="D0",
             )
             result = _query_comprehensive(assist_request, correlation_id)
-        else:
-            _json_log(
-                "community_resolution_progress_acknowledged", correlationId=correlation_id,
-                discussionId=request.discussion_id, sourcePostId=post_id,
-            )
         if result.get("state") == "FAILED":
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,

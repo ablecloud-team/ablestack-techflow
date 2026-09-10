@@ -16,6 +16,7 @@ from app.conversation import (
     is_resolution_progress_update,
     probable_identifier_typos,
     resolution_progress_result,
+    standalone_kvm_import_result,
 )
 from app.embedding import MAX_INPUT_BYTES, validate_inputs
 from app.models import CommunityCaseCreateRequest, ComprehensiveQueryRequest, ComprehensiveSynthesisRequest
@@ -214,6 +215,26 @@ class ConversationProgressionTest(unittest.TestCase):
 
         self.assertIn("지원하는 기능 경로와 사전 조건", prompt)
         self.assertIn("해결된 것으로 해석하지 마십시오", prompt)
+
+    def test_standalone_kvm_import_has_reviewed_baseline_without_provider(self) -> None:
+        result = standalone_kvm_import_result(
+            "ABLESTACK Standalone KVM에서 ABLESTACK HCI로 V2V를 시도했지만 정상적으로 동작하지 않습니다."
+        ) or {}
+        report = result["report"]
+        combined = "\n".join([
+            report["summary"], *report["recommendedActions"], *report["unknowns"],
+        ])
+
+        self.assertEqual("ANSWERED", result["state"])
+        self.assertFalse(result["generationProviderCalled"])
+        for expected in (
+            "원격 ABLESTACK 호스트에서 인스턴스 가져오기",
+            "sudo virsh list --all", "16509", "22", "qemu-img --version",
+            "management-server.log", "agent.log", "작업 시각 전후", "마스킹",
+        ):
+            self.assertIn(expected, combined)
+        self.assertNotIn("문제가 더 이상 발생하지", combined)
+        self.assertEqual((), community_actionability_issues(result))
 
     def test_new_concrete_cli_step_advances_follow_up(self) -> None:
         result = {

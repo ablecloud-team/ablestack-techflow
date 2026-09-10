@@ -113,6 +113,10 @@ class ContainerContractTest(unittest.TestCase):
         self.assertIn("search_official_references(retrieval_question)", MAIN)
         self.assertNotIn("search_official_references(request.question)", MAIN)
 
+    def test_community_v2v_uses_reviewed_baseline_before_provider(self) -> None:
+        self.assertIn("standalone_kvm_import_result(conversation_question)", MAIN)
+        self.assertIn('"community_reviewed_baseline_used"', MAIN)
+
     def test_healthcheck_exists(self) -> None:
         self.assertGreaterEqual(COMPOSE.count("healthcheck:"), 2)
 
