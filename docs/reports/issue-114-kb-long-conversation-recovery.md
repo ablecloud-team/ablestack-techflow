@@ -81,4 +81,3 @@ Gateway와 Community Poller만 `techflow/ai-gateway:issue114-0.16.9-02061eb` 이
 - Issue #114
 - PR #110
 - `docs/evidence/issue-114/discussion-177-kb-recovery.json`
-
