@@ -1,5 +1,11 @@
 # TechFlow AI Gateway
 
+## v0.16.10 구현 범위
+
+- Gateway가 같은 Discussion의 이후 Post까지 처리했다면 이전 Pending Post도 완료로 인정합니다.
+- Poller 실행 중 새로 발견한 해결 토론은 기존 Snapshot이 없어도 해결 이벤트를 생성합니다.
+- 최초 Bootstrap에서는 과거 해결 토론을 일괄 처리하지 않는 기존 안전장치를 유지합니다.
+
 ## v0.16.9 구현 범위
 
 - KB용 16,000자 대화가 공식 외부 자료 검색의 4,000자 계약을 넘지 않도록 UTF-8 제한 검색 질문 재사용

@@ -281,11 +281,16 @@ class CommunityPollerTests(unittest.TestCase):
     def test_legacy_discussion_state_bootstraps_posts_without_notification_flood(self) -> None:
         discussion_payload = {
             "data": [{"type": "discussions", "id": "10",
-                      "attributes": {"title": "질문", "commentCount": 1, "bestAnswerSetAt": None},
+                      "attributes": {
+                          "title": "질문", "commentCount": 1,
+                          "bestAnswerSetAt": "2026-09-01T00:00:00Z",
+                      },
                       "relationships": {
                           "firstPost": {"data": {"type": "posts", "id": "100"}},
                           "user": {"data": {"type": "users", "id": "7"}},
                           "tags": {"data": []},
+                          "bestAnswerPost": {"data": {"type": "posts", "id": "100"}},
+                          "bestAnswerUser": {"data": {"type": "users", "id": "7"}},
                       }}],
             "included": [],
         }
@@ -323,6 +328,7 @@ class CommunityPollerTests(unittest.TestCase):
             migrated = json.loads(state_file.read_text(encoding="utf-8"))
             self.assertEqual(["100"], migrated["seenPosts"])
             self.assertIn("10", migrated["discussions"])
+            self.assertEqual("100", migrated["discussions"]["10"]["bestAnswerPostId"])
 
     def test_html_parser_does_not_execute_or_expand_markup(self) -> None:
         parser = poll_flarum.ContentParser()
@@ -608,6 +614,27 @@ class CommunityPollerTests(unittest.TestCase):
             request.call_args.kwargs["extra_headers"],
         )
 
+    def test_gateway_confirmation_accepts_case_advanced_to_later_post(self) -> None:
+        case = {
+            "discussionId": "181",
+            "lastSeenPostId": "456",
+            "state": "PUBLISHED",
+            "publishedPostId": "455",
+        }
+        self.assertTrue(
+            poll_flarum.gateway_post_is_confirmed(case, "451", require_publication=True)
+        )
+        self.assertFalse(
+            poll_flarum.gateway_post_is_confirmed(case, "457", require_publication=True)
+        )
+        self.assertFalse(
+            poll_flarum.gateway_post_is_confirmed(
+                {**case, "lastSeenPostId": "post-later"},
+                "post-earlier",
+                require_publication=True,
+            )
+        )
+
     def test_unconfirmed_gateway_post_is_not_checkpointed(self) -> None:
         discussion_payload = {
             "data": [{"type": "discussions", "id": "137",
@@ -723,6 +750,88 @@ class CommunityPollerTests(unittest.TestCase):
         self.assertEqual(0, result["pendingPosts"])
         self.assertIn("412", state["seenPosts"])
         self.assertEqual(2, state["discussions"]["137"]["commentCount"])
+
+    def test_resolved_discussion_without_snapshot_submits_resolution_after_advanced_confirmation(self) -> None:
+        discussion_payload = {
+            "data": [{
+                "type": "discussions", "id": "181",
+                "attributes": {
+                    "title": "도메인 생성후 유저 상속", "commentCount": 5,
+                    "bestAnswerSetAt": "2026-09-07T08:38:07Z",
+                },
+                "relationships": {
+                    "firstPost": {"data": {"type": "posts", "id": "451"}},
+                    "user": {"data": {"type": "users", "id": "46"}},
+                    "tags": {"data": []},
+                    "bestAnswerPost": {"data": {"type": "posts", "id": "456"}},
+                    "bestAnswerUser": {"data": {"type": "users", "id": "46"}},
+                },
+            }],
+            "included": [],
+        }
+        posts_payload = {"data": [
+            {
+                "type": "posts", "id": "451",
+                "attributes": {"number": 1, "contentHtml": "<p>도메인 제한 질문</p>"},
+                "relationships": {"user": {"data": {"type": "users", "id": "46"}}},
+            },
+            {
+                "type": "posts", "id": "456",
+                "attributes": {"number": 5, "contentHtml": "<p>지원 담당자 해결 답변</p>"},
+                "relationships": {"user": {"data": {"type": "users", "id": "12"}}},
+            },
+        ]}
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            token_file, webhook_file, state_file = root / "token", root / "webhook", root / "state.json"
+            token_file.write_text("a" * 40, encoding="utf-8")
+            webhook_file.write_text("http://activepieces.invalid/webhook", encoding="utf-8")
+            state_file.write_text(json.dumps({
+                "seenPosts": ["452", "453", "454", "455", "456"],
+                "discussions": {},
+                "pendingPosts": {"451": {
+                    "discussionId": "181", "requirePublication": True,
+                    "submittedAt": 900, "nextRetryAt": 1100, "attempts": 270,
+                }},
+            }), encoding="utf-8")
+            submitted: list[dict] = []
+
+            def fake_request(url: str, **kwargs):
+                if "/api/discussions?" in url:
+                    return discussion_payload
+                if "/api/posts?" in url:
+                    return posts_payload
+                if url == "http://activepieces.invalid/webhook":
+                    submitted.append(kwargs["data"])
+                    return {}
+                if url.endswith("/v1/community/reviews/reconcile"):
+                    return {"data": {"checked": 0, "approved": 0, "retried": 0, "retryFailed": 0}}
+                raise AssertionError(url)
+
+            environment = {
+                "TECHFLOW_FLARUM_API_KEY_FILE": str(token_file),
+                "TECHFLOW_COMMUNITY_INGEST_WEBHOOK_FILE": str(webhook_file),
+            }
+            gateway_case = {
+                "discussionId": "181", "lastSeenPostId": "456",
+                "state": "PUBLISHED", "publishedPostId": "455",
+            }
+            with patch.dict(os.environ, environment, clear=False), patch.object(
+                poll_flarum, "request_json", side_effect=fake_request,
+            ), patch.object(
+                poll_flarum, "get_gateway_case_if_exists", return_value=gateway_case,
+            ), patch.object(poll_flarum.time, "time", return_value=1000):
+                result = poll_flarum.run_once(state_file)
+            state = json.loads(state_file.read_text(encoding="utf-8"))
+
+        self.assertEqual(1, result["delivered"])
+        self.assertEqual(0, result["pendingPosts"])
+        self.assertEqual(1, result["submittedResolutions"])
+        self.assertEqual(1, result["pendingResolutions"])
+        self.assertIn("451", state["seenPosts"])
+        self.assertEqual(1, len(submitted))
+        self.assertTrue(submitted[0]["resolutionOnly"])
+        self.assertEqual("456", submitted[0]["bestAnswerPostId"])
 
     def test_pending_confirmation_does_not_block_discovery_of_another_discussion(self) -> None:
         discussion_payload = {

@@ -557,7 +557,13 @@ def confirm_gateway_post(
 
 def gateway_post_is_confirmed(case: dict, post_id: str, *, require_publication: bool) -> bool:
     """Check a Gateway Case without blocking the Poller discovery loop."""
-    post_confirmed = str(case.get("lastSeenPostId") or "") == post_id
+    last_seen_post_id = str(case.get("lastSeenPostId") or "")
+    post_confirmed = last_seen_post_id == post_id
+    if not post_confirmed and last_seen_post_id.isdigit() and post_id.isdigit():
+        # Flarum post IDs increase monotonically. This Case endpoint is already
+        # scoped to the same discussion, so reaching a later post proves that
+        # the earlier pending post was accepted even if confirmation was late.
+        post_confirmed = int(last_seen_post_id) > int(post_id)
     publication_confirmed = (
         not require_publication
         or (case.get("state") == "PUBLISHED" and bool(case.get("publishedPostId")))
@@ -811,9 +817,14 @@ def run_once(state_path: Path, *, bootstrap_only: bool = False) -> dict:
                 continue
             if discussion_waiting:
                 continue
-            resolution_changed = bool(previous) and (
-                previous.get("bestAnswerPostId") != discussion.get("bestAnswerPostId")
-                or previous.get("bestAnswerSetAt") != discussion.get("bestAnswerSetAt")
+            resolution_changed = (
+                bool(previous)
+                and (
+                    previous.get("bestAnswerPostId") != discussion.get("bestAnswerPostId")
+                    or previous.get("bestAnswerSetAt") != discussion.get("bestAnswerSetAt")
+                )
+            ) or (
+                not previous and bool(discussion.get("bestAnswerPostId"))
             )
             if resolution_changed and not bootstrap_current:
                 if discussion_id in confirmed_resolution_discussions:
