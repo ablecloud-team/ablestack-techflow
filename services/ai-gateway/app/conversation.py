@@ -20,13 +20,22 @@ _RESOLUTION_UPDATE_MARKERS = (
     "정상 동작", "정상적으로 동작", "조치 후 정상", "문제가 없어", "오류가 없어", "성공했습니다",
 )
 
+_UNRESOLVED_UPDATE_PATTERNS = (
+    re.compile(r"정상(?:적으로)?\s*(?:동작|작동)(?:하|되)?지\s*(?:않|못)"),
+    re.compile(r"(?:문제|오류|장애)(?:가|이)?\s*(?:해결|사라|없어)지\s*(?:않|못)"),
+    re.compile(r"(?:해결|복구|성공)(?:되|하)?지\s*(?:않|못)"),
+    re.compile(r"(?:계속|여전히|아직).{0,24}(?:실패|오류|문제|장애|동작하지|작동하지)"),
+)
+
 PROGRESSION_RETRY_INSTRUCTION = (
     "[진행성 재작성 필수]\n"
     "직전 답변의 설명과 점검 목록을 반복하지 마십시오. "
     "관련 제품 기능과 Source 근거에서 확인한 기초 진단과 해결책을 맨 먼저 쓰십시오. 첨부 화면에서는 상태 코드, "
     "API 명령, 컴포넌트 이름과 오류 문구를 읽어 Source 동작과 연결하십시오. 근거가 있는 정확한 CLI 명령, "
     "실행 위치, 정상 판정 기준을 포함하십시오. 원인을 확정하지 못해도 확인된 실패 분기와 안전한 점검 순서를 "
-    "먼저 설명한 뒤, 아직 제공되지 않은 자료 한정으로 구체적인 명령 결과나 응답 본문을 요청하십시오."
+    "먼저 설명한 뒤, 아직 제공되지 않은 자료 한정으로 구체적인 명령 결과나 응답 본문을 요청하십시오. "
+    "사용 방법이나 지원 범위를 묻는 질문은 장애 질문으로 바꾸지 말고 Source에서 확인한 기능 경로, 사전 조건, "
+    "안전한 실행 순서와 성공 기준을 먼저 답하십시오."
 )
 
 ACTIONABILITY_RETRY_INSTRUCTION = (
@@ -45,7 +54,10 @@ _TYPO_PROTECTED_TERMS = {
     "disabled", "enabled", "ineligible", "systemctl", "journalctl", "libvirtd", "virtqemud", "powershell",
     "community", "techflow", "assistant", "localhost",
 }
-_LINUX_OPERATION = re.compile(r"\b(?:sudo\s+)?(?:systemctl|journalctl|virsh|grep|tail)\b", re.IGNORECASE)
+_LINUX_OPERATION = re.compile(
+    r"\b(?:sudo\s+)?(?:systemctl|journalctl|virsh|grep|tail|nc|qemu-img|df)\b",
+    re.IGNORECASE,
+)
 _SSH_EXAMPLE = re.compile(r"\bssh(?:\s+-p\s+\S+)?\s+\S+@\S+", re.IGNORECASE)
 _SERVICE_UNIT = re.compile(r"\b[a-zA-Z0-9_.@-]+\.service\b")
 
@@ -199,6 +211,8 @@ def build_chat_question(
 def is_resolution_progress_update(value: object) -> bool:
     """Recognize a requester's successful outcome without requiring RAG evidence for an acknowledgment."""
     normalized = str(value or "").casefold()
+    if any(pattern.search(normalized) for pattern in _UNRESOLVED_UPDATE_PATTERNS):
+        return False
     return any(marker in normalized for marker in _RESOLUTION_UPDATE_MARKERS)
 
 
@@ -245,6 +259,90 @@ def resolution_progress_result(value: object) -> dict[str, Any] | None:
             "citationsUsed": [],
             "artifactEvidence": [],
             "currentAssessment": "CURRENT_CONFIG_ERROR" if tag_resolution else "CURRENT_NORMAL",
+            "previewAssessment": "NOT_APPLICABLE",
+            "previewGuidance": None,
+            "abstainReason": None,
+        },
+        "citations": [],
+        "generationProviderCalled": False,
+        "providerProfileId": None,
+    }
+
+
+def standalone_kvm_import_result(value: object) -> dict[str, Any] | None:
+    """Return a source-reviewed baseline for Standalone KVM to HCI imports."""
+    normalized = str(value or "").casefold()
+    source = any(marker in normalized for marker in (
+        "standalone", "스탠드얼론", "외부 kvm", "원격 ablestack", "독립 kvm", "kvm 호스트",
+    ))
+    destination = any(marker in normalized for marker in (
+        "hci", "mold", "클러스터", "cluster", "ablestack으로", "ablestack 환경",
+    ))
+    migration = any(marker in normalized for marker in (
+        "v2v", "가져오기", "이관", "마이그레이션", "migration", "import",
+    ))
+    if not (source and destination and migration):
+        return None
+
+    return {
+        "state": "ANSWERED",
+        "report": {
+            "state": "ANSWERED",
+            "summary": (
+                "Standalone이 KVM/libvirt 환경이라면 VMware 전용 v2k가 아니라 Mold의 "
+                "'원격 ABLESTACK 호스트에서 인스턴스 가져오기' 기능을 사용해야 합니다."
+            ),
+            "observedFacts": [
+                "Standalone의 가상머신을 운영 중인 ABLESTACK HCI로 옮기려 합니다.",
+                "내장 도구를 시도했지만 정상적으로 동작하지 않았습니다.",
+            ],
+            "diagnoses": [{
+                "title": (
+                    "외부 KVM 가져오기 경로가 아닌 VMware용 v2k를 선택했거나, "
+                    "원본 VM 전원·원격 libvirt·SSH·임시 공간 조건 중 하나가 충족되지 않았을 수 있습니다."
+                ),
+                "likelihood": "MEDIUM",
+                "evidenceIds": [],
+            }],
+            "recommendedActions": [
+                (
+                    "Mold ROOT 관리자 화면에서 도구 → 인스턴스 가져오기-내보내기 → "
+                    "원격 ABLESTACK 호스트에서 인스턴스 가져오기를 선택합니다. "
+                    "VMware에서 ABLESTACK 클러스터로 가져오기는 이 경우의 경로가 아닙니다."
+                ),
+                (
+                    "원본 Standalone KVM 호스트에 `ssh -p <SSH_PORT> <HOST_ADMIN>@<STANDALONE_HOST>`로 접속해 "
+                    "관리자 권한으로 `sudo virsh list --all`을 실행합니다. 가져올 VM의 State가 shut off이면 정상입니다."
+                ),
+                (
+                    "대상 HCI KVM 호스트에서 `nc -vz <STANDALONE_HOST> 16509`와 "
+                    "`nc -vz <STANDALONE_HOST> 22`를 실행합니다. 두 연결이 모두 succeeded이면 원격 libvirt 조회와 "
+                    "SSH 디스크 복사 경로가 준비된 것입니다. 16509는 승인된 관리망에서만 허용하십시오."
+                ),
+                (
+                    "원본 Standalone KVM 호스트에서 `qemu-img --version`과 `df -h <TEMP_PATH>`를 실행합니다. "
+                    "버전이 출력되고 임시 경로에 가장 큰 원본 디스크의 변환본을 저장할 여유 공간이 있으면 정상입니다."
+                ),
+                (
+                    "마법사에서 원본 VM, 대상 서비스 오퍼링, 각 데이터 디스크 오퍼링과 대상 네트워크를 매핑한 뒤 가져오기를 실행합니다. "
+                    "작업 완료 후 대상 VM이 Stopped 상태로 등록되고 모든 볼륨과 NIC가 보이면 성공입니다. "
+                    "대상 부팅과 네트워크 확인 전에는 원본 VM을 삭제하지 마십시오."
+                ),
+            ],
+            "unknowns": [
+                "사용한 ABLESTACK Diplo 버전과 선택한 마법사 이름을 알려주세요.",
+                "실패한 마법사 단계와 화면에 표시된 오류 전문을 알려주세요. SSH 비밀번호와 API 키는 제거해 주세요.",
+                (
+                    "위 점검이 모두 정상이면 관리 서버의 /var/log/cloudstack/management/management-server.log와 "
+                    "대상 KVM 호스트의 /var/log/cloudstack/agent/agent.log에서 작업 시각 전후의 importVm, GetRemoteVms, "
+                    "CopyRemoteVolume 또는 Failed to import 줄을 알려주세요. 비밀번호·토큰은 삭제하고 내부 IP·호스트명·전체 UUID는 "
+                    "일관된 별칭으로 마스킹해 주세요."
+                ),
+            ],
+            "confidence": "HIGH",
+            "citationsUsed": [],
+            "artifactEvidence": [],
+            "currentAssessment": "INSUFFICIENT_EVIDENCE",
             "previewAssessment": "NOT_APPLICABLE",
             "previewGuidance": None,
             "abstainReason": None,
@@ -305,6 +403,8 @@ def build_conversation_question(
         "최초 질문부터 현재 댓글까지 하나의 기술지원 맥락으로 종합하되, 최신 질문에 먼저 직접 답하십시오. "
         "반드시 질문과 관련된 제품 기능, API 명령, UI 컴포넌트와 Source 근거를 분석한 뒤 답하십시오. "
         "첨부 화면이나 파일이 있으면 보이는 상태 코드, API 명령, 컴포넌트 이름, 오류 문구를 빠짐없이 읽고 Source 동작과 연결하십시오. "
+        "사용 방법이나 지원 범위를 묻는 질문은 장애 발생 시각이나 로그를 먼저 요구하지 말고, 현재 제품에서 지원하는 기능 경로와 사전 조건, "
+        "안전한 실행 순서, 성공 기준을 먼저 설명하십시오. 사용자가 기능을 시도했지만 동작하지 않는다고 하면 해결된 것으로 해석하지 마십시오. "
         "배경에서 실패한 API 호출과 사용자가 실행한 작업의 실패를 구분하고, 둘이 같다고 단정하지 마십시오. "
         "가장 가능성이 높고 안전한 해결 방법을 맨 먼저 제시하십시오. 근거가 있는 경우 실행 위치, 정확한 CLI 명령, "
         "정상 판정 기준을 함께 적으십시오. 그 방법으로 해결되지 않을 때 적용할 대안과 다음 진단 단계를 이어서 제시하십시오. "
@@ -324,6 +424,7 @@ def build_conversation_question(
     compact_instruction = (
         "[응답 지침]\n"
         "관련 기능과 Source를 분석하고 첨부의 상태 코드·API·오류를 Source 동작과 연결하십시오. "
+        "방법·지원 범위 질문에는 지원 기능과 사전 조건을 먼저 답하고, 실패를 보고한 부정문은 해결 확인으로 해석하지 마십시오. "
         "최신 질문에 기초 진단, 해결 방법, 근거 있는 CLI 명령, 정상 판정 기준을 먼저 제시하십시오. "
         "명백한 오타는 짧게 알리고 분석을 계속하십시오. Linux 운영 명령·로그에는 실행 대상, SSH/콘솔 접속, 권한, "
         "정확한 .service 이름, 로그 경로, 시간 범위와 마스킹 안내를 포함하십시오. "
@@ -378,7 +479,7 @@ def build_progression_retry_question(
 
 COMMAND_MARKERS = (
     "`", "sudo ", "systemctl ", "journalctl ", "ausearch ", "findmnt ", "namei ", "getfacl ",
-    "matchpathcon ", "restorecon ", "virsh ", "grep ", "ls -",
+    "matchpathcon ", "restorecon ", "virsh ", "grep ", "ls -", "nc ", "qemu-img ", "df ",
 )
 ACTION_MARKERS = (
     "재시작", "마이그레이션", "복구", "수정", "변경", "적용", "재시도", "해제", "활성화", "비활성화",
@@ -455,7 +556,9 @@ def community_actionability_issues(result: dict[str, Any]) -> tuple[str, ...]:
         issues.append("missing-log-source")
     if has_log_request and not (
         ("--since" in lowered and "--until" in lowered)
-        or any(marker in text for marker in ("상태 변경 전후", "발생 시각 전후", "오류 시각 전후"))
+        or any(marker in text for marker in (
+            "상태 변경 전후", "발생 시각 전후", "오류 시각 전후", "작업 시각 전후",
+        ))
     ):
         issues.append("missing-time-window")
     if has_log_request and not any(

@@ -1,5 +1,12 @@
 # TechFlow AI Gateway
 
+## v0.16.11 구현 범위
+
+- Community의 사용 방법·지원 범위 질문은 기능 경로와 사전 조건을 먼저 답한 뒤 필요한 실패 자료만 요청합니다.
+- Standalone KVM에서 ABLESTACK HCI로 옮기는 질문은 VMware용 `ablestack_v2k`와 외부 KVM `importVm` 경로를 구분합니다.
+- `정상적으로 동작하지 않습니다` 같은 부정문을 해결 확인으로 잘못 판정하지 않습니다.
+- Discussion #183을 Source 검색·부정문·답변 순서 Golden Case로 고정합니다.
+
 ## v0.16.10 구현 범위
 
 - Gateway가 같은 Discussion의 이후 Post까지 처리했다면 이전 Pending Post도 완료로 인정합니다.

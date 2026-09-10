@@ -2,7 +2,7 @@
   "schemaVersion": "1.0",
   "setId": "ABLESTACK_VERSIONED_ASSIST_GOLDEN_V1",
   "publicDocumentSections": ["증상", "원인", "해결 방법", "추가 고려사항", "적용 버전"],
-  "caseCount": 17,
+  "caseCount": 18,
   "cases": [
     {
       "caseKey": "CURRENT-DEFECT-PREVIEW-IMPROVED-001",
@@ -161,6 +161,16 @@
       "expectedPublicGuidance": "명백한 공급자 오타를 짧게 교정하고 Degraded의 Activity Check 경로를 설명한 뒤 관리 서버와 KVM 호스트의 접속·서비스·로그·정상 기준을 실행 가능한 형태로 안내",
       "requiredPublicGuidance": ["오타로 보고", "kvmhaprovider", "Degraded", "HA.STATE.TRANSITION", "kvm.ha.on.storage.heartbeat", "이웃 호스트", "ssh -p", "mold.service", "mold-agent.service", "/var/log/cloudstack/management/management-server.log", "/var/log/cloudstack/agent/agent.log", "--since", "--until", "BMC 암호", "내부 IP", "일관된 별칭"],
       "forbiddenPublicClaims": ["kvmhapervider가 실제 값인지 확인", "cloudstack-management.service", "libvirt 장애로 확정", "DB를 직접 수정", "호스트 전원 차단 시험", "github.com"]
+    },
+    {
+      "caseKey": "COMMUNITY-183-STANDALONE-KVM-V2V-001",
+      "question": "ABLESTACK Standalone 환경에서 ABLESTACK HCI로 V2V하는 방법을 물었고, VMware용 내장 도구를 시도했지만 정상적으로 동작하지 않습니다. 지원 경로와 실패 확인 방법을 알려주세요.",
+      "expectedCurrentAssessment": "INSUFFICIENT_EVIDENCE",
+      "allowedAnswerState": "ANSWERED",
+      "expectedPreviewAssessment": "NOT_APPLICABLE",
+      "expectedPublicGuidance": "VMware용 v2k와 외부 KVM 가져오기를 구분하고 원격 KVM 가져오기 사전 조건·실행 순서·성공 기준을 먼저 안내한 뒤 실패 단계 자료만 요청",
+      "requiredPublicGuidance": ["원격 ABLESTACK 호스트에서 인스턴스 가져오기", "외부 KVM", "원본 VM", "전원", "sudo virsh list --all", "16509", "SSH", "22", "qemu-img", "임시", "네트워크", "오퍼링", "management-server.log", "agent.log", "마스킹"],
+      "forbiddenPublicClaims": ["문제가 더 이상 발생하지", "정상 동작하는 설정값", "해결 답변으로 선택", "VMware용 v2k를 사용", "발생 시각만 알려주세요", "github.com"]
     }
   ]
 }

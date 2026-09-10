@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-09-10T23:10:00Z",
+  "issue": 116,
+  "pullRequest": 117,
+  "discussion": {
+    "discussionId": "183",
+    "firstPostId": "460",
+    "initialAssistantPostId": "461",
+    "failureFollowupPostId": "462",
+    "correctedAssistantPostId": "463",
+    "staffHoldPostId": "464",
+    "caseId": "873ced8f-0cf3-4979-9f2e-21aebc4a4e2d",
+    "caseState": "PUBLISHED",
+    "conversationState": "WAITING_RESOLUTION",
+    "answerState": "ANSWERED",
+    "draftVersion": 2,
+    "postApproved": true,
+    "updatedInPlace": true,
+    "incorrectResolutionClaimRemoved": true,
+    "browserVerified": true
+  },
+  "rootCause": {
+    "howToQuestionTreatedAsIncident": true,
+    "missingExternalKvmSourceAnchors": true,
+    "negatedWorkingPhraseTreatedAsSuccess": true,
+    "matchedPhrase": "정상적으로 동작",
+    "actualPhrase": "정상적으로 동작하지 않습니다"
+  },
+  "sourceEvidence": {
+    "cloudDiploCommit": "678835c2008c47fc32c151196a0dd1a1cc446828",
+    "qemuExecToolsCommit": "9d5f543dd0a1ffb83f661b1b7b792f16b0b1d73a",
+    "externalImportApi": "importVm",
+    "externalImportSource": "EXTERNAL",
+    "hypervisor": "KVM",
+    "remoteLibvirtUri": "qemu+tcp://<STANDALONE_HOST>/system",
+    "sourceVmRequiredState": "PowerOff",
+    "remoteLibvirtPort": 16509,
+    "diskCopySshPort": 22,
+    "conversionCommand": "qemu-img convert -O qcow2"
+  },
+  "providerValidation": {
+    "sourceProfilesWithEvidence": 7,
+    "curatedReferenceFound": true,
+    "firstLiveQueryStatus": "FAILED",
+    "firstLiveQueryErrorCode": "PROVIDER_INVALID_RESPONSE",
+    "firstLiveQueryLatencyMs": 150574,
+    "deterministicBaselineAdded": true,
+    "deterministicProviderCalled": false
+  },
+  "implementation": {
+    "version": "0.16.11",
+    "deploymentCommit": "20500f9",
+    "validationHead": "e35179d",
+    "negativeOutcomeGuard": true,
+    "externalKvmRetrievalAnchors": true,
+    "reviewedBaselineFallback": true,
+    "copyableCliFormatting": true,
+    "goldenCase": "COMMUNITY-183-STANDALONE-KVM-V2V-001",
+    "openApiOperationCount": 39
+  },
+  "runtime": {
+    "image": "techflow/ai-gateway:issue116-0.16.11-20500f9",
+    "imageId": "sha256:68f85651fd05e8f2bd2872f880c2819d781dd9dfc7b1352c9743eb2133dc15024",
+    "gatewayContainerId": "533e9642119158d823a3f1452c607123c2f217b56333a9a82254fd564c0f9004c",
+    "gateway": "healthy",
+    "gatewayRestartCount": 0,
+    "communityPollerContainerId": "9d4801767fd5944f9d41745231d6e6e51044c74ee3adb6a03ae171448c51b7fbf",
+    "communityPoller": "healthy",
+    "communityPollerRestartCount": 0,
+    "pendingPosts": 0,
+    "pendingResolutions": 0,
+    "failed": 0,
+    "publicCommunityHttpStatus": 200,
+    "publicChatHttpStatus": 200
+  },
+  "protectedServices": {
+    "sourceReconcilerContainerId": "d67ff13feccf62434001f5361db114dbc55169cc0d0a1d7eeef3258977ad2b37c",
+    "githubChatEventGatewayContainerId": "bf5c76824dbf8b0513431e4d067043d0ff46fa825553512c41239e5f622804b4c",
+    "activepiecesAppContainerId": "80a652dc8961adc8594aafac216270106285ec4d8175bee95e33dbcfd95755dac",
+    "activepiecesWorkerContainerId": "d50ee9a92d9d8337a5253f39644c0a6c2c5473e3c5203af2277611f1da2887879",
+    "changed": false,
+    "restartCount": 0
+  },
+  "deployment": {
+    "packageSha256": "97658B4CD891B6C5BB31B1870423415A6B05DBA04AF333B23B24E77926F48D76",
+    "archiveShellScriptsLfVerified": true,
+    "backup": "/home/ablecloud/techflow-ai-gateway-backups/issue116-v2v-guidance-20260910T225232Z",
+    "databaseSchemaChanged": false
+  },
+  "validation": {
+    "focusedTestsPassed": 71,
+    "repositoryTestsPassed": 356,
+    "ruffSelectedFilesPassed": true,
+    "communityApiIntegrationPassed": true,
+    "browserVerified": true,
+    "duplicatePostCreated": false
+  }
+}

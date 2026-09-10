@@ -92,6 +92,35 @@ class CommunityTests(unittest.TestCase):
         self.assertEqual(self.payload()["question"], turns[0]["content"])
         self.assertNotIn("[첨부 처리 안내]", turns[0]["content"])
 
+    def test_standalone_kvm_v2v_case_uses_reviewed_baseline_before_provider(self) -> None:
+        store = MemoryStore()
+        client = TestClient(create_app(Settings(), store))
+        payload = {
+            **self.payload(),
+            "discussionId": "183",
+            "discussionUrl": "https://community.ablecloud.io/d/183",
+            "title": "ABLESTACK Standalone에서 ABLESTACK HCI로 V2V",
+            "question": (
+                "Standalone KVM의 가상머신을 HCI로 V2V하려고 했지만 "
+                "내장 툴이 정상적으로 동작하지 않습니다."
+            ),
+            "postId": "462",
+            "postNumber": 3,
+        }
+
+        response = client.post(
+            "/v1/community/cases",
+            headers={**HEADERS, "Idempotency-Key": "community-v2v-reviewed-baseline"},
+            json=payload,
+        )
+
+        self.assertEqual(201, response.status_code, response.text)
+        answer = response.json()["data"]["draftAnswer"]
+        self.assertIn("원격 ABLESTACK 호스트에서 인스턴스 가져오기", answer)
+        self.assertIn("sudo virsh list --all", answer)
+        self.assertIn("nc -vz <STANDALONE_HOST> 16509", answer)
+        self.assertNotIn("문제가 더 이상 발생하지", answer)
+
     def test_staff_reply_is_recorded_without_creating_an_ai_draft(self) -> None:
         store = MemoryStore()
         client = TestClient(create_app(Settings(), store))

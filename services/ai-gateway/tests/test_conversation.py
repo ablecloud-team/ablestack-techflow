@@ -16,10 +16,12 @@ from app.conversation import (
     is_resolution_progress_update,
     probable_identifier_typos,
     resolution_progress_result,
+    standalone_kvm_import_result,
 )
 from app.embedding import MAX_INPUT_BYTES, validate_inputs
 from app.models import CommunityCaseCreateRequest, ComprehensiveQueryRequest, ComprehensiveSynthesisRequest
 from app.responses import COMPREHENSIVE_SYSTEM_POLICY
+from app.versioned_assist import format_public_answer
 
 
 class ConversationProgressionTest(unittest.TestCase):
@@ -181,6 +183,62 @@ class ConversationProgressionTest(unittest.TestCase):
         self.assertIn("태그를 일치시킨 뒤", result["report"]["summary"])
         self.assertIn("태그 불일치", result["report"]["diagnoses"][0]["title"])
         self.assertTrue(any("해결 답변으로 선택" in item for item in result["report"]["recommendedActions"]))
+
+    def test_negative_working_statement_is_not_treated_as_resolution(self) -> None:
+        update = "해당 내장 툴을 사용하여 V2V를 시도하였지만 정상적으로 동작하지 않습니다."
+
+        self.assertFalse(is_resolution_progress_update(update))
+        self.assertIsNone(resolution_progress_result(update))
+
+    def test_continuing_failure_is_not_treated_as_resolution(self) -> None:
+        for update in (
+            "조치했지만 아직 정상 동작하지 못하고 있습니다.",
+            "여전히 오류가 발생하여 문제가 해결되지 않았습니다.",
+            "복구되지 않아 계속 실패합니다.",
+        ):
+            with self.subTest(update=update):
+                self.assertFalse(is_resolution_progress_update(update))
+
+    def test_how_to_prompt_requires_supported_path_before_incident_details(self) -> None:
+        incoming = {
+            "discussionId": "183", "postId": "462", "postNumber": 3,
+            "turnRole": "REQUESTER",
+            "question": "내장 툴로 V2V를 시도했지만 정상적으로 동작하지 않습니다.",
+        }
+        prompt = build_conversation_question(
+            "ABLESTACK Standalone에서 ABLESTACK HCI로 V2V",
+            [{
+                "sourcePostId": "460", "postNumber": 1, "role": "REQUESTER",
+                "content": "Standalone에서 HCI로 V2V하는 방법이 궁금합니다.", "artifactIds": [],
+            }],
+            incoming,
+        )
+
+        self.assertIn("지원하는 기능 경로와 사전 조건", prompt)
+        self.assertIn("해결된 것으로 해석하지 마십시오", prompt)
+
+    def test_standalone_kvm_import_has_reviewed_baseline_without_provider(self) -> None:
+        result = standalone_kvm_import_result(
+            "ABLESTACK Standalone KVM에서 ABLESTACK HCI로 V2V를 시도했지만 정상적으로 동작하지 않습니다."
+        ) or {}
+        report = result["report"]
+        combined = "\n".join([
+            report["summary"], *report["recommendedActions"], *report["unknowns"],
+        ])
+
+        self.assertEqual("ANSWERED", result["state"])
+        self.assertFalse(result["generationProviderCalled"])
+        for expected in (
+            "원격 ABLESTACK 호스트에서 인스턴스 가져오기",
+            "sudo virsh list --all", "16509", "22", "qemu-img --version",
+            "management-server.log", "agent.log", "작업 시각 전후", "마스킹",
+        ):
+            self.assertIn(expected, combined)
+        self.assertNotIn("문제가 더 이상 발생하지", combined)
+        self.assertEqual((), community_actionability_issues(result))
+        answer = format_public_answer(result) or ""
+        self.assertIn("```bash\nnc -vz <STANDALONE_HOST> 16509", answer)
+        self.assertIn("qemu-img --version\ndf -h <TEMP_PATH>\n```", answer)
 
     def test_new_concrete_cli_step_advances_follow_up(self) -> None:
         result = {
