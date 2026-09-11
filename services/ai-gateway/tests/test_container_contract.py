@@ -117,6 +117,14 @@ class ContainerContractTest(unittest.TestCase):
         self.assertIn("standalone_kvm_import_result(conversation_question)", MAIN)
         self.assertIn('"community_reviewed_baseline_used"', MAIN)
 
+    def test_community_v2v_followup_precedes_one_time_baseline(self) -> None:
+        followup = MAIN.index("standalone_libvirt_tcp_result(request.question)")
+        one_time_baseline = MAIN.index('elif not any(item.get("role") == "ASSISTANT" for item in turns)')
+        baseline = MAIN.index("standalone_kvm_import_result(conversation_question)")
+        self.assertLess(followup, one_time_baseline)
+        self.assertLess(one_time_baseline, baseline)
+        self.assertIn('"community_reviewed_followup_used"', MAIN)
+
     def test_healthcheck_exists(self) -> None:
         self.assertGreaterEqual(COMPOSE.count("healthcheck:"), 2)
 

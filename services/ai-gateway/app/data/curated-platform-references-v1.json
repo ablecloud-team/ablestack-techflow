@@ -54,6 +54,15 @@
       "content": "ABLESTACK Diplo의 도구 → 인스턴스 가져오기-내보내기에는 '원격 ABLESTACK 호스트에서 인스턴스 가져오기' 경로가 있고, UI 설명은 ABLESTACK에서 관리하지 않는 외부 KVM 호스트의 libvirt 도메인을 가져오는 기능이라고 명시한다. 이 경로는 importVm API에 hypervisor=KVM, importsource=external을 전달한다. VMware vCenter를 원본으로 사용하는 ablestack_v2k와는 다른 기능이므로 Standalone KVM 원본에 vCenter용 v2k를 사용하지 않는다. 현재 Diplo 소스의 ImportVmCmd와 UnmanagedVMsManagerImpl.importKvmInstance는 ROOT 관리자만 외부 KVM 가져오기를 실행하도록 하며, 대상 Zone에 Up 상태 KVM 호스트가 있어야 한다. 대상 KVM Agent는 GetRemoteVmsCommand로 qemu+tcp://<STANDALONE_HOST>/system에 연결하고 전원이 꺼진 libvirt VM만 목록에 포함한다. 따라서 원본 VM은 먼저 정상 종료하고 원본 호스트에서 sudo virsh list --all로 shut off 상태를 확인한다. 원격 libvirt TCP 연결은 대상 HCI KVM 호스트에서 nc -vz <STANDALONE_HOST> 16509로 확인하고, 원본 디스크 변환·복사는 SSH 22를 사용하므로 nc -vz <STANDALONE_HOST> 22도 확인한다. 16509를 외부망에 공개하지 말고 승인된 관리망과 방화벽 범위에서만 허용한다. 디스크 복사 단계는 원본 호스트에서 qemu-img convert -O qcow2를 실행해 임시 경로(기본 /tmp)에 변환본을 만든 뒤 대상 Filesystem, NetworkFilesystem, SharedMountPoint 또는 RBD 스토리지로 복사한다. 원본 호스트에서 qemu-img --version과 df -h <TEMP_PATH>로 도구와 여유 공간을 확인하고, 대상 HCI에서는 원본 NIC를 대상 네트워크에, 루트·데이터 디스크를 서비스·디스크 오퍼링에 매핑한다. 가져오기 성공 기준은 작업이 완료되고 대상 VM이 Stopped 상태로 등록되며 모든 볼륨과 NIC 매핑이 보이는 것이다. 시작 전 원본 VM은 그대로 보존하고, 대상 부팅·네트워크·게스트 에이전트 확인이 끝나기 전에는 원본을 삭제하지 않는다. 실패하면 사용한 Diplo 버전, '원격 ABLESTACK 호스트에서 인스턴스 가져오기' 마법사의 실패 단계와 오류 전문, 원본 VM의 sudo virsh list --all 결과, 대상 HCI 호스트에서 22와 16509 연결 결과, 원본의 qemu-img --version과 df -h <TEMP_PATH> 결과를 요청한다. 관리 서버의 /var/log/cloudstack/management/management-server.log에서 importVm, GetRemoteVms, CopyRemoteVolume, Failed to import를 작업 시각 전후로 확인하고 대상 KVM 호스트의 /var/log/cloudstack/agent/agent.log에서 같은 키워드를 확인한다. 공개 게시판에는 SSH 비밀번호, API 키, 토큰, 내부 IP·호스트명과 전체 UUID를 마스킹한다."
     },
     {
+      "entryId": "LIBVIRT-REMOTE-TCP-16509-001",
+      "authority": "OFFICIAL_EXTERNAL_DOCUMENTATION",
+      "title": "libvirt 원격 TCP 16509와 systemd socket 설정",
+      "sourceLocator": "https://www.libvirt.org/remote",
+      "matchTerms": ["16509", "qemu+tcp", "원격 libvirt", "libvirtd-tcp.socket", "virtproxyd-tcp.socket"],
+      "requiredTermGroups": [["16509", "qemu+tcp", "원격 libvirt"], ["개방", "열어", "여는", "설정", "구성", "허용", "방법"]],
+      "content": "libvirt 공식 Remote Support 문서는 tcp transport가 암호화되지 않은 연결이며 운영 환경에 권장하지 않고, 기본적으로 비활성화되며 신뢰할 수 있는 네트워크에서만 사용해야 한다고 명시한다. 기본 TCP 포트는 16509다. systemd socket activation을 사용하는 monolithic daemon은 libvirtd-tcp.socket, modular daemon은 virtproxyd-tcp.socket으로 TCP listener를 시작한다. socket activation에서는 --listen을 함께 사용하지 않으며 대부분의 listen 설정은 socket unit에서 관리한다. virtproxyd-tcp.socket도 암호화되지 않은 TCP이므로 적절한 인증을 구성하기 전 자동 시작하면 안 된다. 현재 ABLESTACK Diplo 외부 KVM 가져오기 Source는 qemu+tcp://<STANDALONE_HOST>/system을 열고 SASL 자격 증명 콜백을 전달하지 않으므로, 이 기능을 사용하는 동안에는 원본 Standalone의 auth_tcp를 none으로 설정해야 한다. 이 제약 때문에 16509는 인터넷이나 일반 서비스망에 공개하지 않고 이관 시간 동안 승인된 HCI 관리 IP만 firewalld rich rule로 허용한다. 가져오기 완료 후 사용한 TCP socket을 disable --now로 닫고 16509 LISTEN이 사라졌는지 확인한다."
+    },
+    {
       "entryId": "QEMU-LIVE-MIGRATION-001",
       "authority": "OFFICIAL_EXTERNAL_DOCUMENTATION",
       "title": "QEMU 라이브 마이그레이션의 소스·대상 프로세스",

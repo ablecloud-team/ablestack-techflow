@@ -16,6 +16,7 @@ from app.conversation import (
     is_resolution_progress_update,
     probable_identifier_typos,
     resolution_progress_result,
+    standalone_libvirt_tcp_result,
     standalone_kvm_import_result,
 )
 from app.embedding import MAX_INPUT_BYTES, validate_inputs
@@ -239,6 +240,32 @@ class ConversationProgressionTest(unittest.TestCase):
         answer = format_public_answer(result) or ""
         self.assertIn("```bash\nnc -vz <STANDALONE_HOST> 16509", answer)
         self.assertIn("qemu-img --version\ndf -h <TEMP_PATH>\n```", answer)
+
+    def test_libvirt_16509_followup_gets_focused_security_bounded_answer(self) -> None:
+        result = standalone_libvirt_tcp_result(
+            "아니요. Standalone에서 16509 포트를 개방하는 방법을 알려주세요."
+        ) or {}
+        report = result["report"]
+        combined = "\n".join([
+            report["summary"], *report["recommendedActions"], *report["unknowns"],
+        ])
+
+        self.assertEqual("ANSWERED", result["state"])
+        self.assertFalse(result["generationProviderCalled"])
+        for expected in (
+            "암호화되지 않은", "libvirtd-tcp.socket", "virtproxyd-tcp.socket",
+            'auth_tcp = "none"', "<HCI_MGMT_IP>/32", "--timeout=4h",
+            "qemu+tcp://<STANDALONE_MGMT_IP>/system", "disable --now",
+        ):
+            self.assertIn(expected, combined)
+        self.assertNotIn("인스턴스 가져오기-내보내기", combined)
+        self.assertEqual((), community_actionability_issues(result))
+        answer = format_public_answer(result) or ""
+        self.assertIn("```ini\nlisten_tls = 0", answer)
+        self.assertIn("sudo firewall-cmd --zone=<MGMT_ZONE>", answer)
+
+    def test_unrelated_port_question_does_not_use_libvirt_followup(self) -> None:
+        self.assertIsNone(standalone_libvirt_tcp_result("웹 서버 16509 포트가 열려 있는지 확인해 주세요."))
 
     def test_new_concrete_cli_step_advances_follow_up(self) -> None:
         result = {

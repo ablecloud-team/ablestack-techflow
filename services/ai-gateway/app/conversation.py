@@ -353,6 +353,138 @@ def standalone_kvm_import_result(value: object) -> dict[str, Any] | None:
     }
 
 
+def standalone_libvirt_tcp_result(value: object) -> dict[str, Any] | None:
+    """Return the reviewed, security-bounded 16509 setup follow-up."""
+    normalized = str(value or "").casefold()
+    endpoint = "16509" in normalized or "qemu+tcp" in normalized or "원격 libvirt" in normalized
+    source = any(marker in normalized for marker in (
+        "standalone", "스탠드얼론", "libvirt", "kvm", "16509",
+    ))
+    procedure = any(marker in normalized for marker in (
+        "개방", "열어", "여는", "설정", "구성", "허용", "방법",
+    ))
+    if not (endpoint and source and procedure):
+        return None
+
+    return {
+        "state": "ANSWERED",
+        "report": {
+            "state": "ANSWERED",
+            "summary": (
+                "16509는 현재 외부 KVM 가져오기 기능이 사용하는 암호화되지 않은 libvirt TCP 포트입니다. "
+                "인터넷이나 일반 서비스망에 열지 말고, 이관 시간 동안 승인된 HCI 관리 IP에서만 접근하도록 설정해야 합니다."
+            ),
+            "observedFacts": [
+                "Standalone 호스트에서 libvirt TCP 16509를 여는 구체적인 방법을 요청했습니다.",
+            ],
+            "diagnoses": [{
+                "title": (
+                    "현재 제품은 원본 VM 목록 조회에 qemu+tcp 연결을 사용하므로, Standalone의 libvirt TCP socket과 "
+                    "관리망 방화벽 허용이 모두 필요합니다."
+                ),
+                "likelihood": "HIGH",
+                "evidenceIds": [],
+            }],
+            "recommendedActions": [
+                (
+                    "원본 Standalone KVM 호스트에 `ssh -p <SSH_PORT> <HOST_ADMIN>@<STANDALONE_MGMT_IP>`로 접속한 뒤 "
+                    "관리자 권한으로 아래 명령을 실행해 daemon 방식을 확인합니다. libvirtd가 active이면 monolithic, "
+                    "virtproxyd가 active이면 modular 방식입니다. 둘 중 실제 설치된 방식 하나만 적용합니다.\n\n"
+                    "```bash\n"
+                    "sudo systemctl is-active libvirtd.service\n"
+                    "sudo systemctl is-active virtproxyd.service\n"
+                    "sudo systemctl list-unit-files 'libvirtd-tcp.socket' 'virtproxyd-tcp.socket'\n"
+                    "```"
+                ),
+                (
+                    "원본 Standalone KVM 호스트가 monolithic libvirtd 방식일 때만 설정 파일을 백업하고 "
+                    "`/etc/libvirt/libvirtd.conf`에 아래 값을 설정합니다. 현재 제품 연결은 SASL 자격 증명을 전달하지 않으므로 "
+                    "`auth_tcp = \"none\"`이 필요하지만, 반드시 다음 방화벽 단계에서 HCI 관리 IP로 제한해야 합니다.\n\n"
+                    "```bash\n"
+                    "sudo cp -a /etc/libvirt/libvirtd.conf /etc/libvirt/libvirtd.conf.techflow-backup\n"
+                    "sudoedit /etc/libvirt/libvirtd.conf\n"
+                    "```\n\n"
+                    "```ini\n"
+                    "listen_tls = 0\n"
+                    "listen_tcp = 1\n"
+                    "tcp_port = \"16509\"\n"
+                    "auth_tcp = \"none\"\n"
+                    "```\n\n"
+                    "```bash\n"
+                    "sudo systemctl restart libvirtd.service\n"
+                    "sudo systemctl enable --now libvirtd-tcp.socket\n"
+                    "```"
+                ),
+                (
+                    "원본 Standalone KVM 호스트가 modular virtproxyd 방식일 때만 `/etc/libvirt/virtproxyd.conf`를 백업하고 "
+                    "아래 값을 설정한 뒤 TCP socket을 시작합니다.\n\n"
+                    "```bash\n"
+                    "sudo cp -a /etc/libvirt/virtproxyd.conf /etc/libvirt/virtproxyd.conf.techflow-backup\n"
+                    "sudoedit /etc/libvirt/virtproxyd.conf\n"
+                    "```\n\n"
+                    "```ini\n"
+                    "auth_tcp = \"none\"\n"
+                    "```\n\n"
+                    "```bash\n"
+                    "sudo systemctl restart virtproxyd.service\n"
+                    "sudo systemctl enable --now virtproxyd-tcp.socket\n"
+                    "```"
+                ),
+                (
+                    "원본 Standalone KVM 호스트에서 firewalld가 running인지 확인하고, `<MGMT_ZONE>`에는 관리 NIC의 Zone, "
+                    "`<HCI_MGMT_IP>`에는 가져오기를 실행할 HCI 호스트의 관리 IP를 넣습니다. 전체 대역에 포트를 여는 "
+                    "`--add-port=16509/tcp` 대신 아래처럼 한 IP에 4시간만 허용합니다.\n\n"
+                    "```bash\n"
+                    "sudo firewall-cmd --state\n"
+                    "sudo firewall-cmd --get-active-zones\n"
+                    "sudo firewall-cmd --zone=<MGMT_ZONE> --add-rich-rule='rule family=\"ipv4\" source address=\"<HCI_MGMT_IP>/32\" port port=\"16509\" protocol=\"tcp\" accept' --timeout=4h\n"
+                    "sudo firewall-cmd --zone=<MGMT_ZONE> --list-rich-rules\n"
+                    "```"
+                ),
+                (
+                    "원본 Standalone KVM 호스트에서 16509가 LISTEN인지 확인하고, 대상 HCI KVM 호스트에서는 연결과 libvirt "
+                    "VM 목록을 확인합니다. `ss`에 16509 LISTEN이 보이고 HCI의 `virsh`가 연결 오류 없이 원본 VM 목록을 반환하면 정상입니다.\n\n"
+                    "```bash\n"
+                    "sudo ss -lntp | grep ':16509'\n"
+                    "```\n\n"
+                    "```bash\n"
+                    "nc -vz <STANDALONE_MGMT_IP> 16509\n"
+                    "virsh -c qemu+tcp://<STANDALONE_MGMT_IP>/system list --all\n"
+                    "```"
+                ),
+                (
+                    "가져오기와 대상 VM 검증이 끝나면 원본 Standalone KVM 호스트에서 사용한 TCP socket을 닫습니다. "
+                    "`<LIBVIRT_TCP_SOCKET>`에는 실제 사용한 `libvirtd-tcp.socket` 또는 `virtproxyd-tcp.socket` 하나만 넣습니다. "
+                    "firewalld 규칙은 4시간 뒤 자동 제거되며, 즉시 제거하려면 추가할 때 사용한 rich rule과 동일한 문자열로 삭제합니다.\n\n"
+                    "```bash\n"
+                    "sudo systemctl disable --now <LIBVIRT_TCP_SOCKET>\n"
+                    "sudo ss -lntp | grep ':16509' || true\n"
+                    "```"
+                ),
+            ],
+            "unknowns": [
+                "위 첫 번째 명령에서 active로 표시된 daemon과 설치된 TCP socket 이름을 알려주세요.",
+                "firewall-cmd가 running이 아니면 임의로 firewalld를 시작하지 말고 사용 중인 방화벽 종류와 관리망 정책을 알려주세요.",
+                (
+                    "설정 후 연결되지 않으면 원본의 `sudo journalctl -u libvirtd.service -u virtproxyd.service "
+                    "--since '<시험 5분 전>' --until '<시험 5분 후>' --no-pager` 결과를 알려주세요. "
+                    "비밀번호·토큰은 제거하고 내부 IP와 호스트명은 일관된 별칭으로 마스킹해 주세요."
+                ),
+            ],
+            "confidence": "HIGH",
+            "citationsUsed": [],
+            "artifactEvidence": [],
+            "currentAssessment": "CURRENT_CONFIG_ERROR",
+            "previewAssessment": "NOT_APPLICABLE",
+            "previewGuidance": None,
+            "abstainReason": None,
+        },
+        "citations": [],
+        "generationProviderCalled": False,
+        "providerProfileId": None,
+    }
+
+
 def build_conversation_question(
     title: str,
     turns: Iterable[dict[str, Any]],
