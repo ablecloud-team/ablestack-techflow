@@ -79,6 +79,7 @@ from .conversation import (
     community_result_advances,
     conversation_artifact_ids,
     resolution_progress_result,
+    standalone_libvirt_tcp_result,
     standalone_kvm_import_result,
     source_post_id,
 )
@@ -997,12 +998,19 @@ def create_app(
                 discussionId=request.discussion_id, sourcePostId=post_id,
             )
         else:
-            result = standalone_kvm_import_result(conversation_question)
+            result = standalone_libvirt_tcp_result(request.question)
             if result is not None:
                 _json_log(
-                    "community_reviewed_baseline_used", correlationId=correlation_id,
+                    "community_reviewed_followup_used", correlationId=correlation_id,
                     discussionId=request.discussion_id, sourcePostId=post_id,
                 )
+            elif not any(item.get("role") == "ASSISTANT" for item in turns):
+                result = standalone_kvm_import_result(conversation_question)
+                if result is not None:
+                    _json_log(
+                        "community_reviewed_baseline_used", correlationId=correlation_id,
+                        discussionId=request.discussion_id, sourcePostId=post_id,
+                    )
         if result is None:
             assist_request = ComprehensiveQueryRequest(
                 queryId=uuid4(), question=conversation_question, actorId=f"community:{request.author_id}",

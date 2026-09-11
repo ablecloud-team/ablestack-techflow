@@ -121,6 +121,54 @@ class CommunityTests(unittest.TestCase):
         self.assertIn("nc -vz <STANDALONE_HOST> 16509", answer)
         self.assertNotIn("문제가 더 이상 발생하지", answer)
 
+    def test_libvirt_16509_followup_does_not_repeat_initial_v2v_baseline(self) -> None:
+        store = MemoryStore()
+        first = {
+            **self.payload(),
+            "discussionId": "183",
+            "discussionUrl": "https://community.ablecloud.io/d/183",
+            "title": "ABLESTACK Standalone에서 ABLESTACK HCI로 V2V",
+            "question": "Standalone KVM의 가상머신을 HCI로 V2V하는 방법을 알려주세요.",
+            "postId": "460", "postNumber": 1, "postAuthorId": "46",
+        }
+        case = store.create_community_case(
+            first,
+            {"draftAnswer": "초기 V2V 안내", "answerState": "ANSWERED", "citations": []},
+            "v2v-followup-first", "v2v-followup-first-correlation",
+        )
+        store.mark_community_auto_published(
+            case["caseId"], "초기 V2V 안내",
+            {"postId": "463", "postUrl": "https://community.ablecloud.io/d/183/463"},
+            "v2v-followup-published",
+        )
+        store.record_community_turn(
+            {
+                "discussionId": "183", "postId": "463", "postNumber": 4,
+                "postAuthorId": "40", "authorId": "46", "turnRole": "ASSISTANT",
+                "question": "초기 V2V 안내", "artifactIds": [],
+            },
+            "v2v-followup-assistant", "v2v-followup-assistant-correlation",
+        )
+        client = TestClient(create_app(Settings(), store))
+
+        response = client.post(
+            "/v1/community/cases",
+            headers={**HEADERS, "Idempotency-Key": "community-v2v-16509-followup"},
+            json={
+                **first,
+                "question": "아니요. Standalone에서 16509 포트를 개방하는 방법을 알려주세요.",
+                "postId": "468", "postNumber": 7,
+            },
+        )
+
+        self.assertEqual(201, response.status_code, response.text)
+        answer = response.json()["data"]["draftAnswer"]
+        self.assertIn("libvirtd-tcp.socket", answer)
+        self.assertIn("virtproxyd-tcp.socket", answer)
+        self.assertIn("<HCI_MGMT_IP>/32", answer)
+        self.assertNotIn("인스턴스 가져오기-내보내기", answer)
+        self.assertNotIn("qemu-img --version", answer)
+
     def test_staff_reply_is_recorded_without_creating_an_ai_draft(self) -> None:
         store = MemoryStore()
         client = TestClient(create_app(Settings(), store))

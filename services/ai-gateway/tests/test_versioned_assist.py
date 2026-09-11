@@ -181,6 +181,21 @@ class VersionedAssistPolicyTest(unittest.TestCase):
         self.assertEqual("api/ImportVmCmd.java", ranked[0]["path"])
         self.assertEqual(4, len([item for item in ranked[:4] if item["path"] != "docs/v2v.md"]))
 
+    def test_libvirt_16509_followup_loads_official_socket_guidance(self) -> None:
+        question = "Standalone에서 libvirt 16509 포트를 개방하는 방법을 알려주세요."
+        expanded = expand_retrieval_question(question)
+        results = curated_platform_results(question)
+        combined = "\n".join(item["content"] for item in results)
+
+        for expected in (
+            "암호화되지 않은", "16509", "libvirtd-tcp.socket", "virtproxyd-tcp.socket",
+            "qemu+tcp://<STANDALONE_HOST>/system", "auth_tcp를 none", "firewalld rich rule",
+        ):
+            self.assertIn(expected, combined)
+        self.assertIn("auth_tcp", expanded)
+        self.assertIn("virtproxyd-tcp.socket", expanded)
+        self.assertTrue(any(item["path"] == "https://www.libvirt.org/remote" for item in results))
+
     def test_rocky_linux_smb_question_loads_exact_official_mount_procedure(self) -> None:
         question = (
             "Rocky Linux 8.10 가상머신에서 SMB 서버에 연결해서 마운트하고 싶습니다. "
@@ -491,6 +506,16 @@ class VersionedAssistPolicyTest(unittest.TestCase):
         self.assertIn("/var/log/cloudstack/management/management-server.log", answer)
         self.assertNotIn("제품 내부 경로", answer)
 
+    def test_public_projection_preserves_libvirt_remote_config_paths(self) -> None:
+        answer = simplify_public_text(
+            "`sudoedit /etc/libvirt/libvirtd.conf` 또는 "
+            "`sudoedit /etc/libvirt/virtproxyd.conf`를 실행합니다."
+        )
+
+        self.assertIn("/etc/libvirt/libvirtd.conf", answer)
+        self.assertIn("/etc/libvirt/virtproxyd.conf", answer)
+        self.assertNotIn("제품 내부 경로", answer)
+
     def test_ongoing_answer_naturalizes_internal_action_labels(self) -> None:
         answer = format_public_answer({
             "state": "ANSWERED",
@@ -607,6 +632,13 @@ class VersionedAssistPolicyTest(unittest.TestCase):
         self.assertIn("정상적으로 동작하지 않습니다", v2v_case["question"])
         self.assertIn("원격 ABLESTACK 호스트에서 인스턴스 가져오기", v2v_case["requiredPublicGuidance"])
         self.assertIn("문제가 더 이상 발생하지", v2v_case["forbiddenPublicClaims"])
+        tcp_case = next(
+            item for item in payload["cases"]
+            if item["caseKey"] == "COMMUNITY-183-LIBVIRT-TCP-16509-FOLLOWUP-001"
+        )
+        self.assertIn("16509 포트를 개방", tcp_case["question"])
+        self.assertIn("virtproxyd-tcp.socket", tcp_case["requiredPublicGuidance"])
+        self.assertIn("도구 → 인스턴스 가져오기-내보내기", tcp_case["forbiddenPublicClaims"])
 
     def test_product_first_evidence_priority_is_stable(self) -> None:
         self.assertEqual((1, "ABLESTACK_DOCUMENTATION"), evidence_priority("SHARED_DOCS", "DOCUMENTATION"))

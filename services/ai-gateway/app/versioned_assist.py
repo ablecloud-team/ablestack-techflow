@@ -170,6 +170,18 @@ KVM_EXTERNAL_IMPORT_MARKERS: tuple[str, ...] = (
     "vCenter",
 )
 
+LIBVIRT_REMOTE_TCP_MARKERS: tuple[str, ...] = (
+    "16509",
+    "qemu+tcp",
+    "libvirtd-tcp.socket",
+    "virtproxyd-tcp.socket",
+    "libvirtd.conf",
+    "virtproxyd.conf",
+    "auth_tcp",
+    "listen_tcp",
+    "firewall-cmd",
+)
+
 
 def versioned_plan(question: str) -> dict[str, object]:
     return {
@@ -287,6 +299,15 @@ def _is_kvm_external_import_question(question: str) -> bool:
     return source and destination and migration
 
 
+def _is_libvirt_remote_tcp_question(question: str) -> bool:
+    normalized = question.casefold()
+    endpoint = any(marker in normalized for marker in ("16509", "qemu+tcp", "원격 libvirt"))
+    procedure = any(marker in normalized for marker in (
+        "개방", "열어", "여는", "설정", "구성", "허용", "방법",
+    ))
+    return endpoint and procedure
+
+
 def feature_source_terms(question: str) -> tuple[str, ...]:
     """Map a user symptom to implementation terms before source retrieval."""
     anchors: list[str] = []
@@ -310,6 +331,8 @@ def feature_source_terms(question: str) -> tuple[str, ...]:
         anchors.extend(NETWORK_REQUEST_FAILURE_MARKERS)
     if _is_kvm_external_import_question(question):
         anchors.extend(KVM_EXTERNAL_IMPORT_MARKERS)
+    if _is_libvirt_remote_tcp_question(question):
+        anchors.extend(LIBVIRT_REMOTE_TCP_MARKERS)
     return tuple(dict.fromkeys(anchors))
 
 
@@ -391,6 +414,13 @@ def _relevance_score(question: str, item: dict[str, Any]) -> int:
             "manageinstances.vue", "importunmanagedinstance.vue", "ablestack_v2k.sh",
         )):
             score += 36
+    if _is_libvirt_remote_tcp_question(question):
+        score += sum(9 for marker in LIBVIRT_REMOTE_TCP_MARKERS if marker.casefold() in searchable)
+        path = str(item.get("path") or "").casefold()
+        if any(marker in path for marker in (
+            "libvirtgetremotevmscommandwrapper.java", "libvirtd", "virtproxyd", "remote",
+        )):
+            score += 32
     return score
 
 
@@ -484,6 +514,8 @@ def sanitize_public_text(value: object, citations: Iterable[dict[str, Any]] = ()
     text = str(value or "").strip()
     safe_system_paths = {
         "/dev/virtio-ports/org.qemu.guest_agent.0": "TECHFLOW_SAFE_QGA_CHANNEL_PATH",
+        "/etc/libvirt/libvirtd.conf": "TECHFLOW_SAFE_LIBVIRTD_CONFIG_PATH",
+        "/etc/libvirt/virtproxyd.conf": "TECHFLOW_SAFE_VIRTPROXYD_CONFIG_PATH",
         "/var/log/cloudstack/management/management-server.log": "TECHFLOW_SAFE_MANAGEMENT_LOG_PATH",
         "/var/log/cloudstack/agent/agent.log": "TECHFLOW_SAFE_AGENT_LOG_PATH",
     }
