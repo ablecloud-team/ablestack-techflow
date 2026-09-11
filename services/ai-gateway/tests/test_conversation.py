@@ -262,6 +262,9 @@ class ConversationProgressionTest(unittest.TestCase):
         self.assertEqual((), community_actionability_issues(result))
         answer = format_public_answer(result) or ""
         self.assertIn("```ini\nlisten_tls = 0", answer)
+        self.assertIn("/etc/libvirt/libvirtd.conf", answer)
+        self.assertIn("/etc/libvirt/virtproxyd.conf", answer)
+        self.assertNotIn("제품 내부 경로", answer)
         self.assertIn("sudo firewall-cmd --zone=<MGMT_ZONE>", answer)
 
     def test_unrelated_port_question_does_not_use_libvirt_followup(self) -> None:

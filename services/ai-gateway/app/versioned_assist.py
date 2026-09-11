@@ -514,6 +514,8 @@ def sanitize_public_text(value: object, citations: Iterable[dict[str, Any]] = ()
     text = str(value or "").strip()
     safe_system_paths = {
         "/dev/virtio-ports/org.qemu.guest_agent.0": "TECHFLOW_SAFE_QGA_CHANNEL_PATH",
+        "/etc/libvirt/libvirtd.conf": "TECHFLOW_SAFE_LIBVIRTD_CONFIG_PATH",
+        "/etc/libvirt/virtproxyd.conf": "TECHFLOW_SAFE_VIRTPROXYD_CONFIG_PATH",
         "/var/log/cloudstack/management/management-server.log": "TECHFLOW_SAFE_MANAGEMENT_LOG_PATH",
         "/var/log/cloudstack/agent/agent.log": "TECHFLOW_SAFE_AGENT_LOG_PATH",
     }

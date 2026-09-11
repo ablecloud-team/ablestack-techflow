@@ -506,6 +506,16 @@ class VersionedAssistPolicyTest(unittest.TestCase):
         self.assertIn("/var/log/cloudstack/management/management-server.log", answer)
         self.assertNotIn("제품 내부 경로", answer)
 
+    def test_public_projection_preserves_libvirt_remote_config_paths(self) -> None:
+        answer = simplify_public_text(
+            "`sudoedit /etc/libvirt/libvirtd.conf` 또는 "
+            "`sudoedit /etc/libvirt/virtproxyd.conf`를 실행합니다."
+        )
+
+        self.assertIn("/etc/libvirt/libvirtd.conf", answer)
+        self.assertIn("/etc/libvirt/virtproxyd.conf", answer)
+        self.assertNotIn("제품 내부 경로", answer)
+
     def test_ongoing_answer_naturalizes_internal_action_labels(self) -> None:
         answer = format_public_answer({
             "state": "ANSWERED",
