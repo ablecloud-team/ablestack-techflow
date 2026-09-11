@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-09-11T01:46:00Z",
+  "issue": 118,
+  "discussion": {
+    "discussionId": "183",
+    "configurationQuestionPostId": "466",
+    "repeatedAssistantPostId": "467",
+    "explicitPortQuestionPostId": "468",
+    "correctedAssistantPostId": "469",
+    "caseId": "873ced8f-0cf3-4979-9f2e-21aebc4a4e2d",
+    "caseState": "PUBLISHED",
+    "conversationState": "WAITING_RESOLUTION",
+    "draftVersion": 4,
+    "contextVersion": 9,
+    "updatedInPlace": true,
+    "duplicatePostCreated": false,
+    "auditEvent": "AUTO_PUBLISHED_CORRECTED",
+    "browserVerified": true
+  },
+  "rootCause": {
+    "latestQuestion": "Standalone에서 16509 포트를 개방하는 방법",
+    "wholeConversationBaselineMatched": true,
+    "latestSubtopicWasOverridden": true,
+    "repeatedInitialV2vGuidance": true
+  },
+  "implementation": {
+    "version": "0.16.12",
+    "commit": "d2fd8af",
+    "latestQuestionEvaluatedFirst": true,
+    "initialBaselineLimitedToFirstAssistantTurn": true,
+    "goldenCase": "COMMUNITY-183-LIBVIRT-TCP-16509-FOLLOWUP-001",
+    "libvirtdConfigPathPreserved": true,
+    "virtproxydConfigPathPreserved": true,
+    "openApiOperationCount": 39
+  },
+  "answerContract": {
+    "remoteLibvirtPort": 16509,
+    "remoteLibvirtUri": "qemu+tcp://<STANDALONE_MGMT_IP>/system",
+    "monolithicSocket": "libvirtd-tcp.socket",
+    "modularSocket": "virtproxyd-tcp.socket",
+    "monolithicConfig": "/etc/libvirt/libvirtd.conf",
+    "modularConfig": "/etc/libvirt/virtproxyd.conf",
+    "sourceRestriction": "<HCI_MGMT_IP>/32",
+    "firewallTimeout": "4h",
+    "rollbackIncluded": true,
+    "securityWarningIncluded": true,
+    "initialWorkflowRepeated": false
+  },
+  "validation": {
+    "focusedTestsPassed": 76,
+    "previousWslRepositoryTestsPassed": 361,
+    "deploymentImageFunctionalTestsPassed": 361,
+    "deploymentOnlyExcludedTests": 1,
+    "excludedReason": "Git metadata is intentionally absent on the deployment host, so the git-archive contract test cannot execute there.",
+    "communityApiIntegrationPassed": true,
+    "publicProjectionPathsVerified": true,
+    "browserVerified": true
+  },
+  "runtime": {
+    "image": "techflow/ai-gateway:issue118-0.16.12-d2fd8af",
+    "imageId": "sha256:d01dcd00893b759c92c6ac430872f932b1fec4860cdf1fe437053ecb19963d44",
+    "gatewayContainerId": "3ee36e46a1d9e1c3e5119ee50d38a56af4769d531636e362f9ce4ba6c007ff62",
+    "communityPollerContainerId": "133f335bc6ad53a6a41dda072b3f2feb65b548e9957ac0d2edba6969fa12d5c7",
+    "gateway": "healthy",
+    "communityPoller": "healthy",
+    "gatewayRestartCount": 0,
+    "communityPollerRestartCount": 0,
+    "pendingPosts": 0,
+    "pendingResolutions": 0,
+    "failed": 0,
+    "chatHttpStatus": 200
+  },
+  "protectedServices": {
+    "sourceReconcilerContainerId": "d67ff13feccf62434001f5361db114dbc55169cc0d0a1d7eeef3258977ad2b37c",
+    "githubChatEventGatewayContainerId": "bf5c76824dbf8b0513431e4d067043d0ff46fa825553512c41239e5f622804b4c",
+    "activepiecesAppContainerId": "80a652dc8961adc8594aafac216270106285ec4d8175bee95e33dbcfd95755dac",
+    "activepiecesWorkerContainerId": "d50ee9a92d9d8337a5253f39644c0a6c2c5473e3c5203af2277611f1da2887879",
+    "changed": false
+  },
+  "deployment": {
+    "packageSha256": "02DD00A4F6934FAC67BE8D309E60C4683CEC6B964D620D8BF20BF7BBCF620371",
+    "archiveShellScriptsLfVerified": true,
+    "backup": "/home/ablecloud/techflow-ai-gateway-backups/issue118-v2v-followup-20260911T013416Z",
+    "databaseSchemaChanged": false
+  }
+}
