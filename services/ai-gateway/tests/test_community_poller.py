@@ -37,6 +37,21 @@ class FakeResponse(BytesIO):
 
 
 class CommunityPollerTests(unittest.TestCase):
+    def test_upload_uuid_resolves_only_matching_trusted_file(self) -> None:
+        with patch.object(poll_flarum, "request_json", return_value={"data": [{"attributes": {
+            "uuid": "abc-123", "url": "https://forum.test/assets/files/log.zip", "hidden": False
+        }}]}) as request:
+            result = poll_flarum.resolve_upload_reference("/api/fof/download/abc-123", "13", "http://flarum", "https://forum.test", "existing-actor")
+        self.assertEqual("https://forum.test/assets/files/log.zip", result)
+        self.assertEqual("existing-actor", request.call_args.kwargs["token"])
+
+    def test_upload_uuid_rejects_external_metadata_url(self) -> None:
+        original = "/api/fof/download/abc-123"
+        with patch.object(poll_flarum, "request_json", return_value={"data": [{"attributes": {
+            "uuid": "abc-123", "url": "https://untrusted.test/log.zip"
+        }}]}):
+            self.assertEqual(original, poll_flarum.resolve_upload_reference(original, "13", "http://flarum", "https://forum.test", "actor"))
+
     class _Response:
         def __init__(self, content: bytes, content_type: str, disposition: str = "") -> None:
             self._buffer = BytesIO(content)

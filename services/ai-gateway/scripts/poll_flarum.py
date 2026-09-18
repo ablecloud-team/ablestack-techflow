@@ -15,6 +15,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+import zipfile
 from uuid import uuid4
 
 DEFAULT_ATTACHMENT_MAX_BYTES = 1024 * 1024 * 1024
@@ -460,6 +461,27 @@ def resolution_event_id(discussion: dict) -> str:
     return f"flarum-resolution-{discussion['discussionId']}-{best}-{digest}"
 
 
+def resolve_upload_reference(raw_url: str, author_id: str, base_url: str, public_url: str, token: str) -> str:
+    """Resolve only the referenced UUID through the existing actor's file metadata."""
+    match = re.fullmatch(r"/api/fof/download/([A-Za-z0-9-]+)", raw_url)
+    if not match or not str(author_id).isdigit():
+        return raw_url
+    url = base_url + "/api/fof/uploads?" + urllib.parse.urlencode({"filter[user]": author_id, "page[limit]": 50})
+    try:
+        payload = request_json(url, token=token)
+        for item in payload.get("data", []):
+            attrs = item.get("attributes") or {}
+            if attrs.get("uuid") != match.group(1) or attrs.get("hidden"):
+                continue
+            target = str(attrs.get("url") or "")
+            parsed = urllib.parse.urlparse(target)
+            if _origin_identity(target) in {_origin_identity(base_url), _origin_identity(public_url)} and parsed.path.startswith("/assets/files/"):
+                return target
+    except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError):
+        pass
+    return raw_url
+
+
 def upload_artifacts(
     event: dict, gateway_url: str, base_url: str, public_url: str, token: str, correlation: str
 ) -> tuple[list[str], list[str]]:
@@ -483,6 +505,7 @@ def upload_artifacts(
     ))
     temp_root.mkdir(parents=True, exist_ok=True, mode=0o700)
     for ordinal, raw_url in enumerate(raw_urls, start=1):
+        raw_url = resolve_upload_reference(raw_url, str(event.get("authorId") or ""), base_url, public_url, token)
         public_attachment_url = urllib.parse.urljoin(public_url + "/", raw_url)
         parsed = urllib.parse.urlparse(public_attachment_url)
         if not parsed.hostname or _origin_identity(public_attachment_url) not in trusted_origins:
@@ -514,6 +537,11 @@ def upload_artifacts(
                 _append_unique_warning(warnings, _warning(filename, "fetch"), ordinal)
                 continue
             media_type = _normalized_attachment_media_type(filename, media_type)
+            if media_type == "application/zip" and zipfile.is_zipfile(temporary):
+                with zipfile.ZipFile(temporary) as archive:
+                    if any(info.flag_bits & 1 for info in archive.infolist()):
+                        _append_unique_warning(warnings, f"{filename}: 암호화된 ZIP으로 로그 본문을 읽지 못했습니다. 암호를 공개 댓글에 쓰지 말고 필요한 로그를 비밀정보 제거 후 암호 없이 다시 첨부해 주세요.", ordinal)
+                        continue
             try:
                 ids.append(_upload_artifact(gateway_url, temporary, filename, media_type, correlation, timeout))
             except urllib.error.HTTPError as exc:
