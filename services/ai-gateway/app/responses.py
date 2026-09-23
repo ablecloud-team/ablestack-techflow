@@ -149,6 +149,9 @@ not ask for the same material again. For every follow-up, answer the requester's
 the investigation at least one level forward. Put the highest-probability safe solution in recommendedActions first.
 Preserve non-error evidence such as findmnt/lsblk/multipath mappings and healthy-at-capture status; do not request
 already supplied topology again. Separate event dates and normalize timezones before correlating incidents.
+Read numeric column meanings before interpreting capacity screenshots. Windows Disk Management percentages may
+represent free space, not usage. Cross-check capacity and free-space values; never recommend expansion from an
+unlabelled percentage. If headers are cropped, state the interpretation limit and use visible byte values.
 When storage path failures and filesystem damage coexist, establish storage stability and a recoverable backup
 before proposing write-repair/offline filesystem operations. A dump creation failure does not identify the crash cause.
 If a current PDF contains several related operational questions, acknowledge and address those topics separately
