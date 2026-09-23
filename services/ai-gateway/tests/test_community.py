@@ -34,6 +34,29 @@ class FakeResponse:
 
 
 class CommunityTests(unittest.TestCase):
+    def test_visible_history_excludes_deleted_hidden_and_unapproved_posts(self):
+        client = FlarumClient('http://forum', 'https://forum', None, True)
+        payload = {'data': [
+            {'id': '479', 'attributes': {'contentType':'comment'}},
+            {'id': '480', 'attributes': {'contentType':'comment'}},
+            {'id': '485', 'attributes': {'contentType':'comment', 'hiddenAt':'2026-09-23'}},
+            {'id': '486', 'attributes': {'contentType':'comment', 'isHidden':True}},
+            {'id': '487', 'attributes': {'contentType':'comment', 'isApproved':False}},
+            {'id': '488', 'attributes': {'contentType':'comment'}}]}
+        with patch.object(client, '_request', return_value=payload):
+            self.assertEqual({'479','480','488'}, client.visible_post_ids('186'))
+        with patch.object(client, '_request', side_effect=RuntimeError('offline')):
+            with self.assertRaises(RuntimeError):
+                client.visible_post_ids('186')
+
+    def test_visible_history_paginates_without_losing_older_posts(self):
+        client = FlarumClient('http://forum', 'https://forum', None, True)
+        first = {'data':[{'id':str(i),'attributes':{'contentType':'comment'}} for i in range(1,51)]}
+        second = {'data':[{'id':'51','attributes':{'contentType':'comment'}}]}
+        with patch.object(client, '_request', side_effect=[first,second]) as request:
+            self.assertEqual(51,len(client.visible_post_ids('186')))
+            self.assertIn('page%5Boffset%5D=50',request.call_args.args[0])
+
     def payload(self) -> dict:
         return {
             "discussionId": "901", "discussionUrl": "https://community.ablecloud.io/d/901",

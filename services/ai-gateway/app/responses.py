@@ -78,7 +78,7 @@ COMPREHENSIVE_SCHEMA: dict[str, Any] = {
         "unknowns": {"type": "array", "items": {"type": "string"}, "maxItems": 10},
         "confidence": {"type": "string", "enum": ["HIGH", "MEDIUM", "LOW"]},
         "citationsUsed": {"type": "array", "items": {"type": "string"}, "maxItems": 20},
-        "artifactEvidence": {"type": "array", "maxItems": 12, "items": {"type": "object", "additionalProperties": False,
+        "artifactEvidence": {"type": "array", "maxItems": 20, "items": {"type": "object", "additionalProperties": False,
             "properties": {"artifactId": {"type": "string"}, "finding": {"type": "string"}, "region": {"type": "string"}},
             "required": ["artifactId", "finding", "region"]}},
         "currentAssessment": {"type": "string", "enum": ["CURRENT_NORMAL", "CURRENT_CONFIG_ERROR", "CURRENT_DEFECT", "CURRENT_RUNTIME_ISSUE", "INSUFFICIENT_EVIDENCE"]},
@@ -149,6 +149,9 @@ not ask for the same material again. For every follow-up, answer the requester's
 the investigation at least one level forward. Put the highest-probability safe solution in recommendedActions first.
 Preserve non-error evidence such as findmnt/lsblk/multipath mappings and healthy-at-capture status; do not request
 already supplied topology again. Separate event dates and normalize timezones before correlating incidents.
+Read numeric column meanings before interpreting capacity screenshots. Windows Disk Management percentages may
+represent free space, not usage. Cross-check capacity and free-space values; never recommend expansion from an
+unlabelled percentage. If headers are cropped, state the interpretation limit and use visible byte values.
 When storage path failures and filesystem damage coexist, establish storage stability and a recoverable backup
 before proposing write-repair/offline filesystem operations. A dump creation failure does not identify the crash cause.
 If a current PDF contains several related operational questions, acknowledge and address those topics separately
@@ -695,7 +698,7 @@ class OpenAIResponsesAdapter:
     def generate_comprehensive(self, request: ComprehensiveResponsesRequest) -> ComprehensiveResponsesResult:
         profile_id = "OPENAI_RAG_DEFAULT_V1" if request.artifacts else "OPENAI_RAG_ESCALATION_V1"
         profile = PROVIDER_PROFILES[profile_id]
-        if not request.context or len(request.context) > 20 or len(request.artifacts) > 12:
+        if not request.context or len(request.context) > 20 or len(request.artifacts) > 20:
             raise ProviderContractError("invalid comprehensive request boundary")
         if any(chunk.classification != "D0" for chunk in request.context):
             raise ProviderContractError("only D0 context is permitted")
