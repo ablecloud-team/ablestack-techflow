@@ -78,7 +78,7 @@ COMPREHENSIVE_SCHEMA: dict[str, Any] = {
         "unknowns": {"type": "array", "items": {"type": "string"}, "maxItems": 10},
         "confidence": {"type": "string", "enum": ["HIGH", "MEDIUM", "LOW"]},
         "citationsUsed": {"type": "array", "items": {"type": "string"}, "maxItems": 20},
-        "artifactEvidence": {"type": "array", "maxItems": 12, "items": {"type": "object", "additionalProperties": False,
+        "artifactEvidence": {"type": "array", "maxItems": 20, "items": {"type": "object", "additionalProperties": False,
             "properties": {"artifactId": {"type": "string"}, "finding": {"type": "string"}, "region": {"type": "string"}},
             "required": ["artifactId", "finding", "region"]}},
         "currentAssessment": {"type": "string", "enum": ["CURRENT_NORMAL", "CURRENT_CONFIG_ERROR", "CURRENT_DEFECT", "CURRENT_RUNTIME_ISSUE", "INSUFFICIENT_EVIDENCE"]},
@@ -695,7 +695,7 @@ class OpenAIResponsesAdapter:
     def generate_comprehensive(self, request: ComprehensiveResponsesRequest) -> ComprehensiveResponsesResult:
         profile_id = "OPENAI_RAG_DEFAULT_V1" if request.artifacts else "OPENAI_RAG_ESCALATION_V1"
         profile = PROVIDER_PROFILES[profile_id]
-        if not request.context or len(request.context) > 20 or len(request.artifacts) > 12:
+        if not request.context or len(request.context) > 20 or len(request.artifacts) > 20:
             raise ProviderContractError("invalid comprehensive request boundary")
         if any(chunk.classification != "D0" for chunk in request.context):
             raise ProviderContractError("only D0 context is permitted")

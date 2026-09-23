@@ -163,7 +163,7 @@ def _model_data(model: Any) -> dict[str, Any]:
 
 
 def _available_conversation_artifact_ids(
-    turns: list[dict[str, Any]], artifact_store: ArtifactStore, *, limit: int = 12,
+    turns: list[dict[str, Any]], artifact_store: ArtifactStore, *, limit: int = 20,
 ) -> tuple[list[UUID], int]:
     """Reuse retained artifacts for KB synthesis and skip evidence already removed by policy."""
     available: list[UUID] = []
@@ -620,6 +620,20 @@ def create_app(
     ) -> Envelope:
         return _envelope({"artifactId": artifactId, "deleted": artifact_store.delete(artifactId)}, correlation_id)
 
+    def _visible_community_turns(discussion_id: str, correlation_id: str) -> list[dict[str, Any]]:
+        turns = runtime_store.list_community_turns(discussion_id)
+        if not turns or not getattr(flarum_client, 'enabled', False):
+            return turns
+        try:
+            visible = flarum_client.visible_post_ids(discussion_id)
+        except (RuntimeError, InvalidBoundaryError) as exc:
+            raise HTTPException(status_code=503, detail={'code': 'COMMUNITY_VISIBILITY_CHECK_FAILED'}) from exc
+        filtered = [turn for turn in turns if str(turn.get('sourcePostId')) in visible]
+        _json_log('community_history_visibility_checked', correlationId=correlation_id,
+                  discussionId=discussion_id, excludedPostIds=[str(t.get('sourcePostId')) for t in turns
+                                                               if str(t.get('sourcePostId')) not in visible])
+        return filtered
+
     def _query_comprehensive(request: ComprehensiveQueryRequest, correlation_id: str) -> dict[str, Any]:
         compatibility = runtime_store.resolve_compatibility_set(request.compatibility_set_id, request.product_version)
         explicit_profiles = request.source_profile_ids or (compatibility or {}).get("sourceProfileIds")
@@ -825,7 +839,7 @@ def create_app(
             ):
                 knowledge_completed_now = False
                 if result.get("knowledgeBaseSourcePostId") != result.get("resolvedPostId"):
-                    turns = runtime_store.list_community_turns(request.discussion_id)
+                    turns = _visible_community_turns(request.discussion_id, correlation_id)
                     knowledge_question = build_knowledge_base_question(
                         request.title, turns, str(result["resolvedPostId"]),
                     )
@@ -983,7 +997,7 @@ def create_app(
         if not request.response_requested:
             result = runtime_store.record_community_turn(event, idempotency_key, correlation_id)
             return _envelope(result, correlation_id)
-        turns = runtime_store.list_community_turns(request.discussion_id)
+        turns = _visible_community_turns(request.discussion_id, correlation_id)
         if retry_failed:
             turns = [item for item in turns if item.get("sourcePostId") != post_id]
         # Current uploads must exist; expired historical evidence must not abort a new turn.

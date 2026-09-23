@@ -183,6 +183,24 @@ class FlarumClient:
         except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
             raise RuntimeError("Flarum request failed") from exc
 
+    def visible_post_ids(self, discussion_id: str) -> set[str]:
+        """Read current visible comments; fail closed rather than reuse withdrawn history."""
+        if not discussion_id.isdigit():
+            raise InvalidBoundaryError("invalid discussion")
+        visible: set[str] = set()
+        for offset in range(0, 10000, 50):
+            query = urllib.parse.urlencode({'filter[discussion]': discussion_id, 'page[limit]': 50,
+                                           'page[offset]': offset, 'sort': 'createdAt'})
+            rows = self._request('/api/posts?' + query, as_assistant=True).get('data') or []
+            for item in rows:
+                attrs = item.get('attributes') or {}
+                if (attrs.get('contentType') == 'comment' and not attrs.get('isHidden')
+                        and not attrs.get('hiddenAt') and attrs.get('isApproved') is not False):
+                    visible.add(str(item['id']))
+            if len(rows) < 50:
+                return visible
+        raise RuntimeError('discussion exceeds bounded visibility scan')
+
     def publish_reply(self, discussion_id: str, answer: str, marker: str) -> dict[str, Any]:
         if not self.enabled:
             raise InvalidBoundaryError("community publishing is disabled")
