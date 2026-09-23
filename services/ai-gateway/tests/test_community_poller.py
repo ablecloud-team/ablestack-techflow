@@ -37,6 +37,41 @@ class FakeResponse(BytesIO):
 
 
 class CommunityPollerTests(unittest.TestCase):
+    def test_pdf_rejects_invalid_signature_before_running_process(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            source = Path(root) / 'x.pdf'
+            source.write_bytes(b'not a PDF')
+            with patch.object(poll_flarum.subprocess, 'run') as run:
+                with self.assertRaises(ValueError):
+                    poll_flarum.render_pdf_pages(source, Path(root))
+            run.assert_not_called()
+
+    def test_pdf_preserves_page_order_and_enforces_page_limit(self) -> None:
+        from types import SimpleNamespace
+        with tempfile.TemporaryDirectory() as root:
+            source = Path(root) / 'x.pdf'
+            source.write_bytes(b'%PDF-1.7\n')
+            def run(args, **kwargs):
+                if args[0] == 'pdfinfo':
+                    return SimpleNamespace(stdout='Pages: 3\n')
+                Path(args[-1] + '.png').write_bytes(b'PNG')
+                return SimpleNamespace()
+            with patch.object(poll_flarum.subprocess, 'run', side_effect=run):
+                self.assertEqual(['page-1.png','page-2.png','page-3.png'],
+                                 [p.name for p in poll_flarum.render_pdf_pages(source, Path(root))])
+            with patch.object(poll_flarum.subprocess, 'run', return_value=SimpleNamespace(stdout='Pages: 100\n')):
+                with self.assertRaises(ValueError):
+                    poll_flarum.render_pdf_pages(source, Path(root))
+
+    def test_six_attachment_followup_is_not_truncated(self) -> None:
+        discussion = {'discussionId':'186','discussionUrl':'https://community.ablecloud.io/d/186',
+                      'title':'VM 중단', 'authorId':'13','tagSlugs':[]}
+        payload = {'data':[{'id':'485','attributes':{'number':3,'contentHtml':
+            ''.join(f'<img src="/assets/{i}.png">' for i in range(6))},
+            'relationships':{'user':{'data':{'id':'13'}}}}]}
+        events = poll_flarum.normalize_posts(discussion, payload, '99', set())
+        self.assertEqual(6, len(events[0]['attachmentUrls']))
+
     def test_upload_uuid_resolves_only_matching_trusted_file(self) -> None:
         with patch.object(poll_flarum, "request_json", return_value={"data": [{"attributes": {
             "uuid": "abc-123", "url": "https://forum.test/assets/files/log.zip", "hidden": False

@@ -689,7 +689,7 @@ class OpenAIResponsesAdapter:
     def generate_comprehensive(self, request: ComprehensiveResponsesRequest) -> ComprehensiveResponsesResult:
         profile_id = "OPENAI_RAG_DEFAULT_V1" if request.artifacts else "OPENAI_RAG_ESCALATION_V1"
         profile = PROVIDER_PROFILES[profile_id]
-        if not request.context or len(request.context) > 20 or len(request.artifacts) > 5:
+        if not request.context or len(request.context) > 20 or len(request.artifacts) > 12:
             raise ProviderContractError("invalid comprehensive request boundary")
         if any(chunk.classification != "D0" for chunk in request.context):
             raise ProviderContractError("only D0 context is permitted")

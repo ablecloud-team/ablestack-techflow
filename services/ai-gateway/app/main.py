@@ -164,7 +164,7 @@ def _model_data(model: Any) -> dict[str, Any]:
 
 
 def _available_conversation_artifact_ids(
-    turns: list[dict[str, Any]], artifact_store: ArtifactStore, *, limit: int = 5,
+    turns: list[dict[str, Any]], artifact_store: ArtifactStore, *, limit: int = 12,
 ) -> tuple[list[UUID], int]:
     """Reuse retained artifacts for KB synthesis and skip evidence already removed by policy."""
     available: list[UUID] = []
@@ -175,7 +175,7 @@ def _available_conversation_artifact_ids(
             if value in available:
                 continue
             try:
-                artifact_store.evidence(value)
+                artifact_store.get(value)
             except NotFoundError:
                 unavailable += 1
                 continue
@@ -987,10 +987,19 @@ def create_app(
         turns = runtime_store.list_community_turns(request.discussion_id)
         if retry_failed:
             turns = [item for item in turns if item.get("sourcePostId") != post_id]
+        # Current uploads must exist; expired historical evidence must not abort a new turn.
+        for artifact_id in request.artifact_ids:
+            artifact_store.get(artifact_id)
+        conversation_artifacts, expired_count = _available_conversation_artifact_ids(
+            [*turns, analysis_event], artifact_store,
+        )
+        if expired_count:
+            analysis_event = dict(analysis_event)
+            analysis_event["artifactWarnings"] = [*list(analysis_event.get("artifactWarnings") or []),
+                "이전 첨부 일부는 보관 기간이 지나 재열람할 수 없습니다. 이전 답변의 분석 요약과 이번 첨부를 사용하고, 이전 원문을 다시 확인했다고 표현하지 마십시오."]
+            _json_log("community_historical_artifacts_expired", correlationId=correlation_id,
+                      discussionId=request.discussion_id, unavailable=expired_count)
         conversation_question = build_conversation_question(request.title, turns, analysis_event)
-        conversation_artifacts = [
-            UUID(value) for value in conversation_artifact_ids(turns, analysis_event)
-        ]
         result = resolution_progress_result(request.question)
         if result is not None:
             _json_log(

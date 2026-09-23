@@ -16,6 +16,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import zipfile
+import subprocess
 from uuid import uuid4
 
 DEFAULT_ATTACHMENT_MAX_BYTES = 1024 * 1024 * 1024
@@ -372,7 +373,7 @@ def normalize_posts(
             "turnRole": role, "responseRequested": response_requested,
             "responseReason": response_reason,
             "resolutionOnly": False, "tagSlugs": discussion["tagSlugs"],
-            "attachmentUrls": parser.links[:5],
+            "attachmentUrls": parser.links[:12],
             # Internal poller-only evidence. upload_artifacts removes this key
             # before the event crosses the Activepieces boundary.
             "_attachmentReferenceCount": parser.attachment_reference_count,
@@ -393,14 +394,14 @@ def include_legacy_discussion_context(current: dict, events: list[dict]) -> dict
         f"[{role_labels.get(item['turnRole'], '참여자')} Post #{item['postNumber']}]\n{item['question']}"
         for item in history
     ]
-    current_urls = list(dict.fromkeys(current.get("attachmentUrls") or []))[:5]
+    current_urls = list(dict.fromkeys(current.get("attachmentUrls") or []))[:12]
     attachment_urls: list[str] = current_urls
-    reference_count = min(int(current.get("_attachmentReferenceCount", 0) or 0), 5)
+    reference_count = int(current.get("_attachmentReferenceCount", 0) or 0)
     if not attachment_urls:
         for item in reversed(history[:-1]):
             reference_count += int(item.get("_attachmentReferenceCount", 0) or 0)
             for url in item.get("attachmentUrls") or []:
-                if url not in attachment_urls and len(attachment_urls) < 5:
+                if url not in attachment_urls and len(attachment_urls) < 12:
                     attachment_urls.append(url)
             if attachment_urls:
                 break
@@ -409,7 +410,7 @@ def include_legacy_discussion_context(current: dict, events: list[dict]) -> dict
         + "\n\n".join(transcript)
     )[:16000]
     current["attachmentUrls"] = attachment_urls
-    current["_attachmentReferenceCount"] = min(reference_count, len(attachment_urls) or 5)
+    current["_attachmentReferenceCount"] = reference_count
     return current
 
 
@@ -482,12 +483,35 @@ def resolve_upload_reference(raw_url: str, author_id: str, base_url: str, public
     return raw_url
 
 
+def render_pdf_pages(path: Path, directory: Path) -> list[Path]:
+    """Bounded native rendering preserves screenshot-only PDF evidence without executing content."""
+    if path.stat().st_size > 20 * 1024 * 1024:
+        raise ValueError("PDF exceeds 20 MiB analysis boundary")
+    with path.open('rb') as source:
+        if not source.read(8).startswith(b'%PDF-'):
+            raise ValueError("PDF signature mismatch")
+    info = subprocess.run(['pdfinfo', str(path)], capture_output=True, text=True, timeout=20, check=True,
+                          env={**os.environ, 'LC_ALL': 'C'})
+    match = re.search(r'^Pages:\s+(\d+)', info.stdout, re.MULTILINE)
+    if not match or not 1 <= int(match.group(1)) <= 8:
+        raise ValueError("PDF requires 1 to 8 pages")
+    pages = []
+    for number in range(1, int(match.group(1)) + 1):
+        prefix = directory / f'page-{number}'
+        subprocess.run(['pdftoppm', '-f', str(number), '-l', str(number), '-singlefile', '-scale-to', '1800',
+                        '-png', str(path), str(prefix)], capture_output=True, timeout=30, check=True)
+        page = prefix.with_suffix('.png')
+        if page.stat().st_size > 12 * 1024 * 1024:
+            raise ValueError("Rendered PDF page exceeds boundary")
+        pages.append(page)
+    return pages
+
+
 def upload_artifacts(
     event: dict, gateway_url: str, base_url: str, public_url: str, token: str, correlation: str
 ) -> tuple[list[str], list[str]]:
     ids: list[str] = []
     warnings: list[str] = list(event.get("artifactWarnings") or [])
-    initial_warning_count = len(warnings)
     raw_urls = event.pop("attachmentUrls", [])
     reference_count = max(int(event.pop("_attachmentReferenceCount", 0) or 0), len(raw_urls))
     public_origin = _origin_identity(public_url)
@@ -505,6 +529,9 @@ def upload_artifacts(
     ))
     temp_root.mkdir(parents=True, exist_ok=True, mode=0o700)
     for ordinal, raw_url in enumerate(raw_urls, start=1):
+        if len(ids) >= 12:
+            _append_unique_warning(warnings, "첨부 분석 한도 12개를 초과하여 남은 파일은 분석하지 못했습니다.", ordinal)
+            continue
         raw_url = resolve_upload_reference(raw_url, str(event.get("authorId") or ""), base_url, public_url, token)
         public_attachment_url = urllib.parse.urljoin(public_url + "/", raw_url)
         parsed = urllib.parse.urlparse(public_attachment_url)
@@ -537,6 +564,18 @@ def upload_artifacts(
                 _append_unique_warning(warnings, _warning(filename, "fetch"), ordinal)
                 continue
             media_type = _normalized_attachment_media_type(filename, media_type)
+            if media_type == 'application/pdf' or filename.casefold().endswith('.pdf'):
+                try:
+                    with tempfile.TemporaryDirectory(prefix='pdf-', dir=temp_root) as pdf_dir:
+                        pages = render_pdf_pages(temporary, Path(pdf_dir))
+                        if len(ids) + len(pages) > 12:
+                            raise ValueError('PDF pages exceed remaining attachment budget')
+                        for number, page in enumerate(pages, 1):
+                            ids.append(_upload_artifact(gateway_url, page, filename[:80] + f'-page-{number}.png',
+                                                        'image/png', correlation, timeout))
+                except (ValueError, OSError, subprocess.SubprocessError, urllib.error.URLError) as exc:
+                    _append_unique_warning(warnings, f"{filename}: PDF 페이지 변환 또는 등록을 완료하지 못했습니다. 암호·손상 여부와 분석 한도(20MiB, 8쪽)를 확인해 주세요.", ordinal)
+                continue
             if media_type == "application/zip" and zipfile.is_zipfile(temporary):
                 with zipfile.ZipFile(temporary) as archive:
                     if any(info.flag_bits & 1 for info in archive.infolist()):
@@ -553,7 +592,8 @@ def upload_artifacts(
                 _append_unique_warning(warnings, _warning(filename, "fetch"), ordinal)
         finally:
             temporary.unlink(missing_ok=True)
-    accounted = len(ids) + len(warnings) - initial_warning_count
+    # A PDF may produce several artifacts but accounts for just one original reference.
+    accounted = len(raw_urls)
     for missing in range(max(0, reference_count - accounted)):
         _append_unique_warning(
             warnings,

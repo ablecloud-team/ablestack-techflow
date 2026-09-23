@@ -10,7 +10,7 @@ WORKDIR /opt/techflow-ai-gateway
 COPY requirements.lock ./requirements.lock
 COPY scripts/prefetch_parsers.py /tmp/prefetch_parsers.py
 RUN apt-get update \
-    && apt-get install --yes --no-install-recommends ca-certificates git \
+    && apt-get install --yes --no-install-recommends ca-certificates git poppler-utils \
     && rm -rf /var/lib/apt/lists/* \
     && pip install --no-cache-dir --requirement requirements.lock \
     && python /tmp/prefetch_parsers.py \
