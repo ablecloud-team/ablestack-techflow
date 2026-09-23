@@ -639,7 +639,7 @@ class CommunityTests(unittest.TestCase):
         expired = uuid4()
 
         class EvidenceStore:
-            def evidence(self, artifact_id):
+            def get(self, artifact_id):
                 if artifact_id == expired:
                     raise NotFoundError("artifact not found")
                 return object()
@@ -654,6 +654,21 @@ class CommunityTests(unittest.TestCase):
 
         self.assertEqual([retained], available)
         self.assertEqual(1, unavailable)
+
+    def test_followup_with_expired_prior_attachment_does_not_return_404(self) -> None:
+        store = MemoryStore()
+        first = {**self.payload(), "postId": "101", "postNumber": 1, "artifactIds": [str(uuid4())]}
+        case = store.create_community_case(first, {"draftAnswer": "이전 분석 요약", "answerState": "ANSWERED",
+                                          "citations": [], "evidenceLedger": {}}, "expired-first", "expired-first")
+        store.mark_community_auto_published(case['caseId'], '이전 분석 요약',
+                                           {'postId':'103','postUrl':'https://community.ablecloud.io/d/901/2'}, 'expired-published')
+        client = TestClient(create_app(Settings(), store))
+        with patch('app.main.standalone_libvirt_tcp_result', return_value={
+            "state": "ANSWERED", "report": {"summary": "새 자료를 확인했습니다.",
+            "recommendedActions": ["스토리지 담당자에게 포트 상태 확인을 요청합니다."], "unknowns": []}}):
+            reply = client.post('/v1/community/cases', headers={**HEADERS, 'Idempotency-Key': 'expired-next-followup'},
+                                json={**self.payload(), 'postId': '102', 'postNumber': 2})
+        self.assertEqual(201, reply.status_code, reply.text)
 
     def test_failed_followup_draft_can_be_retried_without_duplicate_turn(self) -> None:
         store = MemoryStore()

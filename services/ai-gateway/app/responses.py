@@ -78,7 +78,7 @@ COMPREHENSIVE_SCHEMA: dict[str, Any] = {
         "unknowns": {"type": "array", "items": {"type": "string"}, "maxItems": 10},
         "confidence": {"type": "string", "enum": ["HIGH", "MEDIUM", "LOW"]},
         "citationsUsed": {"type": "array", "items": {"type": "string"}, "maxItems": 20},
-        "artifactEvidence": {"type": "array", "maxItems": 10, "items": {"type": "object", "additionalProperties": False,
+        "artifactEvidence": {"type": "array", "maxItems": 12, "items": {"type": "object", "additionalProperties": False,
             "properties": {"artifactId": {"type": "string"}, "finding": {"type": "string"}, "region": {"type": "string"}},
             "required": ["artifactId", "finding", "region"]}},
         "currentAssessment": {"type": "string", "enum": ["CURRENT_NORMAL", "CURRENT_CONFIG_ERROR", "CURRENT_DEFECT", "CURRENT_RUNTIME_ISSUE", "INSUFFICIENT_EVIDENCE"]},
@@ -147,6 +147,12 @@ The question can contain a chronological Community conversation. Preserve its co
 discussion solved. Distinguish facts already supplied, actions already attempted, and their reported outcomes. Do
 not ask for the same material again. For every follow-up, answer the requester's latest question directly and move
 the investigation at least one level forward. Put the highest-probability safe solution in recommendedActions first.
+Preserve non-error evidence such as findmnt/lsblk/multipath mappings and healthy-at-capture status; do not request
+already supplied topology again. Separate event dates and normalize timezones before correlating incidents.
+When storage path failures and filesystem damage coexist, establish storage stability and a recoverable backup
+before proposing write-repair/offline filesystem operations. A dump creation failure does not identify the crash cause.
+If a current PDF contains several related operational questions, acknowledge and address those topics separately
+from the incident. Distinguish the document author's assumptions from source-confirmed behavior; never invent schedules.
 When the prompt identifies one unambiguous probable typo that is supported by the prior conversation and supplied
 source evidence, acknowledge the assumed canonical spelling once and continue the technical analysis. Do not turn
 that typo into a blocking question or repeat it in unknowns. Never autocorrect IP addresses, UUIDs, versions, ports,
@@ -689,7 +695,7 @@ class OpenAIResponsesAdapter:
     def generate_comprehensive(self, request: ComprehensiveResponsesRequest) -> ComprehensiveResponsesResult:
         profile_id = "OPENAI_RAG_DEFAULT_V1" if request.artifacts else "OPENAI_RAG_ESCALATION_V1"
         profile = PROVIDER_PROFILES[profile_id]
-        if not request.context or len(request.context) > 20 or len(request.artifacts) > 5:
+        if not request.context or len(request.context) > 20 or len(request.artifacts) > 12:
             raise ProviderContractError("invalid comprehensive request boundary")
         if any(chunk.classification != "D0" for chunk in request.context):
             raise ProviderContractError("only D0 context is permitted")
@@ -751,7 +757,8 @@ class OpenAIResponsesAdapter:
                            {"role": "user", "content": user_content}],
                     reasoning={"effort": profile.reasoning_effort},
                     text={"format": {"type": "json_schema", "name": "techflow_comprehensive_report", "strict": True, "schema": COMPREHENSIVE_SCHEMA}},
-                    tools=[], store=False, background=False, stream=False, max_output_tokens=5000,
+                    tools=[], store=False, background=False, stream=False,
+                    max_output_tokens=8000 if len(request.artifacts) > 5 else 5000,
                     safety_identifier=request.safety_identifier,
                 )
                 try:

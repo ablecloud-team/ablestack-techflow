@@ -163,8 +163,8 @@ class ComprehensiveQueryRequest(StrictModel):
     )
     compatibility_set_id: UUID | None = Field(default=None, alias="compatibilitySetId")
     source_profile_ids: list[SafeId] | None = Field(default=None, min_length=1, max_length=9, alias="sourceProfileIds")
-    artifact_ids: list[UUID] = Field(default_factory=list, max_length=5, alias="artifactIds")
-    required_artifact_ids: list[UUID] | None = Field(default=None, max_length=5, alias="requiredArtifactIds")
+    artifact_ids: list[UUID] = Field(default_factory=list, max_length=12, alias="artifactIds")
+    required_artifact_ids: list[UUID] | None = Field(default=None, max_length=12, alias="requiredArtifactIds")
     environment: Annotated[str, StringConstraints(max_length=1000)] | None = None
     locale: Literal["ko-KR", "en-US"] = "ko-KR"
     classification: Literal["D0"] = "D0"
@@ -196,9 +196,9 @@ class CommunityCaseCreateRequest(StrictModel):
     question: Annotated[str, StringConstraints(min_length=3, max_length=16000)]
     author_id: Annotated[str, StringConstraints(pattern=r"^[A-Za-z0-9_.:@-]{1,128}$")] = Field(alias="authorId")
     tag_slugs: list[Annotated[str, StringConstraints(pattern=r"^[a-z0-9-]{1,64}$")]] = Field(default_factory=list, max_length=20, alias="tagSlugs")
-    artifact_ids: list[UUID] = Field(default_factory=list, max_length=5, alias="artifactIds")
+    artifact_ids: list[UUID] = Field(default_factory=list, max_length=12, alias="artifactIds")
     artifact_warnings: list[Annotated[str, StringConstraints(min_length=3, max_length=300)]] = Field(
-        default_factory=list, max_length=5, alias="artifactWarnings"
+        default_factory=list, max_length=12, alias="artifactWarnings"
     )
     product_version: Annotated[str, StringConstraints(min_length=1, max_length=64)] | None = Field(default=None, alias="productVersion")
     post_id: Annotated[str, StringConstraints(pattern=r"^[1-9][0-9]{0,18}$")] | None = Field(default=None, alias="postId")
