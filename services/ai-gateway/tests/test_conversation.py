@@ -384,6 +384,21 @@ class ConversationProgressionTest(unittest.TestCase):
         ):
             self.assertIn(expected, issues)
 
+    def test_windows_event_log_does_not_require_linux_services(self) -> None:
+        result = {"state": "ANSWERED", "report": {"recommendedActions": [
+            "Windows 가상머신에 원격 데스크톱으로 접속해 관리자 PowerShell에서 "
+            "Get-WinEvent -FilterHashtable @{LogName='System'; Id=41,1074,6008}로 발생 시각 전후 로그를 확인하세요."
+        ]}}
+        self.assertEqual((), community_actionability_issues(result))
+
+    def test_kernel_journal_does_not_require_service_unit(self) -> None:
+        result = {"state": "ANSWERED", "report": {"recommendedActions": [
+            "KVM 호스트에 ssh root@<HOST>로 접속해 관리자 권한으로 확인합니다.",
+            "sudo journalctl -k --since '<전>' --until '<후>' 로그를 확인합니다. "
+            "정상 기준은 OOM이 없는 것입니다. 비밀번호와 토큰은 마스킹합니다."
+        ]}}
+        self.assertEqual((), community_actionability_issues(result))
+
     def test_actionability_gate_accepts_targeted_copyable_diagnostics(self) -> None:
         result = {
             "state": "ANSWERED",

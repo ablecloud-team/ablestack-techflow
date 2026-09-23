@@ -41,8 +41,10 @@ PROGRESSION_RETRY_INSTRUCTION = (
 ACTIONABILITY_RETRY_INSTRUCTION = (
     "[실행 안내 재작성 필수]\n"
     "Linux 운영 명령이나 로그 확인을 안내할 때는 실행 대상, SSH 또는 콘솔 접속 예시, 필요한 권한, "
-    "정확한 systemd .service 이름, 복사 가능한 명령, 정상 판정 기준을 함께 쓰십시오. "
-    "로그는 journalctl -u <service> 또는 /var/log/...의 정확한 경로와 상태 변경 전후 시간 범위를 제시하십시오. "
+    "서비스 조회일 때 정확한 systemd .service 이름, 복사 가능한 명령, 정상 판정 기준을 함께 쓰십시오. "
+    "커널 로그는 journalctl -k와 시간 범위를 쓰며 서비스 이름을 요구하지 않습니다. "
+    "Windows 이벤트 로그에는 Windows 접속 방법과 PowerShell 또는 이벤트 뷰어 경로를 안내하고 Linux 명령을 억지로 추가하지 마십시오. "
+    "로그는 해당 OS의 정확한 로그 위치와 상태 변경 전후 시간 범위를 제시하십시오. "
     "공개 Community에 올리기 전에 BMC 암호, API Key, Token, Cookie와 내부 인프라 식별자를 마스킹하도록 안내하십시오. "
     "근거 없이 DB 수정, 서비스 재시작, 호스트 전원 작업을 제안하지 마십시오."
 )
@@ -652,7 +654,8 @@ def community_actionability_issues(result: dict[str, Any]) -> tuple[str, ...]:
     operation_rows = [item for item in rows if _LINUX_OPERATION.search(item)]
     has_linux_operation = bool(operation_rows)
     has_log_request = "로그" in text or "/var/log/" in text or "journalctl" in text.casefold()
-    if not has_linux_operation and not has_log_request:
+    # A Windows Event Viewer request is not a Linux host operation.
+    if not has_linux_operation and "/var/log/" not in text:
         return ()
 
     issues: list[str] = []
@@ -661,12 +664,14 @@ def community_actionability_issues(result: dict[str, Any]) -> tuple[str, ...]:
         marker in text for marker in ("콘솔로 접속", "콘솔 또는 SSH", "터미널에 접속")
     ):
         issues.append("missing-access-example")
-    target_markers = ("관리 서버", "KVM 호스트", "호스트에서", "같은 호스트", "해당 호스트", "가상머신 안", "게스트에서")
+    target_markers = ("관리 서버", "KVM 호스트", "호스트에서", "같은 호스트", "해당 호스트", "가상머신 안", "게스트에서", "원본 호스트", "대상 호스트", "실행 호스트")
 
     def has_execution_target(row: str) -> bool:
         if any(marker in row for marker in target_markers):
             return True
         folded = row.casefold()
+        if "journalctl" in folded and re.search(r"journalctl\s+(?:-k|--dmesg)\b", folded):
+            return any(marker in text for marker in target_markers)
         if "mold.service" in folded and "관리 서버" in text:
             return True
         host_commands = ("mold-agent.service", "libvirtd.service", "virtqemud.service", "virsh ")
@@ -678,12 +683,13 @@ def community_actionability_issues(result: dict[str, Any]) -> tuple[str, ...]:
         issues.append("missing-execution-target")
     if not any(marker in lowered for marker in ("sudo", "root", "관리자 권한")):
         issues.append("missing-required-role")
-    if ("systemctl" in lowered or "journalctl" in lowered) and not _SERVICE_UNIT.search(text):
+    needs_service = "systemctl" in lowered or bool(re.search(r"journalctl\s+.*?(?:-u\s|--unit[= ])", lowered))
+    if needs_service and not _SERVICE_UNIT.search(text):
         issues.append("missing-service-unit")
     if not any(marker in text for marker in ("정상 기준", "성공 기준", "이면 정상", "오류 없이", "Active: active")):
         issues.append("missing-success-criteria")
     if has_log_request and "/var/log/" not in text and not re.search(
-        r"journalctl\s+-u\s+\S+", text, re.IGNORECASE,
+        r"journalctl\s+(?:-u\s+\S+|-k\b|--dmesg\b)", text, re.IGNORECASE,
     ):
         issues.append("missing-log-source")
     if has_log_request and not (
