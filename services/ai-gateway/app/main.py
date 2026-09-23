@@ -1024,6 +1024,7 @@ def create_app(
             assist_request = ComprehensiveQueryRequest(
                 queryId=uuid4(), question=conversation_question, actorId=f"community:{request.author_id}",
                 productVersion=request.product_version or "diplo", artifactIds=conversation_artifacts,
+                requiredArtifactIds=request.artifact_ids,
                 locale="ko-KR", classification="D0",
             )
             result = _query_comprehensive(assist_request, correlation_id)
@@ -1047,6 +1048,7 @@ def create_app(
             retry_request = ComprehensiveQueryRequest(
                 queryId=uuid4(), question=rewrite_question, actorId=f"community:{request.author_id}",
                 productVersion=request.product_version or "diplo", artifactIds=conversation_artifacts,
+                requiredArtifactIds=request.artifact_ids,
                 locale="ko-KR", classification="D0",
             )
             result = _query_comprehensive(retry_request, correlation_id)

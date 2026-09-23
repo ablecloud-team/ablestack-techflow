@@ -78,7 +78,7 @@ COMPREHENSIVE_SCHEMA: dict[str, Any] = {
         "unknowns": {"type": "array", "items": {"type": "string"}, "maxItems": 10},
         "confidence": {"type": "string", "enum": ["HIGH", "MEDIUM", "LOW"]},
         "citationsUsed": {"type": "array", "items": {"type": "string"}, "maxItems": 20},
-        "artifactEvidence": {"type": "array", "maxItems": 10, "items": {"type": "object", "additionalProperties": False,
+        "artifactEvidence": {"type": "array", "maxItems": 12, "items": {"type": "object", "additionalProperties": False,
             "properties": {"artifactId": {"type": "string"}, "finding": {"type": "string"}, "region": {"type": "string"}},
             "required": ["artifactId", "finding", "region"]}},
         "currentAssessment": {"type": "string", "enum": ["CURRENT_NORMAL", "CURRENT_CONFIG_ERROR", "CURRENT_DEFECT", "CURRENT_RUNTIME_ISSUE", "INSUFFICIENT_EVIDENCE"]},
