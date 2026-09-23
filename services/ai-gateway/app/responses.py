@@ -751,7 +751,8 @@ class OpenAIResponsesAdapter:
                            {"role": "user", "content": user_content}],
                     reasoning={"effort": profile.reasoning_effort},
                     text={"format": {"type": "json_schema", "name": "techflow_comprehensive_report", "strict": True, "schema": COMPREHENSIVE_SCHEMA}},
-                    tools=[], store=False, background=False, stream=False, max_output_tokens=5000,
+                    tools=[], store=False, background=False, stream=False,
+                    max_output_tokens=8000 if len(request.artifacts) > 5 else 5000,
                     safety_identifier=request.safety_identifier,
                 )
                 try:
