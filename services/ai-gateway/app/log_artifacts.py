@@ -121,7 +121,7 @@ class _EntryScan:
 
 
 class _EvidenceSelector:
-    def __init__(self, name: str, max_chars: int) -> None:
+    def __init__(self, name: str, max_chars: int, *, preserve_all: bool = False) -> None:
         self.name = name
         self.max_chars = max_chars
         self.first: list[tuple[int, str]] = []
@@ -134,6 +134,7 @@ class _EvidenceSelector:
         self.line_number = 0
         self.redactions = 0
         self.truncated = False
+        self.preserve_all = preserve_all
 
     def _keep(self, number: int, line: str) -> None:
         if number in self.selected:
@@ -150,6 +151,8 @@ class _EvidenceSelector:
         self.line_number += 1
         line = raw.rstrip("\r\n")
         item = (self.line_number, line)
+        if self.preserve_all:
+            self._keep(*item)
         if len(self.first) < 20:
             self.first.append(item)
         self.last.append(item)
@@ -188,7 +191,7 @@ class _EvidenceSelector:
     def result(self, bytes_read: int) -> _EntryScan:
         if not self.line_number:
             raise InvalidBoundaryError("empty log entries are not permitted")
-        if self.interesting:
+        if self.interesting or self.preserve_all:
             selected = self.selected
         else:
             selected = {}
@@ -205,7 +208,7 @@ class _EvidenceSelector:
 
 def _scan_log_stream(name: str, stream: BinaryIO, *, max_bytes: int, max_evidence_chars: int) -> _EntryScan:
     decoder = codecs.getincrementaldecoder("utf-8-sig")("strict")
-    selector = _EvidenceSelector(name, max_evidence_chars)
+    selector = _EvidenceSelector(name, max_evidence_chars, preserve_all=max_bytes <= max_evidence_chars // 2)
     buffered = ""
     total = controls = characters = 0
     try:
@@ -229,7 +232,7 @@ def _scan_log_stream(name: str, stream: BinaryIO, *, max_bytes: int, max_evidenc
                 complete = combined[:last_newline + 1]
                 buffered = combined[last_newline + 1:]
                 lowered = complete.encode("utf-8").lower()
-                if selector.after or any(token in lowered for token in INTERESTING_TOKENS):
+                if selector.preserve_all or selector.after or any(token in lowered for token in INTERESTING_TOKENS):
                     for line in complete[:-1].split("\n"):
                         selector.line(line)
                 else:
