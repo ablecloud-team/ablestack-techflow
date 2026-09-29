@@ -40,6 +40,18 @@ class VersionedAssistPolicyTest(unittest.TestCase):
                 "ceph status; ceph osd tree; ceph -s")
         self.assertEqual(text, normalize_public_brand_names(text))
 
+    def test_answer_and_kb_project_glue_brand(self) -> None:
+        result = {"state": "ANSWERED", "report": {
+            "summary": "Ceph RBD 지원 조건", "diagnoses": ["Ceph 스토리지 조건"],
+            "recommendedActions": ["Ceph RBD 형식을 확인하세요."],
+            "unknowns": ["Ceph RBD 구성 확인"],
+        }}
+        for renderer in (format_public_answer, format_knowledge_base):
+            with self.subTest(renderer=renderer.__name__):
+                answer = renderer(result)
+                self.assertIn("Glue", answer)
+                self.assertNotIn("Ceph", answer)
+
     def test_plan_reviews_docs_diplo_related_code_and_europa_preview(self) -> None:
         plan = versioned_plan("VM 배포가 실패합니다")
         self.assertEqual(list(VERSIONED_SOURCE_PROFILES), plan["sourceProfileIds"])

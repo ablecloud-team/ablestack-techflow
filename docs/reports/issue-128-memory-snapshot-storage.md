@@ -43,3 +43,12 @@ Discussion #190 Post #497의 오류는 `KVM does not support the type of snapsho
 - 최종 브라우저에서 QCOW2/RAW/RBD/PowerFlex/CLVM, 두 전역 설정 구분, pool type/format만 추가 요청하는 내용 확인 완료.
 - Gateway/Poller Healthy, Restart 0. 보호 서비스 컨테이너 변경 없음.
 - Issue #128 / PR #129. PR 병합은 수행하지 않았다. 고객의 실제 pool type/format은 여전히 확인이 필요하며 장애 해결 완료로 처리하지 않았다.
+
+## Glue 표기 재발 방지 (0.16.17)
+
+- 생성 지침에는 Glue 원칙이 있었으나 고정 지원 답변에 Ceph RBD가 남아 있었다. 고정 답변을 Glue RBD로 수정하고 공통 사용자 답변/KB 출력 단계에 표기 정규화를 추가했다.
+- 명령어, 코드 블록, 패키지·서비스명, 설정 경로, URL은 실제 식별자를 유지한다. 내부 근거 검색도 원래 upstream 식별자를 유지한다.
+- 관련 통합시험 143건 통과. 최종 답변/KB 출력 회귀시험 추가.
+- Gateway/Poller 0.16.17 제한 배포 완료. 두 컨테이너 Healthy/Restart 0, DB/vector ready, Poller failed=0. 보호 서비스 Container ID/StartedAt 변경 없음.
+- Discussion #190 Post #500을 같은 댓글에서 교정하고 저장된 draft/response/turn도 일치시켰다. 브라우저에서 Glue RBD 확인, 댓글 중복 없음.
+- 백업: /home/ablecloud/techflow-ai-gateway-backups/glue190-20260929. PR #129에 반영, 병합은 별도.
