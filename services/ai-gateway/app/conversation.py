@@ -371,7 +371,7 @@ def snapshot_memory_support_result(value: object, context: str = '') -> dict[str
                 '파일 기반 기본 스토리지(NFS, SharedMountPoint 등)에서 ROOT와 모든 연결 데이터 볼륨이 QCOW2이면 '
                 '메모리 포함 VM 스냅샷의 기본 처리 경로가 선택될 수 있습니다. VM이 실행 중이어야 하고, '
                 '암호화된 ROOT 볼륨·공유 볼륨 등 별도의 제한도 충족해야 하므로 파일 스토리지라는 이름만으로 성공을 보장하지는 않습니다.',
-                'Ceph RBD에서 사용하는 RAW 볼륨, RAW 블록 볼륨 또는 QCOW2와 RAW가 섞인 구성은 '
+                'Glue RBD에서 사용하는 RAW 볼륨, RAW 블록 볼륨 또는 QCOW2와 RAW가 섞인 구성은 '
                 '확인한 기본 메모리 스냅샷 경로의 “모든 볼륨 QCOW2” 조건을 충족하지 않습니다. '
                 'PowerFlex 전용 경로도 메모리 포함 요청은 받지 않습니다. CLVM은 별도의 VM 스냅샷 제한이 있습니다. '
                 '디스크 전용 스냅샷이 된다고 메모리 상태 저장까지 지원된다는 뜻은 아닙니다.',

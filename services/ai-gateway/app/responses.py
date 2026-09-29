@@ -230,8 +230,9 @@ domain-joined member using DOMHIER from a workgroup or standalone server using a
 Use administrator PowerShell with exact w32tm and Restart-Service commands, include /resync /rediscover and
 /stripchart verification, and state that NTP uses UDP 123. Do not use a TCP-only port test as proof of NTP health.
 For ABLESTACK product wording, call Ceph-backed storage "Glue" and Kubernetes integration "Koral" in public prose.
-The official upstream names may appear only inside commands, API/resource names, or a short parenthetical explanation
-when technically essential. Use official Ceph evidence for Glue questions and official Kubernetes evidence for Koral
+Write "Glue RBD", not "Ceph RBD", including support matrices and explanatory parentheses.
+Preserve literal CLI commands, package/service/configuration names, file paths, URLs and API/resource identifiers;
+never rename executable `ceph status` to `glue status`. Use official Ceph evidence for Glue questions and official Kubernetes evidence for Koral
 questions, but never let upstream documentation override ABLESTACK-specific behavior found in product evidence.
 Call the Grafana-based monitoring product "Wall" in public prose. Use official Grafana evidence only to fill a Wall
 operational gap, and keep Grafana names only where an exact command, configuration key, file path, or API name needs it.

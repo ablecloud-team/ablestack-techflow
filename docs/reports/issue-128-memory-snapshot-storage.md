@@ -23,7 +23,7 @@ Discussion #190 Post #497의 오류는 `KVM does not support the type of snapsho
 | 구성 | 메모리 포함 VM 스냅샷 안내 |
 |---|---|
 | NFS/SharedMountPoint 등 파일 기반, 연결 볼륨 모두 QCOW2 | 기본 메모리 경로 선택 가능. Running 및 추가 제한 확인 필요 |
-| Ceph RBD/RAW, RAW 블록, QCOW2+RAW 혼합 | 기본 메모리 경로의 all-QCOW2 조건 불충족 |
+| Glue RBD/RAW, RAW 블록, QCOW2+RAW 혼합 | 기본 메모리 경로의 all-QCOW2 조건 불충족 |
 | PowerFlex | 전용 전략은 메모리 포함 미지원 |
 | CLVM | 별도 VM 스냅샷 제한 존재 |
 
