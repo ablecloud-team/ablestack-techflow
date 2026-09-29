@@ -32,3 +32,13 @@ Discussion #189 Post #492는 화면의 두 항목 의미를 물었다. #493은 A
 관련 conversation/community/versioned-assist/responses 통합시험 138건 통과. 옵션 상호작용, 존 범위 예외, 불필요한 로그 요청 없음, 실패 문의 오분류 방지, 명령 없는 설명형 진전 시험을 포함한다.
 
 운영 변경은 Gateway/Poller 0.16.15로 제한한다. DB schema 변경 없음. 기존 미병합 PR #125의 운영 변경을 보존한 후속 PR이다. 백업 경로: /home/ablecloud/techflow-ai-gateway-backups/migration189-20260929.
+
+## 운영 결과
+
+- 이미지: migration189-0.16.15-344c54a.
+- 실제 #494 재처리: HTTP 201, 508.24ms, ANSWERED/PUBLISHED, Post #495.
+- 관리자 Chat 알림 1명 전송 성공.
+- 질문은 기능 문의였음을 바로잡는 문장과 첨부 화면의 두 후보 아니오/토글 OFF 설명을 같은 Post #495에 보완했다. 버전·시각·로그 재요청은 없다.
+- 브라우저에서 공개 답변 전체와 화면별 설명을 확인했다.
+- Gateway/Poller Healthy, Restart 0. 보호 서비스 컨테이너 ID 차이 없음.
+- Issue #126 / PR #127에 증적을 연결했으며 병합은 수행하지 않았다.
