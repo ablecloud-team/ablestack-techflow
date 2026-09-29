@@ -34,6 +34,22 @@ class FakeResponse:
 
 
 class CommunityTests(unittest.TestCase):
+    def test_memory_snapshot_followup_explains_storage_support(self):
+        client = TestClient(create_app(Settings(), MemoryStore()))
+        base = {**self.payload(), 'title':'VM 메모리 스냅샷', 'postId':'9011', 'postNumber':1,
+                'question':'Failed to create vm snapshot: KVM does not support the type of snapshot requested'}
+        first = client.post('/v1/community/cases', headers=HEADERS, json=base)
+        self.assertEqual(201, first.status_code, first.text)
+        follow = client.post('/v1/community/cases', headers={**HEADERS,'Idempotency-Key':'memory-followup-9012'},
+                             json={**base,'postId':'9012','postNumber':2,
+                                   'question':'메모리를 포함해서 VM 스냅샷을 생성하려고 합니다. 메모리 OFF는 정상이고 Agent는 8.2.0입니다.'})
+        self.assertEqual(201, follow.status_code, follow.text)
+        answer=follow.json()['data']['draftAnswer']
+        self.assertIn('QCOW2',answer)
+        self.assertIn('RBD',answer)
+        self.assertIn('kvm.vmstoragesnapshot.enabled',answer)
+        self.assertNotIn('끄고 다시 생성',answer)
+
     def test_visible_history_excludes_deleted_hidden_and_unapproved_posts(self):
         client = FlarumClient('http://forum', 'https://forum', None, True)
         payload = {'data': [

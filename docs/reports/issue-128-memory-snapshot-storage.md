@@ -34,3 +34,12 @@ Discussion #190 Post #497의 오류는 `KVM does not support the type of snapsho
 정확한 오류 및 메모리 목적 후속 질문에 검토된 지원 범위 설명을 제공한다. 관련 Source 근거를 curated reference에 추가하고 일반 생성 정책에도 스토리지 종류·전 볼륨 형식·상태·전략별 판정을 요구한다. 이미 제공된 Agent/전역 설정을 다시 요청하지 않고 ROOT/DATA의 pool type/format만 묻는다.
 
 0.16.16 Gateway/Poller 제한 배포, DB schema 변경 없음. 기존 PR #125/#127의 운영 변경을 보존한다. 백업: /home/ablecloud/techflow-ai-gateway-backups/snapshot190-20260929.
+
+## 최종 검증
+
+- 관련 통합시험 140건 통과 및 실제 Community API의 최초 오류→메모리 목적 후속 회귀시험 1건 추가 통과.
+- #499 재요청은 이미 생성돼 있던 #500을 반환했다. 게시 상태만으로 새 코드가 답변을 재생성했다고 판단하지 않고 브라우저 내용까지 확인했다.
+- 이전 본문이 남은 것을 확인한 뒤 운영 0.16.16의 검토된 지원 설명 함수로 전체 답변을 생성하여 #500을 같은 글에서 교정했다. draft/response/Assistant Turn도 갱신했다.
+- 최종 브라우저에서 QCOW2/RAW/RBD/PowerFlex/CLVM, 두 전역 설정 구분, pool type/format만 추가 요청하는 내용 확인 완료.
+- Gateway/Poller Healthy, Restart 0. 보호 서비스 컨테이너 변경 없음.
+- Issue #128 / PR #129. PR 병합은 수행하지 않았다. 고객의 실제 pool type/format은 여전히 확인이 필요하며 장애 해결 완료로 처리하지 않았다.
