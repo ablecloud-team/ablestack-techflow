@@ -746,7 +746,8 @@ def format_public_answer(result: dict[str, Any]) -> str | None:
         lines.append("말씀해 주신 현상을 기준으로 확인해 보겠습니다.")
 
     if actions:
-        lines.extend(["", "먼저 다음 해결 방법을 적용해 보세요."])
+        lines.extend(["", "각 항목은 다음과 같이 이해하시면 됩니다." if result.get('answerIntent') == 'EXPLANATION'
+                      else "먼저 다음 해결 방법을 적용해 보세요."])
         lines.extend(f"{index}. {_format_copyable_cli(value)}" for index, value in enumerate(actions[:6], 1))
     if artifact_findings:
         lines.extend(["", "첨부해 주신 자료에서는 다음 내용을 확인했습니다."])

@@ -12,6 +12,15 @@
   },
   "entries": [
     {
+      "entryId": "DIPLO-MIGRATION-UI-STORAGE-OPTIONS-001",
+      "authority": "OPERATOR_APPROVED_KNOWLEDGE",
+      "title": "Diplo 호스트 마이그레이션의 스토리지 필요 여부와 선택 토글",
+      "sourceLocator": "https://github.com/ablecloud-team/ablestack-cloud/blob/10973eeb4d284e2d35c1004b2b3f92e8208f0fd1/ui/src/views/compute/MigrateWizard.vue",
+      "matchTerms": ["스토리지 마이그레이션 필요", "스토리지와 함께 마이그레이션", "requiresStorageMotion", "토글", "라이브 마이그레이션"],
+      "requiredTermGroups": [["마이그레이션", "migration"], ["스토리지", "storage", "토글"]],
+      "content": "MigrateWizard.vue는 listHosts의 requiresStorageMotion을 예/아니오로 표시한다. ManagementServerImpl.listHostsForMigrationOfVM은 VM 볼륨별 local 여부, 스토리지 cluster scope와 대상 cluster, usesLocal, 지원 capability 및 적합한 풀을 확인한다. zoneWideVolumeRequiresStorageMotion은 managed storage의 cluster 변경과 driver.zoneWideVolumesAvailableWithoutClusterMotion에 의존한다. 같은 cluster 공유 storage이면 일반적으로 false지만 같은 cluster만으로 판단하지 않는다. migrateWithStorage 토글은 볼륨별 목적지 풀 선택 영역을 표시하고 migrateto[...].volume/pool 매핑을 전달한다. requiresStorageMigration은 selectedHost.requiresStorageMotion OR volumeToPoolSelection.length>0이며 true면 migrateVirtualMachineWithVolume, false면 migrateVirtualMachine을 호출한다. 따라서 필요=true이면 토글 OFF도 필수 볼륨 이동을 우회하지 않으며, false여도 목적지 볼륨 매핑을 지정하면 storage migration 경로다. 아니오는 호스트 적합성이나 작업 성공 보장이 아니다. 이 기능 설명만으로 장애 시각이나 로그를 요구하지 않는다."
+    },
+    {
       "entryId": "ABLESTACK-KNOWN-ISSUE-QEMU-VNC-STALE-001",
       "authority": "OPERATOR_APPROVED_KNOWLEDGE",
       "title": "Mold 콘솔 연결중 상태의 QEMU VNC 세션 복구",

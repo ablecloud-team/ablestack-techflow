@@ -18,6 +18,7 @@ from app.conversation import (
     resolution_progress_result,
     standalone_libvirt_tcp_result,
     standalone_kvm_import_result,
+    migration_option_explanation,
 )
 from app.embedding import MAX_INPUT_BYTES, validate_inputs
 from app.models import CommunityCaseCreateRequest, ComprehensiveQueryRequest, ComprehensiveSynthesisRequest
@@ -26,6 +27,27 @@ from app.versioned_assist import format_public_answer
 
 
 class ConversationProgressionTest(unittest.TestCase):
+    def test_migration_option_explanation_answers_both_fields_without_logs(self):
+        result = migration_option_explanation('스토리지 마이그레이션 필요 기준과 스토리지와 함께 마이그레이션 토글 설명')
+        answer = format_public_answer(result)
+        self.assertIn('각 항목은', answer)
+        self.assertIn('토글을 꺼도', answer)
+        self.assertIn('존 범위', answer)
+        self.assertNotIn('먼저 다음 해결 방법', answer)
+        self.assertEqual([], result['report']['unknowns'])
+
+    def test_usage_clarification_reuses_question_but_not_unrelated_followup(self):
+        context='스토리지 마이그레이션 필요(예/아니오) 항목'
+        self.assertIsNotNone(migration_option_explanation('장애가 아니라 제품 사용 설명 문의입니다', context))
+        self.assertIsNone(migration_option_explanation('백업이 실패합니다', context))
+        self.assertIsNone(migration_option_explanation('스토리지 마이그레이션 필요가 예인데 오류가 발생합니다', context))
+
+    def test_new_explanation_without_command_counts_as_progress(self):
+        result={'state':'ANSWERED','userQuestion':'옵션의 의미와 사용 설명입니다',
+                'report':{'summary':'이 항목은 저장소의 접근 범위와 대상 호스트 조건으로 계산하는 값이며, 단순한 클러스터 이름 비교가 아닙니다.',
+                          'recommendedActions':[], 'unknowns':[]}}
+        # An explanation is useful even without Linux commands or action verbs.
+        self.assertTrue(community_result_advances(result,[{'role':'ASSISTANT','content':'버전과 로그를 보내 주세요.'}]))
     def test_chat_prompt_preserves_latest_question_when_history_is_long(self) -> None:
         turns = [
             {"role": "USER" if index % 2 == 0 else "ASSISTANT", "content": f"이전 {index} " + "긴 내용 " * 1500}

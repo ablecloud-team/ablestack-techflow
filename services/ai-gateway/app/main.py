@@ -79,6 +79,7 @@ from .conversation import (
     community_result_advances,
     resolution_progress_result,
     standalone_libvirt_tcp_result,
+    migration_option_explanation,
     standalone_kvm_import_result,
     source_post_id,
 )
@@ -1020,7 +1021,9 @@ def create_app(
                 discussionId=request.discussion_id, sourcePostId=post_id,
             )
         else:
-            result = standalone_libvirt_tcp_result(request.question)
+            result = migration_option_explanation(request.question, conversation_question)
+            if result is None:
+                result = standalone_libvirt_tcp_result(request.question)
             if result is not None:
                 _json_log(
                     "community_reviewed_followup_used", correlationId=correlation_id,
@@ -1046,6 +1049,7 @@ def create_app(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail={"code": "AI_PROVIDER_TEMPORARY_FAILURE", "message": "community draft generation will retry"},
             )
+        result['userQuestion'] = request.question
         progresses = community_result_advances(result, turns)
         actionability_issues = community_actionability_issues(result)
         if not progresses or actionability_issues:
@@ -1070,6 +1074,7 @@ def create_app(
                     status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                     detail={"code": "AI_PROVIDER_TEMPORARY_FAILURE", "message": "community draft generation will retry"},
                 )
+            result['userQuestion'] = request.question
             retry_progresses = community_result_advances(result, turns)
             retry_actionability_issues = community_actionability_issues(result)
             if not retry_progresses or retry_actionability_issues:
