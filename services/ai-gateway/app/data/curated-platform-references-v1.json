@@ -12,6 +12,15 @@
   },
   "entries": [
     {
+      "entryId": "DIPLO-KVM-MEMORY-SNAPSHOT-STORAGE-001",
+      "authority": "OPERATOR_APPROVED_KNOWLEDGE",
+      "title": "KVM VM 스냅샷의 메모리·볼륨 형식별 전략 선택",
+      "sourceLocator": "https://github.com/ablecloud-team/ablestack-cloud/blob/10973eeb4d284e2d35c1004b2b3f92e8208f0fd1/server/src/main/java/com/cloud/vm/snapshot/VMSnapshotManagerImpl.java",
+      "matchTerms": ["VM 스냅샷", "스냅샷 메모리", "KVM does not support the type of snapshot requested", "QCOW2", "RBD", "RAW"],
+      "requiredTermGroups": [["스냅샷", "snapshot"], ["메모리", "memory", "KVM", "kvm"]],
+      "content": "VMSnapshotManagerImpl.allocVMSnapshot에서 storageStrategyFactory.getVmSnapshotStrategy(vmId, rootPoolId, snapshotMemory)가 null이면 KVM does not support the type of snapshot requested를 발생시킨다. KVM 메모리 스냅샷 전체 미지원이라는 뜻이 아니다. DefaultVMSnapshotStrategy.canHandle은 실행 중 디스크 전용 요청을 제외하고 volumeDao.findByInstance의 모든 볼륨 ImageFormat.QCOW2를 요구한다. 메모리 포함은 VM Running이어야 하며 암호화 ROOT 등 별도 제한도 있다. StorageVMSnapshotStrategy는 kvm.vmstoragesnapshot.enabled 및 !snapshotMemory 조건으로 디스크 전용 경로다. PowerFlex ScaleIOVMSnapshotStrategy는 snapshotMemory=true를 거부한다. Ceph RBD/RAW 또는 혼합 RAW 볼륨은 기본 메모리 경로의 all-QCOW2 조건을 만족하지 않는다. NFS/SharedMountPoint 등 파일 기반이라도 볼륨 형식을 실제 확인해야 하며 CLVM은 별도 제한이다. kvm.snapshot.enabled는 볼륨 스냅샷 설정이며 Guest Agent 버전이나 이 설정이 RAW 메모리 지원을 추가하지 않는다. RAM 복원이 목적이면 메모리 OFF나 VM 정지를 해결책으로 제시하지 말고 ROOT와 모든 DATA의 pool type/format만 추가 확인한다."
+    },
+    {
       "entryId": "DIPLO-MIGRATION-UI-STORAGE-OPTIONS-001",
       "authority": "OPERATOR_APPROVED_KNOWLEDGE",
       "title": "Diplo 호스트 마이그레이션의 스토리지 필요 여부와 선택 토글",

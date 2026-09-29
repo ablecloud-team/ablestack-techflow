@@ -766,7 +766,8 @@ def format_public_answer(result: dict[str, Any]) -> str | None:
     if unknowns:
         lines.extend([
             "",
-            "위 조치로 해결되지 않으면 아래 결과를 알려주세요. 이미 제공한 내용은 다시 보내지 않으셔도 됩니다.",
+            "정확한 지원 여부를 확인하려면 다음 정보가 필요합니다." if result.get('answerIntent') == 'EXPLANATION'
+            else "위 조치로 해결되지 않으면 아래 결과를 알려주세요. 이미 제공한 내용은 다시 보내지 않으셔도 됩니다.",
         ])
         lines.extend(f"- {_format_copyable_cli(value)}" for value in unknowns[:6])
     if not actions and not unknowns:
