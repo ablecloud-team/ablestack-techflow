@@ -16,10 +16,10 @@
 
 ## 검증 및 운영 적용
 
-- 단위 및 Community API 회귀시험에서 Post #507과 같은 후속 내용이 201로 접수되고 근거에 맞는 새 답변이 만들어지는지 확인한다.
-- Gateway/Poller만 제한 배포한 뒤 기존 Post #507이 처리되고 새 AI 댓글이 한 번만 게시되는지 확인한다. 서비스 건강 상태와 보호 서비스의 컨테이너 ID·시작 시각을 비교한다.
-- 게시된 답변은 현장 결과를 기다리는 진단 안내다. 실제 세 Cube 호스트와 CCVM의 서비스 상태는 질문자의 환경에서 확인해야 한다.
-- 초기 배포 0.16.18 뒤 URL 정리 문제를 교정했고, 브라우저에서 확인한 명령 안내 문구까지 다듬어 0.16.20에 반영한다. 기존 Post #508을 같은 댓글에서 수정한다.
+- 관련 단위 및 Community API 회귀시험 190건 통과. Post #507과 같은 후속 내용은 201로 접수되고 검토한 제품 경로에 근거한 답변을 생성한다.
+- Gateway/Poller 0.16.20 제한 배포. 두 컨테이너는 Healthy/Restart 0이며 Gateway의 process/database/vector는 ready, Poller는 pendingPosts=0·failed=0이다. Source Reconciler와 GitHub→Chat 보호 서비스의 Container ID·시작 시각은 변경되지 않았다.
+- Post #507 처리 후 AI 답변 Post #508을 한 번 게시했다. 브라우저에서 실제 본문을 확인하고, URL 마스킹과 문구 문제를 같은 Post #508에서 교정했다. 최종 본문에 `http://ccvm-mngt:8080/`, 세 호스트별 점검, CCVM 서비스·로그 안내가 표시된다. 토론에는 원글, 첫 AI 답변, 후속 질문, 보완 AI 답변의 네 게시물만 있다.
+- 운영 백업: `/home/ablecloud/techflow-ai-gateway-backups/issue130-20261001`. 게시된 답변은 현장 결과를 기다리는 진단 안내다. 실제 세 Cube 호스트와 CCVM의 서비스 상태는 질문자의 환경에서 확인해야 한다.
 
 ## 검토한 소스
 
