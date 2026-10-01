@@ -20,6 +20,7 @@ from app.conversation import (
     standalone_kvm_import_result,
     migration_option_explanation,
     snapshot_memory_support_result,
+    cloud_center_connection_result,
 )
 from app.embedding import MAX_INPUT_BYTES, validate_inputs
 from app.models import CommunityCaseCreateRequest, ComprehensiveQueryRequest, ComprehensiveSynthesisRequest
@@ -28,6 +29,26 @@ from app.versioned_assist import format_public_answer
 
 
 class ConversationProgressionTest(unittest.TestCase):
+    def test_ccvm_connection_message_uses_cube_http_path_and_passes_actionability(self):
+        question = ('클라우드센터에 정상적으로 연결되지 않습니다. '
+                    'ccvmStatus.ccvm = true; "active" : "true"; step8 :: false')
+        result = cloud_center_connection_result(question, 'ABLESTACK VM 클라우드센터 연결실패')
+        self.assertIsNotNone(result)
+        answer = format_public_answer(result)
+        for expected in ('ccvm-mngt', '8080', 'getent hosts', 'curl -sS',
+                         'mold.service', 'journalctl', 'step8=false',
+                         'http://ccvm-mngt:8080/', '--until "now"'):
+            self.assertIn(expected, answer)
+        self.assertNotIn('내부 검토 자료', answer)
+        self.assertNotIn('명령로', answer)
+        self.assertNotIn('createConsoleEndpoint', answer)
+        self.assertEqual((), community_actionability_issues(result))
+        self.assertTrue(community_result_advances(result, [
+            {'role': 'ASSISTANT', 'content': 'createConsoleEndpoint와 콘솔 연결을 확인하세요.'},
+        ]))
+        self.assertIsNone(cloud_center_connection_result('CCVM 배포 후 연결이 되지 않습니다.'))
+        self.assertIsNone(cloud_center_connection_result('클라우드센터 연결이 정상입니다.'))
+
     def test_memory_snapshot_error_requires_storage_format_matrix(self):
         r = snapshot_memory_support_result('KVM does not support the type of snapshot requested')
         text = format_public_answer(r)

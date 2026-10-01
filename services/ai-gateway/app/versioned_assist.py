@@ -512,6 +512,11 @@ def _projection_replacements(citations: Iterable[dict[str, Any]]) -> set[str]:
 
 def sanitize_public_text(value: object, citations: Iterable[dict[str, Any]] = ()) -> str:
     text = str(value or "").strip()
+    # This fixed product service name is needed for a copyable read-only check.
+    # Keep all other internal URLs under the existing public projection policy.
+    safe_operational_urls = {
+        "http://ccvm-mngt:8080/": "TECHFLOW_SAFE_CCVM_HTTP_URL",
+    }
     safe_system_paths = {
         "/dev/virtio-ports/org.qemu.guest_agent.0": "TECHFLOW_SAFE_QGA_CHANNEL_PATH",
         "/etc/libvirt/libvirtd.conf": "TECHFLOW_SAFE_LIBVIRTD_CONFIG_PATH",
@@ -521,6 +526,8 @@ def sanitize_public_text(value: object, citations: Iterable[dict[str, Any]] = ()
     }
     for path, placeholder in safe_system_paths.items():
         text = text.replace(path, placeholder)
+    for url, placeholder in safe_operational_urls.items():
+        text = text.replace(url, placeholder)
     citation_tokens: set[str] = set()
     for item in citations:
         for key in ("citationId", "chunkId", "sourceVersionId"):
@@ -546,6 +553,8 @@ def sanitize_public_text(value: object, citations: Iterable[dict[str, Any]] = ()
     text = re.sub(r"\b(?:citation|chunk|evidence)[-_]?[A-Za-z0-9-]+\b", "내부 근거", text, flags=re.IGNORECASE)
     for path, placeholder in safe_system_paths.items():
         text = text.replace(placeholder, path)
+    for url, placeholder in safe_operational_urls.items():
+        text = text.replace(placeholder, url)
     return re.sub(r"[ \t]+", " ", text).strip()
 
 
@@ -667,7 +676,7 @@ _INLINE_CODE = re.compile(r"`([^`\r\n]+)`")
 _CLI_PREFIXES = (
     "sudo ", "systemctl ", "journalctl ", "ausearch ", "findmnt ", "namei ",
     "getfacl ", "matchpathcon ", "restorecon ", "virsh ", "qemu-ga ", "ls ",
-    "grep ", "curl ", "ip ", "ss ", "getenforce", "sestatus", "mount ", "cat ",
+    "grep ", "curl ", "getent ", "ip ", "ss ", "getenforce", "sestatus", "mount ", "cat ",
     "nc ", "qemu-img ", "df ",
     "apt ", "apt-get ", "dnf ", "rpm ", "dpkg ", "msiexec.exe ", "get-service ", "start-service ",
     "restart-service ", "get-timezone", "get-date", "w32tm ", "tzutil.exe ",

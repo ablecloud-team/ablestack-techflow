@@ -29,6 +29,13 @@ from app.platform_references import curated_platform_results
 
 
 class VersionedAssistPolicyTest(unittest.TestCase):
+    def test_product_ccvm_probe_url_stays_copyable_without_leaking_other_urls(self) -> None:
+        text = sanitize_public_text(
+            'curl http://ccvm-mngt:8080/; source https://private.example.invalid/secret'
+        )
+        self.assertIn('curl http://ccvm-mngt:8080/', text)
+        self.assertNotIn('private.example.invalid', text)
+
     def test_public_branding_uses_glue(self) -> None:
         self.assertEqual("Glue RBD, Glue 스토리지, Glue", normalize_public_brand_names("Ceph RBD, ceph 스토리지, CEPH"))
         self.assertEqual("Glue RBD", simplify_public_text("Ceph RBD"))

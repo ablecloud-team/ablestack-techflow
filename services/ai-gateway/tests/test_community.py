@@ -34,6 +34,37 @@ class FakeResponse:
 
 
 class CommunityTests(unittest.TestCase):
+    def test_ccvm_connection_log_followup_is_answered_without_rejection(self):
+        store = MemoryStore()
+        first = {**self.payload(), 'discussionId': '191',
+                 'discussionUrl': 'https://community.ablecloud.io/d/191',
+                 'title': 'ABLESTACK VM 클라우드센터 연결실패',
+                 'question': 'CCVM 배포 후 클라우드센터 연결이 되지 않습니다.',
+                 'postId': '505', 'postNumber': 1, 'authorId': '51',
+                 'postAuthorId': '51', 'turnRole': 'REQUESTER', 'responseRequested': True}
+        case = store.create_community_case(first, {
+            'draftAnswer': '콘솔 연결 코드를 확인하고 오류 본문을 요청합니다.',
+            'answerState': 'ANSWERED', 'citations': []}, 'ccvm-first', 'ccvm-first')
+        store.mark_community_auto_published(case['caseId'],
+            '콘솔 연결 코드를 확인하고 오류 본문을 요청합니다.',
+            {'postId': '506', 'postUrl': 'https://community.ablecloud.io/d/191/2'},
+            'ccvm-first-published')
+        followup = {**first, 'postId': '507', 'postNumber': 3,
+                    'question': ('클라우드센터에 정상적으로 연결되지 않습니다. '
+                                 'ccvmStatus.ccvm = true; statusResource: '
+                                 '{"code":200,"val":{"active":"true"}}; '
+                                 'step8 :: false')}
+        client = TestClient(create_app(Settings(), store))
+        response = client.post('/v1/community/cases',
+            headers={**HEADERS, 'Idempotency-Key': 'ccvm-followup-507'}, json=followup)
+        self.assertEqual(201, response.status_code, response.text)
+        answer = response.json()['data']['draftAnswer']
+        self.assertIn('ccvm-mngt', answer)
+        self.assertIn('mold.service', answer)
+        self.assertIn('HTTP GET', answer)
+        self.assertNotIn('createConsoleEndpoint', answer)
+        self.assertEqual('507', store.list_community_turns('191')[-1]['sourcePostId'])
+
     def test_memory_snapshot_followup_explains_storage_support(self):
         client = TestClient(create_app(Settings(), MemoryStore()))
         base = {**self.payload(), 'title':'VM 메모리 스냅샷', 'postId':'9011', 'postNumber':1,

@@ -394,6 +394,82 @@ def snapshot_memory_support_result(value: object, context: str = '') -> dict[str
             'previewGuidance':None,'citationsUsed':[],'abstainReason':None}}
 
 
+def cloud_center_connection_result(value: object, context: str = '') -> dict[str, Any] | None:
+    """Explain the reviewed Cube -> CCVM HTTP path for a connection failure."""
+    current = str(value or '').casefold()
+    history = str(context or '').casefold()
+    if not any(term in current + history for term in ('클라우드센터', '클라우드 센터', 'cloud center')):
+        return None
+    if not any(term in current for term in (
+        '클라우드센터에 정상적으로 연결되지',
+        '클라우드 센터에 정상적으로 연결되지',
+        'create_address.py',
+    )):
+        return None
+    # The displayed error is returned by create_address.py's HTTP request
+    # exception handler. Pacemaker and monitoring status are separate checks.
+    has_resource_status = bool(re.search(r'"active"\s*:\s*"?true"?', current))
+    has_ccvm_status = 'ccvmstatus.ccvm = true' in current or bool(
+        re.search(r'"ccvm"\s*:\s*"?true"?', current)
+    )
+    has_wall_status = 'step8 :: false' in current or 'wallstatus.wall = false' in current
+    assessment = (
+        '올려주신 statusResource 결과의 active=true는 클라우드센터 리소스가 실행 중임을 보여 줍니다. '
+        '이는 CCVM의 Mold 웹 서비스가 8080 포트에서 응답한다는 검사 결과는 아닙니다. '
+        if has_resource_status else ''
+    )
+    if has_ccvm_status:
+        assessment += 'ccvm=true는 배포 상태값이며 HTTP 연결 성공을 뜻하지 않습니다. '
+    if has_wall_status:
+        assessment += 'step8=false는 Wall 모니터링 구성 상태이므로 연결 실패의 직접 원인으로 단정하지 않겠습니다. '
+    return {
+        'state': 'ANSWERED', 'generationProviderCalled': False, 'providerProfileId': None,
+        'citations': [], 'report': {
+            'summary': assessment +
+                'Cube의 “클라우드센터 연결”은 각 Cube 호스트에서 ccvm-mngt를 주소로 해석하고 '
+                'CCVM 관리 주소의 8080 포트에 HTTP GET을 보냅니다. 게시하신 “클라우드센터에 정상적으로 '
+                '연결되지 않습니다” 문구는 이 요청에서 예외가 발생할 때 표시됩니다. '
+                '따라서 세 호스트의 동시 구성 자체보다 현재 Cube 호스트→CCVM 8080 연결 경로와 '
+                'CCVM 안의 Mold 웹 서비스 응답을 먼저 확인해야 합니다.',
+            'recommendedActions': [
+                '세 Cube 호스트에서 각각 관리자 계정으로 `ssh -p <SSH_PORT> <ADMIN>@<CUBE_HOST_IP>`에 접속하십시오. '
+                '`getent hosts ccvm-mngt`를 실행해 해석된 주소를 비교하고, '
+                '`curl -sS -o /dev/null -w "%{http_code}\\n" --connect-timeout 5 --max-time 10 '
+                'http://ccvm-mngt:8080/`을 실행하십시오. 정상 기준은 세 호스트가 의도한 같은 CCVM '
+                '관리 주소를 가리키고 HTTP 응답을 받는 것입니다. 연결 오류·시간 초과·주소 차이를 구분해 주세요. '
+                '브라우저의 화면 접속 결과만으로 Cube 호스트의 요청 성공을 판정하지 마십시오.',
+                'CCVM 관리 서버에는 `ssh -p <SSH_PORT> <ADMIN>@<CCVM_MANAGEMENT_IP>`로 접속하거나 '
+                'Cube의 CCVM 콘솔을 사용하십시오. 관리자 권한에서 '
+                '`sudo systemctl status mold.service --no-pager -l`과 '
+                '`sudo ss -ltnp`의 8080 LISTEN 여부를 확인하십시오. 정상 기준은 Mold 서비스가 '
+                'active (running)이고 CCVM 관리 주소의 8080 포트가 LISTEN인 것입니다. '
+                '서비스명이나 포트가 이 설치 버전에서 다르면 실제 설치된 Unit과 LISTEN 출력을 알려주세요.',
+                'CCVM 관리 서버에서 같은 관리자 권한으로 실패 시각 전후의 '
+                '`sudo journalctl -u mold.service --since "-2 hours" '
+                '--until "now" --no-pager`를 확인하십시오. 더 이전에 발생한 장애라면 '
+                '두 시각을 실제 실패 시각 전후로 바꿔 조회하십시오. '
+                '세 Cube 호스트가 모두 실패하면 CCVM 서비스·관리망 경로를, 특정 호스트만 실패하면 '
+                '그 호스트의 주소 해석·라우팅·방화벽 차이를 우선 비교하십시오. '
+                '정상 기준은 같은 시간대에 Mold 서비스 오류가 없고 세 호스트의 HTTP 요청이 응답하는 것입니다. '
+                '공유할 때 암호·토큰·쿠키와 내부 IP는 일관된 별칭으로 마스킹해 주세요.',
+            ],
+            'diagnoses': [
+                '제품 소스의 create_address.py cloudCenter 분기는 ccvm-mngt 주소에 HTTP GET을 보내며 '
+                '연결 예외를 위 안내 문구로 표시합니다. statusResource의 code=200은 리소스 조회 성공이고 '
+                'Mold HTTP 응답 코드가 아닙니다.',
+            ],
+            'unknowns': [
+                '이미 제공한 리소스 상태는 다시 보내지 않으셔도 됩니다. 세 Cube 호스트별 주소 해석 결과와 '
+                'HTTP 상태 또는 연결 오류, CCVM의 Mold 서비스·8080 LISTEN 상태 및 실패 시각 전후 로그에서 '
+                '첫 오류만 알려주시면 실패 지점을 좁힐 수 있습니다.',
+            ],
+            'observedFacts': [], 'artifactEvidence': [], 'confidence': 'HIGH',
+            'currentAssessment': 'INSUFFICIENT_EVIDENCE', 'previewAssessment': 'NOT_APPLICABLE',
+            'previewGuidance': None, 'citationsUsed': [], 'abstainReason': None,
+        },
+    }
+
+
 def migration_option_explanation(value: object, context: str = '') -> dict[str, Any] | None:
     """Reviewed Diplo UI/API explanation; never replace a concrete failure diagnosis."""
     current = str(value or '').replace(' ', '').casefold()
