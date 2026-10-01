@@ -336,7 +336,7 @@ def normalize_posts(
     events: list[dict] = []
     for post in payload.get("data") or []:
         attrs = post.get("attributes") or {}
-        if not attrs.get("contentHtml"):
+        if not attrs.get("contentHtml") or attrs.get('isHidden') or attrs.get('hiddenAt') or attrs.get('isApproved') is False:
             continue
         user_ref = (((post.get("relationships") or {}).get("user") or {}).get("data") or {})
         user = included.get((user_ref.get("type"), user_ref.get("id")), {})
@@ -373,7 +373,7 @@ def normalize_posts(
             "turnRole": role, "responseRequested": response_requested,
             "responseReason": response_reason,
             "resolutionOnly": False, "tagSlugs": discussion["tagSlugs"],
-            "attachmentUrls": parser.links[:12],
+            "attachmentUrls": parser.links[:20],
             # Internal poller-only evidence. upload_artifacts removes this key
             # before the event crosses the Activepieces boundary.
             "_attachmentReferenceCount": parser.attachment_reference_count,
@@ -394,14 +394,14 @@ def include_legacy_discussion_context(current: dict, events: list[dict]) -> dict
         f"[{role_labels.get(item['turnRole'], '참여자')} Post #{item['postNumber']}]\n{item['question']}"
         for item in history
     ]
-    current_urls = list(dict.fromkeys(current.get("attachmentUrls") or []))[:12]
+    current_urls = list(dict.fromkeys(current.get("attachmentUrls") or []))[:20]
     attachment_urls: list[str] = current_urls
     reference_count = int(current.get("_attachmentReferenceCount", 0) or 0)
     if not attachment_urls:
         for item in reversed(history[:-1]):
             reference_count += int(item.get("_attachmentReferenceCount", 0) or 0)
             for url in item.get("attachmentUrls") or []:
-                if url not in attachment_urls and len(attachment_urls) < 12:
+                if url not in attachment_urls and len(attachment_urls) < 20:
                     attachment_urls.append(url)
             if attachment_urls:
                 break
@@ -529,8 +529,8 @@ def upload_artifacts(
     ))
     temp_root.mkdir(parents=True, exist_ok=True, mode=0o700)
     for ordinal, raw_url in enumerate(raw_urls, start=1):
-        if len(ids) >= 12:
-            _append_unique_warning(warnings, "첨부 분석 한도 12개를 초과하여 남은 파일은 분석하지 못했습니다.", ordinal)
+        if len(ids) >= 20:
+            _append_unique_warning(warnings, "첨부 분석 한도 20개를 초과하여 남은 파일은 분석하지 못했습니다.", ordinal)
             continue
         raw_url = resolve_upload_reference(raw_url, str(event.get("authorId") or ""), base_url, public_url, token)
         public_attachment_url = urllib.parse.urljoin(public_url + "/", raw_url)
@@ -568,7 +568,7 @@ def upload_artifacts(
                 try:
                     with tempfile.TemporaryDirectory(prefix='pdf-', dir=temp_root) as pdf_dir:
                         pages = render_pdf_pages(temporary, Path(pdf_dir))
-                        if len(ids) + len(pages) > 12:
+                        if len(ids) + len(pages) > 20:
                             raise ValueError('PDF pages exceed remaining attachment budget')
                         for number, page in enumerate(pages, 1):
                             ids.append(_upload_artifact(gateway_url, page, filename[:80] + f'-page-{number}.png',

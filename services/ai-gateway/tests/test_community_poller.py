@@ -63,14 +63,14 @@ class CommunityPollerTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     poll_flarum.render_pdf_pages(source, Path(root))
 
-    def test_six_attachment_followup_is_not_truncated(self) -> None:
+    def test_thirteen_attachment_followup_is_not_truncated(self) -> None:
         discussion = {'discussionId':'186','discussionUrl':'https://community.ablecloud.io/d/186',
                       'title':'VM 중단', 'authorId':'13','tagSlugs':[]}
         payload = {'data':[{'id':'485','attributes':{'number':3,'contentHtml':
-            ''.join(f'<img src="/assets/{i}.png">' for i in range(6))},
+            ''.join(f'<img src="/assets/{i}.png">' for i in range(13))},
             'relationships':{'user':{'data':{'id':'13'}}}}]}
         events = poll_flarum.normalize_posts(discussion, payload, '99', set())
-        self.assertEqual(6, len(events[0]['attachmentUrls']))
+        self.assertEqual(13, len(events[0]['attachmentUrls']))
 
     def test_upload_uuid_resolves_only_matching_trusted_file(self) -> None:
         with patch.object(poll_flarum, "request_json", return_value={"data": [{"attributes": {

@@ -750,7 +750,7 @@ def format_public_answer(result: dict[str, Any]) -> str | None:
         lines.extend(f"{index}. {_format_copyable_cli(value)}" for index, value in enumerate(actions[:6], 1))
     if artifact_findings:
         lines.extend(["", "첨부해 주신 자료에서는 다음 내용을 확인했습니다."])
-        lines.extend(f"- {value}" for value in artifact_findings[:12])
+        lines.extend(f"- {value}" for value in artifact_findings[:20])
     runtime_context = " ".join([summary, *diagnoses]).casefold()
     if report.get("currentAssessment") == "CURRENT_RUNTIME_ISSUE" and any(
         marker in runtime_context for marker in ("qemu", "vnc", "콘솔 연결")

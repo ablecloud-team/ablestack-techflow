@@ -159,7 +159,7 @@ def conversation_artifact_ids(
     turns: Iterable[dict[str, Any]],
     incoming: dict[str, Any],
     *,
-    limit: int = 12,
+    limit: int = 20,
 ) -> list[str]:
     """Keep the newest unique artifacts available throughout an unresolved conversation."""
     rows = [*list(turns), incoming]
