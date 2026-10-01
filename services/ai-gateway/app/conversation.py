@@ -433,7 +433,7 @@ def cloud_center_connection_result(value: object, context: str = '') -> dict[str
                 'CCVM 안의 Mold 웹 서비스 응답을 먼저 확인해야 합니다.',
             'recommendedActions': [
                 '세 Cube 호스트에서 각각 관리자 계정으로 `ssh -p <SSH_PORT> <ADMIN>@<CUBE_HOST_IP>`에 접속하십시오. '
-                '`getent hosts ccvm-mngt`로 해석된 주소를 비교하고, '
+                '`getent hosts ccvm-mngt`를 실행해 해석된 주소를 비교하고, '
                 '`curl -sS -o /dev/null -w "%{http_code}\\n" --connect-timeout 5 --max-time 10 '
                 'http://ccvm-mngt:8080/`을 실행하십시오. 정상 기준은 세 호스트가 의도한 같은 CCVM '
                 '관리 주소를 가리키고 HTTP 응답을 받는 것입니다. 연결 오류·시간 초과·주소 차이를 구분해 주세요. '
