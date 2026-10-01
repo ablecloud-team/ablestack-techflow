@@ -355,6 +355,45 @@ def standalone_kvm_import_result(value: object) -> dict[str, Any] | None:
     }
 
 
+def migration_option_explanation(value: object, context: str = '') -> dict[str, Any] | None:
+    """Reviewed Diplo UI/API explanation; never replace a concrete failure diagnosis."""
+    current = str(value or '').replace(' ', '').casefold()
+    text = current
+    if any(x in current for x in ('사용설명', '기능설명', '장애가아니', '제품에대한')):
+        text += context.replace(' ', '').casefold()
+    if not any(x in text for x in ('스토리지마이그레이션필요', '스토리지와함께마이그레이션', 'requiresstoragemotion')):
+        return None
+    if any(x in current for x in ('실패합니다', '오류가발생', '동작하지않', '실패했')):
+        return None
+    return {
+        'state': 'ANSWERED', 'answerIntent': 'EXPLANATION', 'generationProviderCalled': False,
+        'citations': [], 'providerProfileId': None,
+        'report': {
+            'summary': '두 항목은 역할이 다릅니다. 호스트별 “스토리지 마이그레이션 필요”는 시스템의 판단이고, '
+                       '“스토리지와 함께 마이그레이션” 토글은 볼륨의 목적지 스토리지 풀을 직접 지정하기 위한 옵션입니다. '
+                       '같은 클러스터에서 공유 스토리지를 그대로 쓰면 보통 “아니오”라는 이해는 맞지만, 클러스터 이름만으로 결정되지는 않습니다.',
+            'recommendedActions': [
+                '호스트별 “예/아니오”는 VM에 연결된 볼륨들의 현재 스토리지 종류·범위와 대상 호스트를 기준으로 판단합니다. '
+                '같은 클러스터의 공유 스토리지를 그대로 사용할 수 있으면 보통 “아니오”입니다. 로컬 스토리지를 사용하거나 '
+                '클러스터 범위 스토리지에서 다른 클러스터로 옮겨야 하면 볼륨 이동이 필요할 수 있습니다. '
+                '하나라도 이동이 필요한 볼륨이 있으면 “예”가 될 수 있으며, 이것이 모든 디스크를 반드시 복사한다는 뜻은 아닙니다. '
+                '존 범위 공유 스토리지는 클러스터가 달라도 그대로 쓸 수 있는 경우가 있고, 관리형 스토리지는 드라이버 조건도 관여합니다.',
+                '토글을 켜면 볼륨별 목적지 스토리지 풀 선택 영역이 나타납니다. 실행 호스트를 바꾸면서 볼륨의 저장 위치도 '
+                '지정해 옮기려는 경우에 사용합니다. 이 토글은 공유 스토리지 여부나 라이브 마이그레이션 기능 자체를 켜는 스위치가 아닙니다.',
+                '대상 호스트가 “아니오”이고 토글을 끄면 보통 디스크는 현재 공유 스토리지에 두고 VM 실행 호스트를 옮깁니다. '
+                '“아니오”여도 다른 목적지 풀로 볼륨 이동을 지정하면 볼륨을 포함한 마이그레이션 경로를 사용합니다. '
+                '반대로 “예”인 호스트는 토글을 꺼도 볼륨 이동을 생략하지 않습니다. 필요한 볼륨 이동 경로로 처리하며, '
+                '직접 지정하지 않은 배치는 서버의 적합성 검사와 할당 조건을 따릅니다. 토글을 끄는 것으로 필수 스토리지 이동을 우회할 수는 없습니다.',
+                '화면의 “아니오”는 스토리지 이동이 불필요하다는 뜻이지 마이그레이션 성공을 보장하는 표시는 아닙니다. '
+                '호스트 적합성, CPU·네트워크·스토리지 접근 조건은 별도로 확인됩니다. 동일 공유 스토리지를 유지하며 호스트만 옮기려면 '
+                '적합한 “아니오” 대상 호스트를 선택하고 토글을 끄는 구성이 일반적입니다. 저장 위치도 바꾸려면 토글을 켜서 볼륨별 목적지를 확인해 주세요.'
+            ], 'observedFacts': [], 'diagnoses': [], 'unknowns': [], 'artifactEvidence': [],
+            'currentAssessment': 'CURRENT_NORMAL', 'previewAssessment': 'NOT_APPLICABLE',
+            'previewGuidance': None, 'confidence': 'HIGH', 'citationsUsed': [], 'abstainReason': None,
+        },
+    }
+
+
 def standalone_libvirt_tcp_result(value: object) -> dict[str, Any] | None:
     """Return the reviewed, security-bounded 16509 setup follow-up."""
     normalized = str(value or "").casefold()
@@ -720,9 +759,14 @@ def community_result_advances(result: dict[str, Any], turns: Iterable[dict[str, 
         for item in (*list(report.get("recommendedActions") or []), *list(report.get("unknowns") or []))
     ]
     candidates = [item for item in candidates if item]
-    if not candidates:
-        return False
     previous_text = previous[-1]
+    question = str(result.get('userQuestion') or '').replace(' ', '')
+    if result.get('answerIntent') == 'EXPLANATION' or any(
+        word in question for word in ('사용설명', '기능설명', '어떤기준', '무슨뜻', '옵션의의미')
+    ):
+        explanation = str(report.get('summary') or '')
+        if len(explanation) >= 30 and _similarity(explanation, previous_text) < 0.70:
+            return True
     for candidate in candidates:
         has_command = any(marker in candidate.casefold() for marker in COMMAND_MARKERS)
         if has_command and candidate.casefold() not in previous_text.casefold():
