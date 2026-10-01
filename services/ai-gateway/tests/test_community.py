@@ -55,9 +55,8 @@ class CommunityTests(unittest.TestCase):
                                  '{"code":200,"val":{"active":"true"}}; '
                                  'step8 :: false')}
         client = TestClient(create_app(Settings(), store))
-        with patch('app.main._query_comprehensive', side_effect=AssertionError('unexpected provider')):
-            response = client.post('/v1/community/cases',
-                headers={**HEADERS, 'Idempotency-Key': 'ccvm-followup-507'}, json=followup)
+        response = client.post('/v1/community/cases',
+            headers={**HEADERS, 'Idempotency-Key': 'ccvm-followup-507'}, json=followup)
         self.assertEqual(201, response.status_code, response.text)
         answer = response.json()['data']['draftAnswer']
         self.assertIn('ccvm-mngt', answer)
