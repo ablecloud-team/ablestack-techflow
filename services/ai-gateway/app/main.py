@@ -80,6 +80,7 @@ from .conversation import (
     resolution_progress_result,
     standalone_libvirt_tcp_result,
     migration_option_explanation,
+    snapshot_memory_support_result,
     standalone_kvm_import_result,
     source_post_id,
 )
@@ -1021,7 +1022,9 @@ def create_app(
                 discussionId=request.discussion_id, sourcePostId=post_id,
             )
         else:
-            result = migration_option_explanation(request.question, conversation_question)
+            result = snapshot_memory_support_result(request.question, conversation_question)
+            if result is None:
+                result = migration_option_explanation(request.question, conversation_question)
             if result is None:
                 result = standalone_libvirt_tcp_result(request.question)
             if result is not None:

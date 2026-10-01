@@ -586,9 +586,25 @@ def naturalize_operational_prefix(value: str) -> str:
     return body
 
 
+def normalize_public_brand_names(text: str) -> str:
+    """Project product prose to Glue without rewriting executable/source literals."""
+    literals = r"(```[\s\S]*?```|~~~[\s\S]*?~~~|`[^`\n]*`|https?://\S+|(?m:^[ \t]{4,}[^\n]+))"
+    parts = re.split(literals, text)
+    for index in range(0, len(parts), 2):
+        # Paths, package names and unquoted ceph CLI invocations are identifiers.
+        parts[index] = re.sub(
+            r"(?<![\w/.-])ceph(?![\w/.-])"
+            r"(?!\s+(?:-\S*|status\b|health\b|osd\b|mon\b|mgr\b|mds\b|"
+            r"fs\b|df\b|auth\b|config\b|quorum_status\b|versions\b|version\b|"
+            r"crash\b|tell\b|orch\b|dashboard\b|pg\b))",
+            "Glue", parts[index], flags=re.IGNORECASE,
+        )
+    return "".join(parts)
+
+
 def simplify_public_text(value: object, citations: Iterable[dict[str, Any]] = ()) -> str:
     """Prefer short user-facing Korean while preserving commands and essential product names."""
-    text = naturalize_operational_prefix(sanitize_public_text(value, citations))
+    text = normalize_public_brand_names(naturalize_operational_prefix(sanitize_public_text(value, citations)))
     replacements = (
         ("QEMU 프로세스 내부의 VNC 통신 소켓", "가상머신 실행 프로그램(QEMU)의 콘솔 연결(VNC)"),
         ("QEMU 프로세스", "가상머신 실행 프로그램(QEMU)"),
@@ -766,7 +782,8 @@ def format_public_answer(result: dict[str, Any]) -> str | None:
     if unknowns:
         lines.extend([
             "",
-            "위 조치로 해결되지 않으면 아래 결과를 알려주세요. 이미 제공한 내용은 다시 보내지 않으셔도 됩니다.",
+            "정확한 지원 여부를 확인하려면 다음 정보가 필요합니다." if result.get('answerIntent') == 'EXPLANATION'
+            else "위 조치로 해결되지 않으면 아래 결과를 알려주세요. 이미 제공한 내용은 다시 보내지 않으셔도 됩니다.",
         ])
         lines.extend(f"- {_format_copyable_cli(value)}" for value in unknowns[:6])
     if not actions and not unknowns:

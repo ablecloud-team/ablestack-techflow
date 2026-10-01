@@ -355,6 +355,45 @@ def standalone_kvm_import_result(value: object) -> dict[str, Any] | None:
     }
 
 
+def snapshot_memory_support_result(value: object, context: str = '') -> dict[str, Any] | None:
+    """Explain the reviewed KVM strategy rejection without replacing memory with disk-only goals."""
+    current = str(value or '').casefold()
+    error = 'kvm does not support the type of snapshot requested'
+    related = ('스냅샷' in current and '메모리' in current) or error in current
+    if not related or error not in (current + context.casefold()):
+        return None
+    return {'state':'ANSWERED', 'answerIntent':'EXPLANATION', 'generationProviderCalled':False,
+        'providerProfileId':None, 'citations':[], 'report':{
+            'summary':'메모리를 포함한 VM 스냅샷이 목적이라면 메모리 옵션을 끄는 것은 같은 목적의 해결책이 아닙니다. '
+                      '또 KVM에서 메모리 스냅샷이 무조건 불가능한 것도 아닙니다. 이 오류는 요청한 메모리 포함 여부와 '
+                      '연결 볼륨 형식에 맞는 스냅샷 처리 경로를 찾지 못했다는 뜻이므로 기본 스토리지 종류와 각 볼륨 형식을 함께 확인해야 합니다.',
+            'recommendedActions':[
+                '파일 기반 기본 스토리지(NFS, SharedMountPoint 등)에서 ROOT와 모든 연결 데이터 볼륨이 QCOW2이면 '
+                '메모리 포함 VM 스냅샷의 기본 처리 경로가 선택될 수 있습니다. VM이 실행 중이어야 하고, '
+                '암호화된 ROOT 볼륨·공유 볼륨 등 별도의 제한도 충족해야 하므로 파일 스토리지라는 이름만으로 성공을 보장하지는 않습니다.',
+                'Glue RBD에서 사용하는 RAW 볼륨, RAW 블록 볼륨 또는 QCOW2와 RAW가 섞인 구성은 '
+                '확인한 기본 메모리 스냅샷 경로의 “모든 볼륨 QCOW2” 조건을 충족하지 않습니다. '
+                'PowerFlex 전용 경로도 메모리 포함 요청은 받지 않습니다. CLVM은 별도의 VM 스냅샷 제한이 있습니다. '
+                '디스크 전용 스냅샷이 된다고 메모리 상태 저장까지 지원된다는 뜻은 아닙니다.',
+                'kvm.snapshot.enabled는 KVM 볼륨 스냅샷 관련 설정입니다. VM의 디스크 전용 스토리지 스냅샷 경로는 '
+                'kvm.vmstoragesnapshot.enabled를 사용하며 메모리 포함 요청은 받지 않습니다. '
+                '어느 설정을 켜거나 Guest Agent를 업데이트하는 것으로 RAW 볼륨의 메모리 스냅샷 지원이 추가되지는 않습니다. '
+                'Guest Agent 버전만을 원인으로 단정하거나 이미 알려주신 설정·버전을 반복 확인할 필요는 없습니다.',
+                'Mold의 대상 VM → 볼륨에서 ROOT와 모든 데이터 볼륨의 기본 스토리지 풀 및 실제 형식(QCOW2/RAW)을 확인해 주세요. '
+                '화면에 형식이 없다면 관리자가 listVolumes와 listStoragePools 조회 결과로 대조할 수 있습니다. '
+                '첨부된 생성 창만으로는 스토리지 형식을 알 수 없으므로 현재 구성이 RBD인지 파일 기반인지 추정하지 않겠습니다.',
+                'RBD/RAW로 확인되면 현재 구성에서 메모리 포함 복원 지점을 만드는 지원 경로가 없습니다. '
+                '메모리 상태 보존이 꼭 필요하면 지원되는 파일/QCOW2 구성으로의 이전 또는 별도 검증된 방식이 필요하며, '
+                '운영 디스크를 임의 변환하거나 저장소를 즉시 바꾸기보다 호환성과 이전 절차를 먼저 검토해야 합니다. '
+                '모든 볼륨이 QCOW2인데도 같은 오류가 나면 그때 실제 볼륨 형식 등록과 해당 버전의 전략 선택을 확인해야 합니다. '
+                'VM 정지나 메모리 옵션 해제는 실행 중 메모리 보존이라는 요구의 해결책으로 제시하지 않겠습니다.'
+            ], 'unknowns':['아직 필요한 정보는 해당 VM의 ROOT 및 데이터 볼륨별 기본 스토리지 종류와 실제 형식입니다. '
+                           '이 정보가 있어야 현재 구성에서 메모리 포함 VM 스냅샷을 지원하는지 판정할 수 있습니다.'],
+            'observedFacts':[], 'diagnoses':[], 'artifactEvidence':[], 'confidence':'HIGH',
+            'currentAssessment':'INSUFFICIENT_EVIDENCE','previewAssessment':'NOT_APPLICABLE',
+            'previewGuidance':None,'citationsUsed':[],'abstainReason':None}}
+
+
 def migration_option_explanation(value: object, context: str = '') -> dict[str, Any] | None:
     """Reviewed Diplo UI/API explanation; never replace a concrete failure diagnosis."""
     current = str(value or '').replace(' ', '').casefold()

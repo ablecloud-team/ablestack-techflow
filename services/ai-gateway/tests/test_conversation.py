@@ -19,6 +19,7 @@ from app.conversation import (
     standalone_libvirt_tcp_result,
     standalone_kvm_import_result,
     migration_option_explanation,
+    snapshot_memory_support_result,
 )
 from app.embedding import MAX_INPUT_BYTES, validate_inputs
 from app.models import CommunityCaseCreateRequest, ComprehensiveQueryRequest, ComprehensiveSynthesisRequest
@@ -27,6 +28,20 @@ from app.versioned_assist import format_public_answer
 
 
 class ConversationProgressionTest(unittest.TestCase):
+    def test_memory_snapshot_error_requires_storage_format_matrix(self):
+        r = snapshot_memory_support_result('KVM does not support the type of snapshot requested')
+        text = format_public_answer(r)
+        for expected in ('QCOW2', 'RAW', 'RBD', '모든', 'kvm.vmstoragesnapshot.enabled', '기본 스토리지', '정지'):
+            self.assertIn(expected,text)
+        self.assertEqual((), community_actionability_issues(r))
+        self.assertIn('같은 목적의 해결책이 아닙니다',text)
+        self.assertNotIn('끄고 다시 생성',text)
+
+    def test_memory_goal_followup_uses_prior_error_but_not_unrelated_question(self):
+        context='KVM does not support the type of snapshot requested'
+        self.assertIsNotNone(snapshot_memory_support_result('스냅샷 메모리를 포함하려고 합니다. 에이전트는 8.2.0입니다.',context))
+        self.assertIsNone(snapshot_memory_support_result('네트워크 변경 문의',context))
+
     def test_migration_option_explanation_answers_both_fields_without_logs(self):
         result = migration_option_explanation('스토리지 마이그레이션 필요 기준과 스토리지와 함께 마이그레이션 토글 설명')
         answer = format_public_answer(result)
