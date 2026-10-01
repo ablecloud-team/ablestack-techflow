@@ -81,6 +81,7 @@ from .conversation import (
     standalone_libvirt_tcp_result,
     migration_option_explanation,
     snapshot_memory_support_result,
+    cloud_center_connection_result,
     standalone_kvm_import_result,
     source_post_id,
 )
@@ -1023,6 +1024,8 @@ def create_app(
             )
         else:
             result = snapshot_memory_support_result(request.question, conversation_question)
+            if result is None:
+                result = cloud_center_connection_result(request.question, conversation_question)
             if result is None:
                 result = migration_option_explanation(request.question, conversation_question)
             if result is None:
