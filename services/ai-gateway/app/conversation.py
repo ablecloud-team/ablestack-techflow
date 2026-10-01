@@ -427,7 +427,7 @@ def cloud_center_connection_result(value: object, context: str = '') -> dict[str
         'citations': [], 'report': {
             'summary': assessment +
                 'Cube의 “클라우드센터 연결”은 각 Cube 호스트에서 ccvm-mngt를 주소로 해석하고 '
-                'http://<CCVM_관리_IP>:8080 에 HTTP GET을 보냅니다. 게시하신 “클라우드센터에 정상적으로 '
+                'CCVM 관리 주소의 8080 포트에 HTTP GET을 보냅니다. 게시하신 “클라우드센터에 정상적으로 '
                 '연결되지 않습니다” 문구는 이 요청에서 예외가 발생할 때 표시됩니다. '
                 '따라서 세 호스트의 동시 구성 자체보다 현재 Cube 호스트→CCVM 8080 연결 경로와 '
                 'CCVM 안의 Mold 웹 서비스 응답을 먼저 확인해야 합니다.',
@@ -445,8 +445,9 @@ def cloud_center_connection_result(value: object, context: str = '') -> dict[str
                 'active (running)이고 CCVM 관리 주소의 8080 포트가 LISTEN인 것입니다. '
                 '서비스명이나 포트가 이 설치 버전에서 다르면 실제 설치된 Unit과 LISTEN 출력을 알려주세요.',
                 'CCVM 관리 서버에서 같은 관리자 권한으로 실패 시각 전후의 '
-                '`sudo journalctl -u mold.service --since "<실패 10분 전>" '
-                '--until "<실패 10분 후>" --no-pager`를 확인하십시오. '
+                '`sudo journalctl -u mold.service --since "-2 hours" '
+                '--until "now" --no-pager`를 확인하십시오. 더 이전에 발생한 장애라면 '
+                '두 시각을 실제 실패 시각 전후로 바꿔 조회하십시오. '
                 '세 Cube 호스트가 모두 실패하면 CCVM 서비스·관리망 경로를, 특정 호스트만 실패하면 '
                 '그 호스트의 주소 해석·라우팅·방화벽 차이를 우선 비교하십시오. '
                 '정상 기준은 같은 시간대에 Mold 서비스 오류가 없고 세 호스트의 HTTP 요청이 응답하는 것입니다. '

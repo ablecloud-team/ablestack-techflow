@@ -36,8 +36,10 @@ class ConversationProgressionTest(unittest.TestCase):
         self.assertIsNotNone(result)
         answer = format_public_answer(result)
         for expected in ('ccvm-mngt', '8080', 'getent hosts', 'curl -sS',
-                         'mold.service', 'journalctl', 'step8=false'):
+                         'mold.service', 'journalctl', 'step8=false',
+                         'http://ccvm-mngt:8080/', '--until "now"'):
             self.assertIn(expected, answer)
+        self.assertNotIn('내부 검토 자료', answer)
         self.assertNotIn('createConsoleEndpoint', answer)
         self.assertEqual((), community_actionability_issues(result))
         self.assertTrue(community_result_advances(result, [
