@@ -21,7 +21,11 @@
 
 ## 운영 검증
 
-Gateway/Poller 제한 배포와 실제 댓글 게시를 확인한 뒤 결과를 기록한다. 이 작업은 사용자 안내와 엔진 보완이며 질문자의 스토리지 세션을 직접 변경하지 않는다.
+- 관련 단위·Community API 회귀시험 195건 통과. 최초 요청 및 CCVM 상태 후속 요청 모두 iSCSI 분리 목표를 유지하고 명령·정지 조건을 제공한다.
+- Gateway/Poller 0.16.21 제한 배포. Healthy/Restart 0, process/database/vector ready, Poller pendingPosts=0·failed=0. 보호 서비스 Container ID·시작 시각 변경 없음.
+- 보류 중인 Post #511은 정상 Gateway 요청으로 재처리해 답변 Post #512를 한 번 게시했다. 자동 재시도 체크포인트도 이후 확인 완료됐다. 운영자가 확인한 ‘초기 설치 단계’ 범위를 같은 답변에 반영하고 DB의 draft/response/Assistant Turn도 갱신했다.
+- 브라우저에서 대상 IQN/portal startup manual 및 logout 명령, 사용 정지 조건, 설치 중 외부 LUN 비노출, 기존 GFS 초기화 금지를 확인했다. 기존 네 게시물 외 중복 댓글 없음.
+- 운영 백업: `/home/ablecloud/techflow-ai-gateway-backups/issue132-20261002`. Issue #132 / PR #133. 질문자 환경의 실제 대상 IQN·portal·WWID는 제시한 조회 결과로 특정해야 한다.
 
 ## 참고
 
