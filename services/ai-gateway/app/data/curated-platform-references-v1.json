@@ -12,6 +12,26 @@
   },
   "entries": [
     {
+      "entryId": "DIPLO-472-ISCSI-REINSTALL-PRESERVATION-001",
+      "authority": "VERIFIED_PRODUCT_SOURCE",
+      "reviewedBy": "codex-source-review",
+      "reviewedAt": "2026-10-02",
+      "title": "초기 설치 재시도 전 iSCSI 분리와 기존 LUN 보존",
+      "sourceLocator": "https://github.com/ablecloud-team/ablestack-cockpit-plugin/blob/9d294e4d591f855b9a33a39e74763a3c5d7d622e/python/gfs/gfs_manage.py",
+      "matchTerms": ["iscsi", "재설치", "분리", "해제"],
+      "requiredTermGroups": [["iscsi"], ["재설치", "분리", "해제", "logout"]],
+      "content": "ABLESTACK-4.7.2 소스의 create_gfs는 pvcreate -ff --yes, vgcreate, lvcreate, mkfs.gfs2를 실행한다. 기존 데이터를 보존할 LUN에 신규 GFS 구성을 실행하면 안 된다. CCVM은 cloudcenter_res 리소스로 관리하며 virsh의 ccvm 도메인과 디스크 매핑을 현재 실행 호스트에서 조회할 수 있다. 초기 설치를 다시 진행하기 위한 질문의 핵심은 iSCSI 연결 분리다. CCVM 상태 요청은 분리 전 소비자 사용 여부를 확인하는 하위 단계다. 대상 IQN/portal/iface/WWID를 식별하고 CCVM 및 공유 파일시스템 사용을 정상 정지한 뒤 대상 세션을 로그아웃한다. 재설치 중 외부 LUN을 제시하지 않고 로컬 OS 디스크만 설치한다. 분리 대상 세션의 모든 LUN 사용을 확인하고 iSCSI 부팅 세션은 온라인 로그아웃에서 제외한다. 업무 데이터나 관리 환경을 보존해야 하면 재설치 대상 밖에 필요한 백업과 설정을 먼저 확보한다."
+    },
+    {
+      "entryId": "OPEN-ISCSI-TARGETED-LOGOUT-001",
+      "authority": "OFFICIAL_EXTERNAL_DOCUMENTATION",
+      "title": "Open-iSCSI 대상 세션 로그아웃과 연결 기록",
+      "sourceLocator": "https://github.com/open-iscsi/open-iscsi/blob/master/README",
+      "matchTerms": ["iscsi", "iscsiadm"],
+      "requiredTermGroups": [["iscsi"], ["분리", "해제", "logout", "재설치"]],
+      "content": "iscsiadm의 node 모드는 targetname과 portal, 필요시 interface로 연결 기록을 지정한다. --logout은 대상 세션을 종료하며 파일시스템 초기화 명령이 아니다. session -P 3은 연결과 장치 대조에 사용한다. node.startup 및 node.conn[0].startup의 manual 설정은 해당 기록의 자동 연결을 제어한다. --op delete는 사용 중인 세션을 로그아웃하고 기록도 삭제하므로 단순 분리 목적으로 사용하지 않는다. 전체 logoutall 대신 식별한 대상 기록을 사용한다. 명령을 제시하기 전에 마운트, LVM, VM 및 공유 클러스터의 사용이 해제돼야 한다."
+    },
+    {
       "entryId": "DIPLO-KVM-MEMORY-SNAPSHOT-STORAGE-001",
       "authority": "OPERATOR_APPROVED_KNOWLEDGE",
       "title": "KVM VM 스냅샷의 메모리·볼륨 형식별 전략 선택",

@@ -29,6 +29,13 @@ from app.platform_references import curated_platform_results
 
 
 class VersionedAssistPolicyTest(unittest.TestCase):
+    def test_iscsi_preservation_retrieval_uses_product_and_session_terms(self) -> None:
+        question = '재설치 전에 iSCSI를 분리하고 기존 데이터를 보존하려고 합니다.'
+        terms = feature_source_terms(question)
+        self.assertIn('iscsiadm', terms)
+        self.assertIn('gfs_manage.py', terms)
+        results = curated_platform_results(question)
+        self.assertTrue(any('9d294e4d' in row['path'] for row in results))
     def test_product_ccvm_probe_url_stays_copyable_without_leaking_other_urls(self) -> None:
         text = sanitize_public_text(
             'curl http://ccvm-mngt:8080/; source https://private.example.invalid/secret'

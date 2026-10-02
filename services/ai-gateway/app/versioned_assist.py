@@ -333,6 +333,9 @@ def feature_source_terms(question: str) -> tuple[str, ...]:
         anchors.extend(KVM_EXTERNAL_IMPORT_MARKERS)
     if _is_libvirt_remote_tcp_question(question):
         anchors.extend(LIBVIRT_REMOTE_TCP_MARKERS)
+    if 'iscsi' in question.casefold() and any(term in question.casefold() for term in ('재설치', '분리', '해제', 'logout', 'reinstall')):
+        anchors.extend(('iscsiadm', 'node.startup', 'node.conn[0].startup', 'multipath', 'WWID',
+                        'gfs_manage.py', 'create_gfs', 'cloudcenter_res', 'pcs cluster stop', 'LUN 데이터 보존'))
     return tuple(dict.fromkeys(anchors))
 
 
@@ -677,7 +680,7 @@ _CLI_PREFIXES = (
     "sudo ", "systemctl ", "journalctl ", "ausearch ", "findmnt ", "namei ",
     "getfacl ", "matchpathcon ", "restorecon ", "virsh ", "qemu-ga ", "ls ",
     "grep ", "curl ", "getent ", "ip ", "ss ", "getenforce", "sestatus", "mount ", "cat ",
-    "nc ", "qemu-img ", "df ",
+    "nc ", "qemu-img ", "df ", "iscsiadm ", "multipath ", "lsblk ", "pvs ", "lvs ", "pcs ", "cloud-init ",
     "apt ", "apt-get ", "dnf ", "rpm ", "dpkg ", "msiexec.exe ", "get-service ", "start-service ",
     "restart-service ", "get-timezone", "get-date", "w32tm ", "tzutil.exe ",
 )
@@ -708,7 +711,7 @@ def _format_copyable_cli(value: str) -> str:
         commands.append(candidate.removeprefix("$ "))
         return "다음 명령"
 
-    explanation = _INLINE_CODE.sub(replace, value).strip().replace("다음 명령를", "다음 명령을")
+    explanation = _INLINE_CODE.sub(replace, value).strip().replace("다음 명령를", "다음 명령을").replace("다음 명령로", "다음 명령으로")
     explanation = re.sub(
         r"다음 명령(?:\s*(?:,|과|와)\s*다음 명령)+",
         "아래 명령",
@@ -771,8 +774,9 @@ def format_public_answer(result: dict[str, Any]) -> str | None:
         lines.append("말씀해 주신 현상을 기준으로 확인해 보겠습니다.")
 
     if actions:
-        lines.extend(["", "각 항목은 다음과 같이 이해하시면 됩니다." if result.get('answerIntent') == 'EXPLANATION'
-                      else "먼저 다음 해결 방법을 적용해 보세요."])
+        lead = {"EXPLANATION": "각 항목은 다음과 같이 이해하시면 됩니다.",
+                "PROCEDURE": "다음 순서로 진행하십시오."}.get(result.get('answerIntent'), "먼저 다음 해결 방법을 적용해 보세요.")
+        lines.extend(["", lead])
         lines.extend(f"{index}. {_format_copyable_cli(value)}" for index, value in enumerate(actions[:6], 1))
     if artifact_findings:
         lines.extend(["", "첨부해 주신 자료에서는 다음 내용을 확인했습니다."])
