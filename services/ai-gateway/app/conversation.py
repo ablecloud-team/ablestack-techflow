@@ -57,7 +57,7 @@ _TYPO_PROTECTED_TERMS = {
     "community", "techflow", "assistant", "localhost",
 }
 _LINUX_OPERATION = re.compile(
-    r"\b(?:sudo\s+)?(?:systemctl|journalctl|virsh|grep|tail|nc|qemu-img|df)\b",
+    r"\b(?:sudo\s+)?(?:systemctl|journalctl|virsh|grep|tail|nc|qemu-img|df|iscsiadm|multipath|lsblk|pvs|lvs|pcs)\b",
     re.IGNORECASE,
 )
 _SSH_EXAMPLE = re.compile(r"\bssh(?:\s+-p\s+\S+)?\s+\S+@\S+", re.IGNORECASE)
@@ -392,6 +392,86 @@ def snapshot_memory_support_result(value: object, context: str = '') -> dict[str
             'observedFacts':[], 'diagnoses':[], 'artifactEvidence':[], 'confidence':'HIGH',
             'currentAssessment':'INSUFFICIENT_EVIDENCE','previewAssessment':'NOT_APPLICABLE',
             'previewGuidance':None,'citationsUsed':[],'abstainReason':None}}
+
+
+def storage_preserving_reinstall_result(value: object, context: str = '') -> dict[str, Any] | None:
+    """Keep iSCSI disconnection as the primary goal across reinstall follow-ups."""
+    current = str(value or '')
+    combined = (current + '\n' + context).casefold()
+    reinstall = any(term in combined for term in ('재설치', 'reinstall')) or (
+        '설치' in combined and any(term in combined for term in ('다시', '재시도'))
+    )
+    if 'iscsi' not in combined or not reinstall:
+        return None
+    latest = current.casefold()
+    diagnostic = ('ccvm' in latest or '클라우드센터' in latest) and any(
+        term in latest for term in ('상태', '명령', '확인', '구성', '새로고침')
+    )
+    preservation = 'iscsi' in latest and any(
+        term in latest for term in ('재설치', '분리', '해제', '보존', '데이터', 'reinstall')
+    )
+    if not diagnostic and not preservation:
+        return None
+    initial_setup = any(term in combined for term in ('초기 설치', '초기설치', 'initial setup'))
+    summary = ('초기 설치를 다시 진행하기 전에 연결된 iSCSI를 분리하는 절차를 안내하겠습니다. '
+               if initial_setup else '재설치 전에 연결된 iSCSI를 분리하고 기존 LUN 데이터를 보존하는 절차를 안내하겠습니다. ')
+    summary += ('대상 IQN·portal 확인 → CCVM과 공유 스토리지 사용 정지 → 대상 기록의 자동 연결 해제 → '
+                '대상 세션 로그아웃 → 설치 중 외부 LUN 차단 순서입니다. iSCSI 로그아웃 자체는 LUN을 지우지 않지만 '
+                '사용 중인 VM·파일시스템의 연결을 끊으면 손상될 수 있으므로 사용 정지를 먼저 확인해야 합니다.')
+    actions = [
+        '각 재설치 대상 Cube 호스트에서 `ssh -p <SSH_PORT> <ADMIN>@<CUBE_HOST_IP>`로 접속하고 관리자 권한으로 '
+        '`sudo iscsiadm -m session -P 3`, `sudo multipath -ll`, '
+        '`lsblk -o NAME,TYPE,SIZE,FSTYPE,MOUNTPOINTS,WWN`, `findmnt`를 확인하십시오. '
+        '여기서 분리할 TARGET_IQN, PORTAL_IP와 LUN의 WWID를 기록합니다. 스토리지 두 대와 세션·LUN 수가 같다고 '
+        '가정하지 말고 각 호스트에서 관련 portal을 확인하십시오. OS 부팅 디스크가 iSCSI이면 아래 온라인 로그아웃을 적용하지 마십시오.',
+        'CCVM 상태는 분리 전 사용 여부를 확인하는 용도로 점검합니다. 각 Cube 호스트에서 '
+        '`sudo pcs status --full`과 `sudo virsh -c qemu:///system list --all`을 확인하고, '
+        'CCVM 실행 호스트에서 `sudo virsh -c qemu:///system domblklist ccvm --details`로 해당 LUN 사용 여부를 대조하십시오. '
+        '기존 자료를 보존하려면 분리 전에 필요한 CCVM 디스크·관리 DB·설정 백업을 재설치 대상 밖에 확보하십시오. '
+        '초기 설치 중이라도 외부 스토리지의 기존 데이터를 새 디스크로 취급하지 마십시오.',
+        '업무 VM이 있으면 먼저 정상 종료하고 Cube에서 CCVM을 정상 정지하십시오. 초기 설치 대상 클러스터 전체를 '
+        '중단할 수 있고 GFS/CLVM 리소스가 구성된 경우, 클러스터 관리자 호스트에서 '
+        '`sudo pcs cluster stop --all`을 한 번 실행해 공유 파일시스템 리소스도 정상 정지합니다. '
+        '각 Cube 호스트에서 VM 실행 여부, `findmnt -t gfs2`와 `sudo lvs -o lv_name,vg_name,lv_attr,devices`로 '
+        '대상 LUN의 사용이 해제됐는지 확인하십시오. 정상 기준은 대상 LUN에 실행 VM·마운트·활성 사용이 없고 '
+        '리소스 정지가 완료된 것입니다. busy 또는 정지 실패가 나오면 강제 옵션을 쓰지 말고 그 결과를 먼저 확인합니다.',
+        '위 조건을 충족한 각 Cube 호스트에서, 1단계의 IQN과 portal로 자리표시자를 바꿔 관리자 권한으로 실행하십시오. '
+        '기존 startup 값을 기록한 뒤 `sudo iscsiadm -m node -T <TARGET_IQN> -p <PORTAL_IP>:3260 --op update -n node.startup -v manual`, '
+        '`sudo iscsiadm -m node -T <TARGET_IQN> -p <PORTAL_IP>:3260 --op update -n node.conn[0].startup -v manual`, '
+        '`sudo iscsiadm -m node -T <TARGET_IQN> -p <PORTAL_IP>:3260 --logout`을 순서대로 적용합니다. '
+        'iface에 바인딩된 기록에는 해당 `-I <IFACE>`를 추가합니다. 다중 경로는 분리 대상의 모든 portal에 대해 진행하며 '
+        '같은 세션이 제공하는 다른 LUN도 사용 중이어서는 안 됩니다. 전체 세션 일괄 로그아웃·node 삭제를 사용하지 마십시오.',
+        '각 Cube 호스트에서 `sudo iscsiadm -m session`과 `sudo multipath -ll`, `lsblk -o NAME,TYPE,SIZE,FSTYPE,MOUNTPOINTS,WWN`로 '
+        '결과를 확인하십시오. 정상 기준은 대상 IQN·portal 세션이 사라지고 설치 대상에 외부 LUN이 나타나지 않는 것입니다. '
+        '재설치 중 재탐색으로 다시 연결되지 않도록 스토리지 관리자와 협의해 해당 호스트의 LUN 매핑 또는 전용 iSCSI 연결을 '
+        '일시 차단하고, 로컬 OS 디스크만 설치 대상으로 선택하십시오. LUN 자체와 다른 호스트의 매핑을 삭제하지 마십시오.',
+        '재설치 뒤 연결을 복원할 때는 기존 WWID와 파일시스템·VG 메타데이터를 먼저 대조하십시오. '
+        '기존 LUN에 신규 GFS 구성·디스크 초기화를 실행하면 강제 PV 생성과 파일시스템 생성 경로가 데이터에 영향을 줄 수 있습니다. '
+        '기존 데이터를 보존하는 재사용·복원 절차로 진행해야 합니다.',
+    ]
+    unknowns = ['대상 값을 특정하기 어렵거나 정지·로그아웃이 실패한 경우에만 세션·WWID·마운트 결과와 실패 메시지를 알려주세요. '
+                '이미 제공한 버전·발생 시각은 다시 보내지 않으셔도 됩니다. CHAP 암호·DB 암호·API 키·토큰은 삭제하고 '
+                'IP·IQN·WWID는 호스트별 대응 관계를 유지한 별칭으로 마스킹하십시오.']
+    if diagnostic:
+        summary = '알려주신 버전·발생 시각을 확인했습니다. 재설치 전 iSCSI 연결 분리라는 목표에 맞춰 안내하겠습니다. ' + summary
+        actions[1] = (
+            '요청하신 CCVM 상태 확인은 각 Cube 호스트의 `sudo pcs status --full`로 cloudcenter_res의 실행 위치를 찾은 뒤 '
+            '그 실행 호스트에서 `sudo virsh -c qemu:///system domstate ccvm`과 '
+            '`sudo virsh -c qemu:///system domblklist ccvm --details`를 실행하면 됩니다. '
+            'Running이면 먼저 Cube에서 CCVM을 정상 정지합니다. 다른 호스트에서 domain not found가 나오는 것은 '
+            '그 호스트가 CCVM 실행 노드가 아니라면 정상입니다. 정상 기준은 정지 후 ccvm이 shut off이고 해당 LUN 사용이 해제되는 것입니다. '
+            'CCVM 정지가 확인되면 공유 파일시스템 사용을 정지하고 대상 세션 분리 단계로 진행합니다. '
+            '보존할 CCVM 디스크·DB·설정이 있다면 정지 전에 재설치 대상 밖에 백업하십시오.'
+        )
+    if any(term in latest for term in ('iscsi로 부팅', 'iscsi 부팅', 'boot from iscsi')):
+        summary = 'OS 부팅 디스크가 iSCSI라면 실행 중인 호스트에서 해당 세션을 로그아웃할 수 없습니다. '
+        summary += 'VM·클러스터를 정상 정지한 뒤 호스트를 종료하고, 설치 시 기존 LUN을 제시하지 않도록 스토리지 매핑을 조정하는 절차가 필요합니다.'
+        actions = [actions[0], actions[1], actions[2], actions[4], actions[5]]
+    return {'state': 'ANSWERED', 'answerIntent': 'PROCEDURE', 'generationProviderCalled': False, 'providerProfileId': None, 'citations': [],
+            'report': {'summary': summary, 'recommendedActions': actions, 'unknowns': unknowns,
+                       'diagnoses': [], 'observedFacts': [], 'artifactEvidence': [], 'confidence': 'HIGH',
+                       'currentAssessment': 'INSUFFICIENT_EVIDENCE', 'previewAssessment': 'NOT_APPLICABLE',
+                       'previewGuidance': None, 'citationsUsed': [], 'abstainReason': None}}
 
 
 def cloud_center_connection_result(value: object, context: str = '') -> dict[str, Any] | None:
@@ -807,7 +887,7 @@ def community_actionability_issues(result: dict[str, Any]) -> tuple[str, ...]:
     text = "\n".join(item for item in rows if item)
     operation_rows = [item for item in rows if _LINUX_OPERATION.search(item)]
     has_linux_operation = bool(operation_rows)
-    has_log_request = "로그" in text or "/var/log/" in text or "journalctl" in text.casefold()
+    has_log_request = bool(re.search(r'로그(?!아웃|인)|/var/log/|journalctl', text, re.IGNORECASE))
     # A Windows Event Viewer request is not a Linux host operation.
     if not has_linux_operation and "/var/log/" not in text:
         return ()
