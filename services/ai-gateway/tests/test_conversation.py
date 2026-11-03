@@ -39,7 +39,7 @@ class ConversationProgressionTest(unittest.TestCase):
         result = ccvm_storage_security_result(question, '기존 답변은 ConsoleAccessManagerImpl을 근거로 설명했습니다.')
         answer = format_public_answer(result)
         for text in ('CCVM은 Mold 관리 서버', '숫자 UID/GID', 'GraphDriver.Data', 'nfs-server.service',
-                     '/nfs/secondary', 'active (exited)', '필요한 서비스로 소명'):
+                     '/nfs/secondary', 'active (exited)', '필요한 서비스로 소명', 'ID 매핑'):
             self.assertIn(text, answer)
         self.assertNotIn('ConsoleAccessManagerImpl', answer)
         self.assertNotIn('제품 내부 경로', answer)
