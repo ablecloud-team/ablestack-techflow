@@ -84,6 +84,7 @@ from .conversation import (
     cloud_center_connection_result,
     storage_preserving_reinstall_result,
     sync_account_hardening_result,
+    ccvm_storage_security_result,
     standalone_kvm_import_result,
     source_post_id,
 )
@@ -1025,7 +1026,9 @@ def create_app(
                 discussionId=request.discussion_id, sourcePostId=post_id,
             )
         else:
-            result = sync_account_hardening_result(request.question, conversation_question)
+            result = ccvm_storage_security_result(request.question, conversation_question)
+            if result is None:
+                result = sync_account_hardening_result(request.question, conversation_question)
             if result is None:
                 result = storage_preserving_reinstall_result(request.question, conversation_question)
             if result is None:

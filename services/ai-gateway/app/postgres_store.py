@@ -1706,7 +1706,8 @@ class PostgresStore:
             return self._community_payload(updated)
 
     def mark_community_auto_published(
-        self, case_id: UUID, answer: str, publication: dict[str, Any], idempotency_key: str
+        self, case_id: UUID, answer: str, publication: dict[str, Any], idempotency_key: str,
+        *, correction_evidence: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         with self._pool.connection() as connection:
             repeated = connection.execute(
@@ -1719,12 +1720,17 @@ class PostgresStore:
             if not row:
                 raise NotFoundError("community case not found")
             if row["state"] == "PUBLISHED" and row.get("published_post_id") == publication["postId"]:
-                if row.get("draft_answer") == answer:
+                if row.get("draft_answer") == answer and correction_evidence is None:
                     return self._community_payload(row)
+                metadata = dict(row.get('source_metadata') or {})
+                citations = row.get('citations') or []
+                if correction_evidence is not None:
+                    metadata['evidenceLedger'] = correction_evidence.get('evidenceLedger') or {}
+                    citations = correction_evidence.get('citations') or []
                 updated = connection.execute(
-                    """UPDATE community_case SET draft_answer=%s,updated_at=now()
+                    """UPDATE community_case SET draft_answer=%s,citations=%s,source_metadata=%s,updated_at=now()
                        WHERE id=%s RETURNING *""",
-                    (answer, case_id),
+                    (answer, json.dumps(citations), json.dumps(metadata), case_id),
                 ).fetchone()
                 connection.execute(
                     """UPDATE community_response SET answer=%s,updated_at=now()
@@ -1740,9 +1746,12 @@ class PostgresStore:
                     """INSERT INTO community_case_event
                        (id,case_id,event_type,actor,idempotency_key,correlation_id,details)
                        VALUES (%s,%s,'AUTO_PUBLISHED_CORRECTED','techflow-assistant',%s,%s,%s)""",
-                    (uuid4(), case_id, idempotency_key, row["correlation_id"], json.dumps(publication)),
+                    (uuid4(), case_id, idempotency_key, row["correlation_id"],
+                     json.dumps({**publication, **({'evidenceRevised': True} if correction_evidence is not None else {})})),
                 )
                 return self._community_payload(updated)
+            if correction_evidence is not None:
+                raise InvalidStateError('correction evidence requires the current published post')
             if (
                 row["state"] not in {"DRAFT_PENDING", "PUBLISHED"}
                 or row.get("reviewer") == "techflow:auto"

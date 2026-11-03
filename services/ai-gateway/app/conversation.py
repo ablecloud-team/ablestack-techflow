@@ -57,7 +57,7 @@ _TYPO_PROTECTED_TERMS = {
     "community", "techflow", "assistant", "localhost",
 }
 _LINUX_OPERATION = re.compile(
-    r"\b(?:sudo\s+)?(?:systemctl|journalctl|virsh|grep|tail|nc|qemu-img|df|iscsiadm|multipath|lsblk|pvs|lvs|pcs|usermod|passwd)\b",
+    r"\b(?:sudo\s+)?(?:systemctl|journalctl|virsh|grep|tail|nc|qemu-img|df|iscsiadm|multipath|lsblk|pvs|lvs|pcs|usermod|passwd|podman|stat|exportfs|rpcinfo|ss|findmnt)\b",
     re.IGNORECASE,
 )
 _SSH_EXAMPLE = re.compile(r"\bssh(?:\s+-p\s+\S+)?\s+\S+@\S+", re.IGNORECASE)
@@ -392,6 +392,101 @@ def snapshot_memory_support_result(value: object, context: str = '') -> dict[str
             'observedFacts':[], 'diagnoses':[], 'artifactEvidence':[], 'confidence':'HIGH',
             'currentAssessment':'INSUFFICIENT_EVIDENCE','previewAssessment':'NOT_APPLICABLE',
             'previewGuidance':None,'citationsUsed':[],'abstainReason':None}}
+
+
+def ccvm_storage_security_result(value: object, context: str = '') -> dict[str, Any] | None:
+    """Reviewed container ownership and CCVM NFS hardening, with no console inference."""
+    latest = str(value or '').casefold()
+    combined = latest + '\n' + context.casefold()
+    if not any(term in combined for term in ('ccvm', 'mold', '몰드')):
+        return None
+    if not any(term in latest for term in ('overlay', 'containers/storage', 'podman', '소유', 'uid', 'gid', 'nfs', '보안', '예외')):
+        return None
+    version = re.search(r'(?:diplo\s+v?|ablecube-v)(\d+\.\d+\.\d+)', combined)
+    if version and version[1] != '4.7.2':
+        return None
+    ownership = '/var/lib/containers/storage/overlay' in combined or (
+        any(term in combined for term in ('overlay', 'podman'))
+        and any(term in combined for term in ('소유', 'uid', 'gid', 'owner'))
+    )
+    nfs = bool(re.search(r'\bnfs\b|nfsd|nfs-server', combined)) and any(
+        term in combined for term in ('보안', '불필요', '비활성', '예외', 'security', 'hardening')
+    )
+    if not ownership and not nfs:
+        return None
+    summary: list[str] = []
+    if 'consoleaccessmanagerimpl' in context.casefold() or 'ccvm의 console proxy' in context.casefold():
+        summary.append('앞선 답변에서 이 경로를 CCVM의 콘솔 중계 기능과 연결한 설명을 정정합니다. '
+                       'CCVM은 Mold 관리 서버이며, overlay 경로만으로 특정 컨테이너나 콘솔 구성요소를 정할 수 없습니다.')
+    actions: list[str] = []
+    if ownership:
+        summary.append('`/var/lib/containers/storage/overlay` 아래 파일은 컨테이너 이미지·실행 계층의 일부일 수 있으므로 파일별로 바로 삭제하거나 '
+                       '소유권을 바꾸는 방식으로 조치하지 않습니다. “소유자 없음”은 숫자 UID/GID를 호스트의 계정 이름으로 '
+                       '변환하지 못했다는 뜻일 수 있어, 실제 이미지의 소유권 문제인지 먼저 구분해야 합니다.')
+        actions.extend([
+            '파일이 발견된 CCVM 관리 서버에 `ssh -p <SSH_PORT> <ADMIN>@<CCVM_MANAGEMENT_IP>`로 관리자 접속하십시오. '
+            '생략하지 않은 경로를 FULL_OVERLAY_PATH 자리에 넣고 '
+            "`sudo stat -c '%n uid=%u gid=%g user=%U group=%G mode=%a' -- '<FULL_OVERLAY_PATH>'`를 실행합니다. "
+            '숫자 UID/GID와 계정 이름을 구분해서 보십시오. user/group이 UNKNOWN이라고 표시돼도 숫자 소유자가 사라진 것은 아닙니다. '
+            '`getent passwd <NUMERIC_UID>`와 `getent group <NUMERIC_GID>`는 해당 CCVM OS에서 이름이 해석되는지 확인하는 명령입니다.',
+            '같은 CCVM 관리 서버에서 `sudo podman ps -a --format "{{.Names}} {{.Image}} {{.Status}}"`로 실행·정지 컨테이너를 확인하고, '
+            "`sudo podman container inspect --format '{{.Name}} {{.GraphDriver.Data.UpperDir}} {{.GraphDriver.Data.LowerDir}}' <CONTAINER_NAME>`로 "
+            '문제 경로가 어느 컨테이너 계층에 속하는지 대조하십시오. LowerDir가 짧은 링크 경로로 표시되면 실제 가리키는 경로로 비교합니다. 실행 중인 컨테이너는 '
+            '`sudo podman exec <CONTAINER_NAME> getent passwd <NUMERIC_UID>`와 '
+            '`sudo podman exec <CONTAINER_NAME> getent group <NUMERIC_GID>`로 내부 계정도 비교할 수 있습니다. '
+            'getent가 없는 최소 이미지에서는 이미지의 계정 정의·빌드 자료로 확인하며, 조회 명령이 없다는 것을 소유자 부재로 해석하지 않습니다. '
+            '정지 컨테이너를 이 확인만을 위해 임의로 시작할 필요는 없습니다. 정상 기준은 이미지·컨테이너와 숫자 ID의 대응 관계가 '
+            '설명되는 것입니다. 실행 목록에 없다는 이유만으로 사용하지 않는 계층이라고 판단하지 마십시오.',
+            '호스트에서만 이름이 해석되지 않고 컨테이너 이미지의 정상 소유권으로 확인되면 그 대응 자료를 보안 점검 증빙으로 '
+            '제출하고 컨테이너 저장소에 맞는 점검 범위를 협의하십시오. 이미지 내부에서도 잘못된 소유권으로 확인되면 '
+            '이미지를 수정·업데이트해 교체하는 방식으로 조치합니다. 중지 컨테이너·이미지·공유 계층의 참조를 모두 확인하기 전에는 '
+            '컨테이너 저장소를 직접 삭제하거나 일괄 정리하지 마십시오. overlay 안의 shadow 파일 내용도 공유하지 마십시오.',
+        ])
+    if nfs:
+        summary.append('NFS는 “불필요한 서비스”인지부터 확인해야 합니다. 검토한 Diplo 4.7.2의 CCVM 구성은 /nfs를 내보내고 '
+                       'nfs-server.service를 활성화하며 /nfs/secondary에 시스템 VM 템플릿을 준비합니다. '
+                       '이 저장소를 사용 중이라면 NFS를 유지해야 합니다. nfsd라는 서비스나 예전 inetd 설정 파일이 없다는 사실만으로 '
+                       'NFS 미사용 예외를 결정할 수는 없습니다.')
+        actions.extend([
+            'CCVM 관리 서버에 `ssh -p <SSH_PORT> <ADMIN>@<CCVM_MANAGEMENT_IP>`로 관리자 접속해 '
+            '`sudo systemctl status nfs-server.service --no-pager -l`, `sudo exportfs -v`, '
+            '`findmnt -M /nfs`, `sudo ss -lntup`를 확인하십시오. '
+            'nfs-server.service는 active (exited)로 보여도 동작 중일 수 있습니다. '
+            '컨테이너에서 제공되는 서비스도 있다면 관리자 권한의 `sudo podman ps -a` 결과와 함께 확인하십시오. '
+            'Mold의 기본·보조 스토리지에 등록한 NFS 주소가 '
+            '이 CCVM의 /nfs/primary 또는 /nfs/secondary를 사용하는지도 대조합니다. 2049의 실제 리스닝과 내보내기 경로를 '
+            '함께 확인해야 하며, 111 포트는 RPC 서비스용이므로 그 포트 하나만으로 NFS 사용 여부를 정하지 않습니다.',
+            '실제 등록된 스토리지가 CCVM의 NFS를 사용한다면 필요한 서비스로 소명하고, 접근 허용 범위 조정은 필요한 클라이언트를 '
+            '확인한 변경 계획으로 진행하십시오. 서비스·내보내기·스토리지 연결과 컨테이너 쪽 사용까지 모두 없는 경우에만 '
+            '“미설치·미사용” 증빙으로 해당 점검 항목의 적용 제외를 협의할 수 있습니다. '
+            '존재하지 않는 /etc/inetd.conf나 /etc/xinetd.d/를 새로 만들 필요는 없습니다. '
+            '정상 기준은 필요한 Mold 스토리지 접근을 유지하면서 실제 사용 상태에 맞는 보안 판정 근거를 확보하는 것입니다.',
+        ])
+    citations = [{
+        'sourceProfileId': 'COCKPIT_DIPLO', 'repository': 'ablecloud-team/ablestack-cockpit-plugin',
+        'branch': 'ABLESTACK-4.7.2', 'commit': '9d294e4d591f855b9a33a39e74763a3c5d7d622e',
+        'path': 'shell/host/ccvm_bootstrap.sh', 'startLine': 62, 'endLine': 132, 'sourceKind': 'SOURCE_CODE',
+    }, {
+        'sourceProfileId': 'CURATED_PLATFORM_REFERENCE', 'repository': 'OFFICIAL_EXTERNAL_DOCUMENTATION',
+        'path': 'https://docs.podman.io/en/latest/markdown/podman-inspect.1.html', 'startLine': 1, 'endLine': 1,
+        'sourceKind': 'OFFICIAL_EXTERNAL_DOCUMENTATION',
+    }]
+    if not nfs:
+        citations = citations[1:]
+    needed = []
+    if ownership:
+        needed.append('파일의 숫자 UID/GID와 필터링한 컨테이너 계층 정보')
+    if nfs:
+        needed.append('NFS 서비스·내보내기 상태 및 Mold에 등록된 저장소 주소의 대응 관계')
+    return {'state': 'ANSWERED', 'answerIntent': 'PROCEDURE', 'generationProviderCalled': False,
+            'providerProfileId': None, 'citations': citations, 'report': {
+                'summary': '\n\n'.join(summary), 'recommendedActions': actions,
+                'unknowns': ['판정이 어려우면 CCVM 관리 서버에서 확인한 ' + ', '.join(needed) + '만 알려주세요. 전체 shadow 내용이나 전체 podman inspect 출력은 '
+                    '보내지 마십시오. 암호·토큰은 제거하고 IP·호스트명·컨테이너 ID는 일관된 별칭으로 마스킹하십시오.'],
+                'diagnoses': [], 'observedFacts': [], 'artifactEvidence': [], 'confidence': 'HIGH',
+                'currentAssessment': 'INSUFFICIENT_EVIDENCE', 'previewAssessment': 'NOT_APPLICABLE',
+                'previewGuidance': None, 'citationsUsed': [], 'abstainReason': None,
+            }}
 
 
 def classify_shadow_password_field(field: str) -> str:

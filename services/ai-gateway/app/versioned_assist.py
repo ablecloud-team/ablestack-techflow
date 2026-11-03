@@ -44,7 +44,7 @@ def evidence_priority(source_profile_id: str, source_kind: str = "SOURCE_CODE") 
     """Return the stable product-first evidence precedence used by the provider and audit ledger."""
     if source_profile_id == "SHARED_DOCS" or source_kind == "OPERATOR_APPROVED_KNOWLEDGE":
         return 1, "ABLESTACK_DOCUMENTATION"
-    if source_profile_id != CURATED_PLATFORM_PROFILE:
+    if source_profile_id != CURATED_PLATFORM_PROFILE or source_kind == 'VERIFIED_PRODUCT_SOURCE':
         return 2, "ABLESTACK_SOURCE_CODE"
     if source_kind in {"OFFICIAL_EXTERNAL_DOCUMENTATION", "OFFICIAL_LIVE_WEB_DOCUMENTATION"}:
         return 3, "OFFICIAL_PLATFORM_DOCUMENTATION"
@@ -128,6 +128,12 @@ WALL_MARKERS: tuple[str, ...] = (
 MOLD_MARKERS: tuple[str, ...] = (
     "mold", "cloudstack", "management server", "system vm", "console proxy", "secondary storage vm",
     "virtual router", "cloudstack api", "api command", "async job", "libvirt", "qemu", "kvm", "virsh",
+)
+
+MOLD_STORAGE_SECURITY_MARKERS: tuple[str, ...] = (
+    'podman', 'containers/storage', 'overlay', 'GraphDriver', 'UpperDir', 'LowerDir',
+    'UID', 'GID', 'getent', 'stat', 'ccvm_bootstrap.sh', 'nfs-server.service',
+    'exportfs', '/nfs/secondary', '/etc/exports',
 )
 
 NETWORK_REQUEST_FAILURE_MARKERS: tuple[str, ...] = (
@@ -276,6 +282,16 @@ def _is_mold_question(question: str) -> bool:
     return any(marker in normalized for marker in ("mold", "cloudstack"))
 
 
+def _is_mold_storage_security_question(question: str) -> bool:
+    text = question.casefold()
+    if '/var/lib/containers/storage/overlay' in text:
+        return True
+    if any(term in text for term in ('overlay', 'podman')) and any(term in text for term in ('소유', 'uid', 'gid', 'owner')):
+        return True
+    return ('nfs' in text and any(term in text for term in ('ccvm', 'mold', '몰드'))
+            and any(term in text for term in ('보안', '불필요', '비활성', '예외', 'security')))
+
+
 def _is_network_request_failure_question(question: str) -> bool:
     normalized = question.casefold()
     network = any(marker in normalized for marker in ("네트워크", "network", "createnetwork"))
@@ -325,8 +341,10 @@ def feature_source_terms(question: str) -> tuple[str, ...]:
         anchors.extend(KORAL_MARKERS)
     if _is_wall_question(question):
         anchors.extend(WALL_MARKERS)
-    if _is_mold_question(question):
+    if _is_mold_question(question) and not _is_mold_storage_security_question(question):
         anchors.extend(MOLD_MARKERS)
+    if _is_mold_storage_security_question(question):
+        anchors.extend(MOLD_STORAGE_SECURITY_MARKERS)
     if _is_network_request_failure_question(question):
         anchors.extend(NETWORK_REQUEST_FAILURE_MARKERS)
     if _is_kvm_external_import_question(question):
@@ -403,8 +421,17 @@ def _relevance_score(question: str, item: dict[str, Any]) -> int:
         score += sum(6 for marker in KORAL_MARKERS if marker in searchable)
     if _is_wall_question(question):
         score += sum(6 for marker in WALL_MARKERS if marker in searchable)
-    if _is_mold_question(question):
+    if _is_mold_question(question) and not _is_mold_storage_security_question(question):
         score += sum(6 for marker in MOLD_MARKERS if marker in searchable)
+    if _is_mold_storage_security_question(question):
+        path = str(item.get('path') or '').casefold()
+        if not _is_console_connection_question(question) and any(term in path for term in (
+            'consoleaccessmanagerimpl', 'libvirtconsoleproxyload', 'checkconsoleproxyload',
+        )):
+            return 0
+        score += sum(8 for marker in MOLD_STORAGE_SECURITY_MARKERS if marker.casefold() in searchable)
+        if any(term in path for term in ('ccvm_bootstrap.sh', 'podman-inspect', 'containers-storage')):
+            score += 30
     if _is_network_request_failure_question(question):
         score += sum(7 for marker in NETWORK_REQUEST_FAILURE_MARKERS if marker.casefold() in searchable)
         path = str(item.get("path") or "").casefold()
@@ -520,6 +547,14 @@ def _projection_replacements(citations: Iterable[dict[str, Any]]) -> set[str]:
 
 def sanitize_public_text(value: object, citations: Iterable[dict[str, Any]] = ()) -> str:
     text = str(value or "").strip()
+    container_paths: dict[str, str] = {}
+
+    def protect_container_path(match: re.Match[str]) -> str:
+        token = f'TECHFLOW_SAFE_CONTAINER_PATH_{len(container_paths)}'
+        container_paths[token] = match[0]
+        return token
+
+    text = re.sub(r'''/var/lib/containers/storage/overlay(?![\w.-])(?:/[^\s`"'(),]+)*''', protect_container_path, text)
     # This fixed product service name is needed for a copyable read-only check.
     # Keep all other internal URLs under the existing public projection policy.
     safe_operational_urls = {
@@ -533,6 +568,12 @@ def sanitize_public_text(value: object, citations: Iterable[dict[str, Any]] = ()
         "/var/log/cloudstack/agent/agent.log": "TECHFLOW_SAFE_AGENT_LOG_PATH",
         "/sbin/nologin": "TECHFLOW_SAFE_NOLOGIN_PATH",
         "/bin/sync": "TECHFLOW_SAFE_SYNC_PATH",
+        "/etc/shadow": "TECHFLOW_SAFE_SHADOW_PATH",
+        "/etc/exports": "TECHFLOW_SAFE_EXPORTS_PATH",
+        "/nfs/primary": "TECHFLOW_SAFE_NFS_PRIMARY_PATH",
+        "/nfs/secondary": "TECHFLOW_SAFE_NFS_SECONDARY_PATH",
+        "/etc/inetd.conf": "TECHFLOW_SAFE_INETD_PATH",
+        "/etc/xinetd.d/": "TECHFLOW_SAFE_XINETD_PATH",
     }
     for path, placeholder in safe_system_paths.items():
         text = text.replace(path, placeholder)
@@ -565,6 +606,8 @@ def sanitize_public_text(value: object, citations: Iterable[dict[str, Any]] = ()
         text = text.replace(placeholder, path)
     for url, placeholder in safe_operational_urls.items():
         text = text.replace(placeholder, url)
+    for token, path in container_paths.items():
+        text = text.replace(token, path)
     return re.sub(r"[ \t]+", " ", text).strip()
 
 
@@ -689,6 +732,7 @@ _CLI_PREFIXES = (
     "grep ", "curl ", "getent ", "ip ", "ss ", "getenforce", "sestatus", "mount ", "cat ",
     "nc ", "qemu-img ", "df ", "iscsiadm ", "multipath ", "lsblk ", "pvs ", "lvs ", "pcs ", "cloud-init ",
     "usermod ", "passwd ",
+    "podman ", "stat ", "exportfs ", "rpcinfo ",
     "apt ", "apt-get ", "dnf ", "rpm ", "dpkg ", "msiexec.exe ", "get-service ", "start-service ",
     "restart-service ", "get-timezone", "get-date", "w32tm ", "tzutil.exe ",
 )

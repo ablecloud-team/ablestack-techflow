@@ -29,6 +29,27 @@ from app.platform_references import curated_platform_results
 
 
 class VersionedAssistPolicyTest(unittest.TestCase):
+    def test_verified_product_snapshot_precedes_external_platform_evidence(self):
+        self.assertEqual((2, 'ABLESTACK_SOURCE_CODE'), evidence_priority(CURATED_PLATFORM_PROFILE, 'VERIFIED_PRODUCT_SOURCE'))
+        self.assertEqual((3, 'OFFICIAL_PLATFORM_DOCUMENTATION'), evidence_priority(CURATED_PLATFORM_PROFILE, 'OFFICIAL_EXTERNAL_DOCUMENTATION'))
+
+    def test_container_operational_paths_survive_projection_but_private_source_paths_do_not(self):
+        path = '/var/lib/containers/storage/overlay/' + 'a' * 64 + '/diff/etc/shadow'
+        text = sanitize_public_text(f'`{path}` /opt/private/repository/secret.java')
+        self.assertIn(path, text)
+        self.assertNotIn('/opt/private/repository/secret.java', text)
+
+    def test_mold_storage_security_prioritizes_bootstrap_over_console_code(self):
+        question = 'Diplo 4.7.2 CCVM Mold 보안 점검 overlay 소유자 및 불필요한 NFS 서비스 비활성화 문의'
+        terms = feature_source_terms(question)
+        self.assertIn('ccvm_bootstrap.sh', terms)
+        self.assertNotIn('console proxy', terms)
+        rows = relevant_results(question, [
+            {'path': 'ConsoleAccessManagerImpl.java', 'content': 'Mold console createConsoleEndpoint'},
+            {'path': 'shell/host/ccvm_bootstrap.sh', 'content': 'nfs-server.service /nfs/secondary exportfs'},
+        ])
+        self.assertEqual(['shell/host/ccvm_bootstrap.sh'], [row['path'] for row in rows])
+
     def test_sync_account_retrieval_and_host_brand_do_not_rename_a_guest(self) -> None:
         question = 'CubeOS sync 계정을 nologin으로 잠가도 되나요?'
         self.assertIn('User=sync', feature_source_terms(question))

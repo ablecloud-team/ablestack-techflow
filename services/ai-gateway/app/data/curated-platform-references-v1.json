@@ -12,6 +12,26 @@
   },
   "entries": [
     {
+      "entryId": "DIPLO-472-CCVM-NFS-DEPENDENCY-001",
+      "authority": "VERIFIED_PRODUCT_SOURCE",
+      "reviewedBy": "codex-source-review",
+      "reviewedAt": "2026-11-03",
+      "title": "CCVM 보안 점검의 NFS 의존성과 서비스 단위",
+      "sourceLocator": "https://github.com/ablecloud-team/ablestack-cockpit-plugin/blob/9d294e4d591f855b9a33a39e74763a3c5d7d622e/shell/host/ccvm_bootstrap.sh",
+      "matchTerms": ["CCVM", "Mold", "NFS", "nfsd", "불필요한 서비스"],
+      "requiredTermGroups": [["ccvm", "mold"], ["nfs", "nfsd"], ["보안", "불필요", "비활성", "예외"]],
+      "content": "ABLESTACK-4.7.2의 ccvm_bootstrap.sh 62~70행은 /nfs 볼륨·내보내기를 구성하고 nfs-server.service를 활성화하며 /nfs/primary와 /nfs/secondary를 생성한다. 129~132행은 /nfs/secondary에 시스템 VM 템플릿을 설치한다. CCVM은 Mold 관리 서버이며 CPVM 콘솔 중계와 구분한다. nfsd라는 systemd 단위나 inetd/xinetd 파일이 없다고 NFS가 불필요하다고 판단하면 안 된다. CCVM의 nfs-server.service 상태, exportfs -v, /nfs 마운트, 실제 리스닝 및 Mold 기본·보조 스토리지 등록 주소를 대조한다. nfs-server는 oneshot/RemainAfterExit 서비스라 active(exited)도 정상일 수 있다. 컨테이너 기반 서비스도 구분한다. 111은 공용 RPC 인프라이고 단독으로 NFS 사용을 증명하지 않는다. 사용 중인 NFS를 보안 점검 문구만 보고 중지하지 않는다. 실제 미설치·미사용은 모든 사용 경로 확인 뒤 증빙하며 기관 승인 여부를 보장하지 않는다."
+    },
+    {
+      "entryId": "PODMAN-OVERLAY-NUMERIC-OWNERSHIP-001",
+      "authority": "OFFICIAL_EXTERNAL_DOCUMENTATION",
+      "title": "컨테이너 overlay 계층과 숫자 소유자 점검",
+      "sourceLocator": "https://docs.podman.io/en/latest/markdown/podman-inspect.1.html",
+      "matchTerms": ["/var/lib/containers/storage/overlay", "overlay", "podman", "소유자", "UID", "GID"],
+      "requiredTermGroups": [["overlay", "podman"], ["소유", "uid", "gid", "owner"]],
+      "content": "Podman root 저장소 기본 위치는 /var/lib/containers/storage이며 inspect GraphDriver.Data에는 overlay 계층 경로가 있다. 이 경로만으로 특정 제품 컨테이너나 콘솔 구성요소를 추정하지 않는다. stat의 숫자 UID/GID와 NSS 사용자 이름 해석을 구분하고, 컨테이너의 계정 및 필요한 ID 매핑과 비교한다. UNKNOWN 이름은 숫자 소유자가 없다는 뜻이 아니다. 실행·중지 컨테이너와 이미지·공유 계층 참조를 확인한다. 환경변수 암호를 노출할 수 있는 전체 inspect 대신 Name/GraphDriver 경로만 필터링한다. 이미지 내부 소유권 결함이면 이미지 수정·업데이트로 조치하며 backing layer 직접 삭제/chown 또는 일괄 prune로 시작하지 않는다. overlay 안의 shadow 내용도 공개 수집하지 않는다."
+    },
+    {
       "entryId": "CUBEOS-SYNC-ACCOUNT-HARDENING-472",
       "authority": "VERIFIED_PRODUCT_SOURCE",
       "reviewedBy": "codex-source-review",
