@@ -100,7 +100,7 @@ class Store(Protocol):
     def mark_community_review_approved(self, case_id: UUID, idempotency_key: str) -> dict[str, Any]: ...
     def mark_community_review_missing(self, case_id: UUID, idempotency_key: str) -> dict[str, Any]: ...
     def mark_community_published(self, case_id: UUID, publication: dict[str, Any], idempotency_key: str) -> dict[str, Any]: ...
-    def mark_community_auto_published(self, case_id: UUID, answer: str, publication: dict[str, Any], idempotency_key: str) -> dict[str, Any]: ...
+    def mark_community_auto_published(self, case_id: UUID, answer: str, publication: dict[str, Any], idempotency_key: str, *, correction_evidence: dict[str, Any] | None = None) -> dict[str, Any]: ...
     def mark_community_knowledge_published(self, case_id: UUID, answer: str, publication: dict[str, Any], idempotency_key: str) -> dict[str, Any]: ...
     def mark_community_knowledge_solution_selected(self, case_id: UUID, selection: dict[str, Any], idempotency_key: str) -> dict[str, Any]: ...
     def upsert_chat_reviewer(self, user_id: str, username: str) -> dict[str, Any]: ...
@@ -1199,7 +1199,8 @@ class MemoryStore:
             return self._remember("publish_community_case", idempotency_key, value)
 
     def mark_community_auto_published(
-        self, case_id: UUID, answer: str, publication: dict[str, Any], idempotency_key: str
+        self, case_id: UUID, answer: str, publication: dict[str, Any], idempotency_key: str,
+        *, correction_evidence: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         with self._lock:
             if repeated := self._repeat("auto_publish_community_case", idempotency_key):
@@ -1208,9 +1209,12 @@ class MemoryStore:
             if not value:
                 raise NotFoundError("community case not found")
             if value["state"] == "PUBLISHED" and value.get("publishedPostId") == publication["postId"]:
-                if value.get("draftAnswer") != answer:
+                if value.get("draftAnswer") != answer or correction_evidence is not None:
                     now = utc_now()
                     value.update(draftAnswer=answer, updatedAt=now)
+                    if correction_evidence is not None:
+                        value['citations'] = deepcopy(correction_evidence.get('citations') or [])
+                        value['evidenceLedger'] = deepcopy(correction_evidence.get('evidenceLedger') or {})
                     if self._community_responses.get(case_id):
                         self._community_responses[case_id][-1].update(answer=answer, updatedAt=now)
                     for turn in self._community_turns.get(case_id, []):
@@ -1218,9 +1222,12 @@ class MemoryStore:
                             turn["content"] = answer
                     self._community_events.append({
                         "caseId": case_id, "eventType": "AUTO_PUBLISHED_CORRECTED",
-                        "actor": "techflow-assistant", "createdAt": now, "details": deepcopy(publication),
+                        "actor": "techflow-assistant", "createdAt": now,
+                        "details": {**deepcopy(publication), **({'evidenceRevised': True} if correction_evidence is not None else {})},
                     })
                 return self._remember("auto_publish_community_case", idempotency_key, value)
+            if correction_evidence is not None:
+                raise InvalidStateError('correction evidence requires the current published post')
             if (
                 value["state"] not in {"DRAFT_PENDING", "PUBLISHED"}
                 or value.get("reviewer") == "techflow:auto"

@@ -24,6 +24,7 @@ from app.conversation import (
     storage_preserving_reinstall_result,
     sync_account_hardening_result,
     classify_shadow_password_field,
+    ccvm_storage_security_result,
 )
 from app.embedding import MAX_INPUT_BYTES, validate_inputs
 from app.models import CommunityCaseCreateRequest, ComprehensiveQueryRequest, ComprehensiveSynthesisRequest
@@ -32,6 +33,28 @@ from app.versioned_assist import format_public_answer
 
 
 class ConversationProgressionTest(unittest.TestCase):
+    def test_ccvm_overlay_and_nfs_security_uses_product_dependencies(self):
+        question = ('Diplo 4.7.2 CCVM 보안조치입니다. /var/lib/containers/storage/overlay/aedc/diff/etc/shadow '
+                    '소유자가 없다고 합니다. 불필요한 NFS를 비활성화하려는데 nfsd가 없습니다.')
+        result = ccvm_storage_security_result(question, '기존 답변은 ConsoleAccessManagerImpl을 근거로 설명했습니다.')
+        answer = format_public_answer(result)
+        for text in ('CCVM은 Mold 관리 서버', '숫자 UID/GID', 'GraphDriver.Data', 'nfs-server.service',
+                     '/nfs/secondary', 'active (exited)', '필요한 서비스로 소명'):
+            self.assertIn(text, answer)
+        self.assertNotIn('ConsoleAccessManagerImpl', answer)
+        self.assertNotIn('제품 내부 경로', answer)
+        for unsafe in ('systemctl disable', 'podman system prune', 'sudo chown', 'sudo rm '):
+            self.assertNotIn(unsafe, answer)
+        self.assertEqual((), community_actionability_issues(result))
+
+    def test_ccvm_nfs_only_answer_does_not_request_overlay_ownership(self):
+        result = ccvm_storage_security_result('Mold CCVM NFS 불필요한 서비스 보안 예외 문의입니다. nfsd 서비스가 없습니다.')
+        answer = format_public_answer(result)
+        self.assertIn('exportfs -v', answer)
+        self.assertNotIn('FULL_OVERLAY_PATH', answer)
+        self.assertIsNone(ccvm_storage_security_result('Mold 콘솔 연결 오류입니다.'))
+        self.assertIsNone(ccvm_storage_security_result('Diplo 4.8.0 CCVM NFS 보안조치입니다.'))
+
     def test_sync_disabled_marker_is_not_a_hash_and_keeps_cubeos_wording(self):
         result = sync_account_hardening_result('sync 계정을 잠그거나 nologin으로 변경해도 되나요? shadow는 sync:*:19820:0:99999:7::: 입니다.')
         answer = format_public_answer(result)

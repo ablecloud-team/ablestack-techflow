@@ -34,6 +34,37 @@ class FakeResponse:
 
 
 class CommunityTests(unittest.TestCase):
+    def test_ccvm_security_request_is_answered_with_paths_and_correct_nfs_dependency(self):
+        client = TestClient(create_app(Settings(), MemoryStore()))
+        response = client.post('/v1/community/cases', headers=HEADERS, json={
+            **self.payload(), 'discussionId': '196', 'title': 'Diplo 4.7.2 Mold 보안조치',
+            'question': 'CCVM 보안조치: /var/lib/containers/storage/overlay/aedc/diff/etc/shadow 소유자가 없습니다. NFS nfsd가 없어 예외 가능한가요?',
+        })
+        self.assertEqual(201, response.status_code, response.text)
+        self.assertIn('nfs-server.service', response.json()['data']['draftAnswer'])
+        self.assertIn('/var/lib/containers/storage/overlay', response.json()['data']['draftAnswer'])
+
+    def test_published_correction_replaces_stale_evidence_without_a_new_post(self):
+        store = MemoryStore()
+        case = store.create_community_case(self.payload(), {
+            'draftAnswer': '이전 답변', 'answerState': 'ANSWERED',
+            'citations': [{'path': 'ConsoleAccessManagerImpl.java'}],
+            'evidenceLedger': {'citations': [{'path': 'ConsoleAccessManagerImpl.java'}]},
+        }, 'evidence-first', 'evidence-first')
+        pub = {'postId': '530', 'postUrl': 'https://community.ablecloud.io/d/196/2'}
+        store.mark_community_auto_published(case['caseId'], '이전 답변', pub, 'evidence-publish')
+        evidence = {'citations': [{'path': 'ccvm_bootstrap.sh'}], 'evidenceLedger': {'policy': 'PRODUCT_FIRST_EVIDENCE_V2'}}
+        corrected = store.mark_community_auto_published(case['caseId'], '보완 답변', pub, 'evidence-correct', correction_evidence=evidence)
+        self.assertEqual('530', corrected['publishedPostId'])
+        self.assertEqual(1, corrected['draftVersion'])
+        self.assertEqual(evidence['citations'], corrected['citations'])
+        self.assertEqual(evidence['evidenceLedger'], corrected['evidenceLedger'])
+        again = store.mark_community_auto_published(case['caseId'], '보완 답변', pub, 'evidence-correct', correction_evidence=evidence)
+        self.assertEqual(corrected, again)
+        revised = {**evidence, 'evidenceLedger': {'policy': 'PRODUCT_FIRST_EVIDENCE_V2', 'reviewed': True}}
+        same_body = store.mark_community_auto_published(case['caseId'], '보완 답변', pub, 'evidence-only-correct', correction_evidence=revised)
+        self.assertEqual(revised['evidenceLedger'], same_body['evidenceLedger'])
+
     def test_sync_account_followup_is_actionable_instead_of_abstaining(self):
         store = MemoryStore()
         client = TestClient(create_app(Settings(), store))
