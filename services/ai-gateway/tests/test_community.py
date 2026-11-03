@@ -34,6 +34,26 @@ class FakeResponse:
 
 
 class CommunityTests(unittest.TestCase):
+    def test_sync_account_followup_is_actionable_instead_of_abstaining(self):
+        store = MemoryStore()
+        client = TestClient(create_app(Settings(), store))
+        base = {**self.payload(), 'discussionId': '197', 'title': 'Sync 계정 문의',
+                'question': 'CubeOS sync 계정을 잠그거나 nologin으로 변경해도 되나요? sync:*:19820:0:99999:7::: 입니다.',
+                'postId': '531', 'postNumber': 1}
+        first = client.post('/v1/community/cases', headers=HEADERS, json=base)
+        self.assertEqual(201, first.status_code, first.text)
+        case = first.json()['data']
+        store.mark_community_auto_published(UUID(case['caseId']), case['draftAnswer'],
+            {'postId': '532', 'postUrl': 'https://community.ablecloud.io/d/197/2'}, 'sync-first-published')
+        follow = client.post('/v1/community/cases', headers={**HEADERS, 'Idempotency-Key': 'sync-followup-533'},
+            json={**base, 'postId': '533', 'postNumber': 3,
+                  'question': 'ablecube-v4.7.2-260902.x86.64이며 취약한 비밀번호 암호화 알고리즘 항목에서 sync:*가 나옵니다.'})
+        self.assertEqual(201, follow.status_code, follow.text)
+        answer = follow.json()['data']['draftAnswer']
+        self.assertIn('CubeOS', answer)
+        self.assertIn('sudo usermod -L -s /sbin/nologin sync', answer)
+        self.assertNotIn('Rocky Linux', answer)
+        self.assertEqual('ANSWERED', follow.json()['data']['answerState'])
     def test_iscsi_reinstall_followup_does_not_switch_to_incident_log_request(self):
         store = MemoryStore()
         client = TestClient(create_app(Settings(), store))

@@ -12,6 +12,33 @@
   },
   "entries": [
     {
+      "entryId": "CUBEOS-SYNC-ACCOUNT-HARDENING-472",
+      "authority": "VERIFIED_PRODUCT_SOURCE",
+      "reviewedBy": "codex-source-review",
+      "reviewedAt": "2026-11-03",
+      "title": "CubeOS 기본 sync 계정과 ABLESTACK 4.7.2 의존성",
+      "sourceLocator": "https://github.com/ablecloud-team/ablestack-cockpit-plugin/blob/9d294e4d591f855b9a33a39e74763a3c5d7d622e/python/backup/ccvm_backup.py",
+      "matchTerms": ["sync 계정", "sync계정", "sync:", "sync account"],
+      "content": "ABLESTACK 호스트 OS는 사용자 답변에서 CubeOS로 표기한다. CubeOS 기반 배포판 기본 setup 패키지의 전통적인 sync 계정은 보통 UID 5, GID 0, 홈 /sbin, 로그인 프로그램 /bin/sync로 등록된다. ABLESTACK-4.7.2 태그 9d294e4d의 호스트 Python/Shell 및 서비스 생성 경로에서 User=sync, Group=sync, sync 사용자 전환·소유자 지정·계정 조회 의존성을 확인하지 못했다. ccvm-backup-sync 서비스는 User 지정을 하지 않는 시스템 서비스이며 sync 인자는 백업 일정 동기화 동작이다. multipath_sync.sh의 sync도 동작 인자이고 sync 계정 로그인이 아니다. 비밀번호 잠금과 /sbin/nologin 적용은 계정의 로그인 경로를 제한하며 다른 주체가 실행하는 coreutils sync 명령 자체를 제거하지 않는다. 별도 추가한 su - sync 자동화가 있으면 구분해 확인한다. 계정 삭제·UID 변경·서비스 재시작은 이 조치에 필요하지 않다."
+    },
+    {
+      "entryId": "SHADOW-PASSWORD-DISABLED-MARKERS-001",
+      "authority": "OFFICIAL_EXTERNAL_DOCUMENTATION",
+      "title": "shadow 비밀번호 비활성 표시와 해시 알고리즘 구분",
+      "sourceLocator": "https://man7.org/linux/man-pages/man5/shadow.5.html",
+      "matchTerms": ["sync:", "shadow", "locked or disabled user", "nologin", "비밀번호 암호화"],
+      "requiredTermGroups": [["계정", "shadow", "sync:"], ["잠금", "잠그", "nologin", "암호화", "locked", "sync:"]],
+      "content": "shadow의 두 번째 칸이 단독 * 또는 ! 같은 crypt 결과가 될 수 없는 표시이면 UNIX 비밀번호 인증을 사용할 수 없으며 약한 해시 알고리즘이 저장됐다는 뜻이 아니다. 빈 비밀번호 칸은 별도 위험 상태다. !가 실제 해시 앞에 붙으면 비밀번호를 잠근 상태이며 기존 해시 알고리즘은 그대로다. 비밀번호 잠금은 다른 인증·UID 실행을 모두 차단하는 계정 만료와 다르고 nologin은 로그인 셸 제한이다. usermod -L은 기존 비밀번호 필드 앞에 !를 붙이며 -s /sbin/nologin은 셸을 변경한다. sync:*만으로 취약한 비밀번호 알고리즘이라고 확정하지 않는다. 점검 도구의 locked or disabled user가 상태 안내인지 실패 조건인지 항목과 기준을 확인한다. 비활성 시스템 계정에 새 비밀번호를 만들어 해시를 생성하라고 안내하지 않는다. 전체 shadow 또는 실제 비밀번호 해시를 공개 요청하지 않는다."
+    },
+    {
+      "entryId": "COREUTILS-SYNC-COMMAND-ACCOUNT-INDEPENDENCE-001",
+      "authority": "OFFICIAL_EXTERNAL_DOCUMENTATION",
+      "title": "coreutils sync 명령의 계정과 독립된 실행",
+      "sourceLocator": "https://github.com/coreutils/coreutils/blob/v8.32/src/sync.c",
+      "matchTerms": ["sync 계정", "sync계정", "sync:", "sync account"],
+      "content": "coreutils 8.32의 sync.c는 옵션에 따라 sync, syncfs, fsync 또는 fdatasync를 호출한다. sync라는 사용자 계정의 비밀번호 인증이나 로그인 셸을 조회해 동작하는 프로그램이 아니다. sync 사용자 계정, /bin/sync 명령, rsync 및 제품의 동기화 작업을 서로 구분해야 한다. 계정의 로그인 셸을 nologin으로 바꾸면 해당 계정으로 로그인해 /bin/sync를 실행하던 전통적인 경로는 제한되지만 다른 사용자나 시스템이 /bin/sync를 직접 실행하는 기능은 유지된다."
+    },
+    {
       "entryId": "DIPLO-472-ISCSI-REINSTALL-PRESERVATION-001",
       "authority": "VERIFIED_PRODUCT_SOURCE",
       "reviewedBy": "codex-source-review",

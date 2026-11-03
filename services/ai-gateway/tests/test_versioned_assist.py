@@ -29,6 +29,12 @@ from app.platform_references import curated_platform_results
 
 
 class VersionedAssistPolicyTest(unittest.TestCase):
+    def test_sync_account_retrieval_and_host_brand_do_not_rename_a_guest(self) -> None:
+        question = 'CubeOS sync 계정을 nologin으로 잠가도 되나요?'
+        self.assertIn('User=sync', feature_source_terms(question))
+        self.assertTrue(any('CubeOS' in row['content'] for row in curated_platform_results(question)))
+        self.assertEqual('Rocky Linux 게스트 VM', simplify_public_text('Rocky Linux 게스트 VM'))
+
     def test_iscsi_preservation_retrieval_uses_product_and_session_terms(self) -> None:
         question = '재설치 전에 iSCSI를 분리하고 기존 데이터를 보존하려고 합니다.'
         terms = feature_source_terms(question)

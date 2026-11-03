@@ -336,6 +336,11 @@ def feature_source_terms(question: str) -> tuple[str, ...]:
     if 'iscsi' in question.casefold() and any(term in question.casefold() for term in ('재설치', '분리', '해제', 'logout', 'reinstall')):
         anchors.extend(('iscsiadm', 'node.startup', 'node.conn[0].startup', 'multipath', 'WWID',
                         'gfs_manage.py', 'create_gfs', 'cloudcenter_res', 'pcs cluster stop', 'LUN 데이터 보존'))
+    if re.search(r'(?<![a-z0-9_])sync(?![a-z0-9_])', question.casefold()) and any(
+        term in question.casefold() for term in ('계정', 'shadow', 'nologin', '비밀번호', '잠금', '암호화')
+    ):
+        anchors.extend(('CubeOS', 'setup passwd sync', 'shadow password marker', 'usermod nologin',
+                        'coreutils sync.c', 'User=sync', 'sync account dependency'))
     return tuple(dict.fromkeys(anchors))
 
 
@@ -526,6 +531,8 @@ def sanitize_public_text(value: object, citations: Iterable[dict[str, Any]] = ()
         "/etc/libvirt/virtproxyd.conf": "TECHFLOW_SAFE_VIRTPROXYD_CONFIG_PATH",
         "/var/log/cloudstack/management/management-server.log": "TECHFLOW_SAFE_MANAGEMENT_LOG_PATH",
         "/var/log/cloudstack/agent/agent.log": "TECHFLOW_SAFE_AGENT_LOG_PATH",
+        "/sbin/nologin": "TECHFLOW_SAFE_NOLOGIN_PATH",
+        "/bin/sync": "TECHFLOW_SAFE_SYNC_PATH",
     }
     for path, placeholder in safe_system_paths.items():
         text = text.replace(path, placeholder)
@@ -681,6 +688,7 @@ _CLI_PREFIXES = (
     "getfacl ", "matchpathcon ", "restorecon ", "virsh ", "qemu-ga ", "ls ",
     "grep ", "curl ", "getent ", "ip ", "ss ", "getenforce", "sestatus", "mount ", "cat ",
     "nc ", "qemu-img ", "df ", "iscsiadm ", "multipath ", "lsblk ", "pvs ", "lvs ", "pcs ", "cloud-init ",
+    "usermod ", "passwd ",
     "apt ", "apt-get ", "dnf ", "rpm ", "dpkg ", "msiexec.exe ", "get-service ", "start-service ",
     "restart-service ", "get-timezone", "get-date", "w32tm ", "tzutil.exe ",
 )

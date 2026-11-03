@@ -57,7 +57,7 @@ _TYPO_PROTECTED_TERMS = {
     "community", "techflow", "assistant", "localhost",
 }
 _LINUX_OPERATION = re.compile(
-    r"\b(?:sudo\s+)?(?:systemctl|journalctl|virsh|grep|tail|nc|qemu-img|df|iscsiadm|multipath|lsblk|pvs|lvs|pcs)\b",
+    r"\b(?:sudo\s+)?(?:systemctl|journalctl|virsh|grep|tail|nc|qemu-img|df|iscsiadm|multipath|lsblk|pvs|lvs|pcs|usermod|passwd)\b",
     re.IGNORECASE,
 )
 _SSH_EXAMPLE = re.compile(r"\bssh(?:\s+-p\s+\S+)?\s+\S+@\S+", re.IGNORECASE)
@@ -392,6 +392,80 @@ def snapshot_memory_support_result(value: object, context: str = '') -> dict[str
             'observedFacts':[], 'diagnoses':[], 'artifactEvidence':[], 'confidence':'HIGH',
             'currentAssessment':'INSUFFICIENT_EVIDENCE','previewAssessment':'NOT_APPLICABLE',
             'previewGuidance':None,'citationsUsed':[],'abstainReason':None}}
+
+
+def classify_shadow_password_field(field: str) -> str:
+    """Classify password markers without exposing a hash or treating one as an algorithm."""
+    if not field:
+        return 'EMPTY_PASSWORD'
+    if re.fullmatch(r'[!*]+', field):
+        return 'PASSWORD_AUTH_DISABLED'
+    if field.startswith('!') and field.lstrip('!').startswith('$'):
+        return 'LOCKED_HASH'
+    if field.startswith('$'):
+        return 'PASSWORD_HASH'
+    return 'OTHER'
+
+
+def sync_account_hardening_result(value: object, context: str = '') -> dict[str, Any] | None:
+    """Reviewed CubeOS system-account guidance; never confuse it with sync/rsync operations."""
+    current = str(value or '')
+    latest = current.casefold()
+    combined = (current + '\n' + context).casefold()
+    if not re.search(r'(?<![a-z0-9_])sync(?![a-z0-9_])', combined):
+        return None
+    account_terms = ('계정', 'shadow', 'nologin', '비밀번호', '패스워드', '로그인', '잠금', '잠그', '암호화', '셸')
+    if not any(term in latest for term in account_terms) and 'sync:' not in latest:
+        return None
+    if any(term in latest for term in ('ldap', 'active directory', '도메인 계정', 'ntp', 'chrony', '시간 동기화')) and 'shadow' not in latest:
+        return None
+    match = re.search(r'(?i)(?<![a-z0-9_])sync:([!*$./0-9a-z]*)', current)
+    field = match[1].rstrip(']),') if match else None
+    if field is not None and classify_shadow_password_field(field) != 'PASSWORD_AUTH_DISABLED':
+        # Real hashes require separate algorithm assessment, including locked weak hashes.
+        return None
+    version = re.search(r'(?:ablecube-v|diplo\s+v?)(\d+\.\d+\.\d+)', combined)
+    if version and version[1] != '4.7.2':
+        return None
+    marker_explanation = (
+        f'보내주신 `sync:{field}`의 `{field}`는 비밀번호 해시가 아니라 비밀번호 인증을 사용할 수 없게 하는 표시입니다. '
+        if field is not None else 'shadow의 sync 비밀번호 칸이 `*` 또는 `!` 같은 잠금 표시라면 비밀번호 인증을 사용할 수 없는 상태입니다. '
+    )
+    return {
+        'state': 'ANSWERED', 'answerIntent': 'PROCEDURE', 'generationProviderCalled': False,
+        'providerProfileId': None, 'citations': [], 'report': {
+            'summary': '네. 검토한 CubeOS 및 ABLESTACK 4.7.2 코드 범위에서는 기본 sync 계정의 비밀번호 인증을 차단한 채 '
+                       '로그인 셸을 /sbin/nologin으로 제한할 수 있습니다. 제품이 이 계정으로 로그인해야 하는 사용 경로는 확인되지 않았습니다. '
+                       + marker_explanation + '따라서 이 값만으로 “취약한 비밀번호 암호화 알고리즘 사용”이라고 판단할 수는 없습니다.',
+            'recommendedActions': [
+                'sync 계정은 CubeOS 기본 패키지에 포함된 전통적인 시스템 계정입니다. 기본 로그인 프로그램은 보통 /bin/sync이며 '
+                '일반적인 bash 셸과 다릅니다. 별도의 sync 명령은 메모리에 남은 파일 쓰기를 저장장치에 반영하는 프로그램입니다. '
+                '계정의 로그인 셸을 제한해도 다른 사용자나 시스템이 실행하는 sync 명령 자체는 그대로 동작합니다. '
+                '제품의 클러스터·백업 동기화 작업 이름에 sync가 들어가는 것과도 구분해야 합니다.',
+                '대상 CubeOS 호스트에서 `ssh -p <SSH_PORT> <ADMIN>@<HOST_MANAGEMENT_IP>`로 관리자 계정에 접속한 뒤 '
+                '`getent passwd sync`와 `sudo passwd -S sync`로 현재 셸과 잠금 상태를 확인하십시오. '
+                '비밀번호 상태가 LK 또는 L이면 잠금 상태입니다. 기관에서 별도로 만든 작업이 sync 계정으로 로그인하거나 '
+                'su - sync를 사용하도록 구성돼 있는지만 확인하면 됩니다. 제품 기본 코드에서는 그런 의존성이 확인되지 않았습니다. '
+                '전체 shadow 파일을 공유하실 필요는 없습니다.',
+                '별도 자동화의 로그인 의존성이 없다면 대상 CubeOS 호스트에서 관리자 권한으로 '
+                '`sudo usermod -L -s /sbin/nologin sync`를 실행할 수 있습니다. 이 명령은 비밀번호 잠금과 로그인 셸 제한을 함께 적용합니다. '
+                '기존 `*` 앞에 `!`가 붙어 `!*`로 보일 수 있으며, 여전히 비밀번호 인증이 차단된 상태입니다. '
+                '계정 항목을 삭제하거나 점검 통과 목적으로 새 비밀번호를 설정할 필요는 없습니다. '
+                '변경 뒤 `getent passwd sync`와 `sudo passwd -S sync`로 확인하십시오. 정상 기준은 셸이 /sbin/nologin이고 '
+                '비밀번호가 잠금 상태인 것입니다. 이 계정 설정 변경에 호스트나 VM 재시작은 필요하지 않습니다.',
+                '보안 재점검에서는 “비밀번호 인증 차단”과 “로그인 셸 제한”을 각각 확인하십시오. '
+                '[locked or disabled user]가 도구의 상태 설명인지 실제 취약 판정 조건인지도 구분해야 합니다. '
+                '`*`에는 판정할 비밀번호 해시 알고리즘이 없으므로, 이 항목만으로 취약 판정됐다면 비밀번호 비활성 시스템 계정임을 '
+                '근거로 점검 규칙의 예외 처리를 확인할 수 있습니다. nologin 변경만으로 암호화 알고리즘이 바뀌는 것은 아니므로 '
+                '외부 점검 도구의 통과 여부를 미리 보장하지는 않습니다.',
+            ],
+            'unknowns': ['재점검 뒤에도 같은 항목이 남으면 점검 항목 번호와 판정 기준, sync 관련 결과 부분만 알려주세요. '
+                         '이미 제공하신 버전은 다시 보내지 않으셔도 됩니다. 비밀번호 해시·암호·토큰은 제거해 주세요.'],
+            'diagnoses': [], 'observedFacts': [], 'artifactEvidence': [], 'confidence': 'HIGH',
+            'currentAssessment': 'INSUFFICIENT_EVIDENCE', 'previewAssessment': 'NOT_APPLICABLE',
+            'previewGuidance': None, 'citationsUsed': [], 'abstainReason': None,
+        },
+    }
 
 
 def storage_preserving_reinstall_result(value: object, context: str = '') -> dict[str, Any] | None:
@@ -887,7 +961,7 @@ def community_actionability_issues(result: dict[str, Any]) -> tuple[str, ...]:
     text = "\n".join(item for item in rows if item)
     operation_rows = [item for item in rows if _LINUX_OPERATION.search(item)]
     has_linux_operation = bool(operation_rows)
-    has_log_request = bool(re.search(r'로그(?!아웃|인)|/var/log/|journalctl', text, re.IGNORECASE))
+    has_log_request = bool(re.search(r'(?<![가-힣a-z])로그(?!아웃|인)|/var/log/|journalctl', text, re.IGNORECASE))
     # A Windows Event Viewer request is not a Linux host operation.
     if not has_linux_operation and "/var/log/" not in text:
         return ()
