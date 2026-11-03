@@ -1269,6 +1269,9 @@ class MemoryStore:
                 knowledgeBasePublishedAt=now, knowledgeBaseSolutionSelectedAt=None,
                 knowledgeBaseSolutionSelectedByUserId=None, updatedAt=now,
             )
+            for turn in self._community_turns.get(case_id, []):
+                if turn.get('sourcePostId') == publication['postId'] and turn.get('role') == 'ASSISTANT':
+                    turn['content'] = answer
             self._community_events.append({
                 "caseId": case_id, "eventType": "KNOWLEDGE_BASE_PUBLISHED", "actor": "techflow-assistant",
                 "createdAt": now,

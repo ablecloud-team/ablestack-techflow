@@ -34,6 +34,58 @@ class FakeResponse:
 
 
 class CommunityTests(unittest.TestCase):
+    def test_withdrawn_queued_source_does_not_generate_or_persist_a_case(self):
+        store = MemoryStore()
+        flarum = FlarumClient('http://forum', 'https://forum', None, True)
+        client = TestClient(create_app(Settings(), store, flarum_client_instance=flarum))
+        with patch.object(flarum, 'post_is_visible', return_value=False):
+            response = client.post('/v1/community/cases', headers=HEADERS,
+                                   json={**self.payload(), 'postId': '514', 'postNumber': 1})
+        self.assertEqual(201, response.status_code, response.text)
+        self.assertTrue(response.json()['data']['cancelled'])
+        with self.assertRaises(NotFoundError):
+            store.get_community_case_by_discussion('901')
+
+    def test_visibility_transport_failure_retries_instead_of_cancelling(self):
+        flarum = FlarumClient('http://forum', 'https://forum', None, True)
+        client = TestClient(create_app(Settings(), MemoryStore(), flarum_client_instance=flarum))
+        with patch.object(flarum, 'post_is_visible', side_effect=RuntimeError('temporary')):
+            response = client.post('/v1/community/cases', headers=HEADERS,
+                                   json={**self.payload(), 'postId': '514', 'postNumber': 1})
+        self.assertEqual(503, response.status_code)
+
+    def test_reset_goal_is_not_overridden_by_old_preservation_reply(self):
+        store = MemoryStore()
+        first = {**self.payload(), 'discussionId': '194', 'title': 'ABLESTACK VM 재설치',
+                 'question': '공유 LUN을 초기화해 공 디스크 상태로 재설치하고 싶습니다. 보존 절차는 필요 없습니다.',
+                 'postId': '517', 'postNumber': 3}
+        case = store.create_community_case(first, {'draftAnswer': '기존 LUN 데이터를 보존하십시오.',
+            'answerState': 'ANSWERED', 'citations': []}, 'reset-old', 'reset-old')
+        store.mark_community_auto_published(case['caseId'], '기존 LUN 데이터를 보존하십시오.',
+            {'postId': '518', 'postUrl': 'https://community.ablecloud.io/d/194/4'}, 'reset-old-pub')
+        client = TestClient(create_app(Settings(), store))
+        follow = client.post('/v1/community/cases', headers={**HEADERS, 'Idempotency-Key': 'reset-followup-519'}, json={
+            **first, 'postId': '519', 'postNumber': 5,
+            'question': '현재 공유 LUN이고 GFS의 ISCSI와 마운트를 해제했지만 VM을 정지하였는지 확인하지 않았음. 올바른 재설치 방법 안내.',
+        })
+        self.assertEqual(201, follow.status_code, follow.text)
+        answer = follow.json()['data']['draftAnswer']
+        self.assertIn('올바른 재설치 준비 순서가 아닙니다', answer)
+        self.assertIn('공 디스크', answer)
+        self.assertNotIn('기존 LUN 데이터를 보존하는 절차를 안내', answer)
+
+    def test_in_place_kb_correction_updates_its_existing_assistant_turn(self):
+        store = MemoryStore()
+        first = {**self.payload(), 'postId': '100', 'postNumber': 1}
+        case = store.create_community_case(first, {'draftAnswer': '답변', 'answerState': 'ANSWERED'}, 'kb-old-case', 'kb-old-case')
+        store.sync_community_resolution({**first, 'bestAnswerPostId': '200', 'bestAnswerUserId': first['authorId']}, 'kb-resolve', 'kb-resolve')
+        pub = {'postId': '201', 'postUrl': 'https://community.ablecloud.io/d/901/3'}
+        store.mark_community_knowledge_published(case['caseId'], '이전 KB', pub, 'kb-first')
+        store.record_community_turn({**first, 'postId': '201', 'postNumber': 3, 'turnRole': 'ASSISTANT',
+            'postAuthorId': '40', 'question': '이전 KB'}, 'kb-turn', 'kb-turn')
+        revised = store.mark_community_knowledge_published(case['caseId'], '초기화 신규 설치 KB', pub, 'kb-correct')
+        self.assertEqual('201', revised['knowledgeBasePostId'])
+        self.assertEqual('초기화 신규 설치 KB', next(t['content'] for t in store.list_community_turns('901') if t['sourcePostId'] == '201'))
     def test_ccvm_security_request_is_answered_with_paths_and_correct_nfs_dependency(self):
         client = TestClient(create_app(Settings(), MemoryStore()))
         response = client.post('/v1/community/cases', headers=HEADERS, json={

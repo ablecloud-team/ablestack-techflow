@@ -299,6 +299,8 @@ def normalize_discussions(payload: dict, base_url: str) -> list[dict]:
     discussions = []
     for discussion in payload.get("data") or []:
         attrs = discussion.get("attributes") or {}
+        if attrs.get('isHidden') or attrs.get('hiddenAt'):
+            continue
         relationships = discussion.get("relationships") or {}
         post_ref = ((relationships.get("firstPost") or {}).get("data") or {})
         user_ref = ((relationships.get("user") or {}).get("data") or {})
@@ -656,6 +658,60 @@ def checkpoint_confirmed_post(
     return completed_post_ids
 
 
+def check_pending_post_visibility(base_url: str, token: str, post_id: str, discussion_id: str) -> str:
+    """Inspect only visibility metadata; never turn authorization or transport failures into deletion."""
+    try:
+        payload = request_json(base_url.rstrip('/') + f'/api/posts/{post_id}?include=discussion', token=token)
+    except urllib.error.HTTPError as exc:
+        return 'NOT_FOUND' if exc.code in (404, 410) else 'UNKNOWN'
+    except (urllib.error.URLError, TimeoutError):
+        return 'UNKNOWN'
+    item = payload.get('data') or {}
+    if not isinstance(item, dict) or str(item.get('id') or '') != post_id:
+        return 'UNKNOWN'
+    parent = (((item.get('relationships') or {}).get('discussion') or {}).get('data') or {})
+    if parent and str(parent.get('id') or '') != discussion_id:
+        return 'UNKNOWN'
+    attrs = item.get('attributes') or {}
+    if attrs.get('isHidden') or attrs.get('hiddenAt'):
+        return 'HIDDEN'
+    for related in payload.get('included') or []:
+        if related.get('type') == 'discussions' and str(related.get('id')) == discussion_id:
+            parent_attrs = related.get('attributes') or {}
+            if parent_attrs.get('isHidden') or parent_attrs.get('hiddenAt'):
+                return 'HIDDEN'
+    if attrs.get('isApproved') is False:
+        return 'UNKNOWN'
+    return 'VISIBLE'
+
+
+def retire_unavailable_pending_post(
+    base_url: str, token: str, post_id: str, pending: dict, retired_posts: dict, now: int,
+) -> bool:
+    """Require two spaced observations before retiring a missing/hidden event, with a content-free audit."""
+    submitted = int(pending.get('submittedAt') or 0)
+    if int(pending.get('attempts') or 0) < 2 and (not submitted or now - submitted < 300):
+        return False
+    if now < int(pending.get('visibilityNextCheckAt') or 0):
+        return False
+    status = check_pending_post_visibility(base_url, token, post_id, str(pending.get('discussionId') or ''))
+    pending['visibilityNextCheckAt'] = now + 30
+    if status not in {'NOT_FOUND', 'HIDDEN'}:
+        pending.pop('unavailableChecks', None)
+        pending.pop('unavailableReason', None)
+        return False
+    checks = int(pending.get('unavailableChecks') or 0) + 1 if pending.get('unavailableReason') == status else 1
+    pending.update(unavailableChecks=checks, unavailableReason=status)
+    if checks < 2:
+        return False
+    retired_posts[post_id] = {'discussionId': str(pending.get('discussionId') or ''),
+                             'reason': f'UPSTREAM_{status}', 'confirmedAt': now}
+    while len(retired_posts) > 1000:
+        oldest = min(retired_posts, key=lambda key: int(retired_posts[key].get('confirmedAt') or 0))
+        retired_posts.pop(oldest)
+    return True
+
+
 def prune_obsolete_pending_resolutions(
     discussions: list[dict], pending_resolutions: dict[str, dict]
 ) -> list[str]:
@@ -715,6 +771,7 @@ def _write_state(
     snapshots: dict,
     pending_posts: dict[str, dict] | None = None,
     pending_resolutions: dict[str, dict] | None = None,
+    retired_posts: dict[str, dict] | None = None,
 ) -> None:
     ordered_posts = sorted(seen_posts, key=lambda value: int(value) if value.isdigit() else 0)[-5000:]
     payload: dict[str, object] = {"seenPosts": ordered_posts, "discussions": snapshots}
@@ -722,6 +779,8 @@ def _write_state(
         payload["pendingPosts"] = pending_posts
     if pending_resolutions is not None:
         payload["pendingResolutions"] = pending_resolutions
+    if retired_posts is not None:
+        payload['retiredPosts'] = retired_posts
     serialized = json.dumps(payload, separators=(",", ":"))
     temporary = state_path.with_suffix(state_path.suffix + ".tmp")
     state_path.parent.mkdir(parents=True, exist_ok=True)
@@ -753,6 +812,7 @@ def run_once(state_path: Path, *, bootstrap_only: bool = False) -> dict:
     snapshots = state.get("discussions") or {}
     pending_posts: dict[str, dict] = dict(state.get("pendingPosts") or {})
     pending_resolutions: dict[str, dict] = dict(state.get("pendingResolutions") or {})
+    retired_posts: dict[str, dict] = dict(state.get('retiredPosts') or {})
     for obsolete_resolution in prune_obsolete_pending_resolutions(discussions, pending_resolutions):
         print(json.dumps({
             "event": "community_obsolete_resolution_removed",
@@ -760,6 +820,7 @@ def run_once(state_path: Path, *, bootstrap_only: bool = False) -> dict:
         }, separators=(",", ":")), flush=True)
     now = int(time.time())
     confirmed = 0
+    retired = 0
     for pending_post_id, pending in list(pending_posts.items()):
         try:
             case = get_gateway_case_if_exists(gateway_url, str(pending.get("discussionId") or ""))
@@ -770,6 +831,11 @@ def run_once(state_path: Path, *, bootstrap_only: bool = False) -> dict:
             ):
                 checkpoint_confirmed_post(pending_post_id, pending, seen_posts, pending_posts)
                 confirmed += 1
+            elif retire_unavailable_pending_post(base_url, token, pending_post_id, pending, retired_posts, now):
+                pending_posts.pop(pending_post_id, None)
+                retired += 1
+                print(json.dumps({'event': 'community_pending_post_retired', 'postId': pending_post_id,
+                                  **retired_posts[pending_post_id]}, separators=(',', ':')), flush=True)
         except Exception:
             # A transient Gateway lookup must not stop discovery of other discussions.
             continue
@@ -822,13 +888,21 @@ def run_once(state_path: Path, *, bootstrap_only: bool = False) -> dict:
                 gateway_case = get_gateway_case_if_exists(gateway_url, discussion_id)
             for event in events:
                 post_id = event["postId"]
+                if post_id in retired_posts:
+                    # Only an actually visible, restored event can resume normal processing.
+                    if check_pending_post_visibility(base_url, token, post_id, discussion_id) != 'VISIBLE':
+                        continue
+                    retired_posts.pop(post_id)
                 if post_id in seen_posts:
                     continue
                 if bootstrap_current:
                     seen_posts.add(post_id)
-                    _write_state(state_path, seen_posts, snapshots, pending_posts, pending_resolutions)
+                    _write_state(state_path, seen_posts, snapshots, pending_posts, pending_resolutions, retired_posts)
                     continue
                 pending = pending_posts.get(post_id)
+                if pending and pending.get('unavailableReason') in {'NOT_FOUND', 'HIDDEN'}:
+                    discussion_waiting = True
+                    continue
                 if pending and now < int(pending.get("nextRetryAt") or 0):
                     discussion_waiting = True
                     continue
@@ -866,7 +940,7 @@ def run_once(state_path: Path, *, bootstrap_only: bool = False) -> dict:
                     }
                     if coalesced_post_ids:
                         pending_posts[post_id]["coalescedPostIds"] = coalesced_post_ids
-                    _write_state(state_path, seen_posts, snapshots, pending_posts, pending_resolutions)
+                    _write_state(state_path, seen_posts, snapshots, pending_posts, pending_resolutions, retired_posts)
                     submitted += 1
                     discussion_waiting = True
                 except Exception as exc:
@@ -875,7 +949,7 @@ def run_once(state_path: Path, *, bootstrap_only: bool = False) -> dict:
                     if pending:
                         pending["nextRetryAt"] = now + min(30 * (2 ** min(attempts, 4)), 300)
                         pending_posts[post_id] = pending
-                        _write_state(state_path, seen_posts, snapshots, pending_posts, pending_resolutions)
+                        _write_state(state_path, seen_posts, snapshots, pending_posts, pending_resolutions, retired_posts)
                     print(json.dumps({
                         "event": "community_post_delivery_failed", "discussionId": discussion_id,
                         "postId": post_id, "errorType": type(exc).__name__,
@@ -931,7 +1005,7 @@ def run_once(state_path: Path, *, bootstrap_only: bool = False) -> dict:
                         "nextRetryAt": now + retry_delay,
                         "attempts": attempts,
                     }
-                    _write_state(state_path, seen_posts, snapshots, pending_posts, pending_resolutions)
+                    _write_state(state_path, seen_posts, snapshots, pending_posts, pending_resolutions, retired_posts)
                     submitted_resolutions += 1
                     continue
                 except Exception as exc:
@@ -947,7 +1021,7 @@ def run_once(state_path: Path, *, bootstrap_only: bool = False) -> dict:
             "bestAnswerPostId": discussion.get("bestAnswerPostId"),
             "bestAnswerSetAt": discussion.get("bestAnswerSetAt"),
         }
-    _write_state(state_path, seen_posts, snapshots, pending_posts, pending_resolutions)
+    _write_state(state_path, seen_posts, snapshots, pending_posts, pending_resolutions, retired_posts)
     reconcile_id = uuid4().hex
     reconciliation = request_json(
         gateway_url.rstrip("/") + "/v1/community/reviews/reconcile",
@@ -957,7 +1031,7 @@ def run_once(state_path: Path, *, bootstrap_only: bool = False) -> dict:
     return {
         "version": POLLER_VERSION,
         "observed": len(discussions), "delivered": delivered, "submitted": submitted,
-        "pendingPosts": len(pending_posts), "submittedResolutions": submitted_resolutions,
+        "pendingPosts": len(pending_posts), 'retiredPosts': retired, "submittedResolutions": submitted_resolutions,
         "pendingResolutions": len(pending_resolutions), "seenPosts": len(seen_posts),
         "resolutions": resolutions, "failed": failed,
         "reviewsChecked": reconciliation.get("data", {}).get("checked", 0),

@@ -85,6 +85,8 @@ from .conversation import (
     storage_preserving_reinstall_result,
     sync_account_hardening_result,
     ccvm_storage_security_result,
+    infer_reinstall_goal,
+    reinstall_reset_result,
     standalone_kvm_import_result,
     source_post_id,
 )
@@ -832,6 +834,16 @@ def create_app(
                 f"- {warning}" for warning in request.artifact_warnings
             )
         post_id = source_post_id(event)
+        if not request.resolution_only and request.post_id and getattr(flarum_client, 'enabled', False):
+            try:
+                visible = flarum_client.post_is_visible(request.discussion_id, request.post_id)
+            except (RuntimeError, InvalidBoundaryError) as exc:
+                raise HTTPException(status_code=503, detail={'code': 'COMMUNITY_VISIBILITY_CHECK_FAILED'}) from exc
+            if not visible:
+                _json_log('community_source_post_unavailable', correlationId=correlation_id,
+                          discussionId=request.discussion_id, sourcePostId=request.post_id)
+                return _envelope({'discussionId': request.discussion_id, 'sourcePostId': request.post_id,
+                                  'cancelled': True, 'reason': 'UPSTREAM_NOT_VISIBLE'}, correlation_id)
         if request.resolution_only:
             event["bestAnswerSelectedByAdministrator"] = bool(
                 request.best_answer_user_id
@@ -859,15 +871,18 @@ def create_app(
                             caseId=str(result["caseId"]),
                             unavailableArtifactCount=unavailable_artifacts,
                         )
-                    knowledge_result = _query_comprehensive(
-                        ComprehensiveSynthesisRequest(
-                            queryId=uuid4(), question=knowledge_question,
-                            actorId=f"community-kb:{request.author_id}",
-                            productVersion=request.product_version or "diplo",
-                            artifactIds=artifact_ids, locale="ko-KR", classification="D0",
-                        ),
-                        correlation_id,
-                    )
+                    requester_turns = [turn for turn in turns if turn.get('role') == 'REQUESTER']
+                    knowledge_result = reinstall_reset_result(requester_turns[-1]['content'], requester_turns[:-1]) if requester_turns else None
+                    if knowledge_result is None:
+                        knowledge_result = _query_comprehensive(
+                            ComprehensiveSynthesisRequest(
+                                queryId=uuid4(), question=knowledge_question,
+                                actorId=f"community-kb:{request.author_id}",
+                                productVersion=request.product_version or "diplo",
+                                artifactIds=artifact_ids, locale="ko-KR", classification="D0",
+                            ),
+                            correlation_id,
+                        )
                     knowledge_result["attachmentFailureRecorded"] = any(
                         "[첨부 처리 안내]" in str(turn.get("content") or "") for turn in turns
                     )
@@ -1026,11 +1041,14 @@ def create_app(
                 discussionId=request.discussion_id, sourcePostId=post_id,
             )
         else:
-            result = ccvm_storage_security_result(request.question, conversation_question)
+            reinstall_goal = infer_reinstall_goal(request.question, turns)
+            result = reinstall_reset_result(request.question, turns, primary_goal=reinstall_goal)
+            if result is None:
+                result = ccvm_storage_security_result(request.question, conversation_question)
             if result is None:
                 result = sync_account_hardening_result(request.question, conversation_question)
             if result is None:
-                result = storage_preserving_reinstall_result(request.question, conversation_question)
+                result = storage_preserving_reinstall_result(request.question, conversation_question, primary_goal=reinstall_goal)
             if result is None:
                 result = snapshot_memory_support_result(request.question, conversation_question)
             if result is None:

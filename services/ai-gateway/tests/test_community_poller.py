@@ -984,5 +984,81 @@ class CommunityPollerTests(unittest.TestCase):
             self.assertTrue(request.call_args.args[0].endswith("/v1/operations/recoveries"))
 
 
+class PendingVisibilityTests(unittest.TestCase):
+    def test_fresh_pending_post_is_not_probed_or_retired(self):
+        with patch.object(poll_flarum, 'request_json') as request:
+            self.assertFalse(poll_flarum.retire_unavailable_pending_post('http://forum', 'token', '536',
+                {'discussionId': '198', 'attempts': 1, 'submittedAt': 999}, {}, 1000))
+            request.assert_not_called()
+
+    def test_hidden_post_requires_two_spaced_observations_and_contains_no_content(self):
+        pending = {'discussionId': '194', 'attempts': 4, 'submittedAt': 1}
+        retired = {}
+        payload = {'data': {'id': '522', 'attributes': {'isHidden': True, 'contentHtml': 'deleted private content'}}}
+        with patch.object(poll_flarum, 'request_json', return_value=payload) as request:
+            self.assertFalse(poll_flarum.retire_unavailable_pending_post('http://forum', 'token', '522', pending, retired, 1000))
+            self.assertFalse(poll_flarum.retire_unavailable_pending_post('http://forum', 'token', '522', pending, retired, 1001))
+            self.assertEqual(1, request.call_count)
+            self.assertTrue(poll_flarum.retire_unavailable_pending_post('http://forum', 'token', '522', pending, retired, 1030))
+        self.assertEqual('UPSTREAM_HIDDEN', retired['522']['reason'])
+        self.assertNotIn('content', json.dumps(retired))
+
+    def test_authentication_and_transport_failures_never_retire_posts(self):
+        for failure in (urllib.error.HTTPError('http://forum', 403, 'forbidden', Message(), None),
+                        urllib.error.HTTPError('http://forum', 503, 'unavailable', Message(), None),
+                        TimeoutError('timeout')):
+            pending = {'discussionId': '194', 'attempts': 4, 'submittedAt': 1,
+                       'unavailableChecks': 1, 'unavailableReason': 'NOT_FOUND'}
+            retired = {}
+            with patch.object(poll_flarum, 'request_json', side_effect=failure):
+                self.assertFalse(poll_flarum.retire_unavailable_pending_post('http://forum', 'token', '522', pending, retired, 1000))
+            self.assertEqual({}, retired)
+            self.assertNotIn('unavailableChecks', pending)
+
+    def test_run_once_retires_missing_and_hidden_events_without_a_webhook(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            token, webhook, state = root / 'token', root / 'webhook', root / 'state.json'
+            token.write_text('token')
+            webhook.write_text('http://webhook')
+            state.write_text(json.dumps({'seenPosts': [], 'discussions': {}, 'pendingPosts': {
+                '514': {'discussionId': '193', 'attempts': 78, 'submittedAt': 1},
+                '522': {'discussionId': '194', 'attempts': 4, 'submittedAt': 1},
+            }}))
+            sent = []
+
+            def request(url, **kwargs):
+                if '/api/discussions?' in url:
+                    return {'data': []}
+                if '/api/posts/514?' in url:
+                    raise urllib.error.HTTPError(url, 404, 'missing', Message(), None)
+                if '/api/posts/522?' in url:
+                    return {'data': {'id': '522', 'attributes': {'isHidden': True}}}
+                if url.endswith('/reviews/reconcile'):
+                    return {'data': {}}
+                sent.append(url)
+                return {}
+
+            env = {'TECHFLOW_FLARUM_API_KEY_FILE': str(token), 'TECHFLOW_COMMUNITY_INGEST_WEBHOOK_FILE': str(webhook)}
+            with patch.dict(os.environ, env), patch.object(poll_flarum, 'request_json', side_effect=request), \
+                 patch.object(poll_flarum, 'get_gateway_case_if_exists', return_value=None):
+                with patch.object(poll_flarum.time, 'time', return_value=1000):
+                    first = poll_flarum.run_once(state)
+                self.assertEqual(2, first['pendingPosts'])
+                with patch.object(poll_flarum.time, 'time', return_value=1030):
+                    second = poll_flarum.run_once(state)
+            self.assertEqual(0, second['pendingPosts'])
+            self.assertEqual(2, second['retiredPosts'])
+            self.assertEqual([], sent)
+            stored = json.loads(state.read_text())
+            self.assertEqual({'514', '522'}, set(stored['retiredPosts']))
+            self.assertEqual([], stored['seenPosts'])
+
+    def test_hidden_parent_is_not_discovered_for_publication(self):
+        self.assertEqual([], poll_flarum.normalize_discussions({'data': [
+            {'id': '193', 'attributes': {'isHidden': True, 'title': 'hidden'}}
+        ]}, 'https://forum'))
+
+
 if __name__ == "__main__":
     unittest.main()

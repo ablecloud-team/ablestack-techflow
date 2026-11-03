@@ -564,9 +564,107 @@ def sync_account_hardening_result(value: object, context: str = '') -> dict[str,
     }
 
 
-def storage_preserving_reinstall_result(value: object, context: str = '') -> dict[str, Any] | None:
+def _explicit_reinstall_goal(text: str) -> str | None:
+    compact = re.sub(r'\s+', '', text).casefold()
+    if re.search(r'보존.{0,14}(?:필요없|불필요)', compact):
+        return 'RESET'
+    if any(term in compact for term in ('데이터에영향을주지않고', '데이터에영향주지않고', '데이터를보존',
+                                        '데이터보존', '보존해야', '보존하고싶', '데이터를유지')):
+        return 'PRESERVE'
+    if any(term in compact for term in ('공디스크', '바닐라상태', '모든스토리지', '데이터모두삭제', '모든데이터삭제')):
+        return 'RESET'
+    return None
+
+
+def infer_reinstall_goal(current: str, prior_turns: Iterable[dict[str, Any]] = ()) -> str | None:
+    """Read explicit user goals in order; assistant suggestions cannot redefine the requested outcome."""
+    questions = [str(turn.get('content') or '') for turn in prior_turns if turn.get('role') in {'REQUESTER', 'USER'}]
+    questions.append(str(current or ''))
+    if not any(any(term in text.casefold() for term in ('재설치', '다시 설치', 'reinstall')) for text in questions):
+        return None
+    goal = None
+    for text in questions:
+        if explicit := _explicit_reinstall_goal(text):
+            goal = explicit
+    return goal
+
+
+def reinstall_reset_result(value: object, prior_turns: Iterable[dict[str, Any]] = (), *, primary_goal: str | None = None) -> dict[str, Any] | None:
+    """Reviewed blank-storage reinstall and premature shared-storage detach guidance."""
+    current = str(value or '')
+    turns = list(prior_turns)
+    human_context = '\n'.join(str(turn.get('content') or '') for turn in turns if turn.get('role') in {'REQUESTER', 'USER'})
+    if not any(term in (human_context + '\n' + current).casefold() for term in ('공유', 'lun', 'gfs', 'iscsi')):
+        return None
+    goal = primary_goal or infer_reinstall_goal(current, turns)
+    if goal != 'RESET' or not any(term in current.casefold() for term in ('재설치', '초기화', '공 디스크', '공디스크', 'lun', 'gfs', 'iscsi', '스토리지', '마운트')):
+        return None
+    text = current.casefold()
+    detached_without_stop = ('해제' in text and any(term in text for term in ('iscsi', 'gfs', 'lun'))
+        and bool(re.search(r'(?:vm|가상머신).{0,30}(?:정지|중지).{0,30}(?:확인하지|확인 안|확인안|미확인)', text)))
+    summary = ('VM 정지 여부를 확인하기 전에 공유 iSCSI/GFS를 해제한 순서는 올바른 재설치 준비 순서가 아닙니다. '
+               '데이터 손상이 발생했다고 단정할 수는 없지만, 지금은 추가 초기화나 설치를 진행하기 전에 모든 사용 주체가 정지했는지 확인해야 합니다. '
+               if detached_without_stop else '')
+    summary += ('요청하신 목표는 기존 스토리지를 공 디스크 상태로 초기화한 뒤 새로 설치하는 것입니다. '
+                '모든 소비자 정지 확인 → 정확한 대상 LUN 초기화·재생성 → 외부 LUN이 보이지 않는 상태에서 CubeOS 설치 → '
+                '새 LUN으로 GFS·CCVM 신규 구성 순서로 안내하겠습니다.')
+    actions = [
+        '각 대상 CubeOS 호스트에 `ssh -p <SSH_PORT> <ADMIN>@<CUBE_HOST_IP>`로 관리자 접속한 뒤 해당 호스트에서 '
+        '`sudo virsh -c qemu:///system list --all`, `sudo pcs status --full`, `sudo iscsiadm -m session`, '
+        '`sudo multipath -ll`, `findmnt -t gfs2`를 확인하십시오. Mold 표시와 호스트 실제 상태를 함께 대조합니다. '
+        '정상 진행 기준은 대상 LUN을 사용하는 Running/Paused VM과 CCVM, 마운트·클러스터 리소스가 없는 것입니다. '
+        '이미 스토리지가 끊겨 장치가 안 보이는 결과만으로 사용 중인 VM이 없다고 판단하지 마십시오.',
+        '호스트에서 실행 VM이 남아 있거나 정지 여부가 불명확하면 초기화를 멈추고, 스토리지 경로 복구와 정상 종료를 하나의 점검 작업으로 '
+        '먼저 진행해야 합니다. 끊긴 LUN의 VM은 종료 요청도 지연될 수 있습니다. 정확한 IQN·portal·WWID와 클러스터 잠금·HA 상태를 '
+        '확인하지 않은 일괄 로그인, 강제 VM 종료 또는 한 노드만의 GFS 재마운트는 피하십시오. '
+        '이 단계에서 진행이 막히면 1단계의 호스트별 상태 결과로 복구·정지 순서를 정해야 합니다.',
+        '스토리지 경로와 관리 기능이 확인된 상태에서 Mold로 업무 VM과 시스템 VM을 정상 종료하고, Cube에서 CCVM을 정상 정지합니다. '
+        '대상 클러스터 전체를 중단할 수 있을 때 관리자 호스트에서 `sudo pcs cluster stop --all`로 GFS/CLVM 리소스를 정상 정지합니다. '
+        '각 호스트에서 `sudo lvs -o lv_name,vg_name,lv_attr,devices`와 마운트·VM 상태를 다시 대조하십시오. '
+        '다른 클러스터나 재설치 범위 밖 호스트가 같은 LUN을 사용한다면 해당 LUN을 초기화하면 안 됩니다. '
+        'busy·정지 실패는 강제 옵션으로 우회하지 마십시오.',
+        '모든 소비자의 정지가 확인된 뒤 스토리지 관리 화면에서 기록한 WWID·IQN·용량과 대조한 대상 LUN만 '
+        '초기화하거나 삭제 후 빈 LUN으로 재생성합니다. 이 단계는 해당 LUN의 기존 내용을 삭제하는 단계입니다. '
+        '여러 호스트·다중 경로에 보이는 같은 LUN은 하나의 자원이므로 경로마다 반복 초기화하지 않습니다. '
+        '장비 모델과 LUN 식별 값이 없는 상태에서 임의의 /dev/sdX에 초기화 명령을 적용하지 마십시오. '
+        '단순 논리 디스크 재생성은 전 섹터 보안 삭제를 보장하지 않으며, 보안 삭제가 목적이면 별도 장비 절차가 필요합니다.',
+        'OS 설치 중에는 해당 호스트에 외부 LUN이 제시되지 않도록 한 뒤 ABLESTACK ISO/USB로 부팅합니다. '
+        'VM Cube 설치 가이드에 따라 Installation Destination에서 CubeOS를 설치할 디스크만 선택하고 나머지는 해제하십시오. '
+        '이 설치 단계가 별도 공유 LUN의 초기화를 대신하지는 않습니다. OS 디스크 식별을 확인한 후 설치를 완료합니다.',
+        '재설치 후 확인한 새 빈 LUN을 연결하고 ABLESTACK VM의 신규 GFS 구성 절차로 파일시스템·클러스터를 다시 만듭니다. '
+        '기존 데이터를 재사용·복원하는 절차로 바꾸지 않습니다. GFS 신규 구성은 실제 PV/VG/LV·파일시스템을 생성하므로 '
+        '초기화 대상으로 확정한 LUN만 선택해야 합니다. CCVM 배포·구성은 지정한 관리 호스트에서 한 번씩 순서대로 진행합니다. '
+        '성공 기준은 새 스토리지·클러스터 상태와 CCVM/Mold 접속이 정상이고 대상 밖 LUN에 변경이 없는 것입니다.',
+    ]
+    return {'state': 'ANSWERED', 'answerIntent': 'PROCEDURE', 'primaryGoal': 'RESET',
+            'generationProviderCalled': False, 'providerProfileId': None,
+            'citations': [{
+                'sourceProfileId': 'SHARED_DOCS', 'repository': 'ablecloud-team/ablestack-docs',
+                'branch': 'master', 'commit': 'f25e3d652cfcc14e5b794781ead65e54d8de8bfb',
+                'path': 'docs/getting-started/install-guide-general-virtualization-cube.md', 'startLine': 83, 'endLine': 128,
+            }, {
+                'sourceProfileId': 'COCKPIT_DIPLO', 'repository': 'ablecloud-team/ablestack-cockpit-plugin',
+                'branch': 'ABLESTACK-4.7.2', 'commit': '9d294e4d591f855b9a33a39e74763a3c5d7d622e',
+                'path': 'python/gfs/gfs_manage.py', 'startLine': 340, 'endLine': 395,
+            }], 'report': {
+                'summary': summary, 'recommendedActions': actions,
+                'observedFacts': ['공유 LUN을 초기화한 뒤 CubeOS와 GFS·CCVM을 신규 구성하는 재설치 절차 문의입니다.',
+                                  *(['GFS의 iSCSI와 마운트를 해제했지만 VM 정지는 확인하지 않은 상태입니다.'] if detached_without_stop else [])],
+                'diagnoses': ['공유 스토리지는 VM·CCVM·공유 파일시스템 소비자의 정상 정지를 먼저 확인한 뒤 분리·초기화해야 합니다.',
+                              'OS 디스크 재설치와 외부 LUN 초기화는 서로 다른 작업입니다.'],
+                'unknowns': ['실제 초기화 작업을 완료했다는 근거는 아직 없습니다. 대상 스토리지 모델과 IQN·WWID·용량 대조 결과가 있어야 '
+                             '장비별 초기화 메뉴를 특정할 수 있습니다. 진행이 막히면 각 대상 호스트에서 확인한 VM·PCS·세션 상태만 알려주세요. '
+                             'CHAP 암호·API 키·토큰은 제거하고 식별자는 대응 관계를 유지해 마스킹하십시오.'],
+                'artifactEvidence': [], 'confidence': 'HIGH', 'currentAssessment': 'INSUFFICIENT_EVIDENCE',
+                'previewAssessment': 'NOT_APPLICABLE', 'previewGuidance': None, 'citationsUsed': [], 'abstainReason': None,
+            }}
+
+
+def storage_preserving_reinstall_result(value: object, context: str = '', *, primary_goal: str | None = None) -> dict[str, Any] | None:
     """Keep iSCSI disconnection as the primary goal across reinstall follow-ups."""
     current = str(value or '')
+    if primary_goal == 'RESET' or _explicit_reinstall_goal(current) == 'RESET':
+        return None
     combined = (current + '\n' + context).casefold()
     reinstall = any(term in combined for term in ('재설치', 'reinstall')) or (
         '설치' in combined and any(term in combined for term in ('다시', '재시도'))
@@ -1176,7 +1274,12 @@ def build_knowledge_base_question(
         "미출시 코드 비교, 개선 미확인, 제품 보완 검토 같은 내부 판단은 사용자 문서에 쓰지 마십시오. "
         "일반 사용자도 이해할 수 있는 짧고 쉬운 한국어를 사용하십시오. 제목은 만들지 마십시오."
     )
-    prefix = f"[Community 해결 완료 주제]\n{title[:200]}\n\n{selected_section}\n\n[전체 대화]\n"
+    goal = infer_reinstall_goal('', rows)
+    goal_note = ('질문자는 데이터 보존이 필요 없고 스토리지 초기화 후 신규 설치를 원합니다. 보존·복원 절차로 바꾸지 마십시오.'
+                 if goal == 'RESET' else '질문자는 기존 데이터를 보존한 재설치를 원합니다.' if goal == 'PRESERVE' else '')
+    if goal_note:
+        goal_note = '[질문자가 명시한 목표]\n' + goal_note + ' 절차 안내와 실제 작업 완료는 구분하십시오.\n\n'
+    prefix = f"[Community 해결 완료 주제]\n{title[:200]}\n\n{goal_note}{selected_section}\n\n[전체 대화]\n"
     suffix = f"\n\n{instruction}"
     if len(prefix) + len(suffix) > limit:
         raise ValueError("knowledge base selected solution and instruction exceed the question limit")
