@@ -209,6 +209,45 @@ class FlarumClient:
                     return False
         return True
 
+    def resolution_selected_by_administrator(self, discussion_id: str, post_id: str, user_id: str) -> bool:
+        """Trust Flarum's current selection and built-in administrator group, never event claims."""
+        if not all(value.isdigit() for value in (discussion_id, post_id, user_id)):
+            raise InvalidBoundaryError('invalid resolution identity')
+        current = self._request(
+            f'/api/discussions/{discussion_id}?include=bestAnswerPost,bestAnswerUser',
+            as_solution_selector=True,
+        ).get('data') or {}
+        relations = current.get('relationships') or {}
+        selected = ((relations.get('bestAnswerPost') or {}).get('data') or {}).get('id')
+        selector = ((relations.get('bestAnswerUser') or {}).get('data') or {}).get('id')
+        if str(current.get('id')) != discussion_id or str(selected) != post_id or str(selector) != user_id:
+            return False
+        identity = self._request(f'/api/users/{user_id}?include=groups', as_solution_selector=True).get('data') or {}
+        groups = ((identity.get('relationships') or {}).get('groups') or {}).get('data')
+        if str(identity.get('id')) != user_id or not isinstance(groups, list):
+            raise RuntimeError('resolution administrator metadata is incomplete')
+        return any(group.get('type') == 'groups' and str(group.get('id')) == '1' for group in groups)
+
+    def visible_post_content(self, discussion_id: str, post_id: str) -> str:
+        """Read the selected answer's current Markdown, including edits made after ingestion."""
+        if not discussion_id.isdigit() or not post_id.isdigit():
+            raise InvalidBoundaryError('invalid selected post')
+        payload = self._request(f'/api/posts/{post_id}?include=discussion', as_solution_selector=True)
+        item = payload.get('data') or {}
+        attrs = item.get('attributes') or {}
+        parent = (((item.get('relationships') or {}).get('discussion') or {}).get('data') or {})
+        hidden_parent = any(
+            row.get('type') == 'discussions' and str(row.get('id')) == discussion_id
+            and ((row.get('attributes') or {}).get('isHidden') or (row.get('attributes') or {}).get('hiddenAt'))
+            for row in payload.get('included') or []
+        )
+        content = attrs.get('content')
+        if (str(item.get('id')) != post_id or str(parent.get('id')) != discussion_id
+                or attrs.get('contentType') != 'comment' or attrs.get('isHidden') or attrs.get('hiddenAt')
+                or attrs.get('isApproved') is False or hidden_parent or not isinstance(content, str) or not content.strip()):
+            raise RuntimeError('selected answer is unavailable')
+        return content.strip()
+
     def visible_post_ids(self, discussion_id: str) -> set[str]:
         """Read current visible comments; fail closed rather than reuse withdrawn history."""
         if not discussion_id.isdigit():

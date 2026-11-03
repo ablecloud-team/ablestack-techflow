@@ -1261,12 +1261,12 @@ def build_knowledge_base_question(
     selected_number = (selected_row or {}).get("postNumber") or "-"
     selected_content = str((selected_row or {}).get("content") or "선택된 답변 본문을 찾을 수 없음").strip()[:1600]
     selected_section = (
-        "[질문자가 선택한 해결 답변]\n"
+        "[포럼에서 선택한 해결 답변]\n"
         f"- #{selected_number} {selected_label}: {selected_content}"
     )
     instruction = (
         "[최종 Knowledge Base 작성 지침]\n"
-        "질문자가 해결 답변으로 선택한 내용을 중심으로 전체 대화를 종합하십시오. "
+        "포럼에서 해결 답변으로 선택한 내용과 질문자의 후속 확인을 중심으로 전체 대화를 종합하십시오. "
         "확인되지 않은 추측이나 대화 중 폐기된 가설은 최종 해결책으로 쓰지 마십시오. "
         "증상에는 사용자가 겪은 현상만, 원인에는 확인된 원인만, 해결 방법에는 실제 해결에 기여한 조치만 배치하십시오. "
         "적용 버전에는 이 해결 방법을 실제 적용해도 되는 ABLESTACK 제품 버전만 적으십시오. "

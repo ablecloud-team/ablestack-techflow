@@ -34,6 +34,97 @@ class FakeResponse:
 
 
 class CommunityTests(unittest.TestCase):
+    def test_live_resolution_authority_requires_matching_selection_and_admin_group(self):
+        flarum = FlarumClient('http://forum', 'https://forum', None, True)
+        discussion = {'data': {'id': '184', 'relationships': {
+            'bestAnswerPost': {'data': {'id': '478'}}, 'bestAnswerUser': {'data': {'id': '12'}}}}}
+        identity = {'data': {'id': '12', 'relationships': {'groups': {'data': [{'type': 'groups', 'id': '1'}]}}}}
+        with patch.object(flarum, '_request', side_effect=[discussion, identity]):
+            self.assertTrue(flarum.resolution_selected_by_administrator('184', '478', '12'))
+        with patch.object(flarum, '_request', return_value=discussion) as request:
+            self.assertFalse(flarum.resolution_selected_by_administrator('184', '479', '12'))
+            self.assertEqual(1, request.call_count)
+        identity['data']['relationships']['groups']['data'] = [{'type': 'groups', 'id': '5'}]
+        with patch.object(flarum, '_request', side_effect=[discussion, identity]):
+            self.assertFalse(flarum.resolution_selected_by_administrator('184', '478', '12'))
+        with patch.object(flarum, '_request', side_effect=[discussion, {'data': {'id': '12'}}]):
+            with self.assertRaises(RuntimeError):
+                flarum.resolution_selected_by_administrator('184', '478', '12')
+
+    def test_selected_answer_read_uses_current_markdown_and_rejects_hidden_or_foreign_source(self):
+        flarum = FlarumClient('http://forum', 'https://forum', None, True)
+        post = {'data': {'id': '478', 'attributes': {'contentType': 'comment', 'content': "변경 후 device='disk' 정상 부팅"},
+                         'relationships': {'discussion': {'data': {'id': '184'}}}}}
+        with patch.object(flarum, '_request', return_value=post):
+            self.assertIn("device='disk'", flarum.visible_post_content('184', '478'))
+            with self.assertRaises(RuntimeError):
+                flarum.visible_post_content('185', '478')
+            post['data']['attributes']['isHidden'] = True
+            with self.assertRaises(RuntimeError):
+                flarum.visible_post_content('184', '478')
+
+    def test_verified_admin_rechecks_old_review_required_event_without_erasing_its_audit(self):
+        store = MemoryStore()
+        first = {**self.payload(), 'postId': '100', 'postNumber': 1}
+        case = store.create_community_case(first, {'draftAnswer': '답변', 'answerState': 'ANSWERED'}, 'admin-case', 'admin-case')
+        resolution = {**first, 'bestAnswerPostId': '478', 'bestAnswerUserId': '12', 'resolutionOnly': True, 'responseRequested': False}
+        old = store.sync_community_resolution(resolution, 'same-admin-resolution', 'old-admin')
+        self.assertEqual('WAITING_RESOLUTION', old['conversationState'])
+        flarum = FlarumClient('http://forum', 'https://forum', None, True)
+        client = TestClient(create_app(Settings(), store, flarum_client_instance=flarum))
+        with patch.object(flarum, 'resolution_selected_by_administrator', return_value=True):
+            for _ in range(2):
+                response = client.post('/v1/community/cases', headers={**HEADERS, 'Idempotency-Key': 'same-admin-resolution'}, json=resolution)
+                self.assertEqual(201, response.status_code, response.text)
+                self.assertEqual('RESOLVED', response.json()['data']['conversationState'])
+        types = [e['eventType'] for e in store.list_community_case_events(case['caseId'], 20)]
+        self.assertIn('RESOLUTION_REVIEW_REQUIRED', types)
+        self.assertEqual(1, types.count('RESOLVED_BY_ADMINISTRATOR'))
+
+    def test_authority_transport_failure_does_not_mark_resolution_complete(self):
+        store = MemoryStore()
+        first = {**self.payload(), 'postId': '100', 'postNumber': 1}
+        store.create_community_case(first, {'draftAnswer': '답변', 'answerState': 'ANSWERED'}, 'admin-error', 'admin-error')
+        flarum = FlarumClient('http://forum', 'https://forum', None, True)
+        client = TestClient(create_app(Settings(), store, flarum_client_instance=flarum))
+        with patch.object(flarum, 'resolution_selected_by_administrator', side_effect=RuntimeError('offline')):
+            response = client.post('/v1/community/cases', headers=HEADERS, json={**first, 'resolutionOnly': True,
+                'responseRequested': False, 'bestAnswerPostId': '478', 'bestAnswerUserId': '12'})
+        self.assertEqual(503, response.status_code)
+        self.assertNotEqual('RESOLVED', store.get_community_case_by_discussion('901')['conversationState'])
+
+    def test_kb_synthesis_reads_edited_selected_answer_before_publication_and_selection(self):
+        from app.conversation import build_knowledge_base_question
+        store = MemoryStore()
+        first = {**self.payload(), 'postId': '100', 'postNumber': 1}
+        store.create_community_case(first, {'draftAnswer': '답변', 'answerState': 'ANSWERED'}, 'edited-first', 'edited-first')
+        store.record_community_turn({**first, 'postId': '478', 'postNumber': 3, 'postAuthorId': '21',
+            'turnRole': 'STAFF', 'question': '편집 전 자료 요청'}, 'edited-staff', 'edited-staff')
+        flarum = FlarumClient('http://forum', 'https://forum', None, True)
+        settings = Settings(community_auto_publish_enabled=True, community_publish_enabled=True,
+            flarum_api_key_file='/unused/key', flarum_assistant_user_id_file='/unused/assistant',
+            flarum_solution_selector_user_id_file='/unused/selector')
+        client = TestClient(create_app(settings, store, flarum_client_instance=flarum))
+        result = {'state': 'ANSWERED', 'report': {'summary': 'SCVM 부팅 오류',
+            'observedFacts': ['SCVM 부팅 오류'], 'diagnoses': ['장치 호환 문제'],
+            'recommendedActions': ["device='disk' 변경 후 정상 부팅 확인"], 'unknowns': [], 'artifactEvidence': []}}
+        with patch.object(flarum, 'resolution_selected_by_administrator', return_value=True), \
+                patch.object(flarum, 'visible_post_ids', return_value={'100', '478'}), \
+                patch.object(flarum, 'visible_post_content', return_value="편집 후 device='disk' 안내"), \
+                patch('app.main.build_knowledge_base_question', wraps=build_knowledge_base_question) as question, \
+                patch('app.main.reinstall_reset_result', return_value=result), \
+                patch.object(flarum, 'publish_assistant_reply', return_value={'postId': '600', 'postUrl': 'https://forum/d/901/6'}) as publish, \
+                patch.object(flarum, 'select_solution', return_value={'postId': '600', 'selectedByUserId': '1'}) as select:
+            response = client.post('/v1/community/cases', headers=HEADERS, json={**first, 'resolutionOnly': True,
+                'responseRequested': False, 'bestAnswerPostId': '478', 'bestAnswerUserId': '12'})
+        self.assertEqual(201, response.status_code, response.text)
+        selected_turn = next(t for t in question.call_args.args[1] if t['sourcePostId'] == '478')
+        self.assertEqual("편집 후 device='disk' 안내", selected_turn['content'])
+        self.assertEqual('600', response.json()['data']['knowledgeBasePostId'])
+        self.assertIsNotNone(response.json()['data']['knowledgeBaseSolutionSelectedAt'])
+        publish.assert_called_once()
+        select.assert_called_once_with('901', '600')
+
     def test_withdrawn_queued_source_does_not_generate_or_persist_a_case(self):
         store = MemoryStore()
         flarum = FlarumClient('http://forum', 'https://forum', None, True)

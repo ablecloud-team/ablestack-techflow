@@ -640,7 +640,7 @@ class ConversationProgressionTest(unittest.TestCase):
 
         self.assertLessEqual(len(prompt), 16000)
         self.assertGreater(len(prompt), 4000)
-        self.assertIn("[질문자가 선택한 해결 답변]", prompt)
+        self.assertIn("[포럼에서 선택한 해결 답변]", prompt)
         self.assertIn("#6 TechFlow-Assistant", prompt)
         self.assertIn("첨부 처리 실패가 명시적으로 기록되지 않았다면", prompt)
         self.assertTrue(prompt.endswith("제목은 만들지 마십시오."))
