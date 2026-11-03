@@ -21,6 +21,7 @@ from app.conversation import (
     migration_option_explanation,
     snapshot_memory_support_result,
     cloud_center_connection_result,
+    storage_preserving_reinstall_result,
 )
 from app.embedding import MAX_INPUT_BYTES, validate_inputs
 from app.models import CommunityCaseCreateRequest, ComprehensiveQueryRequest, ComprehensiveSynthesisRequest
@@ -29,6 +30,31 @@ from app.versioned_assist import format_public_answer
 
 
 class ConversationProgressionTest(unittest.TestCase):
+    def test_initial_reinstall_answers_targeted_iscsi_disconnection(self):
+        result = storage_preserving_reinstall_result('초기 설치를 재시도하기 전에 iSCSI를 분리하고 기존 데이터를 보존하려고 합니다.')
+        answer = format_public_answer(result)
+        for expected in ('TARGET_IQN', 'PORTAL_IP', 'node.startup', 'node.conn[0].startup', '--logout',
+                         'pcs cluster stop --all', '외부 LUN', '신규 GFS'):
+            self.assertIn(expected, answer)
+        self.assertNotIn('--logoutall', answer)
+        self.assertEqual((), community_actionability_issues(result))
+
+    def test_ccvm_status_followup_keeps_iscsi_goal(self):
+        context = '초기 설치를 다시 하기 전 iSCSI 연결을 분리하고 데이터를 보존하고 싶습니다.'
+        result = storage_preserving_reinstall_result('Diplo v4.7.2입니다. ccvm의 상태를 확인하는 명령어를 알려주세요.', context)
+        answer = format_public_answer(result)
+        self.assertIn('--logout', answer)
+        self.assertIn('domstate ccvm', answer)
+        self.assertNotIn('journalctl', answer)
+        self.assertEqual((), community_actionability_issues(result))
+        self.assertIsNone(storage_preserving_reinstall_result('Windows NTP 설정 방법을 알려주세요.', context))
+
+    def test_iscsi_boot_session_is_excluded_from_online_logout(self):
+        result = storage_preserving_reinstall_result('재설치 전 iSCSI 연결을 해제하려고 합니다. 현재 OS는 iSCSI로 부팅합니다.')
+        answer = format_public_answer(result)
+        self.assertNotIn('--logout', answer)
+        self.assertIn('호스트를 종료', answer)
+
     def test_ccvm_connection_message_uses_cube_http_path_and_passes_actionability(self):
         question = ('클라우드센터에 정상적으로 연결되지 않습니다. '
                     'ccvmStatus.ccvm = true; "active" : "true"; step8 :: false')

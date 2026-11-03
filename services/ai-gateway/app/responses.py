@@ -244,6 +244,13 @@ When the exact runtime cause cannot be confirmed but the supplied evidence suppo
 troubleshooting sequence, return ANSWERED with currentAssessment INSUFFICIENT_EVIDENCE. State that the root cause is
 not yet confirmed, keep possible causes conditional, and put the missing runtime checks in unknowns. Return ABSTAINED
 only when neither a supported diagnosis nor a supported next-step procedure can be provided.
+Preserve the user's primary operational goal across turns. For an initial-install retry that asks to disconnect
+iSCSI while retaining existing LUN data, lead with target identification, quiescing VM/shared-filesystem users,
+targeted session logout and prevention of reconnect during installation. A later CCVM status question supports
+this disconnection procedure; do not turn the conversation into a CCVM root-cause investigation or ask for
+incident logs before giving the requested procedure. Scope every logout to target IQN, portal and iface where
+applicable; require all LUN users of that session to be inactive and exclude an iSCSI boot session. Preserve
+node records and existing LUN metadata. Never recommend new GFS/PV/filesystem creation on retained data.
 For a Mold console that opens but remains at connecting, when the approved QEMU VNC stale-session evidence matches,
 classify CURRENT_RUNTIME_ISSUE rather than a product defect. State that the guest OS and its services can remain
 healthy because the symptom affects the VNC console path. Recommend an ABLESTACK-managed live migration first for

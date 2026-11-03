@@ -82,6 +82,7 @@ from .conversation import (
     migration_option_explanation,
     snapshot_memory_support_result,
     cloud_center_connection_result,
+    storage_preserving_reinstall_result,
     standalone_kvm_import_result,
     source_post_id,
 )
@@ -1023,7 +1024,9 @@ def create_app(
                 discussionId=request.discussion_id, sourcePostId=post_id,
             )
         else:
-            result = snapshot_memory_support_result(request.question, conversation_question)
+            result = storage_preserving_reinstall_result(request.question, conversation_question)
+            if result is None:
+                result = snapshot_memory_support_result(request.question, conversation_question)
             if result is None:
                 result = cloud_center_connection_result(request.question, conversation_question)
             if result is None:

@@ -34,6 +34,26 @@ class FakeResponse:
 
 
 class CommunityTests(unittest.TestCase):
+    def test_iscsi_reinstall_followup_does_not_switch_to_incident_log_request(self):
+        store = MemoryStore()
+        client = TestClient(create_app(Settings(), store))
+        first = {**self.payload(), 'discussionId': '192', 'title': '초기 설치 재시도 전 iSCSI 분리',
+                 'question': '초기 설치 중 CCVM 구성이 실패해 재설치 전에 iSCSI를 분리하고 싶습니다. 기존 데이터는 보존해야 합니다.',
+                 'postId': '509', 'postNumber': 1}
+        response = client.post('/v1/community/cases', headers=HEADERS, json=first)
+        self.assertEqual(201, response.status_code, response.text)
+        case = response.json()['data']
+        store.mark_community_auto_published(UUID(case['caseId']), case['draftAnswer'],
+            {'postId': '510', 'postUrl': 'https://community.ablecloud.io/d/192/2'}, 'iscsi-first-published')
+        followup = client.post('/v1/community/cases', headers={**HEADERS, 'Idempotency-Key': 'iscsi-followup-511'},
+            json={**first, 'postId': '511', 'postNumber': 3,
+                  'question': 'Diplo v4.7.2이며 2026-10-01 16:30 ~ 17:30에 구성을 세 호스트에서 눌렀습니다. ccvm 상태 확인 명령을 알려주세요.'})
+        self.assertEqual(201, followup.status_code, followup.text)
+        answer = followup.json()['data']['draftAnswer']
+        self.assertIn('--logout', answer)
+        self.assertIn('domstate ccvm', answer)
+        self.assertNotIn('journalctl', answer)
+
     def test_ccvm_connection_log_followup_is_answered_without_rejection(self):
         store = MemoryStore()
         first = {**self.payload(), 'discussionId': '191',
