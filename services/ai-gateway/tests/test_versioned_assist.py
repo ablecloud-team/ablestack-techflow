@@ -29,6 +29,26 @@ from app.platform_references import curated_platform_results
 
 
 class VersionedAssistPolicyTest(unittest.TestCase):
+    def test_host_reinstall_uses_vm_installation_docs_not_console_code(self):
+        question = 'Mold ABLESTACK 서버 VM Cube 재설치와 공유 LUN 초기화 절차'
+        self.assertNotIn('console proxy', feature_source_terms(question))
+        rows = relevant_results(question, [
+            {'path': 'ConsoleAccessManagerImpl.java', 'content': 'Mold console endpoint'},
+            {'path': 'docs/getting-started/install-guide-general-virtualization-cube.md', 'content': 'Installation Destination OS disk'},
+        ])
+        self.assertEqual(1, len(rows))
+        self.assertIn('install-guide-general-virtualization', rows[0]['path'])
+
+    def test_procedural_kb_still_filters_unrecorded_attachment_failure(self):
+        result = {'state': 'ANSWERED', 'answerIntent': 'PROCEDURE', 'report': {
+            'summary': '초기화 절차 안내', 'observedFacts': ['공유 LUN 초기화 절차 문의입니다.'],
+            'recommendedActions': ['대상 WWID를 확인하십시오.'],
+            'unknowns': ['첨부파일을 다운로드하지 못했습니다.'],
+        }}
+        kb = format_knowledge_base(result)
+        self.assertNotIn('다운로드하지 못했습니다', kb)
+        self.assertIn('### 요청 및 현재 상태', kb)
+
     def test_grouped_inline_commands_keep_correct_korean_subject_particle(self):
         result = {'state': 'ANSWERED', 'report': {'summary': '조회 안내입니다.', 'recommendedActions': [
             '`getent passwd 123`와 `getent group 456`는 이름 해석을 확인하는 명령입니다.'

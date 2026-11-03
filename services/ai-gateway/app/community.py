@@ -183,6 +183,32 @@ class FlarumClient:
         except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
             raise RuntimeError("Flarum request failed") from exc
 
+    def post_is_visible(self, discussion_id: str, post_id: str) -> bool:
+        """Revalidate a queued event before generation; withdrawn posts must never be republished."""
+        if not discussion_id.isdigit() or not post_id.isdigit():
+            raise InvalidBoundaryError('invalid source post')
+        try:
+            payload = self._request(f'/api/posts/{post_id}?include=discussion', as_assistant=True)
+        except FlarumResourceNotFound:
+            return False
+        item = payload.get('data') or {}
+        attrs = item.get('attributes') or {}
+        parent = (((item.get('relationships') or {}).get('discussion') or {}).get('data') or {})
+        if not item.get('id') or not parent.get('id'):
+            raise RuntimeError('source visibility metadata is incomplete')
+        if str(item.get('id')) != post_id or str(parent.get('id')) != discussion_id:
+            return False
+        if attrs.get('contentType') not in (None, 'comment'):
+            return False
+        if attrs.get('isHidden') or attrs.get('hiddenAt') or attrs.get('isApproved') is False:
+            return False
+        for related in payload.get('included') or []:
+            if related.get('type') == 'discussions' and str(related.get('id')) == discussion_id:
+                state = related.get('attributes') or {}
+                if state.get('isHidden') or state.get('hiddenAt'):
+                    return False
+        return True
+
     def visible_post_ids(self, discussion_id: str) -> set[str]:
         """Read current visible comments; fail closed rather than reuse withdrawn history."""
         if not discussion_id.isdigit():

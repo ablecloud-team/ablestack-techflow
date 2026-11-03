@@ -1802,6 +1802,10 @@ class PostgresStore:
                 (publication["postId"], publication["postUrl"], answer, case_id),
             ).fetchone()
             connection.execute(
+                "UPDATE community_turn SET content=%s WHERE case_id=%s AND source_post_id=%s AND role='ASSISTANT'",
+                (answer, case_id, publication['postId']),
+            )
+            connection.execute(
                 """INSERT INTO community_case_event
                    (id,case_id,event_type,actor,idempotency_key,correlation_id,details)
                    VALUES (%s,%s,'KNOWLEDGE_BASE_PUBLISHED','techflow-assistant',%s,%s,%s)""",

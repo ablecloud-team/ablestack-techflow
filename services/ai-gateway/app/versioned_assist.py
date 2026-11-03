@@ -292,6 +292,13 @@ def _is_mold_storage_security_question(question: str) -> bool:
             and any(term in text for term in ('보안', '불필요', '비활성', '예외', 'security')))
 
 
+def _is_host_reinstall_question(question: str) -> bool:
+    text = question.casefold()
+    return (any(term in text for term in ('재설치', 'reinstall'))
+            and any(term in text for term in ('cubeos', 'cube', 'ccvm', '서버', '스토리지', 'gfs', 'lun'))
+            and not any(term in text for term in ('windows', '윈도우', 'ubuntu', '게스트 os')))
+
+
 def _is_network_request_failure_question(question: str) -> bool:
     normalized = question.casefold()
     network = any(marker in normalized for marker in ("네트워크", "network", "createnetwork"))
@@ -341,8 +348,11 @@ def feature_source_terms(question: str) -> tuple[str, ...]:
         anchors.extend(KORAL_MARKERS)
     if _is_wall_question(question):
         anchors.extend(WALL_MARKERS)
-    if _is_mold_question(question) and not _is_mold_storage_security_question(question):
+    if _is_mold_question(question) and not _is_mold_storage_security_question(question) and not _is_host_reinstall_question(question):
         anchors.extend(MOLD_MARKERS)
+    if _is_host_reinstall_question(question):
+        anchors.extend(('install-guide-general-virtualization-cube.md', 'system-restart-vm.md',
+                        'gfs_manage.py', 'create_gfs', 'cloud-vm-wizard', 'Installation Destination', 'WWID', 'LUN'))
     if _is_mold_storage_security_question(question):
         anchors.extend(MOLD_STORAGE_SECURITY_MARKERS)
     if _is_network_request_failure_question(question):
@@ -421,8 +431,14 @@ def _relevance_score(question: str, item: dict[str, Any]) -> int:
         score += sum(6 for marker in KORAL_MARKERS if marker in searchable)
     if _is_wall_question(question):
         score += sum(6 for marker in WALL_MARKERS if marker in searchable)
-    if _is_mold_question(question) and not _is_mold_storage_security_question(question):
+    if _is_mold_question(question) and not _is_mold_storage_security_question(question) and not _is_host_reinstall_question(question):
         score += sum(6 for marker in MOLD_MARKERS if marker in searchable)
+    if _is_host_reinstall_question(question):
+        path = str(item.get('path') or '').casefold()
+        if not _is_console_connection_question(question) and any(term in path for term in ('consoleaccessmanagerimpl', 'consoleproxyload')):
+            return 0
+        if any(term in path for term in ('install-guide-general-virtualization', 'system-restart-vm', 'gfs_manage.py')):
+            score += 40
     if _is_mold_storage_security_question(question):
         path = str(item.get('path') or '').casefold()
         if not _is_console_connection_question(question) and any(term in path for term in (
@@ -887,9 +903,10 @@ def format_knowledge_base(result: dict[str, Any]) -> str | None:
     report = result["report"]
     citations = result.get("citations") or []
     lines: list[str] = []
+    procedure = result.get('answerIntent') == 'PROCEDURE'
 
     symptom_candidates = _section_values(report.get("observedFacts") or [], citations)
-    symptom_values = [value for value in symptom_candidates if _is_user_observed_symptom(value)]
+    symptom_values = symptom_candidates if procedure else [value for value in symptom_candidates if _is_user_observed_symptom(value)]
     if not symptom_values:
         summary = simplify_public_text(report.get("summary"), citations)
         if summary and _is_user_observed_symptom(summary):
@@ -909,12 +926,12 @@ def format_knowledge_base(result: dict[str, Any]) -> str | None:
     else:
         cause_values = [*causal_artifact_findings, *cause_values]
     for heading, values, empty_message in (
-        ("증상", symptom_values, "확인된 증상 정보가 없습니다."),
-        ("원인", cause_values, "현재 근거에서 확인된 원인은 없습니다."),
+        ("요청 및 현재 상태" if procedure else "증상", symptom_values, "요청 범위 확인이 필요합니다." if procedure else "확인된 증상 정보가 없습니다."),
+        ("절차 판단" if procedure else "원인", cause_values, "현재 근거에서 확인된 원인은 없습니다."),
         ("해결 방법", action_values, "추가 정보를 확인한 뒤 해결 방법을 결정해야 합니다."),
     ):
         lines.extend(["", f"### {heading}"])
-        lines.extend(f"- {value}" for value in values or [empty_message])
+        lines.extend(f"- {_format_copyable_cli(value) if heading == '해결 방법' else value}" for value in values or [empty_message])
     information_requests: list[str] = []
     considerations: list[str] = list(contextual_artifact_findings)
     attachment_failure_recorded = bool(result.get("attachmentFailureRecorded"))
@@ -923,6 +940,9 @@ def format_knowledge_base(result: dict[str, Any]) -> str | None:
         if not clean:
             continue
         if not attachment_failure_recorded and _is_unverified_attachment_failure(clean):
+            continue
+        if procedure:
+            considerations.append(clean)
             continue
         if any(marker in clean for marker in ("필요", "확인", "제공", "알려", "첨부", "로그", "화면")):
             if clean not in information_requests:
@@ -936,7 +956,7 @@ def format_knowledge_base(result: dict[str, Any]) -> str | None:
             *(f"- {value}" for value in information_requests),
             "",
         ]
-    lines.extend(["", "### 추가 고려사항"])
+    lines.extend(["", "### 실행 전 확인 사항" if procedure else "### 추가 고려사항"])
     lines.extend(f"- {value}" for value in considerations or ["별도의 추가 고려사항은 확인되지 않았습니다."])
 
     lines.extend(["", "### 적용 버전"])

@@ -25,14 +25,47 @@ from app.conversation import (
     sync_account_hardening_result,
     classify_shadow_password_field,
     ccvm_storage_security_result,
+    infer_reinstall_goal,
+    reinstall_reset_result,
 )
 from app.embedding import MAX_INPUT_BYTES, validate_inputs
 from app.models import CommunityCaseCreateRequest, ComprehensiveQueryRequest, ComprehensiveSynthesisRequest
 from app.responses import COMPREHENSIVE_SYSTEM_POLICY
-from app.versioned_assist import format_public_answer
+from app.versioned_assist import format_public_answer, format_knowledge_base
 
 
 class ConversationProgressionTest(unittest.TestCase):
+    def test_explicit_requester_reset_goal_survives_assistant_preservation_advice(self):
+        turns = [
+            {'role': 'REQUESTER', 'content': 'VM Cube를 재설치하고 싶습니다.'},
+            {'role': 'REQUESTER', 'content': '모든 스토리지를 공 디스크로 만들고 보존하는 절차가 필요 없이 초기화하려고 합니다.'},
+            {'role': 'ASSISTANT', 'content': '기존 데이터를 보존하고 재사용하십시오.'},
+        ]
+        question = '현재 공유 LUN 방식이고 GFS의 ISCSI와 마운트를 해제했지만 VM을 정지하였는지 확인하지 않았음. 올바른 재설치 방법 안내.'
+        self.assertEqual('RESET', infer_reinstall_goal(question, turns))
+        result = reinstall_reset_result(question, turns)
+        answer = format_public_answer(result)
+        self.assertIn('올바른 재설치 준비 순서가 아닙니다', answer)
+        self.assertIn('빈 LUN', answer)
+        self.assertIn('초기화', answer)
+        self.assertNotIn('기존 LUN 데이터를 보존하는 절차를 안내', answer)
+        self.assertNotIn('wipefs -a', answer)
+        self.assertIsNone(storage_preserving_reinstall_result(question, 'iSCSI 재설치', primary_goal='RESET'))
+        self.assertEqual((), community_actionability_issues(result))
+        kb = format_knowledge_base(result)
+        self.assertIn('### 요청 및 현재 상태', kb)
+        self.assertIn('### 절차 판단', kb)
+        self.assertIn('```bash', kb)
+        self.assertIn('실제 초기화 작업을 완료했다는 근거는 아직 없습니다', kb)
+        self.assertNotIn('확인된 증상 정보가 없습니다', kb)
+
+    def test_latest_requester_can_change_reset_goal_to_preservation(self):
+        turns = [{'role': 'REQUESTER', 'content': '공유 LUN을 공디스크로 초기화하고 재설치하려고 합니다.'}]
+        question = '계획을 바꿨습니다. iSCSI 기존 데이터를 보존하고 싶습니다.'
+        self.assertEqual('PRESERVE', infer_reinstall_goal(question, turns))
+        self.assertIsNone(reinstall_reset_result(question, turns))
+        prompt = build_knowledge_base_question('재설치', [*turns, {'role': 'REQUESTER', 'content': question}], '999')
+        self.assertIn('질문자는 기존 데이터를 보존한 재설치를 원합니다', prompt)
     def test_ccvm_overlay_and_nfs_security_uses_product_dependencies(self):
         question = ('Diplo 4.7.2 CCVM 보안조치입니다. /var/lib/containers/storage/overlay/aedc/diff/etc/shadow '
                     '소유자가 없다고 합니다. 불필요한 NFS를 비활성화하려는데 nfsd가 없습니다.')
