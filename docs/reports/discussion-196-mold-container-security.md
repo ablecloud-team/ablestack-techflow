@@ -5,7 +5,7 @@
 ## 검토 결과
 
 - CCVM은 Mold 관리 VM이며 CPVM 콘솔 프록시와 구분한다. 경로만으로 어느 이미지·컨테이너인지 특정할 수 없다.
-- `/var/lib/containers/storage`는 root Podman 저장소 기본 경로다. overlay 파일의 숫자 UID/GID와 호스트 NSS 이름 해석 실패를 구분해야 한다. 컨테이너·이미지의 계정과 참조 계층을 함께 확인한 뒤 정상 이미지 소유권, 실제 이미지 결함, 미사용 자원을 구분한다.
+- `/var/lib/containers/storage`는 root Podman 저장소 기본 경로다. overlay 파일의 숫자 UID/GID와 호스트 NSS 이름 해석 실패를 구분해야 한다. 사용자 네임스페이스를 사용하면 호스트와 내부 ID를 매핑한 뒤 비교한다. 컨테이너·이미지의 계정과 참조 계층을 함께 확인한 뒤 정상 이미지 소유권, 실제 이미지 결함, 미사용 자원을 구분한다.
 - 실행 목록에 없다는 이유만으로 unused 계층으로 판단하지 않는다. 중지 컨테이너와 이미지·공유 계층도 확인한다. 전체 inspect에는 자격 증명이 있을 수 있어 Name/GraphDriver 경로만 필터링한다. 컨테이너의 shadow 내용은 수집하지 않는다.
 - ABLESTACK-4.7.2 태그 `9d294e4d591f855b9a33a39e74763a3c5d7d622e`의 `shell/host/ccvm_bootstrap.sh` 62~70행은 `/nfs`, exports, `nfs-server.service`, primary/secondary 디렉터리를 구성한다. 129~132행은 secondary에 시스템 VM 템플릿을 준비한다. 현재 등록된 Mold 저장소가 이 NFS를 사용하면 유지해야 한다.
 - `nfsd`는 NFS 서버의 커널·유틸리티 명칭으로 systemd 서비스 이름과 동일하지 않다. 기준 CubeOS 기반 환경의 `nfs-server.service`는 Type=oneshot/RemainAfterExit=yes라 active(exited) 표시가 가능하다. 111은 공용 RPC 포트이므로 단독으로 NFS 사용을 판단하지 않는다.
@@ -19,9 +19,9 @@
 
 ## 검증 및 게시
 
-- 관련 단위·Community API·저장소 회귀시험 221건 통과. 전체·단일 주제 안내, 콘솔 검색 제외, 경로 보존, 동일 본문에 대한 근거 갱신 및 멱등성을 검증했다.
+- 관련 단위·Community API·저장소 회귀시험 222건 통과. 전체·단일 주제 안내, 콘솔 검색 제외, 경로 보존, 동일 본문에 대한 근거 갱신 및 멱등성, 한국어 조사 표시와 ID 매핑 조건을 검증했다.
 - 기준 환경에서 nfs-server.service의 Type=oneshot, RemainAfterExit=yes를 확인했다. 고객 CCVM의 파일·컨테이너·NFS 설정을 직접 변경하는 작업은 아니다.
-- PR #137 병합본을 운영에 반영한 뒤 Discussion #196의 기존 Post #530과 draft/response/Assistant Turn/citations/근거 원장을 함께 교정한다. 최종 운영 검증 이력은 PR #137에 기록한다.
+- PR #137 병합본 0.16.23에서 Discussion #196의 기존 Post #530과 draft/response/Assistant Turn/citations/근거 원장을 함께 교정하고 실제 PostgreSQL 저장 상태를 검증했다. 브라우저에서 확인한 조사 표시와 ID 매핑 조건은 후속 PR #138에 반영했다. 최종 운영 검증 이력은 PR #137/#138에 기록한다.
 
 ## 출처
 
