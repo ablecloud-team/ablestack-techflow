@@ -29,6 +29,15 @@ from app.platform_references import curated_platform_results
 
 
 class VersionedAssistPolicyTest(unittest.TestCase):
+    def test_grouped_inline_commands_keep_correct_korean_subject_particle(self):
+        result = {'state': 'ANSWERED', 'report': {'summary': '조회 안내입니다.', 'recommendedActions': [
+            '`getent passwd 123`와 `getent group 456`는 이름 해석을 확인하는 명령입니다.'
+        ]}}
+        answer = format_public_answer(result)
+        self.assertIn('아래 명령은', answer)
+        self.assertNotIn('명령는', answer)
+        self.assertIn('getent passwd 123', answer)
+
     def test_verified_product_snapshot_precedes_external_platform_evidence(self):
         self.assertEqual((2, 'ABLESTACK_SOURCE_CODE'), evidence_priority(CURATED_PLATFORM_PROFILE, 'VERIFIED_PRODUCT_SOURCE'))
         self.assertEqual((3, 'OFFICIAL_PLATFORM_DOCUMENTATION'), evidence_priority(CURATED_PLATFORM_PROFILE, 'OFFICIAL_EXTERNAL_DOCUMENTATION'))
