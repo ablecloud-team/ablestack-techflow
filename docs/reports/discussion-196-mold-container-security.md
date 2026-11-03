@@ -19,7 +19,9 @@
 
 ## 검증 및 게시
 
-관련 회귀시험과 운영 게시·서비스 상태를 검증한 뒤 결과를 기록한다. 고객 CCVM의 파일·컨테이너·NFS 설정을 직접 변경하는 작업은 아니다.
+- 관련 단위·Community API·저장소 회귀시험 221건 통과. 전체·단일 주제 안내, 콘솔 검색 제외, 경로 보존, 동일 본문에 대한 근거 갱신 및 멱등성을 검증했다.
+- 기준 환경에서 nfs-server.service의 Type=oneshot, RemainAfterExit=yes를 확인했다. 고객 CCVM의 파일·컨테이너·NFS 설정을 직접 변경하는 작업은 아니다.
+- PR #137 병합본을 운영에 반영한 뒤 Discussion #196의 기존 Post #530과 draft/response/Assistant Turn/citations/근거 원장을 함께 교정한다. 최종 운영 검증 이력은 PR #137에 기록한다.
 
 ## 출처
 

@@ -434,6 +434,7 @@ def ccvm_storage_security_result(value: object, context: str = '') -> dict[str, 
             '문제 경로가 어느 컨테이너 계층에 속하는지 대조하십시오. LowerDir가 짧은 링크 경로로 표시되면 실제 가리키는 경로로 비교합니다. 실행 중인 컨테이너는 '
             '`sudo podman exec <CONTAINER_NAME> getent passwd <NUMERIC_UID>`와 '
             '`sudo podman exec <CONTAINER_NAME> getent group <NUMERIC_GID>`로 내부 계정도 비교할 수 있습니다. '
+            'getent가 없는 최소 이미지에서는 이미지의 계정 정의·빌드 자료로 확인하며, 조회 명령이 없다는 것을 소유자 부재로 해석하지 않습니다. '
             '정지 컨테이너를 이 확인만을 위해 임의로 시작할 필요는 없습니다. 정상 기준은 이미지·컨테이너와 숫자 ID의 대응 관계가 '
             '설명되는 것입니다. 실행 목록에 없다는 이유만으로 사용하지 않는 계층이라고 판단하지 마십시오.',
             '호스트에서만 이름이 해석되지 않고 컨테이너 이미지의 정상 소유권으로 확인되면 그 대응 자료를 보안 점검 증빙으로 '
