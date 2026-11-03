@@ -784,6 +784,24 @@ class VersionedAssistPolicyTest(unittest.TestCase):
         self.assertIn("가상머신 실행 프로그램(QEMU)", cause)
         self.assertNotIn("라이브 마이그레이션", cause)
 
+    def test_shutdown_and_failed_boot_observations_are_not_dropped_from_kb(self):
+        for observation in (
+            '3노드의 SCVM이 GRUB 화면에서 계속 셧다운됩니다.',
+            'SCVM이 정상적으로 실행되지 않고 종료되는 현상입니다.',
+            'SCVM의 전원이 꺼지는 현상이 발생했습니다.',
+            'SCVM이 부팅되지 않습니다.',
+            'SCVM 전원 꺼짐 현상을 확인했습니다.',
+        ):
+            with self.subTest(observation=observation):
+                kb = format_knowledge_base({'state': 'ANSWERED', 'report': {
+                    'observedFacts': [observation, '장치 호환 문제일 가능성이 있어 확인해야 합니다.'],
+                    'diagnoses': ['장치 표시 변경 후 정상 부팅 확인'],
+                    'recommendedActions': ["device='disk' 변경 결과 확인"], 'unknowns': []}})
+                symptom = kb.split('### 증상', 1)[1].split('### 원인', 1)[0]
+                self.assertIn(observation, symptom)
+                self.assertNotIn('확인된 증상 정보가 없습니다', symptom)
+                self.assertNotIn('가능성', symptom)
+
     def test_log_artifact_finding_is_shown_in_cause_without_internal_identifier(self) -> None:
         result = {
             "state": "ANSWERED",
