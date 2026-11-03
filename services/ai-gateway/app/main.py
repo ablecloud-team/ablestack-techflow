@@ -849,7 +849,22 @@ def create_app(
                 request.best_answer_user_id
                 and request.best_answer_user_id in _resolution_administrator_ids(runtime_settings)
             )
-            result = runtime_store.sync_community_resolution(event, idempotency_key, correlation_id)
+            resolution_key = idempotency_key
+            if (not event['bestAnswerSelectedByAdministrator'] and request.best_answer_post_id
+                    and request.best_answer_user_id and request.best_answer_user_id != request.author_id
+                    and getattr(flarum_client, 'enabled', False)):
+                try:
+                    verified_admin = flarum_client.resolution_selected_by_administrator(
+                        request.discussion_id, request.best_answer_post_id, request.best_answer_user_id,
+                    )
+                except (RuntimeError, InvalidBoundaryError) as exc:
+                    raise HTTPException(status_code=503, detail={'code': 'COMMUNITY_RESOLUTION_AUTHORITY_CHECK_FAILED'}) from exc
+                if verified_admin:
+                    event['bestAnswerSelectedByAdministrator'] = True
+                    # Preserve the old REVIEW_REQUIRED audit record but do not let its
+                    # cached idempotency result prevent a newly verified resolution.
+                    resolution_key = 'flarum-admin-verified-' + hashlib.sha256(idempotency_key.encode()).hexdigest()
+            result = runtime_store.sync_community_resolution(event, resolution_key, correlation_id)
             if (
                 runtime_settings.community_auto_publish_enabled
                 and result.get("conversationState") == "RESOLVED"
@@ -858,6 +873,16 @@ def create_app(
                 knowledge_completed_now = False
                 if result.get("knowledgeBaseSourcePostId") != result.get("resolvedPostId"):
                     turns = _visible_community_turns(request.discussion_id, correlation_id)
+                    if getattr(flarum_client, 'enabled', False):
+                        try:
+                            selected_content = flarum_client.visible_post_content(
+                                request.discussion_id, str(result['resolvedPostId']),
+                            )
+                        except (RuntimeError, InvalidBoundaryError) as exc:
+                            raise HTTPException(status_code=503, detail={'code': 'COMMUNITY_SELECTED_ANSWER_UNAVAILABLE'}) from exc
+                        turns = [{**turn, 'content': selected_content}
+                                 if str(turn.get('sourcePostId')) == str(result['resolvedPostId']) else turn
+                                 for turn in turns]
                     knowledge_question = build_knowledge_base_question(
                         request.title, turns, str(result["resolvedPostId"]),
                     )

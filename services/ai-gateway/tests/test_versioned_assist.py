@@ -68,6 +68,15 @@ class VersionedAssistPolicyTest(unittest.TestCase):
         self.assertIn(path, text)
         self.assertNotIn('/opt/private/repository/secret.java', text)
 
+    def test_scvm_log_path_is_copyable_and_kb_does_not_misidentify_the_selector(self):
+        text = sanitize_public_text('sudo tail -n 200 /var/log/libvirt/qemu/scvm.log')
+        self.assertIn('/var/log/libvirt/qemu/scvm.log', text)
+        kb = format_knowledge_base({'state': 'ANSWERED', 'report': {
+            'observedFacts': ['SCVM 부팅 오류'], 'diagnoses': ['장치 표시 방식 호환 문제'],
+            'recommendedActions': [text], 'unknowns': []}})
+        self.assertIn('포럼에서 선택된 해결 답변', kb)
+        self.assertNotIn('질문자가 해결 답변으로 선택', kb)
+
     def test_mold_storage_security_prioritizes_bootstrap_over_console_code(self):
         question = 'Diplo 4.7.2 CCVM Mold 보안 점검 overlay 소유자 및 불필요한 NFS 서비스 비활성화 문의'
         terms = feature_source_terms(question)

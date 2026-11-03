@@ -582,6 +582,7 @@ def sanitize_public_text(value: object, citations: Iterable[dict[str, Any]] = ()
         "/etc/libvirt/virtproxyd.conf": "TECHFLOW_SAFE_VIRTPROXYD_CONFIG_PATH",
         "/var/log/cloudstack/management/management-server.log": "TECHFLOW_SAFE_MANAGEMENT_LOG_PATH",
         "/var/log/cloudstack/agent/agent.log": "TECHFLOW_SAFE_AGENT_LOG_PATH",
+        "/var/log/libvirt/qemu/scvm.log": "TECHFLOW_SAFE_SCVM_LOG_PATH",
         "/sbin/nologin": "TECHFLOW_SAFE_NOLOGIN_PATH",
         "/bin/sync": "TECHFLOW_SAFE_SYNC_PATH",
         "/etc/shadow": "TECHFLOW_SAFE_SHADOW_PATH",
@@ -961,7 +962,7 @@ def format_knowledge_base(result: dict[str, Any]) -> str | None:
 
     lines.extend(["", "### 적용 버전"])
     lines.append("- ABLESTACK Diplo")
-    lines.extend(["", "> 이 문서는 질문자가 해결 답변으로 선택한 내용을 중심으로 TechFlow가 대화를 정리한 Knowledge Base입니다."])
+    lines.extend(["", "> 이 문서는 포럼에서 선택된 해결 답변을 중심으로 TechFlow가 대화를 정리한 Knowledge Base입니다."])
     return "\n".join(line for line in lines if line is not None).strip()
 
 
