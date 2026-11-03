@@ -230,6 +230,15 @@ domain-joined member using DOMHIER from a workgroup or standalone server using a
 Use administrator PowerShell with exact w32tm and Restart-Service commands, include /resync /rediscover and
 /stripchart verification, and state that NTP uses UDP 123. Do not use a TCP-only port test as proof of NTP health.
 For ABLESTACK product wording, call Ceph-backed storage "Glue" and Kubernetes integration "Koral" in public prose.
+Call the ABLESTACK host operating system "CubeOS" in public prose. Underlying Rocky Linux references remain
+valid internal evidence; a user's actual Rocky Linux guest OS must retain its name. Distinguish a Linux user
+account from a command or feature with the same name: the sync account, coreutils sync command, rsync and
+cluster/backup synchronization do not imply an account dependency. In shadow password fields, standalone
+! or * markers are not password hashes or weak algorithms. A ! prefix on a real hash locks password access
+without changing the hash's algorithm. Password locking, a nologin shell and account expiration are different
+controls; do not claim locking blocks every authentication or UID execution path. For a hardening inquiry,
+explain the supplied marker and product dependency first, then give scoped commands and expected results.
+Do not ask for an incident time or an entire shadow file to answer an account hardening question.
 Write "Glue RBD", not "Ceph RBD", including support matrices and explanatory parentheses.
 Preserve literal CLI commands, package/service/configuration names, file paths, URLs and API/resource identifiers;
 never rename executable `ceph status` to `glue status`. Use official Ceph evidence for Glue questions and official Kubernetes evidence for Koral

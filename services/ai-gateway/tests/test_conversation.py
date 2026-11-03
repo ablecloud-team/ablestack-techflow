@@ -22,6 +22,8 @@ from app.conversation import (
     snapshot_memory_support_result,
     cloud_center_connection_result,
     storage_preserving_reinstall_result,
+    sync_account_hardening_result,
+    classify_shadow_password_field,
 )
 from app.embedding import MAX_INPUT_BYTES, validate_inputs
 from app.models import CommunityCaseCreateRequest, ComprehensiveQueryRequest, ComprehensiveSynthesisRequest
@@ -30,6 +32,36 @@ from app.versioned_assist import format_public_answer
 
 
 class ConversationProgressionTest(unittest.TestCase):
+    def test_sync_disabled_marker_is_not_a_hash_and_keeps_cubeos_wording(self):
+        result = sync_account_hardening_result('sync 계정을 잠그거나 nologin으로 변경해도 되나요? shadow는 sync:*:19820:0:99999:7::: 입니다.')
+        answer = format_public_answer(result)
+        self.assertIn('CubeOS', answer)
+        self.assertNotIn('Rocky Linux', answer)
+        self.assertIn('sudo usermod -L -s /sbin/nologin sync', answer)
+        self.assertIn('비밀번호 해시가 아니라', answer)
+        self.assertIn('별도 자동화', answer)
+        self.assertNotIn('passwd -d', answer)
+        self.assertEqual((), community_actionability_issues(result))
+
+    def test_sync_followup_answers_security_finding_without_incident_logs(self):
+        result = sync_account_hardening_result('버전은 ablecube-v4.7.2-260902.x86.64고, [locked or disabled user] sync:*가 원인이라고 나옵니다.', 'sync 계정을 잠그거나 nologin 처리 가능한지 문의합니다.')
+        answer = format_public_answer(result)
+        self.assertIn('상태 설명인지 실제 취약 판정 조건인지', answer)
+        self.assertIn('getent passwd sync', answer)
+        self.assertNotIn('journalctl', answer)
+        self.assertNotIn('발생한 시각을 알려', answer)
+        self.assertEqual((), community_actionability_issues(result))
+
+    def test_locked_hash_and_disabled_marker_have_different_classifications(self):
+        self.assertEqual('EMPTY_PASSWORD', classify_shadow_password_field(''))
+        for marker in ('*', '!', '!!', '!*'):
+            self.assertEqual('PASSWORD_AUTH_DISABLED', classify_shadow_password_field(marker))
+        self.assertEqual('LOCKED_HASH', classify_shadow_password_field('!$1$redacted'))
+        self.assertEqual('PASSWORD_HASH', classify_shadow_password_field('$6$redacted'))
+        self.assertIsNone(sync_account_hardening_result('sync 계정의 shadow는 sync:!$1$redacted: 입니다.'))
+        self.assertIsNone(sync_account_hardening_result('Rocky Linux VM에서 chrony time sync 방법은?'))
+        self.assertIsNone(sync_account_hardening_result('AD LDAP sync 계정 암호 변경 방법은?'))
+        self.assertIsNone(sync_account_hardening_result('rsync 계정 로그인 방법은?'))
     def test_initial_reinstall_answers_targeted_iscsi_disconnection(self):
         result = storage_preserving_reinstall_result('초기 설치를 재시도하기 전에 iSCSI를 분리하고 기존 데이터를 보존하려고 합니다.')
         answer = format_public_answer(result)
