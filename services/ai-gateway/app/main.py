@@ -87,6 +87,7 @@ from .conversation import (
     ccvm_storage_security_result,
     infer_reinstall_goal,
     reinstall_reset_result,
+    hci_center_redeployment_result,
     standalone_kvm_import_result,
     source_post_id,
 )
@@ -1068,6 +1069,8 @@ def create_app(
         else:
             reinstall_goal = infer_reinstall_goal(request.question, turns)
             result = reinstall_reset_result(request.question, turns, primary_goal=reinstall_goal)
+            if result is None:
+                result = hci_center_redeployment_result(request.question, turns)
             if result is None:
                 result = ccvm_storage_security_result(request.question, conversation_question)
             if result is None:
