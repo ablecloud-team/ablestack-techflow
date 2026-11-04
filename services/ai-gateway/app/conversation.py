@@ -742,6 +742,71 @@ def storage_preserving_reinstall_result(value: object, context: str = '', *, pri
                        'previewGuidance': None, 'citationsUsed': [], 'abstainReason': None}}
 
 
+def hci_center_redeployment_result(value: object, prior_turns: Iterable[dict[str, Any]] = ()) -> dict[str, Any] | None:
+    """Answer an HCI initial deployment retry without assuming the storage is disposable."""
+    current = str(value or '').casefold()
+    history = '\n'.join(str(turn.get('content') or '').casefold() for turn in prior_turns
+                        if turn.get('role') == 'REQUESTER')
+    context = current + '\n' + history
+    scvm = ('scvm', '스토리지센터', '스토리센터', '스토리지 센터')
+    ccvm = ('ccvm', '클라우드센터', '클라우드 센터')
+    if not ('hci' in context and any(term in context for term in scvm) and any(term in context for term in ccvm)):
+        return None
+    if not (any(term in current for term in (*scvm, *ccvm))
+            and any(term in current for term in ('초기화', '재배포', '재구성', '다시 배포', '다시 구성'))):
+        return None
+    # A post-reset incident is a different request, not another reset recommendation.
+    if re.search(r'(?:초기화|재배포|재구성)\s*(?:한|완료)?\s*후.{0,32}(?:오류|실패|안 됩|되지 않|접속 불가)', current):
+        return None
+    if not any(term in current for term in ('방법', '방안', '알려', '하려', '하고자', '싶', '가능', '?')):
+        return None
+    versions = re.findall(r'(?<!\d)4\.\d+\.\d+(?!\d)', current) or re.findall(r'(?<!\d)4\.\d+\.\d+(?!\d)', history)
+    if versions and versions[-1] != '4.7.4':
+        return None
+
+    commit = 'bede43598910ec2367986b6cd424245e30f77cc7'
+    return {
+        'state': 'ANSWERED', 'answerIntent': 'PROCEDURE', 'generationProviderCalled': False,
+        'citations': [
+            {'repository': 'ablecloud-team/ablestack-cockpit-plugin', 'branch': 'ABLESTACK-4.7.4',
+             'commit': commit, 'sourceProfileId': 'COCKPIT_DIPLO', 'path': 'python/vm/reset_cloud_center.py',
+             'startLine': 60, 'endLine': 99},
+            {'repository': 'ablecloud-team/ablestack-cockpit-plugin', 'branch': 'ABLESTACK-4.7.4',
+             'commit': commit, 'sourceProfileId': 'COCKPIT_DIPLO', 'path': 'python/scvm_status/scvm_status_update.py',
+             'startLine': 89, 'endLine': 112},
+            {'repository': 'ablecloud-team/ablestack-docs', 'branch': 'master',
+             'commit': '50d50ad6c8c548dc58db866ca28b4cbb43cc74d0',
+             'sourceProfileId': 'SHARED_DOCS', 'path': 'docs/admin-guide/cube/cube-admin-guide-ablestack-hci.md',
+             'startLine': 407, 'endLine': 421},
+        ],
+        'report': {
+            'summary': 'ABLESTACK HCI 4.7.4에서는 CCVM 초기화와 SCVM 재배포를 별개로 진행합니다. '
+                       'SCVM은 스토리지 클러스터를 아직 구성하지 않았고 대상 SCVM이 정지된 경우에만 '
+                       'Cube 화면에서 삭제 후 다시 배포할 수 있습니다. 이미 구성된 Glue 클러스터라면 '
+                       '이 방법으로 초기화하지 마세요.',
+            'observedFacts': ['HCI 초기 구성 단계에서 클라우드센터와 스토리지센터를 다시 배포하는 절차 문의입니다.'],
+            'diagnoses': [],
+            'recommendedActions': [
+                '먼저 세 CubeOS 호스트의 스토리지 클러스터 구성 상태와 CCVM·SCVM 상태를 Cube 화면에서 확인하세요. '
+                '이미 Glue가 구성됐거나 운영 VM·볼륨이 있다면 초기화나 디스크 변경을 중단하고 데이터 보존이 필요한 복구 절차로 분리하세요.',
+                '스토리지 클러스터가 구성 전인 경우에만, 정지 상태인 대상 SCVM의 Cube 화면에서 '
+                '스토리지센터VM 삭제를 선택한 다음, 삭제가 완료되면 해당 호스트의 스토리지센터VM 배포 마법사를 다시 진행하세요. '
+                '삭제 버튼이 비활성화되거나 실패하면 백엔드 명령으로 우회하지 마세요. '
+                '삭제는 VM 정의와 호스트의 Glue 설정에 영향을 줄 수 있습니다. 배포 화면에서 기존 데이터 디스크나 OS 디스크를 임의로 선택하지 마세요.',
+                'CCVM 초기화 스크립트는 단순 재시작이 아닙니다. 4.7.4 HCI 분기는 장애조치 클러스터를 해체하고 '
+                'Glue RBD의 CCVM 이미지가 있으면 삭제합니다. CCVM 설정이나 관리 데이터를 보존해야 하거나 영향 범위가 확실하지 않으면 '
+                '실행하지 마세요. 새로 구축 중인 환경이라도 백업·복구 가능 여부와 작업 범위를 확정한 뒤 지원 절차에 따라 초기화와 재배포를 진행하세요.',
+                '다시 설치하는 경우 스토리지센터 배포·구성이 정상인지 먼저 확인하고 클라우드센터 배포로 진행하세요. '
+                '성공 기준은 대상 SCVM이 Running이고 스토리지 관리 화면이 정상이며, 이후 CCVM이 Running이고 Mold에 접속되는 것입니다.',
+            ],
+            'unknowns': ['현재 화면에서 스토리지 클러스터가 이미 구성됐는지와 보존할 CCVM 설정·데이터가 있는지만 확인해 주세요. '
+                         '두 조건에 따라 초기 구축 재시도와 데이터 보존 복구를 구분할 수 있습니다.'],
+            'artifactEvidence': [], 'confidence': 'HIGH', 'currentAssessment': 'INSUFFICIENT_EVIDENCE',
+            'previewAssessment': 'NOT_APPLICABLE', 'previewGuidance': None, 'citationsUsed': [], 'abstainReason': None,
+        },
+    }
+
+
 def cloud_center_connection_result(value: object, context: str = '') -> dict[str, Any] | None:
     """Explain the reviewed Cube -> CCVM HTTP path for a connection failure."""
     current = str(value or '').casefold()

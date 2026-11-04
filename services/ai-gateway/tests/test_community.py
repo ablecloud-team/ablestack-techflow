@@ -165,6 +165,27 @@ class CommunityTests(unittest.TestCase):
         self.assertIn('공 디스크', answer)
         self.assertNotIn('기존 LUN 데이터를 보존하는 절차를 안내', answer)
 
+    def test_hci_redeployment_followup_answers_procedure_without_provider(self):
+        store = MemoryStore()
+        first = {**self.payload(), 'discussionId': '200', 'title': 'CCVM 초기화, SCVM 초기화 방안',
+                 'question': 'ABLESTACK HCI 3노드에서 CCVM, SCVM을 다시 구성하는 방법이 있나요?',
+                 'postId': '544', 'postNumber': 1}
+        case = store.create_community_case(first, {'draftAnswer': '오류 시각을 알려주세요.',
+            'answerState': 'ABSTAINED'}, 'hci-redeploy-first', 'hci-redeploy-first')
+        store.mark_community_auto_published(case['caseId'], '오류 시각을 알려주세요.',
+            {'postId': '545', 'postUrl': 'https://community.ablecloud.io/d/200/2'}, 'hci-redeploy-old')
+        client = TestClient(create_app(Settings(), store))
+        response = client.post('/v1/community/cases', headers={**HEADERS, 'Idempotency-Key': 'hci-redeploy-followup'}, json={
+            **first, 'postId': '546', 'postNumber': 3,
+            'question': 'ABLESTACK 4.7.4 버전이며 클라우드센터와 스토리센터를 재배포하려고 합니다.',
+        })
+        self.assertEqual(201, response.status_code, response.text)
+        data = response.json()['data']
+        self.assertEqual('ANSWERED', data['answerState'])
+        self.assertIn('스토리지센터VM 삭제', data['draftAnswer'])
+        self.assertIn('python/vm/reset_cloud_center.py', {citation['path'] for citation in data['citations']})
+        self.assertNotIn('오류 시각을 알려', data['draftAnswer'])
+
     def test_in_place_kb_correction_updates_its_existing_assistant_turn(self):
         store = MemoryStore()
         first = {**self.payload(), 'postId': '100', 'postNumber': 1}
