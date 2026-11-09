@@ -906,6 +906,8 @@ def format_knowledge_base(result: dict[str, Any]) -> str | None:
     citations = result.get("citations") or []
     lines: list[str] = []
     procedure = result.get('answerIntent') == 'PROCEDURE'
+    recommendation_only = bool(result.get('recommendationOnly')) and not procedure
+    action_heading = '확인 및 조치 제안' if recommendation_only else '해결 방법'
 
     symptom_candidates = _section_values(report.get("observedFacts") or [], citations)
     symptom_values = symptom_candidates if procedure else [value for value in symptom_candidates if _is_user_observed_symptom(value)]
@@ -927,13 +929,16 @@ def format_knowledge_base(result: dict[str, Any]) -> str | None:
         ]
     else:
         cause_values = [*causal_artifact_findings, *cause_values]
+    if recommendation_only:
+        cause_values = ['선택된 답변은 조치 제안입니다. 답변 선택 자체는 실제 원인이나 조치 후 결과를 확인한 근거가 아닙니다.']
+        contextual_artifact_findings = artifact_findings
     for heading, values, empty_message in (
         ("요청 및 현재 상태" if procedure else "증상", symptom_values, "요청 범위 확인이 필요합니다." if procedure else "확인된 증상 정보가 없습니다."),
         ("절차 판단" if procedure else "원인", cause_values, "현재 근거에서 확인된 원인은 없습니다."),
-        ("해결 방법", action_values, "추가 정보를 확인한 뒤 해결 방법을 결정해야 합니다."),
+        (action_heading, action_values, "추가 정보를 확인한 뒤 해결 방법을 결정해야 합니다."),
     ):
         lines.extend(["", f"### {heading}"])
-        lines.extend(f"- {_format_copyable_cli(value) if heading == '해결 방법' else value}" for value in values or [empty_message])
+        lines.extend(f"- {_format_copyable_cli(value) if heading == action_heading else value}" for value in values or [empty_message])
     information_requests: list[str] = []
     considerations: list[str] = list(contextual_artifact_findings)
     attachment_failure_recorded = bool(result.get("attachmentFailureRecorded"))
@@ -952,7 +957,7 @@ def format_knowledge_base(result: dict[str, Any]) -> str | None:
         elif clean not in considerations:
             considerations.append(clean)
     if information_requests:
-        insertion = lines.index("### 해결 방법")
+        insertion = lines.index(f"### {action_heading}")
         lines[insertion:insertion] = [
             "### 추가로 필요한 정보",
             *(f"- {value}" for value in information_requests),

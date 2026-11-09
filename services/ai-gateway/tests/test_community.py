@@ -125,6 +125,36 @@ class CommunityTests(unittest.TestCase):
         publish.assert_called_once()
         select.assert_called_once_with('901', '600')
 
+    def test_kb_resolution_route_keeps_selected_advice_unconfirmed(self):
+        store = MemoryStore()
+        initial = {**self.payload(), 'discussionId': '203', 'title': 'Windows 11 설치',
+                   'question': 'Diplo 4.3에서 Windows 11 설치가 막힙니다.', 'postId': '553', 'postNumber': 1}
+        store.create_community_case(initial, {'draftAnswer': '설정 확인', 'answerState': 'ANSWERED'}, 'win11-initial', 'win11-initial')
+        store.record_community_turn({**initial, 'postId': '557', 'postNumber': 5, 'postAuthorId': '21',
+            'turnRole': 'STAFF', 'question': 'TPM도 활성화해서 설치하세요.'}, 'win11-staff', 'win11-staff')
+        flarum = FlarumClient('http://forum', 'https://forum', None, True)
+        settings = Settings(community_auto_publish_enabled=True, community_publish_enabled=True,
+            flarum_api_key_file='/unused/key', flarum_assistant_user_id_file='/unused/assistant',
+            flarum_solution_selector_user_id_file='/unused/selector')
+        client = TestClient(create_app(settings, store, flarum_client_instance=flarum))
+        synthesis = {'state': 'ANSWERED', 'report': {
+            'observedFacts': ['Windows 11 설치 오류가 표시됩니다.'],
+            'diagnoses': ['TPM 2.0이 비활성화됐습니다.'], 'recommendedActions': ['TPM Version 2.0을 선택합니다.']}}
+        with patch.object(flarum, 'resolution_selected_by_administrator', return_value=True), \
+                patch.object(flarum, 'visible_post_ids', return_value={'553', '557'}), \
+                patch.object(flarum, 'visible_post_content', return_value='TPM도 활성화해서 설치하세요.'), \
+                patch('app.main.reinstall_reset_result', return_value=synthesis), \
+                patch.object(flarum, 'publish_assistant_reply', return_value={'postId': '558', 'postUrl': 'https://forum/d/203/6'}) as publish, \
+                patch.object(flarum, 'select_solution', return_value={'postId': '558', 'selectedByUserId': '1'}) as select:
+            response = client.post('/v1/community/cases', headers=HEADERS, json={**initial,
+                'discussionUrl': 'https://community.ablecloud.io/d/203', 'resolutionOnly': True, 'responseRequested': False,
+                'bestAnswerPostId': '557', 'bestAnswerUserId': '12'})
+        self.assertEqual(201, response.status_code, response.text)
+        self.assertEqual('558', response.json()['data']['knowledgeBasePostId'])
+        self.assertIn('### 확인 및 조치 제안', publish.call_args.args[1])
+        self.assertNotIn('비활성화됐습니다', publish.call_args.args[1])
+        select.assert_called_once_with('203', '558')
+
     def test_withdrawn_queued_source_does_not_generate_or_persist_a_case(self):
         store = MemoryStore()
         flarum = FlarumClient('http://forum', 'https://forum', None, True)
