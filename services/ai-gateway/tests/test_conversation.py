@@ -27,6 +27,7 @@ from app.conversation import (
     ccvm_storage_security_result,
     infer_reinstall_goal,
     reinstall_reset_result,
+    hci_center_redeployment_result,
 )
 from app.embedding import MAX_INPUT_BYTES, validate_inputs
 from app.models import CommunityCaseCreateRequest, ComprehensiveQueryRequest, ComprehensiveSynthesisRequest
@@ -35,6 +36,28 @@ from app.versioned_assist import format_public_answer, format_knowledge_base
 
 
 class ConversationProgressionTest(unittest.TestCase):
+    def test_hci_center_redeployment_answers_initial_and_clarifying_requests(self):
+        initial = 'ABLESTACK HCI 3노드에서 CCVM과 SCVM을 초기화하고 다시 구성하는 방법을 알려주세요.'
+        followup = 'ABLESTACK 4.7.4 버전이며, 클라우드센터와 스토리센터를 다시 재배포하려고 합니다.'
+        turns = [{'role': 'REQUESTER', 'content': initial},
+                 {'role': 'ASSISTANT', 'content': '버전과 오류 시각을 알려주세요.'}]
+        for result in (hci_center_redeployment_result(initial), hci_center_redeployment_result(followup, turns)):
+            self.assertEqual('PROCEDURE', result['answerIntent'])
+            answer = format_public_answer(result)
+            for expected in ('구성 전', '스토리지센터VM 삭제', '백엔드 명령으로 우회하지', 'Glue RBD', 'Mold에 접속'):
+                self.assertIn(expected, answer)
+            for excluded in ('rbd rm', 'virsh destroy', 'rm -rf', '오류 시각을 알려'):
+                self.assertNotIn(excluded, answer)
+            self.assertEqual((), community_actionability_issues(result))
+            self.assertTrue(community_result_advances(result, turns))
+
+    def test_hci_center_redeployment_does_not_reuse_unrelated_context_or_version(self):
+        initial = 'ABLESTACK HCI의 CCVM과 SCVM을 초기화하는 방법을 알려주세요.'
+        for question in ('SCVM 재배포 후 오류가 납니다. 해결 방법?', 'SCVM 재배포 방법은? 버전 4.7.2입니다.',
+                         'CCVM 접속이 안 됩니다. 로그는 어디인가요?'):
+            self.assertIsNone(hci_center_redeployment_result(question, [{'role': 'REQUESTER', 'content': initial}]))
+        self.assertIsNone(hci_center_redeployment_result('SCVM 초기화 방법?', [{'role': 'ASSISTANT', 'content': initial}]))
+
     def test_explicit_requester_reset_goal_survives_assistant_preservation_advice(self):
         turns = [
             {'role': 'REQUESTER', 'content': 'VM Cube를 재설치하고 싶습니다.'},
