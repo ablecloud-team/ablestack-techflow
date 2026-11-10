@@ -9,6 +9,8 @@ from app.conversation import (
     build_conversation_question,
     build_chat_question,
     build_knowledge_base_question,
+    selected_resolution_is_unverified_recommendation,
+    windows11_diplo43_tpm_result,
     build_progression_retry_question,
     community_actionability_issues,
     community_result_advances,
@@ -647,6 +649,32 @@ class ConversationProgressionTest(unittest.TestCase):
 
         self.assertIn(ACTIONABILITY_RETRY_INSTRUCTION, prompt)
         self.assertTrue(prompt.endswith("missing-access-example, missing-log-source"))
+
+    def test_win11_tpm_guidance_uses_explicit_43_context_without_guessing_failure(self):
+        initial = 'Ablestack Diplo 4.3버전에서 Windows 11을 설치 중인데 지원하지 않는 걸까요?'
+        turns = [{'role': 'REQUESTER', 'content': initial},
+                 {'role': 'ASSISTANT', 'content': 'TPM이 필요한지 확인할 수 없습니다.'}]
+        for result in (windows11_diplo43_tpm_result(initial), windows11_diplo43_tpm_result('TPM도 활성화해야하나요?', turns)):
+            answer = format_public_answer(result)
+            for expected in ('가상 TPM 2.0이 필요', 'TPM Version 2.0', '고급 설정 표시', 'SECURE', '64GB', '100GB', '알 수 없습니다'):
+                self.assertIn(expected, answer)
+            self.assertTrue(community_result_advances(result, turns))
+            self.assertEqual((), community_actionability_issues(result))
+        self.assertIsNone(windows11_diplo43_tpm_result('TPM 설정 방법? Diplo 4.7.4입니다.', turns))
+        self.assertIsNone(windows11_diplo43_tpm_result('VirtIO 드라이버를 어디서 구하나요?', turns))
+        self.assertIsNone(windows11_diplo43_tpm_result('TPM은 활성화해야 하나요?', turns[1:]))
+
+    def test_selected_tpm_advice_is_not_confirmation_even_when_assistant_guesses(self):
+        turns = [{'role': 'REQUESTER', 'sourcePostId': '553', 'postNumber': 1, 'content': 'Windows 11 설치가 막혔습니다.'},
+                 {'role': 'STAFF', 'sourcePostId': '557', 'postNumber': 5, 'content': 'TPM도 활성화해서 설치하세요.'},
+                 {'role': 'ASSISTANT', 'sourcePostId': '558', 'postNumber': 6, 'content': '문제가 해결되었습니다.'}]
+        self.assertTrue(selected_resolution_is_unverified_recommendation(turns, '557'))
+        self.assertIn('선택은 조치 시행이나 성공을 증명하지 않습니다',
+                      build_knowledge_base_question('Windows 11 설치', turns, '557'))
+        self.assertTrue(selected_resolution_is_unverified_recommendation(
+            [*turns, {'role': 'REQUESTER', 'content': 'TPM을 켜면 설치가 완료됐다고 볼 수 있나요?'}], '557'))
+        self.assertFalse(selected_resolution_is_unverified_recommendation(
+            [*turns, {'role': 'REQUESTER', 'content': 'TPM을 켜고 설치가 완료됐습니다.'}], '557'))
 
     def test_knowledge_base_prompt_preserves_selected_solution_within_model_limit(self) -> None:
         turns = [

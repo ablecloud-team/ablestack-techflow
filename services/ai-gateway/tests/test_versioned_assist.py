@@ -784,6 +784,17 @@ class VersionedAssistPolicyTest(unittest.TestCase):
         self.assertIn("가상머신 실행 프로그램(QEMU)", cause)
         self.assertNotIn("라이브 마이그레이션", cause)
 
+    def test_kb_does_not_turn_unverified_selected_recommendation_into_a_cause(self):
+        kb = format_knowledge_base({'state': 'ANSWERED', 'recommendationOnly': True, 'report': {
+            'observedFacts': ['Windows 11 설치 중 요구 사항 미충족 오류가 표시됩니다.'],
+            'diagnoses': ['Windows 11 VM의 TPM 2.0 설정이 활성화되지 않았습니다.'],
+            'recommendedActions': ['TPM Version 2.0을 선택합니다.'],
+            'unknowns': ['설치 결과 확인이 필요합니다.']}})
+        self.assertIn('### 확인 및 조치 제안', kb)
+        self.assertIn('답변 선택 자체는 실제 원인이나 조치 후 결과를 확인한 근거가 아닙니다', kb)
+        self.assertIn('TPM Version 2.0을 선택', kb)
+        self.assertNotIn('활성화되지 않았습니다', kb)
+
     def test_shutdown_and_failed_boot_observations_are_not_dropped_from_kb(self):
         for observation in (
             '3노드의 SCVM이 GRUB 화면에서 계속 셧다운됩니다.',

@@ -355,6 +355,70 @@ def standalone_kvm_import_result(value: object) -> dict[str, Any] | None:
     }
 
 
+def windows11_diplo43_tpm_result(value: object, prior_turns: Iterable[dict[str, Any]] = ()) -> dict[str, Any] | None:
+    """Keep Windows requirements separate from a released Mold capability and an observed failure."""
+    current = str(value or '').casefold()
+    history = '\n'.join(str(turn.get('content') or '').casefold() for turn in prior_turns
+                        if turn.get('role') == 'REQUESTER')
+    context = current + '\n' + history
+    windows11 = r'(?:windows|윈도우(?:즈)?)\s*11(?!\d)'
+    versions = re.findall(r'(?<![\d.])4\.\d+(?:\.\d+)?(?![\d.])', current) or re.findall(
+        r'(?<![\d.])4\.\d+(?:\.\d+)?(?![\d.])', history,
+    )
+    if (not re.search(windows11, context) or not versions or versions[-1] not in {'4.3', '4.3.0', '4.3.1', '4.3.2'}
+            or not any(term in context for term in ('diplo', '디플로', 'ablestack', '에이블스택', 'mold', '몰드'))):
+        return None
+    if any(term in context for term in ('vmware', 'xenserver', 'hyper-v')):
+        return None
+    if any(term in current for term in ('디스크가 보이지', '디스크가 안 보', '스토리지 드라이버', 'virtio', 'bitlocker', '비트로커')):
+        return None
+    if not ('tpm' in current or (re.search(windows11, current) and any(term in current for term in (
+        '지원', '최소', '요구 사항', '요구사항', '실행할 수 없',
+    )))):
+        return None
+    if not any(term in current for term in ('?', '나요', '까요', '알려', '방법', '문의', '확인')):
+        return None
+
+    commit = 'b58a48992685d16b61f07e66c04b8c0bad4219b9'
+    return {
+        'state': 'ANSWERED', 'answerIntent': 'PROCEDURE', 'generationProviderCalled': False,
+        'citations': [
+            {'repository': 'ablecloud-team/ablestack-cloud', 'branch': 'ABLESTACK-4.3.0', 'commit': commit,
+             'sourceProfileId': 'CLOUD_DIPLO', 'path': 'ui/src/views/compute/DeployVM.vue',
+             'startLine': 583, 'endLine': 628},
+            {'repository': 'ablecloud-team/ablestack-cloud', 'branch': 'ABLESTACK-4.3.0', 'commit': commit,
+             'sourceProfileId': 'CLOUD_DIPLO', 'path': 'ui/src/views/compute/DeployVM.vue',
+             'startLine': 1874, 'endLine': 1878},
+            {'repository': 'ablecloud-team/ablestack-docs', 'branch': 'master',
+             'commit': '50d50ad6c8c548dc58db866ca28b4cbb43cc74d0', 'sourceProfileId': 'SHARED_DOCS',
+             'path': 'docs/userGuide/vms/windows-guide-prepare-vm.md', 'startLine': 183, 'endLine': 211},
+            {'repository': 'OFFICIAL_EXTERNAL_DOCUMENTATION', 'sourceProfileId': 'CURATED_PLATFORM_REFERENCE',
+             'sourceKind': 'OFFICIAL_EXTERNAL_DOCUMENTATION',
+             'sourceLocator': 'https://learn.microsoft.com/en-us/windows/whats-new/windows-11-requirements',
+             'path': 'Windows 11 requirements'},
+        ],
+        'report': {
+            'summary': 'Windows 11을 공식 요구 사항에 맞춰 설치하려면 VM에 가상 TPM 2.0이 필요합니다. '
+                       'Diplo 4.3 계열의 Mold/KVM VM 생성 마법사에는 TPM Version 2.0 옵션이 있습니다. '
+                       '다만 설치 프로그램의 일반적인 최소 요구 사항 메시지만으로 TPM이 실제로 꺼져 있었는지, '
+                       '또는 TPM만 바꾸면 해결되는지는 알 수 없습니다.',
+            'observedFacts': [], 'diagnoses': [], 'artifactEvidence': [],
+            'recommendedActions': [
+                'Mold의 컴퓨트 → 가상머신 → 가상머신 추가에서 Windows 11 ISO를 선택한 뒤 '
+                '확장 모드 → 고급 설정 표시에서 TPM Version 2.0, 부팅 유형 EFI(UEFI), 부팅 모드 SECURE를 선택하세요.',
+                '컴퓨트 오퍼링에서 호환되는 CPU와 vCPU 2개 이상, 메모리 4GB 이상을 확인하세요. '
+                'Windows 11의 저장 공간 최소 요구 사항은 64GB이고, Mold 설치 가이드의 디스크 오퍼링 기준은 100GB 이상입니다.',
+                '설치 화면에서 같은 오류 없이 다음 단계로 진행되는지 확인하세요. '
+                '이미 쓰고 있는 VM의 펌웨어를 임의로 바꾸거나 기존 VM·디스크를 삭제하지 마세요.',
+            ],
+            'unknowns': ['TPM 옵션이 보이지 않거나 설정 후에도 계속 막히면, '
+                         '실제 4.3.x 빌드와 TPM·EFI/SECURE·vCPU·메모리·디스크 설정을 확인해 주세요.'],
+            'confidence': 'HIGH', 'currentAssessment': 'INSUFFICIENT_EVIDENCE',
+            'previewAssessment': 'NOT_APPLICABLE', 'previewGuidance': None, 'citationsUsed': [], 'abstainReason': None,
+        },
+    }
+
+
 def snapshot_memory_support_result(value: object, context: str = '') -> dict[str, Any] | None:
     """Explain the reviewed KVM strategy rejection without replacing memory with disk-only goals."""
     current = str(value or '').casefold()
@@ -1305,6 +1369,29 @@ def community_result_advances(result: dict[str, Any], turns: Iterable[dict[str, 
     return False
 
 
+def selected_resolution_is_unverified_recommendation(
+    turns: Iterable[dict[str, Any]], resolved_post_id: str,
+) -> bool:
+    """A short instruction marked as best answer is not evidence that anyone tried it."""
+    rows = list(turns)
+    selected = next((row for row in rows if str(row.get('sourcePostId')) == resolved_post_id), {})
+    text = str(selected.get('content') or '').strip()
+    if len(text) > 320 or not re.search(r'하세요|하십시오|해\s*보세요|해\s*주세요|바랍니다', text):
+        return False
+    for row in rows:
+        if row.get('role') not in {'REQUESTER', 'STAFF'}:
+            continue
+        body = str(row.get('content') or '').strip()
+        if not body or '?' in body or any(pattern.search(body) for pattern in _UNRESOLVED_UPDATE_PATTERNS):
+            continue
+        if is_resolution_progress_update(body) or re.search(
+            r'(?:설치|부팅|배포|구성|접속|작업)(?:가|이|을|를)?\s*(?:정상적으로\s*)?(?:완료됐|완료되었|완료했|됐습니다|되었습니다|성공했)',
+            body,
+        ):
+            return False
+    return True
+
+
 def build_knowledge_base_question(
     title: str,
     turns: Iterable[dict[str, Any]],
@@ -1332,6 +1419,7 @@ def build_knowledge_base_question(
     instruction = (
         "[최종 Knowledge Base 작성 지침]\n"
         "포럼에서 해결 답변으로 선택한 내용과 질문자의 후속 확인을 중심으로 전체 대화를 종합하십시오. "
+        "해결 답변의 선택은 조치 시행이나 성공을 증명하지 않습니다. 조치 후 결과가 보고되지 않았다면 제안으로만 적으십시오. "
         "확인되지 않은 추측이나 대화 중 폐기된 가설은 최종 해결책으로 쓰지 마십시오. "
         "증상에는 사용자가 겪은 현상만, 원인에는 확인된 원인만, 해결 방법에는 실제 해결에 기여한 조치만 배치하십시오. "
         "적용 버전에는 이 해결 방법을 실제 적용해도 되는 ABLESTACK 제품 버전만 적으십시오. "
@@ -1344,7 +1432,7 @@ def build_knowledge_base_question(
                  if goal == 'RESET' else '질문자는 기존 데이터를 보존한 재설치를 원합니다.' if goal == 'PRESERVE' else '')
     if goal_note:
         goal_note = '[질문자가 명시한 목표]\n' + goal_note + ' 절차 안내와 실제 작업 완료는 구분하십시오.\n\n'
-    prefix = f"[Community 해결 완료 주제]\n{title[:200]}\n\n{goal_note}{selected_section}\n\n[전체 대화]\n"
+    prefix = f"[Community 해결 답변 선택 주제]\n{title[:200]}\n\n{goal_note}{selected_section}\n\n[전체 대화]\n"
     suffix = f"\n\n{instruction}"
     if len(prefix) + len(suffix) > limit:
         raise ValueError("knowledge base selected solution and instruction exceed the question limit")

@@ -74,6 +74,8 @@ from .conversation import (
     build_conversation_question,
     build_chat_question,
     build_knowledge_base_question,
+    selected_resolution_is_unverified_recommendation,
+    windows11_diplo43_tpm_result,
     build_progression_retry_question,
     community_actionability_issues,
     community_result_advances,
@@ -912,6 +914,9 @@ def create_app(
                     knowledge_result["attachmentFailureRecorded"] = any(
                         "[첨부 처리 안내]" in str(turn.get("content") or "") for turn in turns
                     )
+                    knowledge_result['recommendationOnly'] = selected_resolution_is_unverified_recommendation(
+                        turns, str(result['resolvedPostId']),
+                    )
                     knowledge_answer = format_knowledge_base(knowledge_result)
                     if knowledge_result.get("state") == "FAILED" or not knowledge_answer:
                         raise HTTPException(
@@ -1077,6 +1082,8 @@ def create_app(
                 result = sync_account_hardening_result(request.question, conversation_question)
             if result is None:
                 result = storage_preserving_reinstall_result(request.question, conversation_question, primary_goal=reinstall_goal)
+            if result is None:
+                result = windows11_diplo43_tpm_result(request.question, turns)
             if result is None:
                 result = snapshot_memory_support_result(request.question, conversation_question)
             if result is None:
