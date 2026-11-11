@@ -218,6 +218,24 @@ def is_resolution_progress_update(value: object) -> bool:
     return any(marker in normalized for marker in _RESOLUTION_UPDATE_MARKERS)
 
 
+def is_confirmed_resolution_report(value: object) -> bool:
+    """Recognize an affirmative human outcome, not a question, quotation or proposed fix."""
+    text = re.sub(r'```.*?```|\[quote[^\]]*\].*?\[/quote\]|<blockquote\b[^>]*>.*?</blockquote>',
+                  '', str(value or ''), flags=re.S | re.I)
+    text = '\n'.join(line for line in text.splitlines() if not line.lstrip().startswith('>'))
+    if any(pattern.search(text) for pattern in _UNRESOLVED_UPDATE_PATTERNS):
+        return False
+    for sentence in re.split(r'(?<=[.!?。])\s+|[\r\n]+', text):
+        if re.search(r'\?|나요|까요|가능성|추측|예상|하세요|십시오|해\s*보세요|바랍니다|(?:하면|한다면)', sentence):
+            continue
+        if is_resolution_progress_update(sentence) or re.search(
+            r'(?:설치|구성|부팅|배포|접속|작업)(?:가|이|을|를)?\s*(?:정상적으로\s*)?(?:잘\s*)?'
+            r'(?:되었습니다|됐습니다|완료됐습니다|완료되었습니다|완료했습니다|성공했습니다)', sentence,
+        ):
+            return True
+    return False
+
+
 def resolution_progress_result(value: object) -> dict[str, Any] | None:
     """Return a deterministic, source-safe follow-up for a confirmed successful outcome."""
     if not is_resolution_progress_update(value):
@@ -1398,6 +1416,7 @@ def build_knowledge_base_question(
     resolved_post_id: str,
     *,
     limit: int = 16000,
+    update_post_id: str | None = None,
 ) -> str:
     """Build a bounded final synthesis prompt that always preserves the selected solution."""
     rows = sorted(
@@ -1416,6 +1435,18 @@ def build_knowledge_base_question(
         "[포럼에서 선택한 해결 답변]\n"
         f"- #{selected_number} {selected_label}: {selected_content}"
     )
+    update_section = ''
+    if update_post_id:
+        update = next((item for item in rows if str(item.get('sourcePostId')) == update_post_id
+                       and item.get('role') in {'REQUESTER', 'STAFF'}), None)
+        if not update or not is_confirmed_resolution_report(update.get('content')):
+            raise ValueError('KB update requires a visible human outcome in the supplied history')
+        update_section = (
+            '[선택 이후 추가된 사람의 해결 보고]\n'
+            f"- #{update.get('postNumber') or '-'} {ROLE_LABELS[update['role']]}: {str(update.get('content') or '')[:1800]}\n"
+            '이 보고를 기존 KB보다 우선 검토해 폐기된 원인·조치를 바로잡으십시오. 보고한 사람과 질문자를 구분하고, '
+            '일부 환경의 해결 결과를 제품 전체의 필수 조건으로 일반화하지 마십시오.\n\n'
+        )
     instruction = (
         "[최종 Knowledge Base 작성 지침]\n"
         "포럼에서 해결 답변으로 선택한 내용과 질문자의 후속 확인을 중심으로 전체 대화를 종합하십시오. "
@@ -1432,7 +1463,7 @@ def build_knowledge_base_question(
                  if goal == 'RESET' else '질문자는 기존 데이터를 보존한 재설치를 원합니다.' if goal == 'PRESERVE' else '')
     if goal_note:
         goal_note = '[질문자가 명시한 목표]\n' + goal_note + ' 절차 안내와 실제 작업 완료는 구분하십시오.\n\n'
-    prefix = f"[Community 해결 답변 선택 주제]\n{title[:200]}\n\n{goal_note}{selected_section}\n\n[전체 대화]\n"
+    prefix = f"[Community 해결 답변 선택 주제]\n{title[:200]}\n\n{goal_note}{selected_section}\n\n{update_section}[전체 대화]\n"
     suffix = f"\n\n{instruction}"
     if len(prefix) + len(suffix) > limit:
         raise ValueError("knowledge base selected solution and instruction exceed the question limit")

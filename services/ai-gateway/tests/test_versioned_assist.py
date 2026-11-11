@@ -24,11 +24,18 @@ from app.versioned_assist import (
     normalize_public_brand_names,
     select_context_results,
     versioned_plan,
+    _query_terms,
 )
 from app.platform_references import curated_platform_results
 
 
 class VersionedAssistPolicyTest(unittest.TestCase):
+    def test_kb_envelope_does_not_suppress_actual_korean_solution_terms(self):
+        terms = _query_terms('[Community 해결 답변 선택 주제] GFS 스토리지 구성 오류 [최종 Knowledge Base] 멀티패스 미설정')
+        self.assertIn('멀티패스', terms)
+        self.assertIn('스토리지', terms)
+        self.assertFalse(terms & {'community', 'knowledge', 'base'})
+
     def test_host_reinstall_uses_vm_installation_docs_not_console_code(self):
         question = 'Mold ABLESTACK 서버 VM Cube 재설치와 공유 LUN 초기화 절차'
         self.assertNotIn('console proxy', feature_source_terms(question))

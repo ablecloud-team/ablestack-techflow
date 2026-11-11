@@ -101,7 +101,8 @@ class Store(Protocol):
     def mark_community_review_missing(self, case_id: UUID, idempotency_key: str) -> dict[str, Any]: ...
     def mark_community_published(self, case_id: UUID, publication: dict[str, Any], idempotency_key: str) -> dict[str, Any]: ...
     def mark_community_auto_published(self, case_id: UUID, answer: str, publication: dict[str, Any], idempotency_key: str, *, correction_evidence: dict[str, Any] | None = None) -> dict[str, Any]: ...
-    def mark_community_knowledge_published(self, case_id: UUID, answer: str, publication: dict[str, Any], idempotency_key: str) -> dict[str, Any]: ...
+    def mark_community_knowledge_published(self, case_id: UUID, answer: str, publication: dict[str, Any], idempotency_key: str, *, revision_source: dict[str, Any] | None = None) -> dict[str, Any]: ...
+    def cancel_community_knowledge_refresh(self, case_id: UUID, source_post_id: str, correlation_id: str) -> dict[str, Any]: ...
     def mark_community_knowledge_solution_selected(self, case_id: UUID, selection: dict[str, Any], idempotency_key: str) -> dict[str, Any]: ...
     def upsert_chat_reviewer(self, user_id: str, username: str) -> dict[str, Any]: ...
     def list_chat_reviewers(self) -> list[dict[str, Any]]: ...
@@ -775,6 +776,9 @@ class MemoryStore:
                     return self._remember("create_community_case", idempotency_key, existing)
                 turn = self._append_memory_turn(case_id, request, correlation_id)
                 was_resolved = value.get("conversationState") == "RESOLVED"
+                if was_resolved:
+                    value['knowledgeBaseRefresh'] = None
+                    value['knowledgeBaseRevision'] = None
                 value.update(
                     state="DRAFT_PENDING",
                     conversationState=conversation_state_for_draft(draft),
@@ -932,7 +936,7 @@ class MemoryStore:
         self, request: dict[str, Any], idempotency_key: str, correlation_id: str
     ) -> dict[str, Any]:
         with self._lock:
-            if repeated := self._repeat("record_community_turn", idempotency_key):
+            if not request.get('knowledgeBaseRefresh') and (repeated := self._repeat("record_community_turn", idempotency_key)):
                 repeated["turnCreated"] = False
                 return repeated
             case_id = self._community_by_discussion.get(request["discussionId"])
@@ -940,17 +944,30 @@ class MemoryStore:
                 raise NotFoundError("community conversation not found")
             value = self._community_cases[case_id]
             post_id = source_post_id(request)
+            refresh = request.get('knowledgeBaseRefresh')
+            if refresh:
+                value['knowledgeBaseRefresh'] = deepcopy(refresh)
             if any(item["sourcePostId"] == post_id for item in self._community_turns.get(case_id, [])):
+                if refresh:
+                    for item in self._community_turns[case_id]:
+                        if item['sourcePostId'] == post_id:
+                            item['content'] = request.get('question') or ''
+                            item.update(role=request.get('turnRole') or item['role'],
+                                        authorUserId=request.get('postAuthorId') or item['authorUserId'],
+                                        postNumber=request.get('postNumber') or item['postNumber'])
                 result = deepcopy(value)
                 result["turnCreated"] = False
                 return self._remember("record_community_turn", idempotency_key, result)
             turn = self._append_memory_turn(case_id, request, correlation_id)
-            reopened = value.get("conversationState") == "RESOLVED" and turn["role"] == "REQUESTER"
+            reopened = (value.get("conversationState") == "RESOLVED" and turn["role"] == "REQUESTER"
+                        and not request.get('preserveResolution'))
             value.update(
                 lastSeenPostId=post_id, contextVersion=value.get("contextVersion", 0) + 1,
                 updatedAt=utc_now(),
             )
             if reopened:
+                value['knowledgeBaseRefresh'] = None
+                value['knowledgeBaseRevision'] = None
                 value.update(
                     conversationState="ANALYZING", resolvedPostId=None, resolvedByUserId=None,
                     resolvedAt=None, reopenedAt=value["updatedAt"], knowledgeBasePostId=None,
@@ -1031,6 +1048,9 @@ class MemoryStore:
                 changed = False
                 event_type = "RESOLUTION_UNCHANGED"
             if changed:
+                if value.get('conversationState') != 'RESOLVED' or event_type != KB_SOLUTION_CONFIRMED_EVENT:
+                    value['knowledgeBaseRefresh'] = None
+                    value['knowledgeBaseRevision'] = None
                 self._community_events.append({
                     "caseId": case_id, "eventType": event_type, "actor": f"flarum:{best_user or requester or 'unknown'}",
                     "createdAt": now, "details": {
@@ -1251,7 +1271,8 @@ class MemoryStore:
             return self._remember("auto_publish_community_case", idempotency_key, value)
 
     def mark_community_knowledge_published(
-        self, case_id: UUID, answer: str, publication: dict[str, Any], idempotency_key: str
+        self, case_id: UUID, answer: str, publication: dict[str, Any], idempotency_key: str,
+        *, revision_source: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         with self._lock:
             if repeated := self._repeat("publish_community_knowledge", idempotency_key):
@@ -1262,6 +1283,8 @@ class MemoryStore:
             if value.get("conversationState") != "RESOLVED" or not value.get("resolvedPostId"):
                 raise InvalidStateError("knowledge base publication requires a requester or administrator resolution")
             now = utc_now()
+            if revision_source:
+                value['knowledgeBaseRevision'] = deepcopy(revision_source)
             value.update(
                 knowledgeBasePostId=publication["postId"], knowledgeBasePostUrl=publication["postUrl"],
                 knowledgeBaseSourcePostId=value["resolvedPostId"], knowledgeBaseAnswer=answer,
@@ -1298,11 +1321,24 @@ class MemoryStore:
                 knowledgeBaseSolutionSelectedByUserId=selection.get("selectedByUserId"),
                 updatedAt=now,
             )
+            if (value.get('knowledgeBaseRefresh') and value.get('knowledgeBaseRefresh') == value.get('knowledgeBaseRevision')):
+                value['knowledgeBaseRefresh'] = None
             self._community_events.append({
                 "caseId": case_id, "eventType": "KNOWLEDGE_BASE_SOLUTION_SELECTED",
                 "actor": "techflow-integration", "createdAt": now, "details": deepcopy(selection),
             })
             return self._remember("select_community_knowledge_solution", idempotency_key, value)
+
+    def cancel_community_knowledge_refresh(self, case_id: UUID, source_post_id: str, correlation_id: str) -> dict[str, Any]:
+        with self._lock:
+            value = self._community_cases.get(case_id)
+            if not value:
+                raise NotFoundError('community case not found')
+            if str((value.get('knowledgeBaseRefresh') or {}).get('postId')) == source_post_id:
+                value['knowledgeBaseRefresh'] = None
+                self._community_events.append({'caseId': case_id, 'eventType': 'KB_REFRESH_CANCELLED',
+                    'actor': 'techflow', 'createdAt': utc_now(), 'details': {'sourcePostId': source_post_id}})
+            return deepcopy(value)
 
     def upsert_chat_reviewer(self, user_id: str, username: str) -> dict[str, Any]:
         with self._lock:

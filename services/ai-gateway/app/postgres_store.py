@@ -1131,6 +1131,8 @@ class PostgresStore:
             "knowledgeBasePublishedAt": row.get("knowledge_base_published_at"),
             "knowledgeBaseSolutionSelectedAt": row.get("knowledge_base_solution_selected_at"),
             "knowledgeBaseSolutionSelectedByUserId": row.get("knowledge_base_solution_selected_by_user_id"),
+            "knowledgeBaseRefresh": (row.get('source_metadata') or {}).get('knowledgeBaseRefresh'),
+            "knowledgeBaseRevision": (row.get('source_metadata') or {}).get('knowledgeBaseRevision'),
             "correlationId": row["correlation_id"], "createdAt": row["created_at"], "updatedAt": row["updated_at"],
         }
 
@@ -1169,6 +1171,9 @@ class PostgresStore:
                 draft_version = row["draft_version"] + 1
                 was_resolved = row.get("conversation_state") == "RESOLVED"
                 metadata = dict(row.get("source_metadata") or {})
+                if was_resolved:
+                    metadata.pop('knowledgeBaseRefresh', None)
+                    metadata.pop('knowledgeBaseRevision', None)
                 metadata["evidenceLedger"] = draft.get("evidenceLedger") or {}
                 updated = connection.execute(
                     """UPDATE community_case SET state='DRAFT_PENDING',conversation_state=%s,
@@ -1341,6 +1346,10 @@ class PostgresStore:
             if not row:
                 raise NotFoundError("community conversation not found")
             post_id = source_post_id(request)
+            metadata = dict(row.get('source_metadata') or {})
+            refresh = request.get('knowledgeBaseRefresh')
+            if refresh:
+                metadata['knowledgeBaseRefresh'] = refresh
             inserted = connection.execute(
                 """INSERT INTO community_turn
                    (id,case_id,source_post_id,post_number,author_user_id,role,content,artifact_ids,correlation_id)
@@ -1352,10 +1361,20 @@ class PostgresStore:
                  correlation_id),
             ).fetchone()
             if not inserted:
+                if refresh:
+                    connection.execute('UPDATE community_turn SET content=%s,role=%s,author_user_id=%s,post_number=%s WHERE case_id=%s AND source_post_id=%s',
+                                       (request.get('question') or '', request.get('turnRole') or 'STAFF',
+                                        request.get('postAuthorId') or request['authorId'], request.get('postNumber'), row['id'], post_id))
+                    row = connection.execute('UPDATE community_case SET source_metadata=%s,updated_at=now() WHERE id=%s RETURNING *',
+                                             (json.dumps(metadata), row['id'])).fetchone()
                 result = self._community_payload(row)
                 result["turnCreated"] = False
                 return result
-            reopened = row.get("conversation_state") == "RESOLVED" and request.get("turnRole") == "REQUESTER"
+            reopened = (row.get("conversation_state") == "RESOLVED" and request.get("turnRole") == "REQUESTER"
+                        and not request.get('preserveResolution'))
+            if reopened:
+                metadata.pop('knowledgeBaseRefresh', None)
+                metadata.pop('knowledgeBaseRevision', None)
             updated = connection.execute(
                 """UPDATE community_case SET last_seen_post_id=%s,context_version=context_version+1,
                    conversation_state=CASE WHEN %s THEN 'ANALYZING' ELSE conversation_state END,
@@ -1369,10 +1388,10 @@ class PostgresStore:
                    knowledge_base_answer=CASE WHEN %s THEN NULL ELSE knowledge_base_answer END,
                    knowledge_base_solution_selected_at=CASE WHEN %s THEN NULL ELSE knowledge_base_solution_selected_at END,
                    knowledge_base_solution_selected_by_user_id=CASE WHEN %s THEN NULL ELSE knowledge_base_solution_selected_by_user_id END,
-                   updated_at=now()
+                   source_metadata=%s,updated_at=now()
                    WHERE id=%s RETURNING *""",
                 (post_id, reopened, reopened, reopened, reopened, reopened,
-                 reopened, reopened, reopened, reopened, reopened, reopened, row["id"]),
+                 reopened, reopened, reopened, reopened, reopened, reopened, json.dumps(metadata), row["id"]),
             ).fetchone()
             connection.execute(
                 """INSERT INTO community_case_event
@@ -1438,6 +1457,10 @@ class PostgresStore:
                 result = self._community_payload(row)
                 result["resolutionChanged"] = False
                 return result
+            metadata = dict(row.get('source_metadata') or {})
+            if state != 'RESOLVED' or (changed and not preserve_resolution):
+                metadata.pop('knowledgeBaseRefresh', None)
+                metadata.pop('knowledgeBaseRevision', None)
             updated = connection.execute(
                 """UPDATE community_case SET conversation_state=%s,
                    resolved_post_id=CASE WHEN %s THEN resolved_post_id ELSE %s END,
@@ -1454,12 +1477,12 @@ class PostgresStore:
                        ELSE NULL END,
                    knowledge_base_solution_selected_by_user_id=CASE
                        WHEN %s THEN %s ELSE NULL END,
-                   updated_at=now()
+                   source_metadata=%s,updated_at=now()
                    WHERE id=%s RETURNING *""",
                 (state, preserve_resolution, best_post, preserve_resolution, best_user,
                  state, resolved_at, state, state, state, state, state,
                  state, preserve_resolution, request.get("bestAnswerSetAt"),
-                 preserve_resolution, best_user, row["id"]),
+                 preserve_resolution, best_user, json.dumps(metadata), row["id"]),
             ).fetchone()
             if changed:
                 connection.execute(
@@ -1778,7 +1801,8 @@ class PostgresStore:
             return self._community_payload(updated)
 
     def mark_community_knowledge_published(
-        self, case_id: UUID, answer: str, publication: dict[str, Any], idempotency_key: str
+        self, case_id: UUID, answer: str, publication: dict[str, Any], idempotency_key: str,
+        *, revision_source: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         with self._pool.connection() as connection:
             repeated = connection.execute(
@@ -1792,14 +1816,17 @@ class PostgresStore:
                 raise NotFoundError("community case not found")
             if row.get("conversation_state") != "RESOLVED" or not row.get("resolved_post_id"):
                 raise InvalidStateError("knowledge base publication requires a requester or administrator resolution")
+            metadata = dict(row.get('source_metadata') or {})
+            if revision_source:
+                metadata['knowledgeBaseRevision'] = revision_source
             updated = connection.execute(
                 """UPDATE community_case SET knowledge_base_post_id=%s,knowledge_base_post_url=%s,
                    knowledge_base_source_post_id=resolved_post_id,knowledge_base_answer=%s,
                    knowledge_base_version=knowledge_base_version+1,knowledge_base_published_at=now(),
                    knowledge_base_solution_selected_at=NULL,
-                   knowledge_base_solution_selected_by_user_id=NULL,updated_at=now()
+                   knowledge_base_solution_selected_by_user_id=NULL,source_metadata=%s,updated_at=now()
                    WHERE id=%s RETURNING *""",
-                (publication["postId"], publication["postUrl"], answer, case_id),
+                (publication["postId"], publication["postUrl"], answer, json.dumps(metadata), case_id),
             ).fetchone()
             connection.execute(
                 "UPDATE community_turn SET content=%s WHERE case_id=%s AND source_post_id=%s AND role='ASSISTANT'",
@@ -1831,11 +1858,14 @@ class PostgresStore:
                 raise InvalidStateError("knowledge base solution selection requires a published knowledge base")
             if str(selection.get("postId")) != str(row["knowledge_base_post_id"]):
                 raise ConflictError("selected solution does not match the knowledge base post")
+            metadata = dict(row.get('source_metadata') or {})
+            if metadata.get('knowledgeBaseRefresh') and metadata.get('knowledgeBaseRefresh') == metadata.get('knowledgeBaseRevision'):
+                metadata.pop('knowledgeBaseRefresh', None)
             updated = connection.execute(
                 """UPDATE community_case SET knowledge_base_solution_selected_at=now(),
-                   knowledge_base_solution_selected_by_user_id=%s,updated_at=now()
+                   knowledge_base_solution_selected_by_user_id=%s,source_metadata=%s,updated_at=now()
                    WHERE id=%s RETURNING *""",
-                (selection.get("selectedByUserId"), case_id),
+                (selection.get("selectedByUserId"), json.dumps(metadata), case_id),
             ).fetchone()
             connection.execute(
                 """INSERT INTO community_case_event
@@ -1843,6 +1873,21 @@ class PostgresStore:
                    VALUES (%s,%s,'KNOWLEDGE_BASE_SOLUTION_SELECTED','techflow-integration',%s,%s,%s)""",
                 (uuid4(), case_id, idempotency_key, row["correlation_id"], json.dumps(selection)),
             )
+            return self._community_payload(updated)
+
+    def cancel_community_knowledge_refresh(self, case_id: UUID, source_post_id: str, correlation_id: str) -> dict[str, Any]:
+        with self._pool.connection() as connection:
+            row = connection.execute('SELECT * FROM community_case WHERE id=%s FOR UPDATE', (case_id,)).fetchone()
+            if not row:
+                raise NotFoundError('community case not found')
+            metadata = dict(row.get('source_metadata') or {})
+            if str((metadata.get('knowledgeBaseRefresh') or {}).get('postId')) != source_post_id:
+                return self._community_payload(row)
+            metadata.pop('knowledgeBaseRefresh', None)
+            updated = connection.execute('UPDATE community_case SET source_metadata=%s,updated_at=now() WHERE id=%s RETURNING *',
+                                         (json.dumps(metadata), case_id)).fetchone()
+            connection.execute('INSERT INTO community_case_event (id,case_id,event_type,actor,correlation_id,details) VALUES (%s,%s,%s,%s,%s,%s::jsonb)',
+                (uuid4(), case_id, 'KB_REFRESH_CANCELLED', 'techflow', correlation_id, json.dumps({'sourcePostId': source_post_id})))
             return self._community_payload(updated)
 
     def upsert_chat_reviewer(self, user_id: str, username: str) -> dict[str, Any]:

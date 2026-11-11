@@ -627,6 +627,10 @@ def confirm_gateway_post(
 
 def gateway_post_is_confirmed(case: dict, post_id: str, *, require_publication: bool) -> bool:
     """Check a Gateway Case without blocking the Poller discovery loop."""
+    if case.get('knowledgeBaseRefresh'):
+        # Recording a human turn is not completion of its KB refresh. Keep retrying
+        # until the existing KB has been updated and its final selection verified.
+        return False
     last_seen_post_id = str(case.get("lastSeenPostId") or "")
     post_confirmed = last_seen_post_id == post_id
     if not post_confirmed and last_seen_post_id.isdigit() and post_id.isdigit():

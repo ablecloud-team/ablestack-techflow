@@ -230,6 +230,10 @@ class FlarumClient:
 
     def visible_post_content(self, discussion_id: str, post_id: str) -> str:
         """Read the selected answer's current Markdown, including edits made after ingestion."""
+        return self.visible_post_details(discussion_id, post_id)['content']
+
+    def visible_post_details(self, discussion_id: str, post_id: str) -> dict[str, Any]:
+        """Read content and author identity together at the authenticated Flarum boundary."""
         if not discussion_id.isdigit() or not post_id.isdigit():
             raise InvalidBoundaryError('invalid selected post')
         payload = self._request(f'/api/posts/{post_id}?include=discussion', as_solution_selector=True)
@@ -238,7 +242,8 @@ class FlarumClient:
         parent = (((item.get('relationships') or {}).get('discussion') or {}).get('data') or {})
         hidden_parent = any(
             row.get('type') == 'discussions' and str(row.get('id')) == discussion_id
-            and ((row.get('attributes') or {}).get('isHidden') or (row.get('attributes') or {}).get('hiddenAt'))
+            and ((row.get('attributes') or {}).get('isHidden') or (row.get('attributes') or {}).get('hiddenAt')
+                 or (row.get('attributes') or {}).get('isApproved') is False)
             for row in payload.get('included') or []
         )
         content = attrs.get('content')
@@ -246,7 +251,19 @@ class FlarumClient:
                 or attrs.get('contentType') != 'comment' or attrs.get('isHidden') or attrs.get('hiddenAt')
                 or attrs.get('isApproved') is False or hidden_parent or not isinstance(content, str) or not content.strip()):
             raise RuntimeError('selected answer is unavailable')
-        return content.strip()
+        user = (((item.get('relationships') or {}).get('user') or {}).get('data') or {}).get('id')
+        return {'postId': post_id, 'content': content.strip(), 'authorUserId': str(user or ''),
+                'postNumber': attrs.get('number')}
+
+    def knowledge_base_is_selected(self, discussion_id: str, post_id: str) -> bool:
+        if not discussion_id.isdigit() or not post_id.isdigit():
+            raise InvalidBoundaryError('invalid KB selection')
+        current = self._request(f'/api/discussions/{discussion_id}?include=bestAnswerPost',
+                                as_solution_selector=True).get('data') or {}
+        attrs = current.get('attributes') or {}
+        selected = ((current.get('relationships') or {}).get('bestAnswerPost') or {}).get('data') or {}
+        return (str(current.get('id')) == discussion_id and str(selected.get('id')) == post_id
+                and not attrs.get('isHidden') and not attrs.get('hiddenAt') and attrs.get('isApproved') is not False)
 
     def visible_post_ids(self, discussion_id: str) -> set[str]:
         """Read current visible comments; fail closed rather than reuse withdrawn history."""
