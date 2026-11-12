@@ -616,6 +616,44 @@ class ConversationProgressionTest(unittest.TestCase):
 
         self.assertEqual((), community_actionability_issues(result))
 
+    def test_case204_relative_journal_window_ends_at_now_without_until(self):
+        for since in ("'-15 min'", '"-15min"', "'15 minutes ago'", '-10m', '"-2 hours"', "'30 seconds ago'"):
+            with self.subTest(since=since):
+                result = {'state': 'ANSWERED', 'report': {'recommendedActions': [
+                    '대표 VM의 현재 KVM 호스트에 ssh <HOST_ADMIN>@<HOST_IP>로 접속해 관리자 권한을 사용합니다.',
+                    f"해당 호스트에서 sudo journalctl -u libvirtd.service --since {since} --no-pager를 확인합니다. "
+                    '정상 기준은 대표 VM 콘솔이 표시되는 것이며 로그만으로 정상이라고 단정하지 않습니다. '
+                    '토큰과 비밀번호는 마스킹합니다.',
+                ]}}
+                self.assertEqual((), community_actionability_issues(result))
+
+    def test_relative_window_does_not_accept_absolute_future_unknown_or_unbounded_logs(self):
+        for option in ('', "--since '2026-11-12 09:45'", "--since '+15 min'", "--since '0 min'",
+                       "--since '<발생 시각>'", "--since 'all'", '--since -15 min', "--since '15'", "--since 'recently'"):
+            with self.subTest(option=option):
+                result = {'state': 'ANSWERED', 'report': {'recommendedActions': [
+                    'KVM 호스트에 ssh admin@<HOST>로 접속하고 관리자 권한을 사용합니다.',
+                    f'해당 호스트에서 sudo journalctl -u libvirtd.service {option} --no-pager 로그를 확인합니다. '
+                    '정상 기준은 콘솔 표시 성공입니다. 비밀번호와 토큰은 마스킹합니다.',
+                ]}}
+                self.assertIn('missing-time-window', community_actionability_issues(result))
+
+    def test_relative_journal_window_does_not_waive_other_operational_requirements(self):
+        result = {'state': 'ANSWERED', 'report': {'recommendedActions': [
+            "journalctl -u libvirtd --since '-15 min' --no-pager 로그를 보내 주세요."]}}
+        issues = community_actionability_issues(result)
+        self.assertNotIn('missing-time-window', issues)
+        for expected in ('missing-service-unit', 'missing-access-example', 'missing-execution-target',
+                         'missing-required-role', 'missing-success-criteria', 'missing-redaction-guidance'):
+            self.assertIn(expected, issues)
+
+    def test_following_journal_is_not_a_bounded_snapshot(self):
+        result = {'state': 'ANSWERED', 'report': {'recommendedActions': [
+            "KVM 호스트에 ssh admin@<HOST>로 접속해 관리자 권한으로 "
+            "sudo journalctl -u libvirtd.service --since '-15 min' --follow를 실행합니다. "
+            '정상 기준은 오류 없음입니다. 토큰은 마스킹합니다.']}}
+        self.assertIn('missing-time-window', community_actionability_issues(result))
+
     def test_actionability_gate_keeps_target_context_for_following_exact_units(self) -> None:
         result = {
             "state": "ANSWERED",
