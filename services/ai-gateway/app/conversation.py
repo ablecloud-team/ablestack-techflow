@@ -1272,6 +1272,22 @@ def _row_text(row: object) -> str:
     return ""
 
 
+def _has_relative_journal_window(rows: Iterable[str]) -> bool:
+    """journalctl --since with a backward relative duration ends at now by default."""
+    since_argument = re.compile(r'''--since(?:=|\s+)(?:"([^"\r\n]+)"|'([^'\r\n]+)'|([^\s`]+))''', re.IGNORECASE)
+    duration = r'(?:s|sec(?:ond)?s?|m|min(?:ute)?s?|h|hr|hours?|d|days?|w|weeks?)'
+    for row in rows:
+        if not re.search(r'\bjournalctl\b', row, re.IGNORECASE):
+            continue
+        if re.search(r'(?<![A-Za-z0-9_-])(?:--follow|-f)(?![A-Za-z0-9_-])', row):
+            continue
+        for match in since_argument.finditer(row):
+            value = next(group for group in match.groups() if group is not None).strip().casefold()
+            if re.fullmatch(rf'-\s*[1-9][0-9]*\s*{duration}|[1-9][0-9]*\s*{duration}\s+ago', value):
+                return True
+    return False
+
+
 def community_actionability_issues(result: dict[str, Any]) -> tuple[str, ...]:
     """Return missing operational context for Linux commands and log collection requests."""
     if str(result.get("state") or "").upper() != "ANSWERED":
@@ -1325,6 +1341,7 @@ def community_actionability_issues(result: dict[str, Any]) -> tuple[str, ...]:
         issues.append("missing-log-source")
     if has_log_request and not (
         ("--since" in lowered and "--until" in lowered)
+        or _has_relative_journal_window(operation_rows)
         or any(marker in text for marker in (
             "상태 변경 전후", "발생 시각 전후", "오류 시각 전후", "작업 시각 전후",
         ))

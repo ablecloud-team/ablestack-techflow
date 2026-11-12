@@ -221,7 +221,7 @@ docker compose --env-file .env \
 - 사용자 원문은 변경하지 않는다. 답변에서 “문맥상 오타로 보고 진행한다”고 한 번 알린 뒤 최신 상태 분석을 계속한다.
 - `Available`, `Suspect`, `Degraded`, IP, UUID, 버전, 포트, 명령, 경로, API 이름, 화면·로그 원문, Citation ID, Artifact ID는 자동 교정하지 않는다.
 - `systemctl`, `journalctl`, `virsh`, `grep`, `tail`이 있으면 실행 대상·접속 예시·권한·정확한 Unit·정상 기준이 있어야 한다.
-- 로그 요청에는 정확한 `/var/log/...` 경로 또는 `journalctl -u <service>`, `--since`·`--until`, 비밀정보와 내부 인프라 식별자 마스킹 방법이 있어야 한다.
+- 로그 요청에는 정확한 `/var/log/...` 경로 또는 `journalctl -u <service>`와 시간 범위, 비밀정보·내부 인프라 식별자 마스킹 방법이 있어야 한다. 명시적 `--since`·`--until` 외에 `journalctl --since '-15 min'`처럼 현재까지의 과거 상대 범위도 유효하다. 단, `--follow`는 유한한 스냅샷이 아니며 모호한 값이나 미래 시각은 이 예외로 통과시키지 않는다. 사례와 시험은 [#204 복구 보고서](../reports/community-204-console-actionability-recovery.md)를 참고한다.
 - 현재 승인된 공개 운영 로그 경로는 `/var/log/cloudstack/management/management-server.log`와 `/var/log/cloudstack/agent/agent.log`다. 저장소 Source 경로와 내부 Citation 경로는 계속 숨긴다.
 - 1차 답변이 계약을 충족하지 않으면 누락 Code를 포함해 한 번 재작성한다. 2차 답변도 실패하면 공개 게시하지 않고 재처리 대상으로 남긴다.
 

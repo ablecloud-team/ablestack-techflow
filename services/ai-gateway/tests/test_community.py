@@ -34,6 +34,36 @@ class FakeResponse:
 
 
 class CommunityTests(unittest.TestCase):
+    def test_case204_bounded_journal_publishes_once_without_unnecessary_model_rewrite(self):
+        store = MemoryStore()
+        flarum = FlarumClient('http://forum', 'https://forum', None, True)
+        answer = {'state': 'ANSWERED', 'report': {'summary': '모든 VM의 공통 콘솔 경로부터 확인합니다.',
+            'recommendedActions': [
+                'KVM 호스트에 ssh admin@<HOST>로 접속하고 관리자 권한으로 확인합니다.',
+                "해당 호스트에서 sudo journalctl -u libvirtd.service --since '-15 min' --no-pager로 로그를 조회합니다. "
+                '정상 기준은 VM 콘솔 표시 성공입니다. 토큰과 비밀번호는 마스킹합니다.'],
+            'unknowns': []}, 'citations': []}
+        payload = {'discussionId': '204', 'discussionUrl': 'https://community.ablecloud.io/d/204-konsol-bogi-bulga',
+            'authorId': '116', 'postId': '560', 'postNumber': 1, 'postAuthorId': '116',
+            'title': '콘솔 보기 불가', 'question': '모든 VM의 콘솔이 연결중에서 멈춥니다. libvirtd 재시작 후에도 동일합니다.'}
+        client = TestClient(create_app(Settings(community_auto_publish_enabled=True, community_publish_enabled=True,
+            flarum_api_key_file='/unused/key', flarum_assistant_user_id_file='/unused/assistant',
+            flarum_solution_selector_user_id_file='/unused/selector'), store,
+                                        flarum_client_instance=flarum))
+        with patch.object(flarum, 'post_is_visible', return_value=True), \
+                patch.object(flarum, 'visible_post_ids', return_value={'560','561'}), \
+                patch.object(flarum, 'publish_assistant_reply', return_value={
+                    'postId':'561','postUrl':'https://community.ablecloud.io/d/204/2'}) as publication, \
+                patch('app.main.standalone_libvirt_tcp_result', return_value=answer), \
+                patch('app.main.build_progression_retry_question', side_effect=AssertionError('false-positive rewrite')):
+            response = client.post('/v1/community/cases', json=payload, headers=HEADERS)
+            self.assertEqual(201, response.status_code, response.text)
+            self.assertEqual('PUBLISHED', response.json()['data']['state'])
+            self.assertIn("--since '-15 min'", response.json()['data']['draftAnswer'])
+            again = client.post('/v1/community/cases', json=payload, headers=HEADERS)
+            self.assertEqual('561', again.json()['data']['publishedPostId'])
+            publication.assert_called_once()
+
     def test_live_resolution_authority_requires_matching_selection_and_admin_group(self):
         flarum = FlarumClient('http://forum', 'https://forum', None, True)
         discussion = {'data': {'id': '184', 'relationships': {
