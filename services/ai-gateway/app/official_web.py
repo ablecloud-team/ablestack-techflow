@@ -77,7 +77,7 @@ _OS_FAMILIES: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("SOLARIS", ("solaris", "솔라리스")),
     ("AIX", ("aix",)),
     ("MACOS", ("macos", "mac os", "맥os", "맥 os")),
-    ("WINDOWS", ("windows", "윈도우", "win10", "win11")),
+    ("WINDOWS", ("windows", "윈도우즈", "윈도우", "win10", "win11")),
 )
 
 _PRODUCT_PLATFORM_FAMILIES: tuple[tuple[str, tuple[str, ...]], ...] = (
@@ -108,6 +108,28 @@ def guest_os_family(question: str) -> str | None:
     if any(term in normalized for term in ("guest os", "guest operating system", "게스트 운영체제", "가상머신 운영체제")):
         return "GENERIC_GUEST_OS"
     return None
+
+
+def guest_os_context_label(question: str) -> str | None:
+    """Copy only a named OS and its adjacent version from a human question, never arbitrary history."""
+    question = re.sub(r'(?i)\b(?:password|passwd|secret|token|api[_ -]?key)\s*[:=]\s*\S+', '', question)
+    matches = []
+    for family, terms in _OS_FAMILIES:
+        for term in terms:
+            match = re.search(r'(?<![A-Za-z0-9_./:@-])' + re.escape(term) + r'(?![A-Za-z_./:@-])', question, re.IGNORECASE)
+            if match:
+                matches.append((family, term, match))
+    if not matches:
+        return 'Linux' if guest_os_family(question) == 'GENERIC_LINUX' else None
+    if len({family for family, _, _ in matches}) != 1:
+        return None  # A comparison or ambiguous multi-OS statement is not a confirmed environment.
+    _, _, match = max(matches, key=lambda item: len(item[1]))
+    version = re.match(
+        r'(?:\s*(?:server|enterprise|linux|서버|리눅스))*\s*'
+        r'([0-9]{1,4}(?:\.[0-9]{1,3}){0,2}(?:\s*(?:r2|lts))?)(?![0-9.])',
+        question[match.end():], re.IGNORECASE,
+    )
+    return ' '.join((match.group(0) + (' ' + version.group(0).strip() if version else '')).split())
 
 
 def support_family(question: str) -> str | None:
