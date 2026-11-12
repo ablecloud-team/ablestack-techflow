@@ -7,6 +7,7 @@ import re
 from typing import Any, Iterable
 
 from .embedding import MAX_INPUT_BYTES
+from .official_web import guest_os_context_label, guest_os_family, support_topic
 
 
 ROLE_LABELS = {
@@ -174,6 +175,59 @@ def conversation_artifact_ids(
     return selected
 
 
+_CHAT_CONTINUATION = re.compile(
+    r'앞서|방금|이어서|말한|(?:그|이)\s*(?:가상머신|VM|운영체제|명령|값|결과|출력(?:값)?)|'
+    r'(?:같은|동일한|해당)\s*(?:가상머신|VM|운영체제|OS|명령)|'
+    r'\b(?:that vm|same os|previous|earlier|the output|those values)\b', re.IGNORECASE)
+_CHAT_TOPIC_RESET = re.compile(
+    r'(?:다른|새로운?|별개|별도)\s*(?:질문|주제|가상머신|VM|운영체제|서버)|주제.{0,5}바꾸|'
+    r'(?:운영체제|(?<![A-Za-z])OS)(?:를|가|이|는)?\s*(?:변경했|변경하였|변경된|변경한|변경\s*후|바꿨|바뀌었|바뀐)|'
+    r'\bnew topic\b|\bunrelated\b|(?<![A-Za-z])(?:another|different|new)\s+(?:vm|machine|operating system|server|host)(?![A-Za-z])',
+    re.IGNORECASE)
+_CHAT_PRODUCT_SCOPE = re.compile(
+    r'(?<![A-Za-z0-9_])(?:mold|cloudstack|glue|ceph|koral|kubernetes|wall|cubeos|bmc|hypervisor|host)(?![A-Za-z0-9_])|'
+    r'몰드|글루|클라우드센터|관리\s*서버|KVM\s*호스트|호스트(?:에서|의|\s*운영체제)', re.IGNORECASE)
+_CHAT_NEW_SUBJECT = re.compile(r'(?<![A-Za-z0-9_])(?:ssh|dns|docker|smb|cifs|mount|package)(?![A-Za-z0-9_])|네트워크|디스크|파일시스템|패키지|보안|마운트', re.IGNORECASE)
+_CHAT_OUTPUT_REFERENCE = re.compile(r'출력|결과|판단|기준|해석|의미|뜻|그\s*값|이\s*값', re.IGNORECASE)
+_CHAT_TOPIC_LABELS = {'TIME_SYNC': '시간 동기화', 'GUEST_AGENT': '게스트 에이전트 설치', 'SMB_MOUNT': 'SMB 공유 폴더 마운트'}
+
+
+def _chat_followup_context(prior_turns: list[dict[str, Any]], question: str) -> str:
+    """Carry a small user-provided environment hint only across an explicit continuation."""
+    current_topic = support_topic(question)
+    explicit_reference = bool(_CHAT_CONTINUATION.search(question))
+    if ((not explicit_reference and current_topic not in _CHAT_TOPIC_LABELS)
+            or _CHAT_TOPIC_RESET.search(question) or _CHAT_PRODUCT_SCOPE.search(question)):
+        return ''
+    current_family = guest_os_family(question)
+    if current_family and current_family not in {'GENERIC_LINUX', 'GENERIC_GUEST_OS'}:
+        return ''  # Current explicit OS/version always wins, including a change of OS.
+    topic = None
+    for turn in reversed(prior_turns):
+        if turn.get('role') != 'USER':
+            continue
+        text = str(turn.get('content') or '')
+        if _CHAT_PRODUCT_SCOPE.search(text):
+            break
+        if topic is None:
+            topic = support_topic(text) or ('GENERAL_OS' if _CHAT_NEW_SUBJECT.search(text) else None)
+        label = guest_os_context_label(text)
+        if label:
+            if not explicit_reference and topic != current_topic:
+                return ''
+            family = guest_os_family(label)
+            if current_family == 'GENERIC_LINUX' and family in {'WINDOWS','MACOS','FREEBSD','AIX','SOLARIS'}:
+                return ''
+            hint = f'이전 사용자 질문에 명시된 환경(연속 질문 참고): {label}.'
+            if (current_topic in {None, 'GENERAL_OS'} and topic in _CHAT_TOPIC_LABELS
+                    and _CHAT_OUTPUT_REFERENCE.search(question) and not _CHAT_NEW_SUBJECT.search(question)):
+                hint += f' 이전 사용자 질문 주제: {_CHAT_TOPIC_LABELS[topic]}.'
+            return hint + '\n사용자의 현재 질문 원문:\n'
+        if guest_os_family(text) or _CHAT_TOPIC_RESET.search(text):
+            break  # Do not walk past ambiguous OS statements or an explicit topic reset.
+    return ''
+
+
 def build_chat_question(
     prior_turns: Iterable[dict[str, Any]],
     current_question: str,
@@ -193,12 +247,14 @@ def build_chat_question(
     history_prefix = "\n\n이전 대화:\n"
     fixed_bytes = len((instruction + current_prefix + history_prefix).encode("utf-8"))
     current_budget = max(0, min(limit // 2, limit - fixed_bytes))
-    current = current_prefix + _utf8_excerpt(current_question, current_budget)
+    turns = list(prior_turns)
+    context_hint = _chat_followup_context(turns, current_question)
+    current = current_prefix + _utf8_excerpt(context_hint + current_question, current_budget)
     remaining = max(0, limit - len((instruction + current + history_prefix).encode("utf-8")))
     rows = [
         f"{'사용자' if item.get('role') == 'USER' else '전문 엔지니어'}: "
         f"{_utf8_excerpt(item.get('content'), 2000)}"
-        for item in list(prior_turns)[-12:]
+        for item in turns[-12:]
     ]
     while rows and len("\n".join(rows).encode("utf-8")) > remaining:
         rows.pop(0)

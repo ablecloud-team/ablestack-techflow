@@ -17,6 +17,8 @@ GitHub→Chat Webhook의 `github-chat-v1`, `chat-adapter`, `activepieces-control
 7. 실패 Job은 지수 재시도하고, 한도 초과 시 사용자 안내와 Dead Letter를 기록한다.
 8. 사용자가 `해결`을 입력하면 같은 Context의 진행 중 Job을 취소하고 다음 질문은 새 Context Version으로 시작한다.
 
+게스트 OS 후속 질문의 분류에는 현재 명시된 OS를 우선한다. 같은 활성 대화의 명확한 연속 질문에 한해 이전 사용자 발언의 OS·버전·주제를 참고하고, AI 답변·다른 VM·새 주제·호스트 질문으로 과거 환경을 강제 상속하지 않는다. [Issue #150 보완](../reports/issue-150-chat-followup-os-context.md)의 OS 전환 및 문맥 경계 시험을 함께 확인한다.
+
 일반 답변에는 Repository·Branch·Commit·Path·Line·Evidence ID를 표시하지 않는다. 권한 있는 담당자의 `근거 <Case>` 명령만 Community Case의 내부 근거를 표시한다.
 
 ## 3. Community 연속성
