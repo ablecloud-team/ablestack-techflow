@@ -685,6 +685,14 @@ class CommunityPollerTests(unittest.TestCase):
             )
         )
 
+    def test_pending_kb_refresh_is_not_confirmed_until_selection_completes(self) -> None:
+        case = {'lastSeenPostId': '559', 'state': 'PUBLISHED', 'publishedPostId': '549',
+                'knowledgeBaseRefresh': {'postId': '559'}}
+        self.assertFalse(poll_flarum.gateway_post_is_confirmed(case, '559', require_publication=False))
+        self.assertFalse(poll_flarum.gateway_post_is_confirmed(case, '559', require_publication=True))
+        case['knowledgeBaseRefresh'] = None
+        self.assertTrue(poll_flarum.gateway_post_is_confirmed(case, '559', require_publication=False))
+
     def test_unconfirmed_gateway_post_is_not_checkpointed(self) -> None:
         discussion_payload = {
             "data": [{"type": "discussions", "id": "137",

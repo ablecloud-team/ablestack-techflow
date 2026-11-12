@@ -216,14 +216,16 @@ STOP_WORDS = {
 
 
 def _query_terms(question: str) -> set[str]:
+    envelope_words = {'ablestack', 'diplo', 'europa', 'community', 'knowledge', 'base', 'techflow',
+                      'assistant', 'requester', 'staff'}
     identifiers = {
         item.casefold() for item in re.findall(r"[A-Za-z][A-Za-z0-9_]{5,}", question)
-        if item.casefold() not in {"ablestack", "diplo", "europa"}
+        if item.casefold() not in envelope_words
     }
     if identifiers:
         return identifiers
     terms = set(re.findall(r"[A-Za-z][A-Za-z0-9_]{3,}|[가-힣]{2,}", question.casefold()))
-    return {item for item in terms if item not in STOP_WORDS}
+    return {item for item in terms if item not in STOP_WORDS and item not in envelope_words}
 
 
 def _is_console_connection_question(question: str) -> bool:

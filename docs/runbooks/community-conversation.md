@@ -233,3 +233,7 @@ docker compose --env-file .env \
 4. Migration Down은 데이터 열을 삭제하므로 별도 승인과 백업 없이는 실행하지 않는다.
 5. 이미 공개된 Community 글과 KB를 자동 삭제하지 않는다.
 6. `techflow-activepieces-event-gateway-1`은 롤백 범위에서 제외한다.
+
+## 11. 해결 이후 추가 해결 보고와 KB 갱신
+
+기존 KB 선택 이후 새 사람의 해결 결과가 추가되거나 질문자·관리자가 새 해결 답변을 선택하면 기존 AI 소유 KB를 같은 위치에서 최신화한다. 재시도·동시 실행·예약 재선별의 상세 기준은 [후속 해결 KB 갱신 Runbook](community-late-solution-kb-refresh.md)을 따른다.

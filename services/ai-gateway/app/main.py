@@ -9,6 +9,7 @@ import json
 import logging
 from pathlib import Path
 import re
+from threading import RLock
 import time
 from typing import Annotated, Any
 from uuid import UUID, uuid4
@@ -75,6 +76,7 @@ from .conversation import (
     build_chat_question,
     build_knowledge_base_question,
     selected_resolution_is_unverified_recommendation,
+    is_confirmed_resolution_report,
     windows11_diplo43_tpm_result,
     build_progression_retry_question,
     community_actionability_issues,
@@ -821,6 +823,92 @@ def create_app(
     def query_assist(request: ComprehensiveQueryRequest, correlation_id: Annotated[str, Depends(_correlation_id)]) -> Envelope:
         return _envelope(_query_comprehensive(request, correlation_id), correlation_id)
 
+    # The deployed Gateway runs one worker. Serialize KB refreshes in that worker
+    # without holding a database connection during generation or Flarum requests.
+    knowledge_refresh_lock = RLock()
+
+    def _refresh_late_knowledge(request: CommunityCaseCreateRequest, correlation_id: str) -> dict[str, Any] | None:
+        if (not runtime_settings.community_auto_publish_enabled or not getattr(flarum_client, 'enabled', False)
+                or not request.post_id or request.turn_role == 'ASSISTANT'):
+            return None
+        with knowledge_refresh_lock:
+            try:
+                case = runtime_store.get_community_case_by_discussion(request.discussion_id)
+            except NotFoundError:
+                return None
+            kb_id = str(case.get('knowledgeBasePostId') or '')
+            if (case.get('conversationState') != 'RESOLVED' or not case.get('resolvedPostId')
+                    or not kb_id.isdigit() or int(request.post_id) <= int(kb_id)):
+                return None
+            try:
+                source = flarum_client.visible_post_details(request.discussion_id, request.post_id)
+                if not source['authorUserId'] or source['authorUserId'] == flarum_client._assistant_user_id():
+                    runtime_store.cancel_community_knowledge_refresh(case['caseId'], request.post_id, correlation_id)
+                    return None
+                if not is_confirmed_resolution_report(source['content']):
+                    runtime_store.cancel_community_knowledge_refresh(case['caseId'], request.post_id, correlation_id)
+                    return None
+                if not flarum_client.knowledge_base_is_selected(request.discussion_id, kb_id):
+                    runtime_store.cancel_community_knowledge_refresh(case['caseId'], request.post_id, correlation_id)
+                    return None
+                # Validate the target's ownership and discussion before any write.
+                target = flarum_client.visible_post_details(request.discussion_id, kb_id)
+                if target['authorUserId'] != flarum_client._assistant_user_id():
+                    raise InvalidBoundaryError('KB target is not assistant-owned')
+                digest = hashlib.sha256((request.post_id + '\n' + source['content']).encode()).hexdigest()
+                revision = {'postId': request.post_id, 'fingerprint': digest,
+                            'authorUserId': source['authorUserId'], 'postNumber': source['postNumber']}
+                committed = case.get('knowledgeBaseRevision') or {}
+                pending = case.get('knowledgeBaseRefresh') or {}
+                if committed == revision and not pending:
+                    return case
+                if any(str(item.get('postId') or '').isdigit() and int(item['postId']) > int(request.post_id)
+                       for item in (committed, pending)):
+                    return case
+                if pending != revision:
+                    actual_event = {**_model_data(request), 'question': source['content'],
+                                    'postAuthorId': source['authorUserId'], 'postNumber': source['postNumber'],
+                                    'turnRole': 'REQUESTER' if source['authorUserId'] == case.get('requesterUserId') else 'STAFF',
+                                    'preserveResolution': True, 'knowledgeBaseRefresh': revision}
+                    for artifact_id in request.artifact_ids:
+                        artifact_store.get(artifact_id)
+                    case = runtime_store.record_community_turn(actual_event, 'kb-refresh-turn-' + digest, correlation_id)
+                if committed != revision:
+                    turns = [turn for turn in _visible_community_turns(request.discussion_id, correlation_id)
+                             if str(turn.get('sourcePostId')) != kb_id]
+                    question = build_knowledge_base_question(request.title, turns, str(case['resolvedPostId']),
+                                                            update_post_id=request.post_id, limit=15000)
+                    artifact_ids, expired = _available_conversation_artifact_ids(turns, artifact_store)
+                    if expired:
+                        question += '\n[자료 범위] 이전 첨부 일부는 보존 기간 만료로 이번에 원문을 재확인하지 못했습니다. 최신 사람의 보고와 남은 근거를 구분하십시오.'
+                    generated = _query_comprehensive(ComprehensiveSynthesisRequest(
+                        queryId=uuid4(), question=question, actorId=f"community-kb:{request.author_id}",
+                        productVersion=request.product_version or 'diplo', artifactIds=artifact_ids,
+                        locale='ko-KR', classification='D0'), correlation_id)
+                    generated['attachmentFailureRecorded'] = any('[첨부 처리 안내]' in str(t.get('content')) for t in turns)
+                    answer = format_knowledge_base(generated)
+                    if generated.get('state') != 'ANSWERED' or not answer:
+                        raise RuntimeError('late KB synthesis is not ready')
+                    current_source = flarum_client.visible_post_details(request.discussion_id, request.post_id)
+                    current_case = runtime_store.get_community_case_by_discussion(request.discussion_id)
+                    if (current_source != source or not flarum_client.knowledge_base_is_selected(request.discussion_id, kb_id)
+                            or current_case.get('conversationState') != 'RESOLVED'
+                            or str(current_case.get('knowledgeBasePostId')) != kb_id
+                            or current_case.get('knowledgeBaseRefresh') != revision):
+                        raise RuntimeError('KB source or selection changed during generation')
+                    publication = flarum_client.update_assistant_reply(request.discussion_id, kb_id, answer,
+                        f"<!-- techflow-kb:{case['caseId']}:resolved:{case['resolvedPostId']} -->")
+                    case = runtime_store.mark_community_knowledge_published(case['caseId'], answer, publication,
+                        'kb-refresh-publish-' + digest, revision_source=revision)
+                selection = flarum_client.select_solution(request.discussion_id, kb_id)
+                case = runtime_store.mark_community_knowledge_solution_selected(case['caseId'], selection,
+                    'kb-refresh-select-' + digest)
+                _json_log('community_late_knowledge_refreshed', correlationId=correlation_id,
+                          caseId=str(case['caseId']), sourcePostId=request.post_id, postId=kb_id)
+                return case
+            except (RuntimeError, InvalidBoundaryError) as exc:
+                raise HTTPException(status_code=503, detail={'code': 'COMMUNITY_KNOWLEDGE_REFRESH_RETRY'}) from exc
+
     @application.post(
         "/v1/community/cases", response_model=Envelope, status_code=status.HTTP_201_CREATED,
         operation_id="createCommunityCase",
@@ -843,6 +931,11 @@ def create_app(
             except (RuntimeError, InvalidBoundaryError) as exc:
                 raise HTTPException(status_code=503, detail={'code': 'COMMUNITY_VISIBILITY_CHECK_FAILED'}) from exc
             if not visible:
+                try:
+                    unavailable_case = runtime_store.get_community_case_by_discussion(request.discussion_id)
+                    runtime_store.cancel_community_knowledge_refresh(unavailable_case['caseId'], request.post_id, correlation_id)
+                except NotFoundError:
+                    pass
                 _json_log('community_source_post_unavailable', correlationId=correlation_id,
                           discussionId=request.discussion_id, sourcePostId=request.post_id)
                 return _envelope({'discussionId': request.discussion_id, 'sourcePostId': request.post_id,
@@ -876,6 +969,8 @@ def create_app(
                 knowledge_completed_now = False
                 if result.get("knowledgeBaseSourcePostId") != result.get("resolvedPostId"):
                     turns = _visible_community_turns(request.discussion_id, correlation_id)
+                    turns = [turn for turn in turns
+                             if str(turn.get('sourcePostId')) != str(result.get('knowledgeBasePostId'))]
                     if getattr(flarum_client, 'enabled', False):
                         try:
                             selected_content = flarum_client.visible_post_content(
@@ -925,12 +1020,24 @@ def create_app(
                         )
                     marker = f"<!-- techflow-kb:{result['caseId']}:resolved:{result['resolvedPostId']} -->"
                     try:
-                        publication = flarum_client.publish_assistant_reply(
-                            result["discussionId"], knowledge_answer, marker,
-                        )
+                        publication_key = f"knowledge-base-{result['caseId']}-{result['resolvedPostId']}"
+                        if result.get('knowledgeBasePostId'):
+                            kb_id = str(result['knowledgeBasePostId'])
+                            target = flarum_client.visible_post_details(result['discussionId'], kb_id)
+                            if target['authorUserId'] != flarum_client._assistant_user_id():
+                                raise InvalidBoundaryError('KB target is not assistant-owned')
+                            if not flarum_client.knowledge_base_is_selected(result['discussionId'], str(result['resolvedPostId'])):
+                                raise RuntimeError('selected resolution changed during generation')
+                            publication = flarum_client.update_assistant_reply(
+                                result['discussionId'], kb_id, knowledge_answer, marker)
+                            publication_key += '-' + hashlib.sha256(knowledge_answer.encode()).hexdigest()
+                        else:
+                            publication = flarum_client.publish_assistant_reply(
+                                result["discussionId"], knowledge_answer, marker,
+                            )
                         result = runtime_store.mark_community_knowledge_published(
                             result["caseId"], knowledge_answer, publication,
-                            f"knowledge-base-{result['caseId']}-{result['resolvedPostId']}",
+                            publication_key,
                         )
                         _json_log(
                             "community_knowledge_base_published", correlationId=correlation_id,
@@ -988,6 +1095,9 @@ def create_app(
                                 caseId=str(result["caseId"]), errorType=type(exc).__name__,
                             )
             return _envelope(result, correlation_id)
+        refreshed = _refresh_late_knowledge(request, correlation_id)
+        if refreshed is not None:
+            return _envelope(refreshed, correlation_id)
         retry_failed = False
         if runtime_store.community_turn_exists(request.discussion_id, post_id):
             current = runtime_store.get_community_case_by_discussion(request.discussion_id)
