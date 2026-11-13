@@ -38,6 +38,15 @@ from app.versioned_assist import format_public_answer, format_knowledge_base
 
 
 class ConversationProgressionTest(unittest.TestCase):
+    def test_resolution_report_is_not_general_requirement_or_proven_root_cause(self):
+        turns = [{'sourcePostId':'566','postNumber':1,'role':'REQUESTER','content':'Host2가 Ineligible입니다.'},
+                 {'sourcePostId':'568','postNumber':3,'role':'REQUESTER','content':'가상머신이 1개씩 필요하다는 것을 알아 해결했습니다.'}]
+        prompt = build_knowledge_base_question('호스트 HA Ineligible',turns,'568')
+        self.assertIn('특정 조치 후 해결됐다고 보고해도',prompt)
+        self.assertIn('제품 전체의 필수 조건',prompt)
+        self.assertIn('첨부에 반례',prompt)
+        self.assertIn(turns[1]['content'],prompt)
+
     def test_hci_center_redeployment_answers_initial_and_clarifying_requests(self):
         initial = 'ABLESTACK HCI 3노드에서 CCVM과 SCVM을 초기화하고 다시 구성하는 방법을 알려주세요.'
         followup = 'ABLESTACK 4.7.4 버전이며, 클라우드센터와 스토리센터를 다시 재배포하려고 합니다.'
