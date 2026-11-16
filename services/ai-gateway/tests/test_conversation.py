@@ -478,6 +478,45 @@ class ConversationProgressionTest(unittest.TestCase):
         }
         self.assertTrue(community_result_advances(result, self.turns))
 
+    def test_code_formatted_identifiers_are_not_concrete_cli_progress(self) -> None:
+        turns = [{'role': 'ASSISTANT', 'content':
+                  '정상 신규 VM과 실패 기존 VM의 createConsoleEndpoint 응답과 WebSocket 코드를 비교해 주세요.'}]
+        for identifier in ('`createConsoleEndpoint`', '`WebSocket`', '`log.txt`', '`AgentBasedConsoleProxyManager.getVncPort`'):
+            with self.subTest(identifier=identifier):
+                result = {'state': 'ANSWERED', 'report': {'recommendedActions': [
+                    f'이번에는 {identifier} 응답이나 내용을 각각 알려 주세요.'], 'unknowns': []}}
+                self.assertFalse(community_result_advances(result, turns))
+
+    def test_rephrasing_same_cli_command_does_not_advance(self) -> None:
+        turns = [{'role': 'ASSISTANT', 'content':
+                  '해당 호스트에서 `sudo virsh domdisplay <VM_DOMAIN> --type vnc`로 확인해 주세요.'}]
+        result = {'state': 'ANSWERED', 'report': {'recommendedActions': [
+            '다시 비교하려면 다음을 실행합니다.\n```bash\nsudo virsh domdisplay <VM_DOMAIN> --type vnc\n```'], 'unknowns': []}}
+        self.assertFalse(community_result_advances(result, turns))
+
+    def test_new_read_only_vm_comparison_command_advances(self) -> None:
+        turns = [{'role': 'ASSISTANT', 'content': 'createConsoleEndpoint 응답과 WebSocket 코드를 비교해 주세요.'}]
+        result = {'state': 'ANSWERED', 'report': {'recommendedActions': [
+            '같은 CubeOS 호스트에서 확인합니다.\n```bash\nsudo virsh domdisplay <VM_DOMAIN> --type vnc\n```'], 'unknowns': []}}
+        self.assertTrue(community_result_advances(result, turns))
+
+    def test_latest_outcome_and_unavailable_ui_guidance_survive_compaction_and_retry(self) -> None:
+        turns = [{'sourcePostId': '1', 'postNumber': 1, 'role': 'REQUESTER',
+                  'content': '모든 VM 콘솔이 연결중입니다. libvirtd 재시작도 동일합니다.'},
+                 {'sourcePostId': '2', 'postNumber': 2, 'role': 'ASSISTANT',
+                  'content': '공통 장애를 의심합니다. createConsoleEndpoint 응답을 확인하십시오. ' * 100},
+                 {'sourcePostId': '3', 'postNumber': 3, 'role': 'REQUESTER',
+                  'content': 'createConsoleEndpoint 응답을 찾을 수 없습니다. 신규 VM은 정상이고 기존 VM만 실패합니다.'}]
+        incoming = {'postId': '4', 'postNumber': 4, 'turnRole': 'REQUESTER',
+                    'question': '정상 신규 VM과 실패 기존 VM은 같은 호스트입니다.'}
+        for prompt in (build_conversation_question('콘솔 보기 불가', turns, incoming),
+                       build_conversation_question('콘솔 보기 불가', turns, incoming, limit=3600),
+                       build_progression_retry_question('콘솔 보기 불가', turns, incoming)):
+            self.assertIn('같은 호스트입니다', prompt)
+            self.assertIn('최신 결과로 이전 가설을 갱신', prompt)
+            self.assertIn('찾지 못한 UI 자료', prompt)
+            self.assertIn('읽기 전용 대안', prompt)
+
     def test_staff_followup_becomes_latest_human_question(self) -> None:
         incoming = {
             "discussionId": "167",
