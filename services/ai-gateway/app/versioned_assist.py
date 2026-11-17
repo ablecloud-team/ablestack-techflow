@@ -68,6 +68,12 @@ CONSOLE_CONNECTION_MARKERS: tuple[str, ...] = (
     "콘솔 프록시",
 )
 
+HOST_HA_ELIGIBILITY_MARKERS: tuple[str, ...] = (
+    'KVMHAProvider', 'isEligible', 'KVMHostActivityChecker', 'getNeighbors',
+    'hasStoragePoolHeartbeatEnabled', 'getVolumeUuidOnHost', 'KvmHACheckOnStorage',
+    'OutOfBandManagement', 'Ineligible',
+)
+
 FSFREEZE_MARKERS: tuple[str, ...] = (
     "guest-fsfreeze-freeze",
     "guest-fsfreeze-status",
@@ -333,9 +339,27 @@ def _is_libvirt_remote_tcp_question(question: str) -> bool:
     return endpoint and procedure
 
 
+def _is_host_ha_eligibility_question(question: str) -> bool:
+    normalized = question.casefold()
+    if any(symbol in normalized for symbol in ('kvmhaprovider', 'hasstoragepoolheartbeatenabled')):
+        return True
+    if re.search(r'(?<![a-z0-9_])(?:list)?hostha(?:providers|resources)?(?![a-z0-9_])', normalized):
+        return True
+    if not re.search(r'(?<![a-z0-9_])ha(?![a-z0-9_])', normalized):
+        return False
+    state = any(value in normalized for value in ('ineligible','lneligible','suspect','degraded','available'))
+    compact = re.sub(r'\s+', '', normalized)
+    if not state and any(value in compact for value in ('가상머신ha','vmha','vm-levelha')):
+        return False
+    return state or '호스트' in normalized or bool(re.search(r'(?<![a-z])host(?:[0-9]+)?(?![a-z])', normalized))
+
+
 def feature_source_terms(question: str) -> tuple[str, ...]:
     """Map a user symptom to implementation terms before source retrieval."""
     anchors: list[str] = []
+    if _is_host_ha_eligibility_question(question):
+        # Retrieval expansion only: do not rewrite a user's enum or infer the live state.
+        anchors.extend(HOST_HA_ELIGIBILITY_MARKERS)
     if _is_console_connection_question(question):
         anchors.extend(CONSOLE_CONNECTION_MARKERS)
     if _is_fsfreeze_question(question):
@@ -405,6 +429,13 @@ def expand_retrieval_question(question: str, *, limit: int = 4000) -> str:
 def _relevance_score(question: str, item: dict[str, Any]) -> int:
     searchable = f"{item.get('symbol') or ''}\n{item.get('path') or ''}\n{item.get('content') or ''}".casefold()
     score = sum(1 for term in _query_terms(question) if term in searchable)
+    if _is_host_ha_eligibility_question(question):
+        # Generic method/enum names alone also occur in unrelated eligibility engines.
+        score += sum(8 for marker in HOST_HA_ELIGIBILITY_MARKERS
+                     if marker not in {'isEligible','getNeighbors','Ineligible'} and marker.casefold() in searchable)
+        score += sum(8 for marker in ('host ha','host high availability','호스트 ha','호스트ha') if marker in searchable)
+        if any(marker in str(item.get('path') or '').casefold() for marker in ('kvmhaprovider','kvmhostactivitychecker')):
+            score += 32
     if _is_console_connection_question(question):
         score += sum(6 for marker in CONSOLE_CONNECTION_MARKERS if marker in searchable)
         path = str(item.get("path") or "").casefold()

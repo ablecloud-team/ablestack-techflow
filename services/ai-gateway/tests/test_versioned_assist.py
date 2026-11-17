@@ -30,6 +30,38 @@ from app.platform_references import curated_platform_results
 
 
 class VersionedAssistPolicyTest(unittest.TestCase):
+    def test_case207_keeps_eligibility_and_storage_heartbeat_sources_for_typo_title(self):
+        question = 'HA 활성화 중 Host2번만 lneligible 상태 문제. 저 부분에서 지속해서 바뀌지 않습니다.'
+        rows = [
+            {'path':'KVMHAProvider.java','content':'isEligible outOfBandManagement getNeighbors hasStoragePoolHeartbeatEnabled'},
+            {'path':'KVMHostActivityChecker.java','content':'hasStoragePoolHeartbeatEnabled getVolumeUuidOnHost KvmHACheckOnStorage'},
+            {'path':'ConsoleAccessManagerImpl.java','content':'createConsoleEndpoint noVNC'},
+            {'path':'NetworkEligibility.java','content':'isEligible getNeighbors Ineligible'},
+        ]
+        anchors = feature_source_terms(question)
+        for term in ('KVMHAProvider','getNeighbors','hasStoragePoolHeartbeatEnabled','getVolumeUuidOnHost'):
+            self.assertIn(term,anchors)
+        self.assertCountEqual(['KVMHAProvider.java','KVMHostActivityChecker.java'],[r['path'] for r in relevant_results(question,rows)])
+        expanded = expand_retrieval_question(question)
+        self.assertIn(question,expanded)
+        self.assertIn('lneligible',expanded)  # Original enum spelling is preserved.
+        self.assertIn('KVMHAProvider',feature_source_terms('HostHA의 Ineligible은 어떤 조건인가요?'))
+
+    def test_host_ha_expansion_does_not_replace_vm_ha_or_generic_ineligible_questions(self):
+        for question in ('가상머신 HA 제공 컴퓨트 오퍼링은 어떻게 만드나요?',
+                         'VM HA가 호스트 장애 후 동작하지 않습니다.',
+                         '일반적인 Ineligible 표시는 무슨 의미인가요?',
+                         'NTP 설정 방법은요?'):
+            self.assertNotIn('KVMHAProvider',feature_source_terms(question),question)
+
+    def test_host_ha_expansion_preserves_utf8_limit_and_not_service_actions(self):
+        question = '호스트 HA 상태 Ineligible입니다. ' + '상세 내용을 확인합니다. '*900
+        expanded = expand_retrieval_question(question,limit=4000)
+        self.assertLessEqual(len(expanded.encode('utf-8')),4000)
+        self.assertIn('getVolumeUuidOnHost',expanded)
+        for action in ('systemctl restart','pcs stonith','shutdown'):
+            self.assertNotIn(action,expanded)
+
     def test_kb_envelope_does_not_suppress_actual_korean_solution_terms(self):
         terms = _query_terms('[Community 해결 답변 선택 주제] GFS 스토리지 구성 오류 [최종 Knowledge Base] 멀티패스 미설정')
         self.assertIn('멀티패스', terms)
