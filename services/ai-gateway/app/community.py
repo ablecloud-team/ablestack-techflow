@@ -236,7 +236,7 @@ class FlarumClient:
         """Read content and author identity together at the authenticated Flarum boundary."""
         if not discussion_id.isdigit() or not post_id.isdigit():
             raise InvalidBoundaryError('invalid selected post')
-        payload = self._request(f'/api/posts/{post_id}?include=discussion', as_solution_selector=True)
+        payload = self._request(f'/api/posts/{post_id}?include=discussion,user', as_solution_selector=True)
         item = payload.get('data') or {}
         attrs = item.get('attributes') or {}
         parent = (((item.get('relationships') or {}).get('discussion') or {}).get('data') or {})

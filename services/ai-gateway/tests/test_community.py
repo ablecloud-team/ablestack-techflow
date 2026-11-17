@@ -153,6 +153,18 @@ class CommunityTests(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 flarum.visible_post_content('184', '478')
 
+    def test_selected_post_details_explicitly_requests_author_relationship(self):
+        flarum = FlarumClient('http://forum', 'https://forum', None, True)
+        def payload_for_path(path, **kwargs):
+            relationships = {'discussion': {'data': {'type': 'discussions', 'id': '204'}}}
+            if 'user' in path.split('include=', 1)[-1].split(','):
+                relationships['user'] = {'data': {'type': 'users', 'id': '40'}}
+            return {'data': {'id': '580', 'attributes': {'contentType': 'comment', 'content': 'AI 답변'},
+                             'relationships': relationships}}
+        with patch.object(flarum, '_request', side_effect=payload_for_path) as request:
+            self.assertEqual('40', flarum.visible_post_details('204', '580')['authorUserId'])
+            request.assert_called_once_with('/api/posts/580?include=discussion,user', as_solution_selector=True)
+
     def test_verified_admin_rechecks_old_review_required_event_without_erasing_its_audit(self):
         store = MemoryStore()
         first = {**self.payload(), 'postId': '100', 'postNumber': 1}

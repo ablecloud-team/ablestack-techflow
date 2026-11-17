@@ -164,6 +164,34 @@ class VersionedAssistPolicyTest(unittest.TestCase):
         self.assertIn("websockify", expanded)
         self.assertIn("VNC".casefold(), expanded.casefold())
 
+    def test_console_certificate_evidence_separates_lab_result_and_release_plan(self):
+        question = 'Mold 콘솔이 같은 호스트의 신규 VM에서는 정상이고 기존 VM은 연결중입니다.'
+        results = curated_platform_results(question)
+        selected = [r for r in results if '인증서' in r['symbol']]
+        self.assertEqual(2, len(selected))
+        content = '\n'.join(r['content'] for r in selected)
+        for value in ('QEMU 6.0', 'vencrypt+x509', 'tls-certs', 'display-reload',
+                      'notBefore/notAfter', '읽기 전용이 아닌', '시험 환경',
+                      '질문자 환경의 적용·해결 확인과 다르다', '다음 ABLESTACK 버전',
+                      '정확한 릴리스 번호·일정은 미정', '현재 운영 배포', 'Mold에서 해당 VM을 완전히 정지 후 시작'):
+            self.assertIn(value, content)
+        self.assertNotIn('cloudstack', content.casefold())
+        self.assertIn('display-reload', expand_retrieval_question(question))
+
+    def test_certificate_guidance_does_not_match_generic_console_or_ntp(self):
+        for question in ('Mold 콘솔 화면이 연결중입니다.', '신규 Ubuntu VM에 NTP 인증서를 설정합니다.'):
+            with self.subTest(question=question):
+                self.assertFalse(any('인증서' in r['symbol'] for r in curated_platform_results(question)))
+
+    def test_tls_reload_public_projection_keeps_exact_json_and_product_only_wording(self):
+        command = '''sudo virsh qemu-monitor-command '<VM_DOMAIN>' --pretty '{"execute":"display-reload","arguments":{"type":"vnc","tls-certs":true}}' '''.strip()
+        result = {'state':'ANSWERED', 'report': {'summary':'기존 VM 콘솔의 인증서 재적용을 검토합니다.',
+            'recommendedActions':['해당 호스트에서 담당자가 실행합니다.\n```bash\n'+command+'\n```'],
+            'unknowns':[], 'diagnoses':[]}, 'citations':[]}
+        public = format_public_answer(result)
+        self.assertIn(command, public)
+        self.assertNotIn('cloudstack', public.casefold())
+
     def test_console_connecting_question_prioritizes_console_proxy_evidence(self) -> None:
         question = "가상머신 콘솔 화면이 연결중이라고 표시됩니다."
         rows = [
