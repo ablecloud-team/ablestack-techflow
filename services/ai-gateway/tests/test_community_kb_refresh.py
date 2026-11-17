@@ -251,7 +251,7 @@ class FlarumRefreshBoundaryTests(unittest.TestCase):
                 'relationships': {'discussion': {'data': {'id': '199'}}, 'user': {'data': {'id': '101'}}}}
         with patch.object(client, '_request', return_value={'data': item}) as request:
             self.assertEqual('101', client.visible_post_details('199', '559')['authorUserId'])
-            request.assert_called_with('/api/posts/559?include=discussion', as_solution_selector=True)
+            request.assert_called_with('/api/posts/559?include=discussion,user', as_solution_selector=True)
             with self.assertRaises(RuntimeError):
                 client.visible_post_details('200', '559')
             item['attributes']['isApproved'] = False

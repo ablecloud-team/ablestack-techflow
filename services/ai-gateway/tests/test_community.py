@@ -12,6 +12,7 @@ from fastapi.testclient import TestClient
 from app.community import FlarumClient, FlarumResourceNotFound, conversationalize_answer, format_draft, profiles_for_tags
 from app.versioned_assist import format_knowledge_base
 from app.config import Settings
+from app.provider import ComprehensiveResponsesResult, ContextChunk, MockResponsesAdapter
 from app.main import _available_conversation_artifact_ids, _resolution_administrator_ids, create_app
 from app.store import KB_SOLUTION_CONFIRMED_EVENT, MemoryStore, NotFoundError
 
@@ -34,6 +35,65 @@ class FakeResponse:
 
 
 class CommunityTests(unittest.TestCase):
+    def test_repeated_api_request_is_rewritten_before_publication_or_rejected(self):
+        repeated = {'state': 'ANSWERED', 'summary': '같은 호스트의 VM별 차이를 확인합니다.',
+                    'recommendedActions': ['이번에는 `createConsoleEndpoint` 응답과 `WebSocket` 코드를 각각 알려 주세요.'],
+                    'unknowns': []}
+        advanced = {'state': 'ANSWERED', 'summary': '공통 장애로 단정하지 않고 두 VM의 표시 정보를 비교합니다.',
+                    'recommendedActions': [
+                        '동일한 CubeOS 호스트에 ssh admin@<HOST>로 접속하고 sudo 권한으로 조회합니다.',
+                        '해당 호스트에서 VM별로 다음을 확인합니다.\n```bash\nsudo virsh domdisplay <VM_DOMAIN> --type vnc\n```\n'
+                        '정상 기준은 두 실행 중 VM의 VNC 표시 주소가 조회되는 것입니다. 조회 성공은 화면 연결 성공의 증명이 아닙니다.'],
+                    'unknowns': []}
+        for retry_succeeds in (True, False):
+            with self.subTest(retry_succeeds=retry_succeeds):
+                store = MemoryStore()
+                flarum = FlarumClient('http://forum', 'https://forum', None, True)
+                first = {'discussionId': '204', 'discussionUrl': 'https://community.ablecloud.io/d/204',
+                         'authorId': '116', 'postAuthorId': '116', 'title': '콘솔 보기 불가',
+                         'question': '신규 VM은 정상, 기존 VM은 연결중입니다. libvirtd 재시작도 동일합니다.',
+                         'postId': '1', 'postNumber': 1}
+                old = '정상 신규 VM과 실패 기존 VM의 createConsoleEndpoint 응답과 WebSocket 코드를 비교해 주세요.'
+                case = store.create_community_case(first,
+                    {'draftAnswer': old, 'answerState': 'ANSWERED', 'citations': []}, 'first-console', 'first-console-correlation')
+                store.mark_community_auto_published(case['caseId'], old,
+                    {'postId': '2', 'postUrl': 'https://community.ablecloud.io/d/204/2'}, 'first-console-publication')
+                store.record_community_turn({**first, 'postId': '2', 'postNumber': 2,
+                    'postAuthorId': '40', 'turnRole': 'ASSISTANT', 'question': old}, 'old-console', 'old-console-correlation')
+                adapter = MockResponsesAdapter()
+                reports = [repeated, advanced if retry_succeeds else repeated]
+                generated = [ComprehensiveResponsesResult(report=dict(report), citations_used=(),
+                    requested_model_id='mock', returned_model_id='mock', request_id=f'mock-{i}', response_id=f'mock-{i}')
+                    for i, report in enumerate(reports)]
+                chunk = ContextChunk('mock-console', 'D0', 'synthetic', 'main', '0'*40, 'console.txt', 'Synthetic console evidence')
+                client = TestClient(create_app(Settings(community_auto_publish_enabled=True, community_publish_enabled=True,
+                    flarum_api_key_file='/unused/key', flarum_assistant_user_id_file='/unused/assistant',
+                    flarum_solution_selector_user_id_file='/unused/selector'), store,
+                    responses_adapter=adapter, flarum_client_instance=flarum))
+                with patch.object(flarum, 'post_is_visible', return_value=True), \
+                        patch.object(flarum, 'visible_post_ids', return_value={'1','2','3','4'}), \
+                        patch.object(flarum, 'publish_assistant_reply', return_value={
+                            'postId':'4', 'postUrl':'https://community.ablecloud.io/d/204/4'}) as publication, \
+                        patch('app.main.context_from_results', return_value=(chunk,)), \
+                        patch.object(adapter, 'generate_comprehensive', side_effect=generated) as provider:
+                    payload = {**first, 'postId': '3', 'postNumber': 3,
+                               'question': '정상 신규 VM과 실패 기존 VM은 같은 호스트입니다.'}
+                    response = client.post('/v1/community/cases', json=payload, headers=HEADERS)
+                    self.assertEqual(2, provider.call_count)
+                    self.assertIn('진행성 재작성 필수', provider.call_args_list[1].args[0].question)
+                    if retry_succeeds:
+                        self.assertEqual(201, response.status_code, response.text)
+                        self.assertIn('virsh domdisplay', response.json()['data']['draftAnswer'])
+                        self.assertNotIn('각각 알려 주세요', response.json()['data']['draftAnswer'])
+                        again = client.post('/v1/community/cases', json=payload, headers=HEADERS)
+                        self.assertEqual('4', again.json()['data']['publishedPostId'])
+                        publication.assert_called_once()
+                        self.assertEqual(2, provider.call_count)
+                    else:
+                        self.assertEqual(503, response.status_code, response.text)
+                        self.assertEqual('COMMUNITY_RESPONSE_NOT_PROGRESSING', response.json()['detail']['code'])
+                        publication.assert_not_called()
+
     def test_case204_bounded_journal_publishes_once_without_unnecessary_model_rewrite(self):
         store = MemoryStore()
         flarum = FlarumClient('http://forum', 'https://forum', None, True)
@@ -92,6 +152,18 @@ class CommunityTests(unittest.TestCase):
             post['data']['attributes']['isHidden'] = True
             with self.assertRaises(RuntimeError):
                 flarum.visible_post_content('184', '478')
+
+    def test_selected_post_details_explicitly_requests_author_relationship(self):
+        flarum = FlarumClient('http://forum', 'https://forum', None, True)
+        def payload_for_path(path, **kwargs):
+            relationships = {'discussion': {'data': {'type': 'discussions', 'id': '204'}}}
+            if 'user' in path.split('include=', 1)[-1].split(','):
+                relationships['user'] = {'data': {'type': 'users', 'id': '40'}}
+            return {'data': {'id': '580', 'attributes': {'contentType': 'comment', 'content': 'AI 답변'},
+                             'relationships': relationships}}
+        with patch.object(flarum, '_request', side_effect=payload_for_path) as request:
+            self.assertEqual('40', flarum.visible_post_details('204', '580')['authorUserId'])
+            request.assert_called_once_with('/api/posts/580?include=discussion,user', as_solution_selector=True)
 
     def test_verified_admin_rechecks_old_review_required_event_without_erasing_its_audit(self):
         store = MemoryStore()

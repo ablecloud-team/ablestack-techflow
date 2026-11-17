@@ -28,6 +28,12 @@ _UNRESOLVED_UPDATE_PATTERNS = (
     re.compile(r"(?:계속|여전히|아직).{0,24}(?:실패|오류|문제|장애|동작하지|작동하지)"),
 )
 
+FOLLOWUP_OUTCOME_INSTRUCTION = (
+    "최신 결과로 이전 가설을 갱신하고 확인된 사실과 추정을 구분하십시오. "
+    "같은 호스트의 정상·실패 VM은 VM별 차이를 비교하되 원인을 단정하지 마십시오. "
+    "찾지 못한 UI 자료 요청을 반복하지 말고, 근거 있는 읽기 전용 대안과 실행 위치·판정 기준을 먼저 안내하십시오. "
+)
+
 PROGRESSION_RETRY_INSTRUCTION = (
     "[진행성 재작성 필수]\n"
     "직전 답변의 설명과 점검 목록을 반복하지 마십시오. "
@@ -1251,6 +1257,7 @@ def build_conversation_question(
         "추가 자료 요청으로 답변을 시작하지 마십시오. 추가 자료는 기초 답변과 우선 점검을 제공한 뒤에만, "
         "사용자가 아직 제공하지 않은 정확한 API 응답 본문, 명령 결과 또는 로그 이름으로 구체적으로 요청하십시오. "
         "이미 제공된 제품 버전, 첨부 화면, 시각 또는 로그를 다시 요청하지 마십시오. "
+        f"{FOLLOWUP_OUTCOME_INSTRUCTION}"
         "문맥상 명백한 오타 후보는 짧게 가정하고 핵심 분석을 계속하십시오. 오타 확인만을 위해 답변을 중단하지 마십시오. "
         "Linux 운영 명령과 로그를 요청할 때는 실행 대상, SSH 또는 콘솔 접속 예시, 필요한 권한, 정확한 서비스명과 로그 경로, 시간 범위, 정상 기준을 포함하십시오. "
         "공개 답변에는 BMC 암호, API Key, Token, Cookie와 내부 인프라 식별자 마스킹 방법을 포함하십시오. "
@@ -1263,6 +1270,7 @@ def build_conversation_question(
     compact_instruction = (
         "[응답 지침]\n"
         "관련 기능과 Source를 분석하고 첨부의 상태 코드·API·오류를 Source 동작과 연결하십시오. "
+        f"{FOLLOWUP_OUTCOME_INSTRUCTION}"
         "방법·지원 범위 질문에는 지원 기능과 사전 조건을 먼저 답하고, 실패를 보고한 부정문은 해결 확인으로 해석하지 마십시오. "
         "최신 질문에 기초 진단, 해결 방법, 근거 있는 CLI 명령, 정상 판정 기준을 먼저 제시하십시오. "
         "명백한 오타는 짧게 알리고 분석을 계속하십시오. Linux 운영 명령·로그에는 실행 대상, SSH/콘솔 접속, 권한, "
@@ -1317,9 +1325,21 @@ def build_progression_retry_question(
 
 
 COMMAND_MARKERS = (
-    "`", "sudo ", "systemctl ", "journalctl ", "ausearch ", "findmnt ", "namei ", "getfacl ",
+    "sudo ", "systemctl ", "journalctl ", "ausearch ", "findmnt ", "namei ", "getfacl ",
     "matchpathcon ", "restorecon ", "virsh ", "grep ", "ls -", "nc ", "qemu-img ", "df ",
 )
+_COMMAND_STEP = re.compile(
+    r"(?<![\w./-])(?:" + "|".join(re.escape(marker) for marker in COMMAND_MARKERS)
+    + r")[^`\r\n가-힣]+", re.IGNORECASE,
+)
+
+
+def _command_steps(value: str) -> set[str]:
+    """Compare command text, not Markdown delimiters or surrounding Korean prose."""
+    return {re.sub(r"\s+", " ", match.group()).strip(' .,:;').casefold()
+            for match in _COMMAND_STEP.finditer(value)}
+
+
 ACTION_MARKERS = (
     "재시작", "마이그레이션", "복구", "수정", "변경", "적용", "재시도", "해제", "활성화", "비활성화",
     "설치", "업데이트", "교체", "삭제", "추가", "선택", "재연결", "초기화",
@@ -1443,6 +1463,7 @@ def community_result_advances(result: dict[str, Any], turns: Iterable[dict[str, 
     ]
     candidates = [item for item in candidates if item]
     previous_text = previous[-1]
+    previous_commands = set().union(*(_command_steps(text) for text in previous))
     question = str(result.get('userQuestion') or '').replace(' ', '')
     if result.get('answerIntent') == 'EXPLANATION' or any(
         word in question for word in ('사용설명', '기능설명', '어떤기준', '무슨뜻', '옵션의의미')
@@ -1451,9 +1472,12 @@ def community_result_advances(result: dict[str, Any], turns: Iterable[dict[str, 
         if len(explanation) >= 30 and _similarity(explanation, previous_text) < 0.70:
             return True
     for candidate in candidates:
-        has_command = any(marker in candidate.casefold() for marker in COMMAND_MARKERS)
-        if has_command and candidate.casefold() not in previous_text.casefold():
-            return True
+        commands = _command_steps(candidate)
+        if commands:
+            if commands - previous_commands:
+                return True
+            # New surrounding prose is not a new diagnostic command.
+            continue
         has_action = any(marker in candidate.casefold() for marker in ACTION_MARKERS)
         if has_action and _similarity(candidate, previous_text) < 0.70:
             return True
