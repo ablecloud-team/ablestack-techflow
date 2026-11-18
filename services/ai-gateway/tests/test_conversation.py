@@ -53,6 +53,7 @@ class ConversationProgressionTest(unittest.TestCase):
             self.assertIn('no matching host key type found',value)
             self.assertIn('PREFIX',value)
             self.assertIn('END',value)
+            self.assertIn('…',value)  # Cropped peer/line fragments must not look complete.
 
     def test_new_ssh_diagnostic_advances_but_same_command_or_bare_identifier_does_not(self):
         command="ssh -o BatchMode=yes -o ConnectTimeout=5 '<TARGET>' 'echo ok'"

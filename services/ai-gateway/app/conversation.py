@@ -103,10 +103,12 @@ def _support_excerpt(value: object, limit: int) -> str:
     for match in _SSH_DIAGNOSTIC.finditer(text):
         if budget < 64:
             break
-        start = max(text.rfind('\n', 0, match.start()) + 1, match.start() - 32)
+        line_start = text.rfind('\n', 0, match.start()) + 1
+        start = max(line_start, match.start() - 32)
         end = text.find('\n', match.end())
         end = len(text) if end < 0 else end
-        line = text[start:min(end, start + min(140, budget - 1))].strip()
+        stop = min(end, start + min(136, budget - 5))
+        line = ('… ' if start > line_start else '') + text[start:stop].strip() + (' …' if stop < end else '')
         if not line or line in ordinary or line in snippets or len(line) + 1 > budget:
             continue
         snippets.append(line)
