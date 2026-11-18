@@ -12,6 +12,38 @@
   },
   "entries": [
     {
+      "entryId": "CCVM-REMOTE-DIRECTORY-STEP-001",
+      "authority": "VERIFIED_PRODUCT_SOURCE",
+      "reviewedBy": "codex-source-review",
+      "reviewedAt": "2026-11-18",
+      "title": "CCVM 사전 검사 통과 후 원격 PCS 디렉터리 준비 실패",
+      "sourceLocator": "https://github.com/ablecloud-team/ablestack-cockpit-plugin/blob/c8b37dd6a4c35a8ba18169189a553595b24e54ab/python/vm/create_ccvm_cloudinit.py#L137-L159",
+      "matchTerms": ["/vmconfig/ccvm", "폴더생성 명령 실패", "폴더 생성 명령 실패"],
+      "requiredTermGroups": [["/vmconfig/ccvm"], ["폴더생성", "폴더 생성", "mkdir"]],
+      "content": "이 오류는 create_ccvm_cloudinit.py가 cloud-init ISO 생성 성공 후 args.host_names 대상 각각에 ssh root@대상으로 mkdir -p <pluginpath>/tools/vmconfig/ccvm를 수행하는 분기다. 최대3회 시도 후에도 실패하면 대상 주소와 pcs 클러스터 호스트에 /vmconfig/ccvm 폴더생성 명령 실패 문구를 반환한다. 앞부분 숫자는 대상 주소의 일부이지 오류 코드가 아니다. 앞선 insertScvmHost는 대상에 계정을 명시하지 않은 SSH echo ok 검사이고, 이 단계는 root@PCS대상을 명시하며 호스트 키 옵션도 다를 수 있으므로 사전 검사가 성공해도 이 연결·쓰기 성공을 보장하지 않는다. 사전 오류가 해결됐지만 폴더 오류가 새로 났다는 댓글은 전체 해결 확인이 아니다. 최신 실패 단계의 현재 PCS 대상에 집중한다. 배포 실행 호스트에서 root@대상으로 BatchMode=yes, ConnectTimeout=5, StrictHostKeyChecking=yes와 echo ok를 읽기 전용으로 확인하고 종료 코드를 바로 기록한다. root 접속이 성공한 뒤 대상 호스트에서 id -un, namei -l로 경로의 구성요소와 존재 여부를 확인한다. 디렉터리 자체가 아직 없는 것은 생성하려던 대상이므로 그 사실만으로 원인을 확정하지 않는다. 가장 가까운 기존 부모 경로의 df -h, df -i, findmnt -T 결과로 용량·inode·ro 여부를 확인한다. 기본 pluginpath는 /usr/share/cockpit/ablestack이며 실제 설치 경로가 다르면 담당자가 해당 경로를 확인한다. root 인증·승인된 호스트 키·대상 경로·파일시스템 상태를 확인하기 전에 임의 mkdir, chmod777, remount 또는 키 삭제를 지시하지 않는다. 실패한 접속 오류나 확인된 파일시스템 문제를 먼저 정상화하고 지원되는 배포 화면에서 재시도한다. 모두 정상인데 재발하면 같은 원문 오류를 숨긴 반환값의 한계를 알리고 승인된 재시도의 실제 표준 오류를 수집해 판단한다. 개인키 내용·암호는 요청하지 않으며 공개 로그는 대상 별칭과 필요한 오류만 제공하게 한다."
+    },
+    {
+      "entryId": "CCVM-DEPLOY-SSH-PREFLIGHT-001",
+      "authority": "VERIFIED_PRODUCT_SOURCE",
+      "reviewedBy": "codex-source-review",
+      "reviewedAt": "2026-11-18",
+      "title": "CCVM 배포 사전 SSH 명령 실행 검사와 안전한 진단",
+      "sourceLocator": "https://github.com/ablecloud-team/ablestack-cockpit-plugin/blob/c8b37dd6a4c35a8ba18169189a553595b24e54ab/python/cluster/cluster_config.py#L251-L303",
+      "matchTerms": ["ccvm", "클라우드센터", "ablecube hosts and scvms"],
+      "requiredTermGroups": [["ccvm", "클라우드센터", "ablecube hosts and scvms"], ["배포", "command execution test failed"]],
+      "content": "insertScvmHost는 배포 화면이 전달한 JSON의 ablecube와 scvmMngt 값들을 ping 검사한 다음, 배포 실행 호스트의 실행 계정·SSH 설정에서 각 대상으로 순서대로 ssh 대상 'echo ok'를 실행한다. 종료 코드 0이고 양끝 공백을 제거한 출력이 ok여야 다음 대상으로 진행한다. 출력에 다른 안내 문구가 섞여도 실패할 수 있다. 예외를 일반 Command execution test failed 메시지로 축약하는 경로가 있어 대상이 화면에 없을 수 있다. 이 사전 검사를 통과한 뒤 원격 cluster.json·hosts 설정을 쓰는 단계가 있으므로 insertScvmHost 전체를 읽기 전용 검사로 재실행하면 안 된다. 대상 SCVM 안이나 다른 출발지에서 성공한 수동 로그인만으로 배포 호스트의 자동 검사를 통과했다고 판단하지 않는다. Cockpit 배포를 실행한 동일 CubeOS 호스트·동일 계정에서 확인하며, root로 배포한다면 root 문맥을 사용한다. 안전한 진단 예시는 ssh <DEPLOY_ADMIN>@<DEPLOY_CUBE_HOST>로 접속하고 id -un을 확인한 뒤, 배포 화면의 대상 값을 그대로 넣어 ssh -o BatchMode=yes -o ConnectTimeout=5 -o StrictHostKeyChecking=yes '<TARGET_FROM_PROFILE>' 'echo ok'를 실행하고 바로 printf 'ssh_exit=%s\\n' \"$?\"로 종료 코드를 확인하는 것이다. 정상 기준은 각 대상의 출력이 ok이고 종료 코드 0인 것이다. 이 진단은 호스트 신원 검증을 유지하므로 미등록·변경된 키 오류면 담당자가 별도 확인한 지문과 대조하며 자동 승인·known_hosts 전체 삭제를 하지 않는다. Permission denied는 같은 접속의 사용자 인증 키·계정을 확인하고, timeout/no route는 대상 주소·경로를 확인하며, 출력에 여분 문장이 있으면 비대화형 셸 시작 스크립트의 stdout을 담당자가 확인한다. 키 자료는 제품 내부 관리 구성의 호스트와 SCVM 범위만 기존 구성과 대조하며 일반 업무 VM에 공유 개인키를 배포하지 않는다. 개인키 내용·암호·토큰을 요청하지 않는다. 첫 이미지의 주소 일부를 오류 코드로 해석하지 않는다. create_ccvm_cloudinit.py의 별도 원격 mkdir 오류는 cloud-init 준비/배포 분기에 해당하며 standalone의 local_ccvm_manage.py copy와 혼동하지 않는다. 두 단계의 오류가 같은 원인이라는 증거는 없다. 기존 파일 생성 오류만 보고 폴더 수동 생성·재배포 초기화·서비스 재시작을 지시하지 않는다."
+    },
+    {
+      "entryId": "OPENSSH-HOST-KEY-SCAN-DIAGNOSTICS-001",
+      "authority": "OFFICIAL_EXTERNAL_DOCUMENTATION",
+      "reviewedAt": "2026-11-18",
+      "title": "SSH 호스트 키 스캔과 사용자 인증 로그의 구분",
+      "sourceLocator": "https://man.openbsd.org/ssh-keyscan",
+      "matchTerms": ["no matching host key type", "ssh-keyscan", "sk-ecdsa", "sk-ssh-ed25519"],
+      "requiredTermGroups": [["no matching host key type", "ssh-keyscan", "sk-ecdsa", "sk-ssh-ed25519"]],
+      "content": "ssh-keyscan은 로그인 없이 서버 호스트 공개키를 수집하며 기본적으로 RSA·ECDSA·ED25519 및 보안 키 계열 등 여러 유형을 요청한다. 일부 유형의 협상 실패나 preauth 종료와 다른 연결의 Accepted publickey가 함께 있을 수 있다. 다만 특정 로그 행이 스캔에서 발생했다고 시각만으로 확정하지 않는다. 출발지·대상·계정·시각과 실제 명령을 대조한다. 호스트 키는 서버 신원이고 로그인 사용자 공개키 인증과 다르므로 HostKeyAlgorithms와 PubkeyAcceptedAlgorithms를 혼동하지 않는다. 스캔 결과는 신원을 인증하지 않으므로 확인 없이 known_hosts에 추가하지 않는다. BatchMode=yes는 암호·호스트 키 확인 등의 대화형 질문을 막는 진단 조건이며, 대화형 로그인 성공이 자동 실행 성공을 보장하지 않는다. 무조건 레거시 알고리즘 추가, 전역 검증 비활성화, 개인키 공개·재생성부터 안내하지 않는다."
+    },
+    {
       "entryId": "DIPLO-GFS-RESET-REINSTALL-001",
       "authority": "VERIFIED_PRODUCT_SOURCE",
       "reviewedBy": "codex-source-review",

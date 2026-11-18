@@ -84,6 +84,41 @@ def _excerpt(value: object, limit: int) -> str:
     return text[:head] + marker + text[-(body_limit - head):]
 
 
+_SSH_DIAGNOSTIC = re.compile(
+    r'no matching (?:host key type|key exchange method|cipher)|permission denied|'
+    r'host key verification failed|remote host identification has changed|'
+    r'connection (?:refused|timed out)|no route to host', re.IGNORECASE,
+)
+
+
+def _support_excerpt(value: object, limit: int) -> str:
+    """Preserve bounded middle SSH failures as evidence, not just a log's healthy ends."""
+    text = str(value or '').strip()
+    ordinary = _excerpt(text, limit)
+    if len(text) <= limit or limit < 300:
+        return ordinary
+    header = '\n[중간 진단 행 발췌 — 로그 자료]\n'
+    budget = limit // 3 - len(header)
+    snippets: list[str] = []
+    for match in _SSH_DIAGNOSTIC.finditer(text):
+        if budget < 64:
+            break
+        start = max(text.rfind('\n', 0, match.start()) + 1, match.start() - 32)
+        end = text.find('\n', match.end())
+        end = len(text) if end < 0 else end
+        line = text[start:min(end, start + min(140, budget - 1))].strip()
+        if not line or line in ordinary or line in snippets or len(line) + 1 > budget:
+            continue
+        snippets.append(line)
+        budget -= len(line) + 1
+        if len(snippets) == 2:
+            break
+    if not snippets:
+        return ordinary
+    block = header + '\n'.join(snippets)
+    return _excerpt(text, limit - len(block)) + block
+
+
 def _utf8_excerpt(value: object, limit: int) -> str:
     """Keep both ends of text within an exact UTF-8 byte budget."""
     text = str(value or "").strip()
@@ -1219,17 +1254,18 @@ def build_conversation_question(
         })
     rows.sort(key=lambda item: (int(item.get("postNumber") or 0), str(item.get("sourcePostId") or "")))
     original = next((item for item in rows if item.get("role") == "REQUESTER"), rows[0] if rows else None)
-    original_text = _excerpt((original or {}).get("content") or incoming.get("question") or "", 1200)
+    original_text = _support_excerpt((original or {}).get("content") or incoming.get("question") or "", 1200)
     transcript: list[str] = []
     for item in rows[-12:]:
         label = ROLE_LABELS.get(str(item.get("role") or "STAFF"), "참여자")
         number = item.get("postNumber") or "-"
-        content = _excerpt(item.get("content"), 900)
+        excerpt = _excerpt if item.get('role') == 'ASSISTANT' else _support_excerpt
+        content = excerpt(item.get("content"), 900)
         suffix = " (첨부자료 포함)" if item.get("artifactIds") else ""
         transcript.append(f"- #{number} {label}{suffix}: {content}")
     human_turns = [item for item in rows if item.get("role") != "ASSISTANT"]
     assistant_turns = [item for item in rows if item.get("role") == "ASSISTANT"]
-    latest_human = _excerpt(
+    latest_human = _support_excerpt(
         (human_turns[-1] if human_turns else {}).get("content") or incoming.get("question") or "",
         1200,
     )
@@ -1280,8 +1316,8 @@ def build_conversation_question(
     )
     compact_prefix = (
         f"[Community 기술지원 제목]\n{title[:200]}\n\n"
-        f"[최초 질문]\n{_excerpt(original_text, 650)}\n\n"
-        f"[참여자의 최신 추가 정보 또는 질문]\n{_excerpt(latest_human, 900)}\n\n"
+        f"[최초 질문]\n{_support_excerpt(original_text, 650)}\n\n"
+        f"[참여자의 최신 추가 정보 또는 질문]\n{_support_excerpt(latest_human, 900)}\n\n"
         f"{_excerpt(typo_section, 500)}"
         f"[직전 TechFlow 답변]\n{_excerpt(previous_assistant, 650) or '없음'}\n\n"
         "[최근 대화]\n"
@@ -1293,7 +1329,7 @@ def build_conversation_question(
     compact_transcript: list[str] = []
     used = 0
     for row in reversed(transcript):
-        row = _excerpt(row, 500)
+        row = _support_excerpt(row, 500)
         separator = 1 if compact_transcript else 0
         remaining = available - used - separator
         if remaining <= 0:
@@ -1325,7 +1361,7 @@ def build_progression_retry_question(
 
 
 COMMAND_MARKERS = (
-    "sudo ", "systemctl ", "journalctl ", "ausearch ", "findmnt ", "namei ", "getfacl ",
+    "sudo ", "ssh ", "systemctl ", "journalctl ", "ausearch ", "findmnt ", "namei ", "getfacl ",
     "matchpathcon ", "restorecon ", "virsh ", "grep ", "ls -", "nc ", "qemu-img ", "df ",
 )
 _COMMAND_STEP = re.compile(

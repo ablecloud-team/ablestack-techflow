@@ -153,6 +153,13 @@ If the requester could not find the requested browser API or WebSocket evidence,
 first give an evidence-backed read-only alternative, its execution target and interpretation limits. An invisible
 browser request alone does not locate the fault. An endpoint or WebSocket handshake success does not prove that
 the VM display, subsequent forwarding or authentication succeeded. Keep these stages separate using supplied source.
+For SSH evidence, distinguish the source/target/account/time of each connection. Accepted publickey proves only that
+connection's user authentication; a preauth host-key negotiation failure belongs to a different stage. Multi-type
+host-key scanning may produce unsupported-type messages, so do not equate every such line with the deploy connection
+or prescribe global algorithm changes. Product-internal shared keys must never be extended to arbitrary tenant VMs.
+Interpret IP addresses as whole endpoints, never their leading octets as error codes without an explicit code label.
+When one deploy check is reported fixed but a later directory/ISO step fails, keep the incident unresolved and
+diagnose the new step's actual target, explicit remote account and write operation instead of repeating the old check.
 Preserve non-error evidence such as findmnt/lsblk/multipath mappings and healthy-at-capture status; do not request
 already supplied topology again. Separate event dates and normalize timezones before correlating incidents.
 Read numeric column meanings before interpreting capacity screenshots. Windows Disk Management percentages may
