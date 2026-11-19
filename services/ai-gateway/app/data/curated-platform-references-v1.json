@@ -155,6 +155,46 @@
       "content": "ABLESTACK Diplo의 KVM HA 공급자 식별자는 kvmhaprovider다. 앞선 대화에서 정식 식별자가 확인됐고 사용자가 kvmhapervider처럼 한두 글자를 바꾸어 입력했다면 문맥상 오타로 보고 진행한다고 한 문장으로 알린 뒤 HA 상태 분석을 계속한다. IP, UUID, 버전, 명령, 경로, 상태값, 화면·로그 원문은 자동 교정하지 않는다. HAConfig 상태에서 Suspect는 최근 Health Check 실패, Degraded는 리소스를 관리할 수 없지만 사용자 요청은 계속 서비스하는 상태다. Checking 상태의 VM·스토리지 Activity Check에서 연속 실패 수가 설정 임계치에 미치지 못하는 것으로 판정되면 Degraded로 전환될 수 있고 Health Check가 통과하면 Available로 전환된다. 따라서 Degraded를 libvirt 장애 하나로 단정하지 않는다. KVM HA 자격에는 호스트별 OOBM 활성화, 유지보수·비활성 상태 아님, 같은 클러스터의 Up 상태 이웃 KVM 호스트, VM 볼륨이 사용하는 스토리지 풀 중 kvm.ha.on.storage.heartbeat=true인 풀이 하나 이상 존재하는 조건이 포함된다. Mold에서 호스트 상세의 관리 IP·호스트 UUID·HA 상태·공급자를 확인하고 이벤트에서 HA.STATE.TRANSITION과 [VM Activity Check]를 상태 변경 시각 전후로 확인한다. 관리 서버에는 ssh -p <SSH_PORT> <MANAGEMENT_ADMIN>@<MOLD_MANAGEMENT_IP>로 접속해 sudo -i를 실행한다. 관리 서버 서비스는 mold.service이며 sudo systemctl status mold.service --no-pager -l, sudo journalctl -u mold.service --since '<상태 변경 10분 전>' --until '<상태 변경 10분 후>' --no-pager, sudo grep -Ei 'HA state|VM Activity Check|Suspect|Checking|Degraded|CheckOnHostCommand|storage pool' /var/log/cloudstack/management/management-server.log 명령으로 확인한다. 각 KVM 호스트에는 ssh -p <SSH_PORT> <HOST_ADMIN>@<HOST_MANAGEMENT_IP>로 접속해 sudo -i를 실행한다. 호스트 에이전트는 mold-agent.service이며 sudo systemctl status mold-agent.service --no-pager -l, sudo journalctl -u mold-agent.service --since '<상태 변경 10분 전>' --until '<상태 변경 10분 후>' --no-pager, sudo tail -n 300 /var/log/cloudstack/agent/agent.log를 사용한다. 이어 sudo virsh -c qemu:///system list --all로 libvirt 연결과 VM 목록을 확인한다. 배포에 따라 sudo systemctl status libvirtd.service --no-pager -l 또는 sudo systemctl status virtqemud.service --no-pager -l 중 실제 설치된 Unit을 사용하며 Unit not found인 서비스를 임의로 설치하거나 전환하지 않는다. 정상 기준은 mold.service와 mold-agent.service가 active (running), virsh가 연결 오류 없이 VM 목록을 반환하고, 모든 HA 대상 호스트가 Available / kvmhaprovider가 되는 것이다. Available 전에는 호스트 전원 차단, Fencing, DB 직접 수정, 서비스 재시작을 수행하지 않는다. 공개 Community에 결과를 올릴 때 BMC 암호, API Key, Token, Cookie는 삭제하고 내부 IP·FQDN·사용자 이름·전체 UUID는 HOST-A 같은 일관된 별칭으로 마스킹하되 시각, 서비스명, HA 상태, 오류 문구와 명령 결과는 유지한다."
     },
     {
+      "entryId": "CUBEOS-SECURITY-ACCOUNTS-001",
+      "authority": "SOURCE_CODE",
+      "reviewedAt": "2026-11-19",
+      "title": "CubeOS 일반 관리계정·root 전환과 SSH 포트 연동 보안 기능",
+      "sourceLocator": "https://github.com/ablecloud-team/ablestack-cockpit-plugin/blob/d0e122f01bbf3710cb926f03e0d1164d6493b4aa/shell/host/security_patch.sh#L295-L330",
+      "matchTerms": ["계정", "ssh", "포트", "비밀번호", "패스워드"],
+      "requiredTermGroups": [["cubeos", "cube os", "mold", "wall"], ["계정", "ssh", "포트", "비밀번호", "패스워드"]],
+      "content": "검토한 제품 보안조치 소스는 일반 관리계정 생성·wheel 그룹 구성과 pam_wheel 기반 root 전환 제한을 구현한다(295-330행). 따라서 허가된 일반계정으로 SSH 로그인 후 root 전환하는 운영 방식이 구현되어 있다. 61-66행의 PermitRootLogin prohibit-password는 root 비밀번호 SSH 로그인을 제한하며 root 키 인증 전체 차단과 다르다. 제품 내부 root 키 인증을 유지해야 하며 임의 root 잠금·삭제·계정 만료 정책을 영향 없다고 보장하지 않는다. 149-202행은 SSH 포트 변경 시 서버 설정뿐 아니라 /root/.ssh/config, 방화벽·SELinux와 ssh-scan 포트를 함께 반영하며 설정 검증 후 재시작한다. 이는 변경 가능성의 소스 근거이지 고객 설치 버전에서 모든 보안 정책 조합이 무영향이라는 보증이 아니다. 코드에 고정된 초기 자격정보는 공개 답변에 인용하지 않는다. 전체 스크립트는 여러 보안 설정을 변경하므로 단일 기능 문의에 실행을 권하지 않는다. 소스로 확인 불가능한 설치 버전별 공식 지원 범위와 고객별 연동 영향은 ABLECLOUD 기술지원센터에 문의하도록 안내한다."
+    },
+    {
+      "entryId": "CUBEOS-SSH-PORT-CAPABILITY-001",
+      "authority": "SOURCE_CODE",
+      "reviewedAt": "2026-11-19",
+      "title": "Cube 관리 화면의 SSH 포트 변경과 security_patch.py 연동",
+      "sourceLocator": "https://github.com/ablecloud-team/ablestack-cockpit-plugin/blob/d0e122f01bbf3710cb926f03e0d1164d6493b4aa/python/security_patch/security_patch.py#L55-L65",
+      "matchTerms": ["ssh", "포트"],
+      "requiredTermGroups": [["cubeos", "cube os", "mold", "wall"], ["ssh", "포트"]],
+      "content": "제품의 security_patch.py에는 현재 SSH 포트 --ssh-port와 새 포트 --new-port/-P(1-65535), 대상 선택 및 --port-change 옵션이 구현되어 있다. 같은 커밋 src/features/main.js 6425-6453행의 button-cloud-cluster-ssh-port는 div-modal-ssh-port-change에서 현재·변경 포트를 받아 이 도구의 --port-change 경로를 실행한다. 따라서 CubeOS SSH 포트 변경 기능 자체는 존재하며 미지원이라고 단정하면 안 된다. SSH 서버·내부 클라이언트·호스트 키 수집·방화벽·SELinux를 함께 반영해야 하므로 sshd_config만 수정해도 모든 기능이 정상이라는 안내는 부적절하다. 해당 구성에서는 Glue 관리 SSH 포트도 연동한다. 브랜치에 기능이 존재하는 것과 고객 설치 버전 포함·공식 적용 정책은 별개다. 고객 버전의 지원 도구·적용 대상·승인된 변경 절차는 ABLECLOUD 기술지원센터에 확인하도록 안내한다. 기능 지원 여부 문의에 장애 시각·로그를 먼저 요구하거나 전체 보안조치 스크립트 실행을 권하지 않는다."
+    },
+    {
+      "entryId": "MOLD-LOCAL-PASSWORD-CAPABILITY-001",
+      "authority": "SOURCE_CODE",
+      "reviewedAt": "2026-11-19",
+      "title": "Mold 사용자 비밀번호 변경 API",
+      "sourceLocator": "https://github.com/ablecloud-team/ablestack-cloud/blob/c2baaf9d507bdffa8dbafeee0c32b19c1c52f843/api/src/main/java/org/apache/cloudstack/api/command/admin/user/UpdateUserCmd.java#L37-L68",
+      "matchTerms": ["비밀번호", "패스워드", "암호"],
+      "requiredTermGroups": [["mold"], ["비밀번호", "패스워드", "암호"]],
+      "content": "Mold의 UpdateUserCmd는 updateUser API에서 password와 currentPassword를 처리하고 사용자 갱신 서비스에 전달한다. 제품 사용자 비밀번호 변경 기능이 존재한다. 이는 웹 로컬 사용자 비밀번호 변경이며 CubeOS root나 DB 계정 자격정보 변경과 다르다. 정기적인 수동 비밀번호 변경 가능 여부와 계정 강제 만료·잠금·외부 인증 또는 저장된 연동 자격정보 교체 영향은 구분해야 한다. 소스에서 고객의 외부 인증과 저장된 연동 정보를 확인하지 못했다면 일괄 무영향을 보장하지 말고 ABLECLOUD 기술지원센터에 해당 정책의 적용 범위를 문의하도록 안내한다. 공개 답변에는 내부 구현 경로나 기반 프로젝트명 대신 Mold 제품 기능으로 설명한다."
+    },
+    {
+      "entryId": "WALL-LOCAL-PASSWORD-CAPABILITY-001",
+      "authority": "SOURCE_CODE",
+      "reviewedAt": "2026-11-19",
+      "title": "Wall 로컬 사용자 비밀번호 변경과 외부 인증 예외",
+      "sourceLocator": "https://github.com/ablecloud-team/ablestack-wall/blob/f27b3f1b0b35489e05c64924b5cff7dc64dd2f6d/pkg/api/user.go#L220-L254",
+      "matchTerms": ["비밀번호", "패스워드", "암호"],
+      "requiredTermGroups": [["wall"], ["비밀번호", "패스워드", "암호"]],
+      "content": "Wall ChangeUserPassword는 기존 비밀번호·새 비밀번호를 검증하고 사용자 비밀번호를 갱신한다. LDAPEnabled 또는 AuthProxyEnabled이면 이 경로에서 변경을 거부한다. 같은 커밋 public/app/features/profile/ChangePasswordForm.tsx 16-25행도 LDAP·인증 프록시 및 특정 외부 인증 구성에서 로컬 변경 양식을 제한한다. 따라서 로컬 웹 관리계정 비밀번호 변경 기능은 존재하지만 LDAP·인증 프록시·외부 인증 계정은 해당 인증 체계의 정책을 따라야 한다. CubeOS·Mold·Wall을 한 항목으로 질문하면 각 계정 영역을 빠짐없이 구분하여 답변한다. 비밀번호 변경 기능만으로 모든 고객 외부 연동과 강제 만료 정책이 무영향이라고 보증하지 않으며 확인되지 않은 공식 적용 범위는 ABLECLOUD 기술지원센터에 문의하도록 안내한다."
+    },
+    {
       "entryId": "LIBVIRT-VNC-GRAPHICS-001",
       "authority": "OFFICIAL_EXTERNAL_DOCUMENTATION",
       "title": "libvirt VNC 그래픽 엔드포인트와 진단 명령",

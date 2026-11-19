@@ -7,6 +7,7 @@ import re
 from typing import Any, Iterable
 
 from .embedding import MAX_INPUT_BYTES
+from .support_intent import capability_review_spec, capability_question, capability_result_complete
 from .official_web import guest_os_context_label, guest_os_family, support_topic
 
 
@@ -241,6 +242,9 @@ def build_chat_question(
     limit: int = MAX_INPUT_BYTES,
 ) -> str:
     """Build a Chat prompt bounded by the downstream embedding UTF-8 limit."""
+    capability = capability_review_spec(current_question)
+    if capability:
+        return capability_question(capability, limit=limit)
     instruction = (
         "같은 사용자의 기술지원 대화입니다. 이전 맥락을 유지하되 현재 질문을 우선하고, "
         "DOC, ABLESTACK Diplo 현재 코드, 관련 제품 코드 전체, ABLESTACK Europa 프리뷰를 순서대로 "
@@ -1206,6 +1210,9 @@ def build_conversation_question(
     limit: int = 4000,
 ) -> str:
     """Build a bounded prompt that preserves the original question and recent support turns."""
+    capability = capability_review_spec(str(incoming.get('question') or ''))
+    if capability:
+        return capability_question(capability, limit=limit)
     rows = list(turns)
     incoming_id = source_post_id(incoming)
     if not any(str(item.get("sourcePostId")) == incoming_id for item in rows):
@@ -1313,6 +1320,9 @@ def build_progression_retry_question(
     actionability_issues: Iterable[str] = (),
 ) -> str:
     """Build a retry prompt while reserving space for the mandatory rewrite instruction."""
+    capability = capability_review_spec(str(incoming.get('question') or ''))
+    if capability:
+        return capability_question(capability, limit=limit)
     issues = tuple(actionability_issues)
     actionability = (
         f"\n\n{ACTIONABILITY_RETRY_INSTRUCTION}\n누락 항목: {', '.join(issues)}" if issues else ""
@@ -1384,6 +1394,8 @@ def _has_relative_journal_window(rows: Iterable[str]) -> bool:
 
 def community_actionability_issues(result: dict[str, Any]) -> tuple[str, ...]:
     """Return missing operational context for Linux commands and log collection requests."""
+    if capability_result_complete(result):
+        return ()  # This mode permits feature verdicts/referrals, not operational commands.
     if str(result.get("state") or "").upper() != "ANSWERED":
         return ()
     report = result.get("report") or {}
@@ -1451,6 +1463,8 @@ def community_actionability_issues(result: dict[str, Any]) -> tuple[str, ...]:
 
 def community_result_advances(result: dict[str, Any], turns: Iterable[dict[str, Any]]) -> bool:
     """Return whether a follow-up adds a concrete step instead of repeating the last reply."""
+    if capability_result_complete(result):
+        return True  # Completeness and truthful referral replace incident-step progression.
     previous = [str(item.get("content") or "") for item in turns if item.get("role") == "ASSISTANT"]
     if not previous:
         return True

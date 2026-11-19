@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 from typing import Any, Iterable
+from .support_intent import MODE as CAPABILITY_REVIEW_MODE, capability_review_spec, capability_result_complete
 
 
 CURRENT_SOURCE_PROFILES: tuple[str, ...] = (
@@ -377,7 +378,7 @@ def feature_source_terms(question: str) -> tuple[str, ...]:
         anchors.extend(KORAL_MARKERS)
     if _is_wall_question(question):
         anchors.extend(WALL_MARKERS)
-    if _is_mold_question(question) and not _is_mold_storage_security_question(question) and not _is_host_reinstall_question(question):
+    if _is_mold_question(question) and not _is_mold_storage_security_question(question) and not _is_host_reinstall_question(question) and not _is_security_capability(question):
         anchors.extend(MOLD_MARKERS)
     if _is_host_reinstall_question(question):
         anchors.extend(('install-guide-general-virtualization-cube.md', 'system-restart-vm.md',
@@ -398,7 +399,20 @@ def feature_source_terms(question: str) -> tuple[str, ...]:
     ):
         anchors.extend(('CubeOS', 'setup passwd sync', 'shadow password marker', 'usermod nologin',
                         'coreutils sync.c', 'User=sync', 'sync account dependency'))
+    if _is_security_capability(question):
+        anchors.extend(('security_patch.py','security_patch.sh','PermitRootLogin','wheel','pam_wheel',
+                        'UpdateUserCmd','ChangeUserPassword','ChangePasswordForm','--new-port','--port-change'))
     return tuple(dict.fromkeys(anchors))
+
+
+def _is_security_capability(question: str) -> bool:
+    spec = capability_review_spec(question)
+    if not spec:
+        return False
+    raw = spec.original.casefold()
+    return (bool(re.search(r'cube\s*os|\bmold\b|\bwall\b',raw))
+            and bool(re.search(r'계정|비밀번호|패스워드|암호|ssh|포트',raw))
+            and not any(word in raw for word in ('vnc','콘솔 연결','웹콘솔','웹 콘솔')))
 
 
 def implementation_identifiers(question: str, *, limit: int = 40) -> tuple[str, ...]:
@@ -484,6 +498,12 @@ def _relevance_score(question: str, item: dict[str, Any]) -> int:
         score += sum(8 for marker in MOLD_STORAGE_SECURITY_MARKERS if marker.casefold() in searchable)
         if any(term in path for term in ('ccvm_bootstrap.sh', 'podman-inspect', 'containers-storage')):
             score += 30
+    if _is_security_capability(question):
+        path = str(item.get('path') or '').casefold()
+        if any(part in path for part in ('consoleproxy','consoleaccessmanager','console.vue')):
+            return 0
+        if any(part in path for part in ('security_patch','updateusercmd','pkg/api/user.go','changepasswordform')):
+            score += 48
     if _is_network_request_failure_question(question):
         score += sum(7 for marker in NETWORK_REQUEST_FAILURE_MARKERS if marker.casefold() in searchable)
         path = str(item.get("path") or "").casefold()
@@ -840,6 +860,20 @@ def format_public_answer(result: dict[str, Any]) -> str | None:
     and ask only for information that is still needed.
     """
     citations = result.get("citations") or []
+    if result.get('answerMode') == CAPABILITY_REVIEW_MODE:
+        if not capability_result_complete(result):
+            return None
+        lines = ['문의하신 항목별로 가능 여부와 적용 조건을 나누어 답변드립니다.']
+        for index,row in enumerate(result['capabilityAnswers'],1):
+            question = simplify_public_text(row['question'],citations).replace('\n',' ')
+            body = simplify_public_text(row['answer'],citations)
+            lines.extend(['',f'### {index}. {question}',f'**{row["verdict"]}** — {body}'])
+        notes = result.get('capabilityUnknowns') or []
+        if notes:
+            lines.extend(['','### 기술지원센터 확인사항'])
+            lines.extend('- '+simplify_public_text(note,citations) for note in notes)
+            lines.append('위 범위는 ABLECLOUD 기술지원센터에 공식 적용 여부를 문의해 주세요.')
+        return '\n'.join(lines).strip()
     if result.get("state") == "NEEDS_INFORMATION":
         needed = result.get("questionsNeeded") or (result.get("plan") or {}).get("questionsNeeded") or []
         lines = [

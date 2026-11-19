@@ -77,7 +77,7 @@ def conversationalize_answer(answer: str) -> str:
     answers created before the automatic-publication policy was enabled.
     """
     value = answer.strip()
-    if "### " not in value:
+    if not re.search(r'(?m)^### (?:증상|원인|해결 방법|추가로 필요한 정보|추가 고려사항|적용 버전)\s*$', value):
         return value
     sections: dict[str, list[str]] = {}
     current: str | None = None
