@@ -30,6 +30,48 @@ from app.platform_references import curated_platform_results
 
 
 class VersionedAssistPolicyTest(unittest.TestCase):
+    def test_latest_ccvm_directory_failure_outranks_resolved_preflight_history(self):
+        question=('[Community 기술지원 제목]\nCCVM 배포 오류\n\n'
+            '[참여자의 최신 추가 정보 또는 질문]\n해결되니 pcs 클러스터 호스트에 /vmconfig/ccvm 폴더생성 명령 실패가 나옵니다.\n\n'
+            '[직전 TechFlow 답변]\nCommand execution test failed. Check the ablecube hosts and scvms status.')
+        rows=[{'path':'python/cluster/cluster_config.py','content':'CCVM insertScvmHost echo ok'},
+              {'path':'python/vm/create_ccvm_cloudinit.py','content':'CCVM mkdir -p tools/vmconfig/ccvm'}]
+        self.assertEqual(rows[1]['path'],relevant_results(question,rows)[0]['path'])
+        content='\n'.join(r['content'] for r in curated_platform_results(question) if '디렉터리' in r['symbol'])
+        for term in ('root@','사전 검사가 성공해도','전체 해결 확인이 아니다','df -i','findmnt -T'):
+            self.assertIn(term,content)
+
+    def test_ccvm_preflight_prioritizes_helper_and_has_safe_exact_diagnostic(self):
+        question='CCVM 배포 Command execution test failed. Check the ablecube hosts and scvms status.'
+        terms=feature_source_terms(question)
+        self.assertIn('insertScvmHost',terms)
+        self.assertIn('cluster_config.py',terms)
+        helper={'path':'python/cluster/cluster_config.py','symbol':'insertScvmHost',
+                'content':'ssh ablecube echo ok; ssh scvmMngt echo ok; Command execution test failed'}
+        ui={'path':'src/features/cloud-vm-wizard.js','content':'CCVM 배포 HOSTS SSH local_ccvm_manage.py copy'}
+        self.assertEqual(helper['path'],relevant_results(question,[ui,helper])[0]['path'])
+        content='\n'.join(r['content'] for r in curated_platform_results(question) if '사전' in r['symbol'])
+        for term in ('echo ok','BatchMode=yes','StrictHostKeyChecking=yes','배포 실행 호스트',
+                     '종료 코드 0','출력이 ok','일반 업무 VM','호스트 신원','개인키','insertScvmHost'):
+            self.assertIn(term,content)
+        self.assertNotIn('StrictHostKeyChecking=no',content)
+
+    def test_ccvm_preflight_does_not_override_unrelated_ssh_or_maintenance_questions(self):
+        for question in ('Ubuntu VM SSH 키 오류입니다.','CCVM NFS 보안 설정 문의입니다.',
+                         '다른 제품에서 Command execution test failed라고 나옵니다.'):
+            with self.subTest(question=question):
+                self.assertNotIn('insertScvmHost',feature_source_terms(question))
+        question='CCVM 배포 실패, 대상 192.0.2.11의 Command execution test failed'
+        expanded=expand_retrieval_question(question)
+        self.assertTrue(expanded.startswith(question))
+        self.assertLessEqual(len(expanded.encode('utf-8')),4000)
+
+    def test_key_scan_reference_is_evidence_not_automatic_authentication_failure(self):
+        question='CCVM 배포 로그 Accepted publickey와 no matching host key type sk-ssh-ed25519 [preauth]'
+        content='\n'.join(r['content'] for r in curated_platform_results(question) if '스캔' in r['symbol'])
+        for term in ('로그인 없이','여러 유형','확정하지','HostKeyAlgorithms','PubkeyAcceptedAlgorithms','확인 없이'):
+            self.assertIn(term,content)
+
     def test_case207_keeps_eligibility_and_storage_heartbeat_sources_for_typo_title(self):
         question = 'HA 활성화 중 Host2번만 lneligible 상태 문제. 저 부분에서 지속해서 바뀌지 않습니다.'
         rows = [

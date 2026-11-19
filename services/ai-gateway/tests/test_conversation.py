@@ -12,6 +12,7 @@ from app.conversation import (
     selected_resolution_is_unverified_recommendation,
     windows11_diplo43_tpm_result,
     build_progression_retry_question,
+    _support_excerpt,
     community_actionability_issues,
     community_result_advances,
     conversation_artifact_ids,
@@ -38,6 +39,50 @@ from app.versioned_assist import format_public_answer, format_knowledge_base
 
 
 class ConversationProgressionTest(unittest.TestCase):
+    def test_resolved_preflight_then_directory_failure_is_not_a_resolution(self):
+        question='해결되니 pcs 클러스터 호스트에 /vmconfig/ccvm 폴더생성 명령 실패 이 오류가 발생해'
+        self.assertIsNone(resolution_progress_result(question))
+
+    def test_support_excerpt_is_bounded_and_keeps_short_text_unchanged(self):
+        short='Accepted publickey; no matching host key type found'
+        self.assertEqual(short,_support_excerpt(short,300))
+        text='PREFIX\n'+'x'*2000+' no matching host key type found. Their offer: sk-ssh-ed25519 [preauth] '+'y'*2000+'\nEND'
+        for limit in (300,500,900,1200):
+            value=_support_excerpt(text,limit)
+            self.assertLessEqual(len(value),limit)
+            self.assertIn('no matching host key type found',value)
+            self.assertIn('PREFIX',value)
+            self.assertIn('END',value)
+            self.assertIn('…',value)  # Cropped peer/line fragments must not look complete.
+
+    def test_new_ssh_diagnostic_advances_but_same_command_or_bare_identifier_does_not(self):
+        command="ssh -o BatchMode=yes -o ConnectTimeout=5 '<TARGET>' 'echo ok'"
+        previous=[{'role':'ASSISTANT','content':'대상 상태를 확인해 주세요.'}]
+        report={'state':'ANSWERED','report':{'recommendedActions':['```bash\n'+command+'\n```'],'unknowns':[]}}
+        self.assertTrue(community_result_advances(report,previous))
+        self.assertFalse(community_result_advances(report,[{'role':'ASSISTANT','content':command}]))
+        report['report']['recommendedActions']=['`ssh` 상태를 알려주세요.']
+        self.assertFalse(community_result_advances(report,previous))
+
+    def test_ssh_policy_keeps_peers_and_ip_addresses_distinct(self):
+        self.assertIn('source/target/account/time',COMPREHENSIVE_SYSTEM_POLICY)
+        self.assertIn('Interpret IP addresses as whole endpoints',COMPREHENSIVE_SYSTEM_POLICY)
+        self.assertIn('arbitrary tenant VMs',COMPREHENSIVE_SYSTEM_POLICY)
+
+    def test_middle_ssh_failure_survives_human_log_compaction_and_retry(self):
+        raw = ('로그 시작: Accepted publickey for root\n' + '반복 상태 행입니다.\n'*120
+               + 'sshd: no matching host key type found. Their offer: sk-ssh-ed25519@openssh.com [preauth]\n'
+               + '반복 상태 행입니다.\n'*120 + '로그 끝: 이제 어느 대상을 확인해야 하나요?')
+        turns=[{'sourcePostId':'1','postNumber':1,'role':'REQUESTER','content':'CCVM 배포 오류입니다.'},
+               {'sourcePostId':'2','postNumber':2,'role':'ASSISTANT','content':'배포 상태를 알려주세요.'}]
+        incoming={'postId':'3','postNumber':3,'turnRole':'REQUESTER','question':raw}
+        for prompt in (build_conversation_question('CCVM 배포 오류',turns,incoming),
+                       build_progression_retry_question('CCVM 배포 오류',turns,incoming)):
+            self.assertLessEqual(len(prompt),4000)
+            self.assertIn('Accepted publickey',prompt)
+            self.assertIn('no matching host key type found',prompt)
+            self.assertIn('어느 대상을 확인',prompt)
+
     def test_resolution_report_is_not_general_requirement_or_proven_root_cause(self):
         turns = [{'sourcePostId':'566','postNumber':1,'role':'REQUESTER','content':'Host2가 Ineligible입니다.'},
                  {'sourcePostId':'568','postNumber':3,'role':'REQUESTER','content':'가상머신이 1개씩 필요하다는 것을 알아 해결했습니다.'}]

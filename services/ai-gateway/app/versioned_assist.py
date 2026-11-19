@@ -77,6 +77,11 @@ HOST_HA_ELIGIBILITY_MARKERS: tuple[str, ...] = (
     'OutOfBandManagement', 'Ineligible',
 )
 
+CCVM_PREFLIGHT_MARKERS: tuple[str, ...] = (
+    'cluster_config.py', 'insertScvmHost', 'ablecube', 'scvmMngt', 'echo ok',
+    'create_ccvm_cloudinit.py',
+)
+
 FSFREEZE_MARKERS: tuple[str, ...] = (
     "guest-fsfreeze-freeze",
     "guest-fsfreeze-status",
@@ -357,9 +362,36 @@ def _is_host_ha_eligibility_question(question: str) -> bool:
     return state or '호스트' in normalized or bool(re.search(r'(?<![a-z])host(?:[0-9]+)?(?![a-z])', normalized))
 
 
+def _ccvm_failure_stage(question: str) -> str:
+    latest = question
+    marker = '[참여자의 최신 추가 정보 또는 질문]\n'
+    if marker in latest:
+        latest = latest.split(marker, 1)[1].split('\n\n[', 1)[0]
+    latest = latest.casefold()
+    folder = max(latest.rfind('폴더생성 명령 실패'), latest.rfind('폴더 생성 명령 실패'))
+    preflight = latest.rfind('command execution test failed')
+    if folder >= 0 and '/vmconfig/ccvm' in latest and folder > preflight:
+        return 'DIRECTORY'
+    return 'PREFLIGHT' if preflight >= 0 else 'UNKNOWN'
+
+
+def _is_ccvm_preflight_question(question: str) -> bool:
+    text = question.casefold()
+    product = any(term in text for term in ('ccvm', '클라우드센터', 'ablecube hosts and scvms'))
+    return product and (
+        'command execution test failed' in text
+        or _ccvm_failure_stage(question) == 'DIRECTORY'
+        or ('배포' in text and any(term in text for term in ('오류', '실패', 'ssh', '사전 점검')))
+    )
+
+
 def feature_source_terms(question: str) -> tuple[str, ...]:
     """Map a user symptom to implementation terms before source retrieval."""
     anchors: list[str] = []
+    if _is_ccvm_preflight_question(question):
+        if _ccvm_failure_stage(question) == 'DIRECTORY':
+            anchors.extend(('create_ccvm_cloudinit.py', 'mkdir -p', 'tools/vmconfig/ccvm'))
+        anchors.extend(CCVM_PREFLIGHT_MARKERS)
     if _is_host_ha_eligibility_question(question):
         # Retrieval expansion only: do not rewrite a user's enum or infer the live state.
         anchors.extend(HOST_HA_ELIGIBILITY_MARKERS)
@@ -432,6 +464,13 @@ def expand_retrieval_question(question: str, *, limit: int = 4000) -> str:
 def _relevance_score(question: str, item: dict[str, Any]) -> int:
     searchable = f"{item.get('symbol') or ''}\n{item.get('path') or ''}\n{item.get('content') or ''}".casefold()
     score = sum(1 for term in _query_terms(question) if term in searchable)
+    if _is_ccvm_preflight_question(question):
+        path = str(item.get('path') or '').casefold()
+        directory = _ccvm_failure_stage(question) == 'DIRECTORY'
+        if path.endswith('python/cluster/cluster_config.py'):
+            score += 40 if 'insertscvmhost' in searchable and not directory else 8
+        if path.endswith('python/vm/create_ccvm_cloudinit.py'):
+            score += 48 if directory else 24
     if _is_host_ha_eligibility_question(question):
         # Generic method/enum names alone also occur in unrelated eligibility engines.
         score += sum(8 for marker in HOST_HA_ELIGIBILITY_MARKERS
