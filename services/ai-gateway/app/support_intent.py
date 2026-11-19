@@ -85,7 +85,11 @@ def capability_question(spec: CapabilitySpec, *, limit: int = 4000) -> str:
 
 
 def _products(text: str) -> set[str]:
-    return {name for name, pattern in (('CubeOS', r'cube\s*os'), ('Mold', r'\bmold\b'), ('Wall', r'\bwall\b'))
+    # Unicode \b treats Korean particles as word characters. Match ASCII token
+    # boundaries instead: Mold는/Wall의 are products, MoldX/Firewall are not.
+    return {name for name, pattern in (('CubeOS', r'(?<![a-z0-9_])cube\s*os(?![a-z0-9_])'),
+                                      ('Mold', r'(?<![a-z0-9_])mold(?![a-z0-9_])'),
+                                      ('Wall', r'(?<![a-z0-9_])wall(?![a-z0-9_])'))
             if re.search(pattern, text, re.I)}
 
 

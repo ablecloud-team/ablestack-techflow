@@ -137,6 +137,19 @@ class CapabilityReviewTests(unittest.TestCase):
         prepared['capabilityAnswers'].pop()
         self.assertFalse(capability_result_complete(prepared))
 
+    def test_korean_particles_do_not_turn_complete_product_answers_into_referrals(self):
+        actions=[ACTIONS[0], '[조건부 가능] CubeOS의 계정 암호 변경은 가능합니다. Mold는 사용자 암호 변경을 지원하고, '
+                 'Wall의 로컬 암호도 변경 가능합니다. 외부 인증은 별도입니다.', ACTIONS[2]]
+        prepared=prepare_capability_result(result(actions),capability_review_spec(QUESTION))
+        self.assertEqual('ANSWERED',prepared['state'])
+        self.assertFalse(prepared.get('capabilityReferralFallback',False))
+        self.assertTrue(capability_result_complete(prepared))
+
+    def test_product_matching_accepts_korean_particles_but_not_other_ascii_words(self):
+        from app.support_intent import _products
+        self.assertEqual({'CubeOS','Mold','Wall'},_products('Cube OS계정과 Mold는 Wall의 구성과 다릅니다.'))
+        self.assertEqual(set(),_products('CubeOSX MoldX Firewall SMALLWALL mold_account'))
+
     def test_security_retrieval_excludes_console_and_includes_pinned_feature_sources(self):
         anchors = feature_source_terms(QUESTION)
         self.assertIn('security_patch.py', anchors)
