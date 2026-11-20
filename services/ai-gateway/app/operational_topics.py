@@ -40,7 +40,7 @@ def operation_topics(value: str) -> tuple[str, ...]:
         topics.append('CUBE_UPDATE')
     if re.search(r'(?<![a-z0-9_])hci(?![a-z0-9_])|하이퍼컨버지드', text, re.I) and re.search(r'종료|퇴근|내렸다|재기동|전원|shutdown', text, re.I):
         topics.append('HCI_POWER')
-    if re.search(r'\bCVE-\d{4}-\d{4,}\b', text, re.I) and re.search(r'버전|취약|대상|영향|업데이트', text):
+    if re.search(r'(?<![a-z0-9_])CVE-\d{4}-\d{4,}(?![a-z0-9_])', text, re.I) and re.search(r'버전|취약|대상|영향|업데이트', text):
         topics.append('SECURITY_APPLICABILITY')
     return tuple(topics)
 

@@ -107,6 +107,7 @@ class OperationalTopicTests(unittest.TestCase):
 
     def test_vulnerability_applicability_has_no_incident_time_or_log_request(self):
         self.assertTrue(nonincident_operation('CVE-2026-123456 취약 대상 Java 버전인지 확인 가능한가요?'))
+        self.assertTrue(nonincident_operation('CVE-2026-123456에 해당하는 취약 버전인가요?'))
         self.assertFalse(nonincident_operation('CVE-2026-123456 공격받아 오류가 발생했습니다.'))
         answer=format_public_answer({'state':'ABSTAINED','answerIntent':'EXPLANATION'})
         self.assertIn('기술지원센터',answer)
