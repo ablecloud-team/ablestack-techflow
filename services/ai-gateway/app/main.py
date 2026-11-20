@@ -72,6 +72,7 @@ from .artifacts import ArtifactStore
 from .comprehensive import plan_query
 from .community import FlarumClient, conversationalize_answer, format_draft, profiles_for_tags
 from .support_intent import capability_review_spec, capability_question, prepare_capability_result
+from .operational_topics import nonincident_operation
 from .conversation import (
     build_conversation_question,
     build_chat_question,
@@ -824,7 +825,10 @@ def create_app(
         capability = capability_review_spec(request.question)
         if capability and '[기능·지원 검토]' not in request.question:
             request = request.model_copy(update={'question': capability_question(capability)})
-        return prepare_capability_result(_query_comprehensive_base(request, correlation_id), capability)
+        result = prepare_capability_result(_query_comprehensive_base(request, correlation_id), capability)
+        if nonincident_operation(request.question):
+            result = dict(result, answerIntent='EXPLANATION')
+        return result
 
     @application.post("/v1/assist/query", response_model=Envelope, operation_id="queryAssist")
     def query_assist(request: ComprehensiveQueryRequest, correlation_id: Annotated[str, Depends(_correlation_id)]) -> Envelope:
@@ -1183,13 +1187,14 @@ def create_app(
                       discussionId=request.discussion_id, unavailable=expired_count)
         conversation_question = build_conversation_question(request.title, turns, analysis_event)
         capability = capability_review_spec(request.question)
-        result = None if capability else resolution_progress_result(request.question)
+        operational = nonincident_operation(request.question)
+        result = None if capability or operational else resolution_progress_result(request.question)
         if result is not None:
             _json_log(
                 "community_resolution_progress_acknowledged", correlationId=correlation_id,
                 discussionId=request.discussion_id, sourcePostId=post_id,
             )
-        elif not capability:
+        elif not (capability or operational):
             reinstall_goal = infer_reinstall_goal(request.question, turns)
             result = reinstall_reset_result(request.question, turns, primary_goal=reinstall_goal)
             if result is None:

@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 from typing import Any, Iterable
 from .support_intent import MODE as CAPABILITY_REVIEW_MODE, capability_review_spec, capability_result_complete
+from .operational_topics import operational_source_terms
 
 
 CURRENT_SOURCE_PROFILES: tuple[str, ...] = (
@@ -388,6 +389,9 @@ def _is_ccvm_preflight_question(question: str) -> bool:
 
 def feature_source_terms(question: str) -> tuple[str, ...]:
     """Map a user symptom to implementation terms before source retrieval."""
+    operational = operational_source_terms(question)
+    if operational:
+        return operational
     anchors: list[str] = []
     if _is_ccvm_preflight_question(question):
         if _ccvm_failure_stage(question) == 'DIRECTORY':
@@ -478,6 +482,12 @@ def expand_retrieval_question(question: str, *, limit: int = 4000) -> str:
 def _relevance_score(question: str, item: dict[str, Any]) -> int:
     searchable = f"{item.get('symbol') or ''}\n{item.get('path') or ''}\n{item.get('content') or ''}".casefold()
     score = sum(1 for term in _query_terms(question) if term in searchable)
+    operational = operational_source_terms(question)
+    if operational:
+        path = str(item.get('path') or '').casefold()
+        if any(term in path for term in ('consoleproxy', 'consoleaccessmanager', 'create_ccvm_cloudinit', 'cluster_config.py')):
+            return 0
+        return score + sum(16 for term in operational if term.casefold() in searchable)
     if _is_ccvm_preflight_question(question):
         path = str(item.get('path') or '').casefold()
         directory = _ccvm_failure_stage(question) == 'DIRECTORY'
@@ -863,7 +873,7 @@ def _looks_like_cli(value: str) -> bool:
 
 def _format_copyable_cli(value: str) -> str:
     """Move inline shell commands below their explanation as copy-ready blocks."""
-    if "```" in value:
+    if "```" in value or re.search(r'실행하지|금지|권하지|실행.{0,8}마십시오', value):
         return value
     commands: list[str] = []
 
@@ -923,6 +933,10 @@ def format_public_answer(result: dict[str, Any]) -> str | None:
         lines.extend(f"- {simplify_public_text(item, citations)}" for item in needed)
         return "\n".join(line for line in lines if line is not None).strip()
     if result.get("state") == "ABSTAINED":
+        if result.get('answerIntent') == 'EXPLANATION':
+            return ('문의하신 기능의 공식 지원 범위와 설치 버전별 적용 여부를 현재 근거로 확정할 수 없습니다. '
+                    'ABLECLOUD 기술지원센터에 해당 제품의 공식 절차와 적용 범위를 문의해 주세요. '
+                    '확인되지 않은 기능을 지원 또는 미지원으로 단정하지 않겠습니다.')
         needed = result.get("questionsNeeded") or (result.get("plan") or {}).get("questionsNeeded") or []
         lines = [
             "확인을 도와드리겠습니다. 현재 자료만으로는 원인을 안전하게 하나로 좁히기 어려워 몇 가지 확인이 더 필요합니다.",
