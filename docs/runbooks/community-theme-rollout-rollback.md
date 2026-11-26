@@ -49,6 +49,9 @@ sudo -u www-data env COMPOSER_HOME=/tmp/techflow-composer \
   composer require ablecloud/community-theme:@dev --with-dependencies --no-interaction
 sudo -u www-data php flarum extension:enable ablecloud-community-theme
 sudo -u www-data php flarum cache:clear
+sudo -u www-data php flarum assets:publish
+sudo -u www-data env TECHFLOW_ALLOWED_FLARUM_ROOT=/var/www/html \
+  php vendor/ablecloud/community-theme/tools/verify-xslt-assets.php /var/www/html
 sudo -u www-data env TECHFLOW_ALLOWED_FLARUM_ROOT=/var/www/html \
   php vendor/ablecloud/community-theme/tools/warm-korean-locale.php /var/www/html
 sudo systemctl restart php8.3-fpm nginx
@@ -71,6 +74,16 @@ sudo bash deploy/flarum/apply-community-theme-update.sh \
 - 외부 HTTPS와 서버 로컬 Host/HTTPS 전달 헤더 점검이 모두 200이어야 한다.
 - `public/assets/forum.css`에 `--ablecloud-brand-primary`가 있어야 한다.
 - `public/assets/forum-ko.js`가 비어 있지 않고 `core.forum.header.search_placeholder`를 포함해야 한다.
+- Core에 `Formatter/XsltPolyfill.php`가 있는 버전에서는 설치된 두 호환성 자산과
+  공개 파일의 SHA-256이 일치해야 한다. 외부 HTTPS에서도 아래 두 파일이 JS MIME으로
+  HTTP200인지 확인한다. 첫 파일만 존재하면 충분하지 않다.
+  - `/assets/xslt-polyfill/xslt-polyfill.min.js`
+  - `/assets/xslt-polyfill/dist/xslt-wasm.js`
+- 네이티브 XSLT가 없는 브라우저에서도 카테고리·본문 요약·썸네일·작성기를 확인한다.
+  Chrome158부터 해당 API가 제거되므로 구버전 Chrome에서만 통과한 결과로 완료하지 않는다.
+  `XSLTProcessor is not defined`와 호환성 파일404가 함께 나오면 테마 전체를 제거하기 전에
+  표준 `assets:publish`로 배포 자산을 게시하고 위 검증을 다시 수행한다. Core·DB 복원이나
+  브라우저 보안 기능 재활성화로 우회하지 않는다.
 - 데스크톱과 모바일에서 홈, 목록, 상세, 검색, 로그인, 글쓰기, 첨부를 확인한다.
 - 데스크톱 첫 화면에서 문서 전체의 `scrollY`가 `0`으로 유지되는지 확인한다.
   Welcome Hero는 표시하지 않고 좌측 메뉴는 고정한다. `.IndexPage-results` 전체가 스크롤되어야
@@ -197,6 +210,9 @@ sudo bash deploy/flarum/apply-community-theme-update.sh \
 cd /var/www/html
 sudo -u www-data php flarum extension:disable ablecloud-community-theme
 sudo -u www-data php flarum cache:clear
+sudo -u www-data php flarum assets:publish
+sudo -u www-data env TECHFLOW_ALLOWED_FLARUM_ROOT=/var/www/html \
+  php vendor/ablecloud/community-theme/tools/verify-xslt-assets.php /var/www/html
 sudo -u www-data env TECHFLOW_ALLOWED_FLARUM_ROOT=/var/www/html \
   php vendor/ablecloud/community-theme/tools/warm-korean-locale.php /var/www/html
 sudo systemctl restart php8.3-fpm nginx
