@@ -58,6 +58,9 @@ sudo -u www-data env COMPOSER_HOME=/tmp/techflow-composer \
     composer require ablecloud/community-theme:@dev --with-dependencies --no-interaction
 sudo -u www-data php flarum extension:enable ablecloud-community-theme
 sudo -u www-data php flarum cache:clear
+sudo -u www-data php flarum assets:publish
+sudo -u www-data env TECHFLOW_ALLOWED_FLARUM_ROOT="$app_root" \
+    php vendor/ablecloud/community-theme/tools/verify-xslt-assets.php "$app_root"
 sudo -u www-data env TECHFLOW_ALLOWED_FLARUM_ROOT="$app_root" \
     php vendor/ablecloud/community-theme/tools/warm-korean-locale.php "$app_root"
 systemctl restart php8.3-fpm nginx

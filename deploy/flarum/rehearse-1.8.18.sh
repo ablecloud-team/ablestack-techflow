@@ -149,6 +149,7 @@ rebuild_runtime() {
     rm -f "$APP_ROOT/storage/locale/"*
     rm -f "$APP_ROOT/public/assets/forum-ko.js" "$APP_ROOT/public/assets/forum-ko.js.map"
     (cd "$APP_ROOT" && as_web php flarum cache:clear)
+    (cd "$APP_ROOT" && as_web php flarum assets:publish)
     systemctl restart "$PHP_FPM_SERVICE" nginx
     curl --fail --silent --show-error --retry 10 --retry-delay 1 \
         http://127.0.0.1:18080/ >/dev/null
@@ -168,6 +169,10 @@ verify_runtime() {
     systemctl is-active --quiet mariadb
     curl --fail --silent --show-error http://127.0.0.1:18080/ >/dev/null
     [[ -s "$APP_ROOT/public/assets/forum-ko.js" ]] || die "Korean locale bundle is missing"
+    if [[ -f "$APP_ROOT/vendor/flarum/core/src/Formatter/XsltPolyfill.php" ]]; then
+        [[ -s "$APP_ROOT/public/assets/xslt-polyfill/xslt-polyfill.min.js" ]] || die "XSLT compatibility loader is missing"
+        [[ -s "$APP_ROOT/public/assets/xslt-polyfill/dist/xslt-wasm.js" ]] || die "XSLT compatibility WASM bundle is missing"
+    fi
     ! grep -Fq 'addTranslations([])' "$APP_ROOT/public/assets/forum-ko.js" ||
         die "Korean locale bundle is empty"
     grep -Fq 'core.forum.header.search_placeholder' "$APP_ROOT/public/assets/forum-ko.js" ||

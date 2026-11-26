@@ -88,6 +88,8 @@ clear_runtime() {
     local theme_expected="false"
     extension_enabled && theme_expected="true"
     (cd "$APP_ROOT" && as_web php flarum cache:clear)
+    (cd "$APP_ROOT" && as_web php flarum assets:publish)
+    as_web php "$SOURCE_ROOT/tools/verify-xslt-assets.php" "$APP_ROOT"
     # Flarum can leave an empty Symfony catalogue after a CLI asset flush.
     # Remove it after the flush so the first web request rebuilds the complete
     # Korean catalogue and the matching forum-ko.js bundle.
